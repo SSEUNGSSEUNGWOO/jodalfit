@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.recommendations import router as recommendations_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -19,3 +20,6 @@ app.add_middleware(
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+app.include_router(recommendations_router)
