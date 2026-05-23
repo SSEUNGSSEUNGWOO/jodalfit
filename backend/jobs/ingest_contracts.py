@@ -104,13 +104,13 @@ def run(days_back: int = 1, batch_size: int = 500) -> None:
                 continue
             batch.append(row)
             if len(batch) >= batch_size:
-                upsert_rows("contracts", batch, on_conflict="cntrct_no,cntrct_ord")
+                upsert_rows("contracts", batch, on_conflict="cntrct_no,cntrct_ord", ignore_duplicates=True)
                 new_companies += upsert_companies_from_contracts(batch)
                 total += len(batch)
                 print(f"  upserted {total} contracts ({new_companies} new companies)...")
                 batch.clear()
         if batch:
-            upsert_rows("contracts", batch, on_conflict="cntrct_no,cntrct_ord")
+            upsert_rows("contracts", batch, on_conflict="cntrct_no,cntrct_ord", ignore_duplicates=True)
             new_companies += upsert_companies_from_contracts(batch)
             total += len(batch)
         log_ingest_finish(run_id, "success", rows_inserted=total)

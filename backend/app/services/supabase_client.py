@@ -24,14 +24,25 @@ def get_admin_client() -> Client:
     return create_client(settings.supabase_url, settings.supabase_service_role_key)
 
 
-def upsert_rows(table: str, rows: list[dict], on_conflict: str | None = None) -> dict:
-    """배치 upsert helper. 빈 리스트는 noop."""
+def upsert_rows(
+    table: str,
+    rows: list[dict],
+    on_conflict: str | None = None,
+    ignore_duplicates: bool = False,
+) -> dict:
+    """배치 upsert helper.
+
+    - ignore_duplicates=True: INSERT ... ON CONFLICT DO NOTHING (UPDATE 안 함, 빠름)
+    - ignore_duplicates=False(기본): ON CONFLICT DO UPDATE (느림. HNSW 인덱스 있는 테이블은 timeout 위험)
+    """
     if not rows:
         return {"inserted": 0}
     client = get_admin_client()
     query = client.table(table)
     if on_conflict:
-        result = query.upsert(rows, on_conflict=on_conflict).execute()
+        result = query.upsert(
+            rows, on_conflict=on_conflict, ignore_duplicates=ignore_duplicates
+        ).execute()
     else:
-        result = query.upsert(rows).execute()
+        result = query.upsert(rows, ignore_duplicates=ignore_duplicates).execute()
     return {"inserted": len(result.data or [])}

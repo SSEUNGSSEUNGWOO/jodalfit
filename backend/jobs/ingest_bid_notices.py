@@ -80,12 +80,12 @@ def run(days_back: int = 1, batch_size: int = 500) -> None:
                 continue
             batch.append(row)
             if len(batch) >= batch_size:
-                upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord")
+                upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord", ignore_duplicates=True)
                 total += len(batch)
                 print(f"  upserted {total}...")
                 batch.clear()
         if batch:
-            upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord")
+            upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord", ignore_duplicates=True)
             total += len(batch)
         log_ingest_finish(run_id, "success", rows_inserted=total)
         print(f"[{JOB_NAME}] done. {total} rows upserted")
