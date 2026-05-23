@@ -1,0 +1,53 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function maskBizrno(bizrno: string | undefined | null) {
+  if (!bizrno) return "—";
+  const digits = bizrno.replace(/\D/g, "");
+  if (digits.length !== 10) return bizrno;
+  return `${digits.slice(0, 3)}-XX-X${digits.slice(7)}`;
+}
+
+export function formatKRW(value: number | null | undefined) {
+  if (value == null) return "—";
+  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}억`;
+  if (value >= 10_000) return `${(value / 10_000).toFixed(0)}만`;
+  return value.toLocaleString("ko-KR");
+}
+
+export function formatKRWFull(value: number | null | undefined) {
+  if (value == null) return "—";
+  return value.toLocaleString("ko-KR") + "원";
+}
+
+export function daysUntil(dateStr: string | null | undefined) {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const ms = target.getTime() - today.getTime();
+  return Math.round(ms / (1000 * 60 * 60 * 24));
+}
+
+export function formatDateKR(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function scoreLabel(score: number) {
+  if (score >= 0.85) return { label: "매우 적합", tone: "primary" as const };
+  if (score >= 0.7) return { label: "적합", tone: "primary" as const };
+  if (score >= 0.55) return { label: "관련 있음", tone: "muted" as const };
+  return { label: "참고", tone: "muted" as const };
+}
+
+export function scorePercent(score: number) {
+  return Math.round(score * 100);
+}

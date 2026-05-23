@@ -1,26 +1,203 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css");
 @import "tailwindcss";
 
+@theme {
+  /* Brand palette — Korean Financial Bureau */
+  --color-navy: #12355b;
+  --color-navy-50: #f0f4f9;
+  --color-navy-100: #d8e2ee;
+  --color-navy-200: #b3c5dd;
+  --color-navy-700: #1a4778;
+  --color-navy-900: #0a1f37;
+
+  --color-blue-500: #2563eb;
+  --color-blue-600: #1d4ed8;
+  --color-blue-50: #eff6ff;
+
+  --color-teal-50: #f0fdfa;
+  --color-teal-100: #ccfbf1;
+  --color-teal-300: #5eead4;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+
+  --color-bg: #f7f9fc;
+  --color-bg-alt: #eef2f7;
+  --color-surface: #ffffff;
+
+  --color-ink: #111827;
+  --color-ink-strong: #030712;
+  --color-ink-muted: #6b7280;
+  --color-ink-soft: #9ca3af;
+
+  --color-line: #e5e7eb;
+  --color-line-strong: #d1d5db;
+  --color-line-soft: #f3f4f6;
+
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-warning-50: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-50: #fef2f2;
+
+  /* Typography */
+  --font-sans: "Pretendard Variable", "Pretendard", -apple-system,
+    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR",
+    "Malgun Gothic", sans-serif;
+  --font-mono: "Pretendard Variable", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Radius — subtle for B2B trust */
+  --radius-tile: 4px;
+  --radius-card: 8px;
+  --radius-pill: 999px;
+}
+
+/* Reset & base */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --selection: rgba(20, 184, 166, 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss03", "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+/* Editorial accents */
+.hairline {
+  background-image: linear-gradient(
+    to right,
+    var(--color-line) 0%,
+    var(--color-line) 50%,
+    transparent 50%,
+    transparent 100%
+  );
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Compositional vertical accent (editorial quote) */
+.quote-rail {
+  position: relative;
+  padding-left: 1rem;
+}
+.quote-rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  width: 2px;
+  background: var(--color-teal-500);
+  border-radius: 1px;
+}
+
+/* Hero "wordmark" accent — small geometric mark */
+.wordmark-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--color-teal-500);
+  margin-left: 0.25rem;
+  vertical-align: 0.1em;
+}
+
+/* Match gauge: thin horizontal bar */
+.gauge-track {
+  position: relative;
+  height: 4px;
+  background: var(--color-line-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.gauge-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    var(--color-teal-500),
+    var(--color-teal-600)
+  );
+  border-radius: 999px;
+  transform-origin: left;
+}
+
+/* Subtle inset card */
+.inset-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 1px 0 0 rgba(17, 24, 39, 0.02),
+    0 1px 2px -1px rgba(17, 24, 39, 0.04);
+}
+
+/* Stat label — editorial small caps */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-blue-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Stagger reveal */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.draw {
+  animation: draw 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Mobile-readable density */
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
 }
