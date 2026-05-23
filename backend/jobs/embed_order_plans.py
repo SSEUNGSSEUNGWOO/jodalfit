@@ -61,7 +61,7 @@ def run(limit: int = 5000, batch: int = 200) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            client.table("order_plans").upsert(updates, on_conflict="order_plan_unty_no").execute()
+            client.rpc("update_order_plans_embeddings", {"updates": updates}).execute()
             total += len(rows)
             print(f"  embedded {total}")
         log_ingest_finish(run_id, "success", rows_updated=total)

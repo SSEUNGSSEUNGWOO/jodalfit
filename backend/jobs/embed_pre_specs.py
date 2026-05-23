@@ -59,7 +59,7 @@ def run(limit: int = 5000, batch: int = 200) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            client.table("pre_specs").upsert(updates, on_conflict="bf_spec_rgst_no").execute()
+            client.rpc("update_pre_specs_embeddings", {"updates": updates}).execute()
             total += len(rows)
             print(f"  embedded {total}")
         log_ingest_finish(run_id, "success", rows_updated=total)

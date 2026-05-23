@@ -65,9 +65,7 @@ def run(limit: int = 5000, batch: int = 200) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            client.table("bid_notices").upsert(
-                updates, on_conflict="bid_ntce_no,bid_ntce_ord"
-            ).execute()
+            client.rpc("update_bid_notice_embeddings", {"updates": updates}).execute()
             total += len(rows)
             print(f"  embedded {total}")
         log_ingest_finish(run_id, "success", rows_updated=total)

@@ -189,7 +189,7 @@ def run(limit: int = 5000, batch: int = 50) -> None:
                 )
 
             if updates:
-                client.table("companies").upsert(updates, on_conflict="bizrno").execute()
+                client.rpc("update_company_embeddings", {"updates": updates}).execute()
                 total += len(updates)
                 print(f"  computed {total} company vectors (skipped {skipped})")
 
