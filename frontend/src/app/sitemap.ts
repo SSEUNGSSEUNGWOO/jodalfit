@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { fetchActiveCompaniesForSitemap } from "@/lib/company";
+import { fetchRecentNoticesForSitemap } from "@/lib/notice";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://jodalfit.co.kr";
 
@@ -40,5 +41,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 시드 데이터 부족 시 빈 list. 검색엔진은 정적 routes만 인덱싱.
   }
 
-  return [...staticRoutes, ...companyRoutes];
+  // Dynamic: notices (라이프사이클 페이지)
+  let noticeRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const rows = await fetchRecentNoticesForSitemap(3000);
+    noticeRoutes = rows
+      .filter((r) => r.bid_ntce_no)
+      .map((r) => ({
+        url: `${BASE_URL}/notices/${r.bid_ntce_no}`,
+        lastModified: r.updated_at ? new Date(r.updated_at) : now,
+        changeFrequency: "weekly" as const,
+        priority: 0.5,
+      }));
+  } catch {
+    // 데이터 없으면 skip
+  }
+
+  return [...staticRoutes, ...companyRoutes, ...noticeRoutes];
 }
