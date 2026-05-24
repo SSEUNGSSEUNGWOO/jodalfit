@@ -206,8 +206,16 @@ export interface NoticeSummary {
   bid_ntce_nm: string;
   bsns_div_nm: string | null;
   dmnd_instt_nm: string | null;
+  ntce_instt_nm: string | null;
+  bid_ntce_date: string | null;
   bid_clse_date: string | null;
+  openg_date: string | null;
   presmpt_prce: number | null;
+  asign_bdgt_amt: number | null;
+  bidprc_psbl_indstryty_nm: string | null;
+  prtcpt_psbl_rgn_nm: string | null;
+  cntrct_cncls_mthd_nm: string | null;
+  rgn_lmt_yn: string | null;
 }
 
 export async function fetchBrowseNotices(
@@ -220,7 +228,7 @@ export async function fetchBrowseNotices(
   let query = c
     .from("bid_notices")
     .select(
-      "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,bid_clse_date,presmpt_prce"
+      "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn"
     )
     .gte("bid_clse_date", today)
     .order("bid_clse_date")

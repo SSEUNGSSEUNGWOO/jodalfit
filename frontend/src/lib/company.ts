@@ -111,8 +111,16 @@ export interface CompanySummary {
   bizrno: string;
   bizrno_norm: string;
   corp_nm: string;
+  ceo_nm: string | null;
   rgn_nm: string | null;
   corp_bsns_div_nm: string | null;
+  mnfctr_div_nm: string | null;
+  hmpg_addr: string | null;
+  opng_dt: string | null;
+  contract_count: number | null;
+  /** runtime-attached */
+  recent_amount?: number;
+  recent_sectors?: string[];
 }
 
 export async function fetchBrowseCompanies(
@@ -121,9 +129,40 @@ export async function fetchBrowseCompanies(
   const c = getServerSupabase();
   const { data } = await c
     .from("companies")
-    .select("bizrno,bizrno_norm,corp_nm,rgn_nm,corp_bsns_div_nm")
+    .select(
+      "bizrno,bizrno_norm,corp_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,hmpg_addr,opng_dt,contract_count"
+    )
     .not("embedded_at", "is", null)
     .order("embedded_at", { ascending: false })
     .limit(limit);
-  return (data as CompanySummary[]) ?? [];
+  const companies = (data as CompanySummary[]) ?? [];
+  if (companies.length === 0) return companies;
+
+  // 모든 회사의 contracts 한 번에 join (효율적)
+  const bizrnos = companies.map((x) => x.bizrno_norm).filter(Boolean);
+  const { data: contracts } = await c
+    .from("contracts")
+    .select("rprsnt_corp_bizrno_norm,cntrct_amt,bsns_div_nm")
+    .in("rprsnt_corp_bizrno_norm", bizrnos);
+
+  const byBiz: Record<string, { amt: number; sectors: Set<string>; cnt: number }> =
+    {};
+  for (const r of (contracts as any[]) ?? []) {
+    const k = r.rprsnt_corp_bizrno_norm;
+    if (!k) continue;
+    if (!byBiz[k]) byBiz[k] = { amt: 0, sectors: new Set(), cnt: 0 };
+    byBiz[k].amt += r.cntrct_amt ?? 0;
+    byBiz[k].cnt += 1;
+    if (r.bsns_div_nm) byBiz[k].sectors.add(r.bsns_div_nm);
+  }
+
+  return companies.map((x) => {
+    const s = byBiz[x.bizrno_norm];
+    return {
+      ...x,
+      contract_count: s?.cnt ?? x.contract_count ?? 0,
+      recent_amount: s?.amt ?? 0,
+      recent_sectors: s ? Array.from(s.sectors).slice(0, 3) : [],
+    };
+  });
 }
