@@ -1,4 +1,5 @@
-import { Building2 } from "lucide-react";
+import Link from "next/link";
+import { Building2, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, maskBizrno } from "@/lib/utils";
@@ -26,9 +27,15 @@ export function CompanyCard({
               <Building2 className="h-4 w-4 text-primary" aria-hidden />
               <span className="text-[12.5px] font-bold text-primary">분석 대상</span>
             </div>
-            <h2 className="mt-2 text-[26px] sm:text-[28px] font-extrabold tracking-tight text-foreground">
-              {company.corp_nm}
-            </h2>
+            <Link
+              href={`/companies/${company.bizrno.replace(/\D/g, "")}`}
+              className="group inline-flex items-baseline gap-2 mt-2 hover:text-primary transition-colors"
+            >
+              <h2 className="text-[26px] sm:text-[28px] font-extrabold tracking-tight text-foreground group-hover:text-primary">
+                {company.corp_nm}
+              </h2>
+              <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </Link>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] text-muted-foreground">
               <span className="tabular tabular-nums font-medium">
                 사업자 {maskBizrno(company.bizrno)}

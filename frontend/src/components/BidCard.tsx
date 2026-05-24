@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowUpRight, Bookmark, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,9 +48,14 @@ export function BidCard({
           <MatchScore score={bid.score} size="sm" className="shrink-0" />
         </div>
 
-        {/* Title */}
-        <h3 className="mt-4 text-[20px] sm:text-[22px] font-extrabold tracking-tight leading-[1.35] text-foreground">
-          {bid.bid_ntce_nm}
+        {/* Title — links to lifecycle page */}
+        <h3 className="mt-4 text-[20px] sm:text-[22px] font-extrabold tracking-tight leading-[1.35]">
+          <Link
+            href={`/notices/${bid.bid_ntce_no}`}
+            className="text-foreground hover:text-primary transition-colors"
+          >
+            {bid.bid_ntce_nm}
+          </Link>
         </h3>
 
         {/* Meta */}
