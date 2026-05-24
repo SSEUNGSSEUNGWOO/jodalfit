@@ -2,18 +2,19 @@
 
 import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface FilterState {
   bsns_div?: string;
-  region?: string;
   budget?: string;
   deadline?: string;
 }
 
 const BSNS_OPTIONS = ["전체", "용역", "물품", "공사", "외자"];
 const DEADLINE_OPTIONS = ["전체", "1주일 이내", "2주일 이내", "1개월 이내"];
-const BUDGET_OPTIONS = ["전체", "5천만 이하", "5천만~3억", "3억~10억", "10억 이상"];
+const BUDGET_OPTIONS = ["전체", "5천만 이하", "5천~3억", "3억~10억", "10억 이상"];
 
 export function FilterPanel({
   className,
@@ -31,31 +32,33 @@ export function FilterPanel({
   };
 
   return (
-    <aside className={cn("inset-card sticky top-20 p-5", className)}>
-      <div className="flex items-center gap-2">
-        <SlidersHorizontal className="h-3.5 w-3.5 text-ink-muted" aria-hidden />
-        <span className="eyebrow text-ink">필터</span>
-      </div>
+    <Card className={cn("sticky top-24", className)}>
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <span className="text-sm font-bold text-foreground">필터</span>
+        </div>
 
-      <FilterGroup
-        label="업무구분"
-        options={BSNS_OPTIONS}
-        value={filters.bsns_div ?? "전체"}
-        onSelect={(v) => update("bsns_div", v)}
-      />
-      <FilterGroup
-        label="마감일"
-        options={DEADLINE_OPTIONS}
-        value={filters.deadline ?? "전체"}
-        onSelect={(v) => update("deadline", v)}
-      />
-      <FilterGroup
-        label="추정가"
-        options={BUDGET_OPTIONS}
-        value={filters.budget ?? "전체"}
-        onSelect={(v) => update("budget", v)}
-      />
-    </aside>
+        <FilterGroup
+          label="업무구분"
+          options={BSNS_OPTIONS}
+          value={filters.bsns_div ?? "전체"}
+          onSelect={(v) => update("bsns_div", v)}
+        />
+        <FilterGroup
+          label="마감일"
+          options={DEADLINE_OPTIONS}
+          value={filters.deadline ?? "전체"}
+          onSelect={(v) => update("deadline", v)}
+        />
+        <FilterGroup
+          label="추정가"
+          options={BUDGET_OPTIONS}
+          value={filters.budget ?? "전체"}
+          onSelect={(v) => update("budget", v)}
+        />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -71,25 +74,23 @@ function FilterGroup({
   onSelect: (v: string) => void;
 }) {
   return (
-    <div className="mt-5">
-      <div className="text-[12px] font-semibold text-ink-muted">{label}</div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+    <div className="mt-4 pt-4 border-t first:border-t-0 first:mt-0 first:pt-0">
+      <div className="text-xs font-bold text-muted-foreground mb-2.5">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
         {options.map((o) => {
           const selected = o === value;
           return (
-            <button
+            <Button
               key={o}
-              type="button"
+              size="sm"
+              variant={selected ? "default" : "secondary"}
               onClick={() => onSelect(o)}
-              className={cn(
-                "rounded-tile border px-2 py-1 text-[12.5px] transition-colors",
-                selected
-                  ? "border-navy bg-navy text-white"
-                  : "border-line bg-surface text-ink-muted hover:border-line-strong hover:text-ink"
-              )}
+              className="h-7 px-3 text-[12.5px] font-semibold"
             >
               {o}
-            </button>
+            </Button>
           );
         })}
       </div>

@@ -3,25 +3,19 @@ import { Brand } from "./Brand";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-[1180px] items-center justify-between px-6 sm:px-8">
+    <header className="sticky top-0 z-40 bg-bg/90 backdrop-blur-md border-b border-line">
+      <div className="mx-auto flex h-16 max-w-[1140px] items-center justify-between px-5 sm:px-8">
         <Brand size="md" />
-        <nav className="flex items-center gap-7 text-[14px] text-ink-muted">
+        <nav className="flex items-center gap-2 sm:gap-1">
           <Link
             href="/#how"
-            className="hidden transition-colors hover:text-ink sm:inline"
+            className="hidden sm:inline-block px-3 py-2 text-[14px] font-semibold text-ink-3 hover:text-ink rounded-md hover:bg-bg-soft transition-colors"
           >
             추천 방식
           </Link>
           <Link
-            href="/#trust"
-            className="hidden transition-colors hover:text-ink sm:inline"
-          >
-            데이터
-          </Link>
-          <Link
             href="mailto:hello@jodalfit.co.kr"
-            className="transition-colors hover:text-ink"
+            className="px-3 py-2 text-[14px] font-semibold text-ink-3 hover:text-ink rounded-md hover:bg-bg-soft transition-colors"
           >
             문의
           </Link>

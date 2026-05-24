@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="720" height="200">
+  
+  <g transform="translate(0 0)">
+    <g fill="none" stroke="#166534" stroke-width="10" stroke-linecap="butt">
+      <polyline points="30 65, 30 30, 65 30"></polyline>
+      <polyline points="135 30, 170 30, 170 65"></polyline>
+      <polyline points="170 135, 170 170, 135 170"></polyline>
+      <polyline points="65 170, 30 170, 30 135"></polyline>
+    </g>
+    <circle cx="100" cy="100" r="13" fill="#166534"></circle>
+  </g>
+  
+  <text x="220" y="138" fill="#166534" font-family="Manrope, &#39;Pretendard Variable&#39;, Pretendard, system-ui, -apple-system, &#39;Segoe UI&#39;, sans-serif" font-weight="700" font-size="120" letter-spacing="-5">jodalfit</text>
+</svg>

@@ -11,45 +11,40 @@ export function MatchScore({
 }) {
   const { label } = scoreLabel(score);
   const pct = scorePercent(score);
-  const fill = Math.min(100, Math.max(0, pct));
 
   const dims = {
-    sm: { number: "text-[22px]", label: "text-[11px]", width: "w-12" },
-    md: { number: "text-[32px]", label: "text-[12px]", width: "w-16" },
-    lg: { number: "text-[44px]", label: "text-[12px]", width: "w-20" },
+    sm: { num: "text-[24px]", w: "w-14", h: "h-1.5", lbl: "text-[11.5px]" },
+    md: { num: "text-[36px]", w: "w-20", h: "h-2", lbl: "text-[12.5px]" },
+    lg: { num: "text-[52px]", w: "w-28", h: "h-2.5", lbl: "text-[13px]" },
   }[size];
 
   return (
-    <div className={cn("flex flex-col items-end gap-1.5", className)}>
+    <div className={cn("flex flex-col items-end gap-2", className)}>
       <div className="flex items-baseline gap-1">
         <span
           className={cn(
-            "font-bold tabular text-navy leading-none",
-            dims.number
+            "font-extrabold tabular tabular-nums leading-none text-primary",
+            dims.num
           )}
         >
           {pct}
         </span>
-        <span className="text-[12px] font-medium text-ink-muted">/ 100</span>
+        <span className="text-sm font-semibold text-muted-foreground">점</span>
       </div>
-      <div className={cn("gauge-track", dims.width)}>
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-full bg-muted",
+          dims.w,
+          dims.h
+        )}
+      >
         <div
-          className="gauge-fill draw"
-          style={{
-            transform: `scaleX(${fill / 100})`,
-            transformOrigin: "left",
-          }}
+          className="absolute inset-y-0 left-0 bg-primary rounded-full"
+          style={{ width: `${pct}%` }}
           aria-hidden
         />
       </div>
-      <span
-        className={cn(
-          "eyebrow tabular text-teal-700",
-          dims.label
-        )}
-      >
-        {label}
-      </span>
+      <span className={cn("font-bold text-primary", dims.lbl)}>{label}</span>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { cn, daysUntil, formatDateKR } from "@/lib/utils";
 
 export function DDayBadge({
@@ -10,41 +11,33 @@ export function DDayBadge({
   const days = daysUntil(date);
   if (days === null) return null;
 
-  let tone: "danger" | "warning" | "ink" | "muted" = "ink";
-  let prefix = "D-";
-  let n: number | string = days;
+  let variant: "destructive" | "secondary" | "default" | "outline" = "secondary";
+  let label = `D-${days}`;
+  let tint: string | undefined;
 
   if (days < 0) {
-    tone = "muted";
-    prefix = "D+";
-    n = -days;
+    variant = "outline";
+    label = "마감됨";
   } else if (days === 0) {
-    tone = "danger";
-    prefix = "D";
-    n = "DAY";
+    variant = "destructive";
+    label = "오늘 마감";
   } else if (days <= 2) {
-    tone = "danger";
+    variant = "destructive";
+    label = `D-${days}`;
   } else if (days <= 5) {
-    tone = "warning";
+    variant = "secondary";
+    tint = "bg-orange-100 text-orange-700 border-orange-200";
   }
 
-  const tones = {
-    danger: "bg-danger-50 text-danger border-danger/20",
-    warning: "bg-warning-50 text-warning border-warning/30",
-    ink: "bg-navy-50 text-navy border-navy-100",
-    muted: "bg-line-soft text-ink-muted border-line",
-  };
-
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-tile border px-2 py-0.5 text-[12px] font-semibold tabular",
-        tones[tone],
-        className
-      )}
+    <Badge
+      variant={variant}
+      className={cn("gap-2 font-bold tabular tabular-nums", tint, className)}
     >
-      <span>{`${prefix}${n}`}</span>
-      <span className="font-normal text-ink-muted">{formatDateKR(date)}</span>
-    </span>
+      <span>{label}</span>
+      <span className="text-[11px] font-medium opacity-70">
+        {formatDateKR(date)}
+      </span>
+    </Badge>
   );
 }

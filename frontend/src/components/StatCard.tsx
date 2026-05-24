@@ -14,25 +14,21 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "flex flex-col justify-between gap-4 border-l border-line pl-5 first:border-l-0 first:pl-0",
-        "sm:pl-6 sm:first:pl-0",
-        className
-      )}
-    >
-      <span className="eyebrow text-ink-muted">{label}</span>
-      <div className="flex items-baseline gap-1">
-        <span className="text-[28px] font-bold tabular leading-none text-navy sm:text-[32px]">
+    <div className={cn("", className)}>
+      <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+      <div className="mt-2 flex items-baseline gap-1">
+        <span className="text-[36px] sm:text-[40px] font-extrabold tabular tabular-nums leading-none text-foreground">
           {value}
         </span>
         {suffix && (
-          <span className="text-[14px] font-semibold text-ink-muted">
+          <span className="text-base font-bold text-muted-foreground">
             {suffix}
           </span>
         )}
       </div>
-      {hint && <span className="text-[12px] text-ink-soft">{hint}</span>}
+      {hint && (
+        <p className="mt-2 text-xs text-muted-foreground/70">{hint}</p>
+      )}
     </div>
   );
 }

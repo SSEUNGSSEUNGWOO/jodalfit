@@ -1,4 +1,7 @@
-import { ExternalLink, Bookmark, BarChart3 } from "lucide-react";
+import { ArrowUpRight, Bookmark, BarChart3 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { DDayBadge } from "./DDayBadge";
 import { EvidenceTag } from "./EvidenceTag";
 import { ExplanationBlock } from "./ExplanationBlock";
@@ -18,119 +21,119 @@ export function BidCard({
   className?: string;
 }) {
   return (
-    <article
+    <Card
       className={cn(
-        "group relative bg-surface border border-line rounded-card transition-colors hover:border-line-strong",
-        preview ? "shadow-[0_24px_48px_-32px_rgba(18,53,91,0.18)]" : "",
+        "overflow-hidden transition-shadow gap-0 py-0",
+        preview ? "shadow-lg" : "hover:shadow-md",
         className
       )}
     >
-      {/* Rank ribbon — editorial mark, top-left */}
-      {rank !== undefined && (
-        <div className="absolute -top-3 left-6 z-10">
-          <span className="inline-flex items-center gap-1 rounded-tile bg-navy px-2.5 py-1 text-[11px] font-bold tracking-[0.12em] text-white">
-            <span className="text-teal-300">#</span>
-            <span className="tabular">{rank}</span>
-          </span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-x-6 px-6 pt-6 pb-5 sm:grid-cols-[1fr_auto] sm:items-start sm:gap-x-8 sm:px-8 sm:pt-7">
-        {/* Title + meta */}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="eyebrow text-navy">{bid.bsns_div_nm}</span>
-            <span className="text-[11px] text-ink-soft">·</span>
-            <span className="text-[12px] tabular text-ink-muted">
+      <CardContent className="p-6 sm:p-7">
+        {/* Top: rank + meta + score */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+            {rank !== undefined && (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-[12.5px] font-extrabold tabular tabular-nums shrink-0">
+                {rank}
+              </span>
+            )}
+            <Badge variant="secondary" className="bg-primary/10 text-primary font-semibold">
+              {bid.bsns_div_nm || "공고"}
+            </Badge>
+            <span className="hidden sm:inline text-xs tabular tabular-nums text-muted-foreground">
               {bid.bid_ntce_no}
             </span>
           </div>
-          <h3 className="mt-2 text-[19px] font-semibold leading-[1.4] tracking-tight text-ink-strong sm:text-[21px]">
-            {bid.bid_ntce_nm}
-          </h3>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13.5px] text-ink-muted">
-            <span className="text-ink">{bid.dmnd_instt_nm || bid.ntce_instt_nm || "—"}</span>
-            {bid.prtcpt_psbl_rgn_nm && (
-              <>
-                <Separator />
-                <span>{bid.prtcpt_psbl_rgn_nm}</span>
-              </>
-            )}
-            {bid.bidprc_psbl_indstryty_nm && (
-              <>
-                <Separator />
-                <span className="truncate max-w-[260px]">
-                  {bid.bidprc_psbl_indstryty_nm}
-                </span>
-              </>
-            )}
+          <MatchScore score={bid.score} size="sm" className="shrink-0" />
+        </div>
+
+        {/* Title */}
+        <h3 className="mt-4 text-[20px] sm:text-[22px] font-extrabold tracking-tight leading-[1.35] text-foreground">
+          {bid.bid_ntce_nm}
+        </h3>
+
+        {/* Meta */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] text-muted-foreground">
+          <span className="font-semibold text-foreground/80">
+            {bid.dmnd_instt_nm || bid.ntce_instt_nm || "—"}
+          </span>
+          {bid.prtcpt_psbl_rgn_nm && (
+            <>
+              <Dot />
+              <span>{bid.prtcpt_psbl_rgn_nm}</span>
+            </>
+          )}
+          {bid.bidprc_psbl_indstryty_nm && (
+            <>
+              <Dot />
+              <span className="truncate max-w-[240px]">
+                {bid.bidprc_psbl_indstryty_nm}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Explanation */}
+        {bid.explanation && (
+          <div className="mt-5">
+            <ExplanationBlock text={bid.explanation} />
           </div>
-        </div>
+        )}
 
-        {/* Match score — right column on desktop */}
-        <div className="mt-5 sm:mt-0">
-          <MatchScore score={bid.score} size="md" />
-        </div>
-      </div>
+        {/* Evidence */}
+        {bid.evidence && bid.evidence.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            {bid.evidence.map((tag) => (
+              <EvidenceTag key={tag}>{tag}</EvidenceTag>
+            ))}
+          </div>
+        )}
+      </CardContent>
 
-      {/* Explanation block */}
-      {bid.explanation && (
-        <div className="px-6 pb-5 sm:px-8">
-          <ExplanationBlock text={bid.explanation} />
-        </div>
-      )}
-
-      {/* Evidence tags */}
-      {bid.evidence && bid.evidence.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 px-6 pb-5 sm:px-8">
-          {bid.evidence.map((tag) => (
-            <EvidenceTag key={tag}>{tag}</EvidenceTag>
-          ))}
-        </div>
-      )}
-
-      {/* Bottom row: dday + price + ctas */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-bg-alt/40 px-6 py-3 sm:px-8 rounded-b-card">
-        <div className="flex items-center gap-3">
+      <CardFooter className="flex flex-wrap items-center justify-between gap-3 bg-muted/40 border-t px-6 sm:px-7 py-3.5">
+        <div className="flex items-center gap-4">
           <DDayBadge date={bid.bid_clse_date} />
-          <span className="text-[12px] text-ink-muted">
-            <span className="eyebrow mr-1">추정가</span>
-            <span className="font-semibold tabular text-ink">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[12px] font-semibold text-muted-foreground">
+              추정가
+            </span>
+            <span className="text-[15px] font-bold tabular tabular-nums text-foreground">
               {formatKRW(bid.presmpt_prce)}
             </span>
-          </span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-tile px-2 py-1.5 text-[12.5px] font-medium text-ink-muted transition-colors hover:bg-line-soft hover:text-ink"
-            aria-label="관심 공고 저장"
-          >
-            <Bookmark className="h-3.5 w-3.5" aria-hidden /> 저장
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-tile px-2 py-1.5 text-[12.5px] font-medium text-ink-muted transition-colors hover:bg-line-soft hover:text-ink"
-            aria-label="상세 분석"
-          >
-            <BarChart3 className="h-3.5 w-3.5" aria-hidden /> 상세
-          </button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" aria-label="저장">
+            <Bookmark className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="상세">
+            <BarChart3 className="h-4 w-4" />
+          </Button>
           {bid.bid_ntce_url && (
             <a
               href={bid.bid_ntce_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-tile bg-navy px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-navy-700"
+              className={cn(
+                "ml-1 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg",
+                "bg-primary text-primary-foreground text-sm font-bold",
+                "hover:bg-primary/90 transition-colors"
+              )}
             >
-              공고 원문 <ExternalLink className="h-3 w-3" aria-hidden />
+              공고 보기
+              <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
           )}
         </div>
-      </div>
-    </article>
+      </CardFooter>
+    </Card>
   );
 }
 
-function Separator() {
-  return <span className="text-ink-soft text-[11px]" aria-hidden>·</span>;
+function Dot() {
+  return (
+    <span aria-hidden className="text-muted-foreground/50">
+      ·
+    </span>
+  );
 }

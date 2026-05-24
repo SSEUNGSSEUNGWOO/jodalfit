@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function EvidenceTag({
@@ -8,15 +9,14 @@ export function EvidenceTag({
   className?: string;
 }) {
   return (
-    <span
+    <Badge
+      variant="secondary"
       className={cn(
-        "inline-flex items-center rounded-tile border border-line bg-bg-alt px-2 py-0.5 text-[12px] font-medium text-ink-muted",
-        "transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700",
+        "bg-primary/10 text-primary hover:bg-primary/15 font-semibold",
         className
       )}
     >
-      <span className="text-teal-500">#</span>
-      <span className="ml-0.5">{children}</span>
-    </span>
+      {children}
+    </Badge>
   );
 }

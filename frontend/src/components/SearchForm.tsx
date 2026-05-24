@@ -1,8 +1,9 @@
 "use client";
 
-import { Search, ArrowRight } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function SearchForm({
@@ -33,56 +34,64 @@ export function SearchForm({
       <form
         onSubmit={submit}
         className={cn(
-          "flex items-center gap-2 rounded-tile border border-line bg-surface px-3 py-2 transition-colors focus-within:border-blue-500",
+          "flex items-center gap-2 rounded-lg bg-muted/60 px-3 h-11 transition-colors focus-within:bg-muted focus-within:ring-2 focus-within:ring-primary/30",
           className
         )}
       >
-        <Search className="h-4 w-4 text-ink-soft" aria-hidden />
+        <Search className="h-4 w-4 text-muted-foreground" aria-hidden />
         <input
           autoFocus={autoFocus}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="다른 회사 검색"
-          className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-ink-soft"
+          className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground"
           aria-label="회사명"
         />
-        <button
+        <Button
           type="submit"
+          size="sm"
           disabled={!value.trim() || loading}
-          className="rounded-tile bg-navy px-3 py-1 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-30"
+          variant="default"
         >
           검색
-        </button>
+        </Button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={submit} className={cn("group w-full", className)}>
-      <div className="relative flex items-center rounded-card border border-line-strong bg-surface transition-shadow focus-within:border-navy focus-within:shadow-[0_8px_24px_-12px_rgba(18,53,91,0.18)]">
-        <span className="pl-5 pr-3 text-ink-soft">
-          <Search className="h-5 w-5" aria-hidden />
-        </span>
+    <form onSubmit={submit} className={cn("w-full", className)}>
+      <div className="relative">
+        <Search
+          className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none"
+          aria-hidden
+        />
         <input
           autoFocus={autoFocus}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="예: 주식회사 제이오달소프트"
+          placeholder="회사명을 입력해보세요"
           aria-label="회사명을 입력하세요"
-          className="flex-1 bg-transparent py-[18px] text-[16px] outline-none placeholder:text-ink-soft sm:text-[17px]"
+          className={cn(
+            "w-full h-[68px] pl-14 pr-[150px] rounded-2xl bg-muted",
+            "text-[18px] font-semibold text-foreground",
+            "placeholder:font-normal placeholder:text-muted-foreground",
+            "outline-none transition-all",
+            "focus:bg-background focus:ring-2 focus:ring-primary"
+          )}
         />
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={!value.trim() || loading}
-          className="my-2 mr-2 flex items-center gap-2 rounded-tile bg-navy px-5 py-3 text-[14px] font-semibold text-white transition-all hover:bg-navy-700 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-[52px] px-5 text-[15px] gap-1.5"
         >
-          {loading ? "분석 중..." : "추천 공고 보기"}
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </button>
+          {loading ? "분석 중..." : "추천 받기"}
+          {!loading && <ArrowRight className="h-4 w-4" aria-hidden />}
+        </Button>
       </div>
-      <p className="mt-3 px-2 text-[13px] text-ink-muted">
-        회원가입 없이 먼저 확인.{" "}
-        <span className="text-ink-soft">검색 기록은 저장되지 않습니다.</span>
+      <p className="mt-3 ml-1 text-sm text-muted-foreground">
+        회원가입 없이 바로 확인할 수 있어요.
       </p>
     </form>
   );

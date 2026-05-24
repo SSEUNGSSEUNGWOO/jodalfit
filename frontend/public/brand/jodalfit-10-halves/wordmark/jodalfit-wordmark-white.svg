@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="720" height="200">
+  <g transform="translate(0 0)">
+    <polygon points="35 35, 165 35, 35 165" fill="#FFFFFF"></polygon>
+    <polygon points="165 35, 165 165, 35 165" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="miter"></polygon>
+  </g>
+  <text x="220" y="138" fill="#FFFFFF" font-family="Manrope, &#39;Pretendard Variable&#39;, Pretendard, system-ui, -apple-system, &#39;Segoe UI&#39;, sans-serif" font-weight="700" font-size="120" letter-spacing="-5">jodalfit</text>
+</svg>
