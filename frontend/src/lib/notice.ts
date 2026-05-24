@@ -178,7 +178,7 @@ export async function fetchLifecycle(
   };
 }
 
-/** sitemap용 — 최근 입찰공고 목록 */
+/** sitemap용 — 최근 입찰공고 목록 (dedupe by bid_ntce_no) */
 export async function fetchRecentNoticesForSitemap(
   limit = 5000
 ): Promise<{ bid_ntce_no: string; updated_at: string }[]> {
@@ -187,8 +187,17 @@ export async function fetchRecentNoticesForSitemap(
     .from("bid_notices")
     .select("bid_ntce_no,updated_at")
     .order("bid_ntce_date", { ascending: false })
-    .limit(limit);
-  return (data as { bid_ntce_no: string; updated_at: string }[]) ?? [];
+    .limit(limit * 2);
+  const rows = (data as { bid_ntce_no: string; updated_at: string }[]) ?? [];
+  const seen = new Set<string>();
+  const deduped: { bid_ntce_no: string; updated_at: string }[] = [];
+  for (const r of rows) {
+    if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
+    seen.add(r.bid_ntce_no);
+    deduped.push(r);
+    if (deduped.length >= limit) break;
+  }
+  return deduped;
 }
 
 /** 인덱스 페이지용 — 진행 중 공고 (마감일 안 지남) */
@@ -207,6 +216,7 @@ export async function fetchBrowseNotices(
 ): Promise<NoticeSummary[]> {
   const c = getServerSupabase();
   const today = new Date().toISOString().slice(0, 10);
+  // 같은 공고번호가 여러 차수로 존재할 수 있어 limit*2 가져온 뒤 dedupe
   let query = c
     .from("bid_notices")
     .select(
@@ -214,8 +224,19 @@ export async function fetchBrowseNotices(
     )
     .gte("bid_clse_date", today)
     .order("bid_clse_date")
-    .limit(limit);
+    .limit(limit * 2);
   if (bsnsDiv) query = query.eq("bsns_div_nm", bsnsDiv);
   const { data } = await query;
-  return (data as NoticeSummary[]) ?? [];
+  const rows = (data as NoticeSummary[]) ?? [];
+
+  // dedupe by bid_ntce_no (최근 ord가 마지막에 오므로 first occurrence 유지)
+  const seen = new Set<string>();
+  const deduped: NoticeSummary[] = [];
+  for (const r of rows) {
+    if (seen.has(r.bid_ntce_no)) continue;
+    seen.add(r.bid_ntce_no);
+    deduped.push(r);
+    if (deduped.length >= limit) break;
+  }
+  return deduped;
 }
