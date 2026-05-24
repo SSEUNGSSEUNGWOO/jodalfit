@@ -10,6 +10,7 @@ const USE_MOCK =
 
 export interface RecommendInput {
   query: string;
+  mode?: "company" | "keywords";
   limit?: number;
   candidate_pool?: number;
   with_explanation?: boolean;
@@ -28,6 +29,7 @@ export async function getRecommendations(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         query: input.query,
+        mode: input.mode ?? "company",
         limit: input.limit ?? 5,
         candidate_pool: input.candidate_pool ?? 100,
         with_explanation: input.with_explanation ?? true,

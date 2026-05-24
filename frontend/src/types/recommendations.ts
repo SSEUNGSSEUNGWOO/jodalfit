@@ -30,4 +30,8 @@ export interface RecommendationResponse {
   company: CompanyDigest | null;
   results: BidRecommendation[];
   error?: string;
+  mode?: "company" | "keywords";
+  query?: string;
+  /** "keywords"면 회사 벡터 없거나 식별 실패 — 프론트가 키워드 폴백 UI 노출 */
+  fallback?: "keywords";
 }
