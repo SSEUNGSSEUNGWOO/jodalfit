@@ -1,0 +1,314 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { BidCard } from "@/components/BidCard";
+import { EmailCaptureForm } from "@/components/EmailCaptureForm";
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { KeywordFallback } from "@/components/KeywordFallback";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  fetchCompanyByBizrno,
+  fetchCompanyContracts,
+  summarizeContracts,
+} from "@/lib/company";
+import { getRecommendations } from "@/lib/api";
+import { formatKRW, maskBizrno } from "@/lib/utils";
+
+interface Props {
+  params: Promise<{ bizrno: string }>;
+}
+
+// Cache for 1 hour, revalidate on demand
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { bizrno } = await params;
+  const normalized = bizrno.replace(/\D/g, "");
+  const company = await fetchCompanyByBizrno(normalized);
+  if (!company) {
+    return {
+      title: "회사 정보 없음 | jodalfit",
+      robots: { index: false },
+    };
+  }
+  const title = `${company.corp_nm} 공공입찰 추천 | jodalfit`;
+  const desc = `${company.corp_nm}의 과거 나라장터 수주 이력 분석과 적합한 신규 공공입찰 공고 TOP 5 추천. 매일 갱신.`;
+  return {
+    title,
+    description: desc,
+    alternates: { canonical: `/companies/${normalized}` },
+    openGraph: {
+      title,
+      description: desc,
+      type: "profile",
+      locale: "ko_KR",
+    },
+    keywords: [
+      company.corp_nm,
+      `${company.corp_nm} 입찰`,
+      `${company.corp_nm} 공고`,
+      `${company.corp_nm} 수주`,
+      "공공조달",
+      "나라장터",
+    ],
+  };
+}
+
+export default async function CompanyPage({ params }: Props) {
+  const { bizrno } = await params;
+  const normalized = bizrno.replace(/\D/g, "");
+  if (normalized.length !== 10) notFound();
+
+  const company = await fetchCompanyByBizrno(normalized);
+  if (!company) notFound();
+
+  return (
+    <>
+      <Header />
+      <main className="flex-1">
+        <CompanyHero company={company} />
+        <Suspense fallback={<SectionSkeleton />}>
+          <RecommendationsSection company={company} />
+        </Suspense>
+        <Suspense fallback={<SectionSkeleton />}>
+          <HistorySection bizrnoNorm={normalized} />
+        </Suspense>
+        <CTASection company={company} />
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+function CompanyHero({
+  company,
+}: {
+  company: Awaited<ReturnType<typeof fetchCompanyByBizrno>> & object;
+}) {
+  return (
+    <section className="border-b border-border bg-muted/30">
+      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <div className="flex items-center gap-2 mb-3">
+          <Badge variant="secondary" className="bg-primary/10 text-primary font-semibold">
+            기업 분석
+          </Badge>
+          {company.is_restricted && (
+            <Badge variant="destructive">부정당 제재</Badge>
+          )}
+        </div>
+        <h1 className="text-[32px] sm:text-[44px] font-extrabold tracking-tight text-foreground leading-[1.1]">
+          {company.corp_nm}
+        </h1>
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] text-muted-foreground">
+          <span className="font-medium tabular tabular-nums">
+            사업자 {maskBizrno(company.bizrno)}
+          </span>
+          {company.rgn_nm && (
+            <>
+              <Dot />
+              <span>{company.rgn_nm}</span>
+            </>
+          )}
+          {company.corp_bsns_div_nm && (
+            <>
+              <Dot />
+              <span>{company.corp_bsns_div_nm}</span>
+            </>
+          )}
+          {company.ceo_nm && (
+            <>
+              <Dot />
+              <span>대표 {company.ceo_nm}</span>
+            </>
+          )}
+        </div>
+        <p className="mt-6 max-w-[60ch] text-[15.5px] leading-[1.7] text-foreground/80">
+          <span className="font-semibold text-foreground">{company.corp_nm}</span>의 과거
+          나라장터 수주 이력을 분석해 가장 적합한 신규 공공입찰 공고를 추천해드려요. 매일 갱신되는 데이터로 분석합니다.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+async function RecommendationsSection({
+  company,
+}: {
+  company: Awaited<ReturnType<typeof fetchCompanyByBizrno>> & object;
+}) {
+  // 회사 벡터 없으면 폴백
+  if (!company.has_embedding) {
+    return (
+      <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <div className="mb-5">
+          <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+            추천 공고
+          </h2>
+          <p className="mt-1 text-[14px] text-muted-foreground">
+            과거 수주 이력이 부족해 자동 매칭이 어려워요. 관심 영역을 직접 알려주시면 추천해드려요.
+          </p>
+        </div>
+        <KeywordFallback />
+      </section>
+    );
+  }
+
+  // 추천 호출
+  const data = await getRecommendations({
+    query: company.bizrno,
+    mode: "company",
+    limit: 5,
+    with_explanation: true,
+  });
+
+  return (
+    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+      <div className="flex items-baseline justify-between mb-5">
+        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+          {company.corp_nm}에 맞는 공고 TOP {data.results.length}
+        </h2>
+        <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
+      </div>
+      {data.results.length === 0 ? (
+        <p className="text-[14.5px] text-muted-foreground">
+          현재 매칭되는 신규 공고가 없어요. 나중에 다시 확인해보세요.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {data.results.map((bid, i) => (
+            <BidCard
+              key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
+              bid={bid}
+              rank={i + 1}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+async function HistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
+  const contracts = await fetchCompanyContracts(bizrnoNorm, 20);
+  if (contracts.length === 0) return null;
+  const summary = summarizeContracts(contracts);
+  const totalAmt = contracts.reduce((s, r) => s + (r.cntrct_amt || 0), 0);
+
+  return (
+    <section className="border-t border-border bg-muted/20">
+      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+          과거 수주 이력
+        </h2>
+        <p className="mt-1 text-[14px] text-muted-foreground">
+          최근 {contracts.length}건의 계약 정보예요.
+        </p>
+
+        {/* 통계 카드 */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-[12.5px] font-semibold text-muted-foreground">
+                누적 계약 (최근)
+              </div>
+              <div className="mt-2 text-[28px] font-extrabold tabular tabular-nums text-primary leading-none">
+                {contracts.length}
+                <span className="text-[14px] font-bold text-foreground/70 ml-1">건</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-[12.5px] font-semibold text-muted-foreground">
+                누적 계약금액
+              </div>
+              <div className="mt-2 text-[28px] font-extrabold tabular tabular-nums text-primary leading-none">
+                {formatKRW(totalAmt)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-[12.5px] font-semibold text-muted-foreground">
+                주요 발주 기관
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {summary.top_institutions.slice(0, 3).map((s) => (
+                  <Badge key={s} variant="secondary" className="text-[12px]">
+                    {s.length > 14 ? s.slice(0, 14) + "..." : s}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 계약 리스트 */}
+        <div className="mt-7 overflow-hidden rounded-xl border border-border bg-background">
+          <table className="w-full text-[13.5px]">
+            <thead className="bg-muted/60 text-[12px] font-semibold text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2.5 text-left">계약일</th>
+                <th className="px-4 py-2.5 text-left">사업명</th>
+                <th className="px-4 py-2.5 text-left">발주 기관</th>
+                <th className="px-4 py-2.5 text-right">금액</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contracts.slice(0, 10).map((c) => (
+                <tr key={c.cntrct_no} className="border-t border-border">
+                  <td className="px-4 py-2.5 tabular tabular-nums text-muted-foreground">
+                    {c.cntrct_cncls_date ?? "—"}
+                  </td>
+                  <td className="px-4 py-2.5 font-medium text-foreground">
+                    {c.cntrct_nm || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
+                    {c.dmnd_instt_nm || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular tabular-nums font-bold text-foreground">
+                    {formatKRW(c.cntrct_amt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+function CTASection({
+  company,
+}: {
+  company: Awaited<ReturnType<typeof fetchCompanyByBizrno>> & object;
+}) {
+  return (
+    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-12 sm:py-16">
+      <EmailCaptureForm />
+    </section>
+  );
+}
+
+function SectionSkeleton() {
+  return (
+    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10">
+      <div className="h-7 w-48 bg-muted rounded animate-pulse" />
+      <div className="mt-6 flex flex-col gap-3">
+        <div className="h-32 w-full bg-muted/60 rounded-xl animate-pulse" />
+        <div className="h-32 w-full bg-muted/60 rounded-xl animate-pulse" />
+      </div>
+    </section>
+  );
+}
+
+function Dot() {
+  return <span aria-hidden className="text-muted-foreground/50">·</span>;
+}
