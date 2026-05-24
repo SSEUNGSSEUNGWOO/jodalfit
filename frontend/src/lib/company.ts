@@ -105,3 +105,25 @@ export async function fetchActiveCompaniesForSitemap(
     .limit(limit);
   return (data as { bizrno_norm: string; updated_at: string }[]) ?? [];
 }
+
+/** 인덱스 페이지용 — 회사 벡터 있는 회사 우선 (추천 가능한 회사) */
+export interface CompanySummary {
+  bizrno: string;
+  bizrno_norm: string;
+  corp_nm: string;
+  rgn_nm: string | null;
+  corp_bsns_div_nm: string | null;
+}
+
+export async function fetchBrowseCompanies(
+  limit = 30
+): Promise<CompanySummary[]> {
+  const c = getServerSupabase();
+  const { data } = await c
+    .from("companies")
+    .select("bizrno,bizrno_norm,corp_nm,rgn_nm,corp_bsns_div_nm")
+    .not("embedded_at", "is", null)
+    .order("embedded_at", { ascending: false })
+    .limit(limit);
+  return (data as CompanySummary[]) ?? [];
+}

@@ -190,3 +190,32 @@ export async function fetchRecentNoticesForSitemap(
     .limit(limit);
   return (data as { bid_ntce_no: string; updated_at: string }[]) ?? [];
 }
+
+/** 인덱스 페이지용 — 진행 중 공고 (마감일 안 지남) */
+export interface NoticeSummary {
+  bid_ntce_no: string;
+  bid_ntce_nm: string;
+  bsns_div_nm: string | null;
+  dmnd_instt_nm: string | null;
+  bid_clse_date: string | null;
+  presmpt_prce: number | null;
+}
+
+export async function fetchBrowseNotices(
+  limit = 30,
+  bsnsDiv?: string
+): Promise<NoticeSummary[]> {
+  const c = getServerSupabase();
+  const today = new Date().toISOString().slice(0, 10);
+  let query = c
+    .from("bid_notices")
+    .select(
+      "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,bid_clse_date,presmpt_prce"
+    )
+    .gte("bid_clse_date", today)
+    .order("bid_clse_date")
+    .limit(limit);
+  if (bsnsDiv) query = query.eq("bsns_div_nm", bsnsDiv);
+  const { data } = await query;
+  return (data as NoticeSummary[]) ?? [];
+}
