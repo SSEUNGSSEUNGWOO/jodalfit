@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BidCard } from "@/components/BidCard";
+import { SlimBidRow } from "@/components/SlimBidRow";
 import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -11,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   fetchCompanyByBizrno,
   fetchCompanyContracts,
+  fetchCompanyProfile,
   summarizeContracts,
 } from "@/lib/company";
 import { getRecommendations } from "@/lib/api";
@@ -69,6 +71,9 @@ export default async function CompanyPage({ params }: Props) {
       <Header />
       <main className="flex-1">
         <CompanyHero company={company} />
+        <Suspense fallback={null}>
+          <ProfileSection bizrno={company.bizrno} />
+        </Suspense>
         <Suspense fallback={<SectionSkeleton />}>
           <RecommendationsSection company={company} />
         </Suspense>
@@ -135,6 +140,82 @@ function CompanyHero({
 }
 
 // ───────────────────────────────────────────────────────────────
+async function ProfileSection({ bizrno }: { bizrno: string }) {
+  const profile = await fetchCompanyProfile(bizrno);
+  if (profile.industries.length === 0 && profile.products.length === 0) return null;
+
+  return (
+    <section className="border-b border-border bg-background">
+      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
+        <h2 className="text-[18px] sm:text-[20px] font-bold text-foreground mb-4">
+          이 회사가 하는 일
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {profile.industries.length > 0 && (
+            <Card>
+              <CardContent className="p-5">
+                <div className="text-[12.5px] font-semibold text-muted-foreground mb-3">
+                  등록업종 · {profile.industries.length}개
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.industries.slice(0, 12).map((nm, i) => (
+                    <Badge
+                      key={`${nm}-${i}`}
+                      variant={i === 0 ? "default" : "secondary"}
+                      className={
+                        i === 0
+                          ? "bg-primary/15 text-primary border-primary/20 text-[12px]"
+                          : "text-[12px]"
+                      }
+                    >
+                      {nm}
+                    </Badge>
+                  ))}
+                  {profile.industries.length > 12 && (
+                    <span className="text-[12px] text-muted-foreground self-center">
+                      +{profile.industries.length - 12}
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {profile.products.length > 0 && (
+            <Card>
+              <CardContent className="p-5">
+                <div className="text-[12.5px] font-semibold text-muted-foreground mb-3">
+                  공급물품 · {profile.products.length}개
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.products.slice(0, 12).map((nm, i) => (
+                    <Badge
+                      key={`${nm}-${i}`}
+                      variant={i === 0 ? "default" : "secondary"}
+                      className={
+                        i === 0
+                          ? "bg-primary/15 text-primary border-primary/20 text-[12px]"
+                          : "text-[12px]"
+                      }
+                    >
+                      {nm}
+                    </Badge>
+                  ))}
+                  {profile.products.length > 12 && (
+                    <span className="text-[12px] text-muted-foreground self-center">
+                      +{profile.products.length - 12}
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
 async function RecommendationsSection({
   company,
 }: {
@@ -157,19 +238,23 @@ async function RecommendationsSection({
     );
   }
 
-  // 추천 호출
+  // 추천 호출 — TOP 5 큰 카드 + 6~20 슬림 리스트
   const data = await getRecommendations({
     query: company.bizrno,
     mode: "company",
-    limit: 5,
+    limit: 20,
     with_explanation: true,
   });
+
+  const TOP = 5;
+  const top = data.results.slice(0, TOP);
+  const slim = data.results.slice(TOP);
 
   return (
     <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
       <div className="flex items-baseline justify-between mb-5">
         <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
-          {company.corp_nm}에 맞는 공고 TOP {data.results.length}
+          {company.corp_nm}에 맞는 공고 {data.results.length}건
         </h2>
         <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
       </div>
@@ -178,15 +263,38 @@ async function RecommendationsSection({
           현재 매칭되는 신규 공고가 없어요. 나중에 다시 확인해보세요.
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
-          {data.results.map((bid, i) => (
-            <BidCard
-              key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-              bid={bid}
-              rank={i + 1}
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-col gap-4">
+            {top.map((bid, i) => (
+              <BidCard
+                key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
+                bid={bid}
+                rank={i + 1}
+              />
+            ))}
+          </div>
+          {slim.length > 0 && (
+            <section className="mt-10">
+              <div className="flex items-baseline justify-between mb-3 px-3">
+                <h3 className="text-[15px] font-bold text-foreground">
+                  관련 공고 {slim.length}개 더
+                </h3>
+                <span className="text-[11.5px] text-muted-foreground font-medium">
+                  점수 / 마감 / 예산
+                </span>
+              </div>
+              <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
+                {slim.map((bid, i) => (
+                  <SlimBidRow
+                    key={`slim-${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
+                    bid={bid}
+                    rank={TOP + i + 1}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </section>
   );

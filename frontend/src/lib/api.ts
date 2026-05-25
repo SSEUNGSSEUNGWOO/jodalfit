@@ -10,7 +10,7 @@ const USE_MOCK =
 
 export interface RecommendInput {
   query: string;
-  mode?: "company" | "keywords";
+  mode?: "company" | "keywords" | "auto";
   limit?: number;
   candidate_pool?: number;
   with_explanation?: boolean;

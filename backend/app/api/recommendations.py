@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.services.explain import explain_batch
+from app.services.explain import explain_batch, explain_keyword_batch
 from app.services.recommend import recommend
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
@@ -15,11 +15,15 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 class RecommendRequest(BaseModel):
     query: str = Field(..., min_length=1, description="회사명/사업자번호 또는 관심 키워드")
-    mode: Literal["company", "keywords"] = Field(
-        "company", description="company: 회사 벡터 매칭 / keywords: 키워드 직접 임베딩"
+    mode: Literal["company", "keywords", "auto"] = Field(
+        "company",
+        description="company: 회사 벡터 / keywords: 키워드 직접 임베딩 / auto: 자동 라우팅 + 양쪽 결과",
     )
-    limit: int = Field(5, ge=1, le=20)
-    candidate_pool: int = Field(100, ge=10, le=500)
+    limit: int = Field(20, ge=1, le=40)
+    candidate_pool: int = Field(200, ge=10, le=500)
+    explain_top: int = Field(
+        5, ge=0, le=10, description="LLM 설명은 상위 explain_top건만 (비용 절약)"
+    )
     with_explanation: bool = Field(False, description="LLM 추천 이유 생성 (OpenAI 비용 발생)")
 
 
@@ -32,18 +36,30 @@ def post_recommendations(req: RecommendRequest):
         mode=req.mode,
     )
 
-    # fallback이 가능한 에러는 404 대신 200 + payload로 반환 (프론트에서 분기)
-    if result.get("error") and not result.get("results") and not result.get("fallback"):
+    has_any_results = bool(result.get("results") or result.get("keyword_results"))
+    if (
+        result.get("error")
+        and not has_any_results
+        and not result.get("fallback")
+    ):
         raise HTTPException(status_code=404, detail=result["error"])
 
-    if req.with_explanation and result.get("results"):
-        # company 모드: company 정보 전달 / keywords 모드: query 텍스트 전달
-        ctx = result.get("company") or {
-            "corp_nm": f"키워드: {req.query}",
-            "corp_bsns_div_nm": req.query,
-        }
-        explanations = explain_batch(ctx, result["results"])
-        for r, ex in zip(result["results"], explanations):
-            r["explanation"] = ex
+    if req.with_explanation and req.explain_top > 0:
+        # 회사 모드 결과 → 회사 컨텍스트 기반 설명
+        # 키워드/회사식별실패 → 키워드 기반 설명 (회사 호칭 안 씀)
+        if result.get("results"):
+            top_results = result["results"][: req.explain_top]
+            if result.get("company"):
+                explanations = explain_batch(result["company"], top_results)
+            else:
+                explanations = explain_keyword_batch(req.query, top_results)
+            for r, ex in zip(top_results, explanations):
+                r["explanation"] = ex
+        # auto 모드 키워드 결과(보조)도 키워드 기반 설명
+        if result.get("keyword_results"):
+            top_kw = result["keyword_results"][: req.explain_top]
+            kw_explanations = explain_keyword_batch(req.query, top_kw)
+            for r, ex in zip(top_kw, kw_explanations):
+                r["explanation"] = ex
 
     return result

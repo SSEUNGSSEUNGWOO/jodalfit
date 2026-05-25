@@ -178,6 +178,58 @@ export async function fetchLifecycle(
   };
 }
 
+/** 비슷한 공고 — 해당 공고의 embedding을 기준으로 코사인 검색.
+ *  자기 자신 + 같은 bid_ntce_no 다른 차수 제외, 마감 안 지난 것만.
+ */
+export interface SimilarNotice {
+  bid_ntce_no: string;
+  bid_ntce_ord: string;
+  bid_ntce_nm: string;
+  bsns_div_nm: string | null;
+  dmnd_instt_nm: string | null;
+  ntce_instt_nm: string | null;
+  bid_clse_date: string | null;
+  presmpt_prce: number | null;
+  bidprc_psbl_indstryty_nm: string | null;
+  similarity: number;
+}
+
+export async function fetchSimilarNotices(
+  bidNtceNo: string,
+  limit = 10
+): Promise<SimilarNotice[]> {
+  const c = getServerSupabase();
+  // 1) source notice embedding 조회 (가장 최근 ord)
+  const { data: src } = await c
+    .from("bid_notices")
+    .select("bid_ntce_no,bid_ntce_ord,embedding")
+    .eq("bid_ntce_no", bidNtceNo)
+    .order("bid_ntce_ord", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!src?.embedding) return [];
+
+  // 2) match_bid_notices RPC 호출 (오늘 이후 마감만)
+  const today = new Date().toISOString().slice(0, 10);
+  const candidatePool = limit * 4 + 5; // 자기 자신 제외 여유분
+  const { data } = await c.rpc("match_bid_notices", {
+    query_embedding: src.embedding,
+    match_count: candidatePool,
+    min_clse_date: today,
+  });
+  const rows = (data as (SimilarNotice & { bid_ntce_no: string })[]) ?? [];
+
+  const seen = new Set<string>([bidNtceNo]); // 자기 자신
+  const out: SimilarNotice[] = [];
+  for (const r of rows) {
+    if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
+    seen.add(r.bid_ntce_no);
+    out.push(r);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 /** sitemap용 — 최근 입찰공고 목록 (dedupe by bid_ntce_no) */
 export async function fetchRecentNoticesForSitemap(
   limit = 5000
@@ -218,33 +270,200 @@ export interface NoticeSummary {
   rgn_lmt_yn: string | null;
 }
 
-export async function fetchBrowseNotices(
-  limit = 30,
-  bsnsDiv?: string
-): Promise<NoticeSummary[]> {
+export type NoticeCategory =
+  | "it"
+  | "medical"
+  | "construction"
+  | "environment"
+  | "education"
+  | "consulting"
+  | "other";
+
+export const CATEGORY_LABELS: Record<NoticeCategory, string> = {
+  it: "IT/소프트웨어",
+  medical: "의료/보건",
+  construction: "건설/토목",
+  environment: "환경/시설",
+  education: "교육/연구",
+  consulting: "컨설팅/기획",
+  other: "기타",
+};
+
+const CATEGORY_KEYWORDS: Record<Exclude<NoticeCategory, "other">, string[]> = {
+  it: ["IT","소프트웨어","시스템","SI","전산","정보화","데이터","AI","인공지능","보안","클라우드","홈페이지","웹","앱","어플리케이션","네트워크","서버","DB","GIS","BIM","메타버스","블록체인","챗봇","디지털"],
+  medical: ["병원","의약품","의료","보건","진료","약품","보건소","요양","간호","임상","백신","진단","의료기기"],
+  construction: ["공사","건축","토목","도로","상수도","하수도","관로","정비공사","신축","증축","개축","리모델링","포장","교량","터널","댐","준설","아스콘"],
+  environment: ["환경","청소","미화","경비","재활용","폐기물","정수","수처리","오염","대기","수질","조경","녹지","공원","시설관리","유지관리"],
+  education: ["교육","학교","대학","학술","연구","연구용역","교과서","학습","캠퍼스","강의","학원","교과","학생","교육청"],
+  consulting: ["컨설팅","기획","조사","전략","정책","분석","마스터플랜","평가","자문","감리","설계용역"],
+};
+
+/** 한 공고가 속한 카테고리들을 반환 (여러 개 가능, 매칭 0개면 ["other"]). */
+export function categoriesOf(notice: {
+  bid_ntce_nm?: string | null;
+  bidprc_psbl_indstryty_nm?: string | null;
+  bsns_div_nm?: string | null;
+}): NoticeCategory[] {
+  const text = [
+    notice.bid_ntce_nm,
+    notice.bidprc_psbl_indstryty_nm,
+    notice.bsns_div_nm,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const hits: NoticeCategory[] = [];
+  for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS) as [
+    Exclude<NoticeCategory, "other">,
+    string[],
+  ][]) {
+    if (kws.some((kw) => text.includes(kw.toLowerCase()))) {
+      hits.push(cat);
+    }
+  }
+  return hits.length > 0 ? hits : ["other"];
+}
+
+export interface NoticeFilters {
+  bsnsDiv?: string;
+  dday?: 7 | 14 | 30; // D-day 이내 (없으면 전체)
+  priceBucket?: "lt1" | "1to10" | "10to50" | "gt50";
+  rgn?: string; // 시·도 키워드 (예: "서울")
+  category?: NoticeCategory;
+  sort?: "close" | "price_desc" | "ntce_desc";
+}
+
+const PRICE_RANGES: Record<NonNullable<NoticeFilters["priceBucket"]>, [number, number | null]> = {
+  lt1: [0, 100_000_000],
+  "1to10": [100_000_000, 1_000_000_000],
+  "10to50": [1_000_000_000, 5_000_000_000],
+  gt50: [5_000_000_000, null],
+};
+
+function applyFilters<T>(
+  q: T,
+  today: string,
+  f: NoticeFilters
+): T {
+  // chainable에 cast가 어려워 any 사용 (Supabase builder)
+  let qq = q as any;
+  qq = qq.gte("bid_clse_date", today);
+  if (f.bsnsDiv) qq = qq.eq("bsns_div_nm", f.bsnsDiv);
+  if (f.dday) {
+    const max = new Date();
+    max.setHours(0, 0, 0, 0);
+    max.setDate(max.getDate() + f.dday);
+    qq = qq.lte("bid_clse_date", max.toISOString().slice(0, 10));
+  }
+  if (f.priceBucket) {
+    const [lo, hi] = PRICE_RANGES[f.priceBucket];
+    qq = qq.gte("presmpt_prce", lo);
+    if (hi != null) qq = qq.lt("presmpt_prce", hi);
+  }
+  if (f.rgn) {
+    // 시·도 키워드 부분 일치 (예: "서울" → "서울특별시 …")
+    qq = qq.ilike("prtcpt_psbl_rgn_nm", `%${f.rgn}%`);
+  }
+  return qq as T;
+}
+
+function orderClause<T>(q: T, sort: NoticeFilters["sort"]): T {
+  const qq = q as any;
+  switch (sort) {
+    case "price_desc":
+      return qq.order("presmpt_prce", { ascending: false, nullsFirst: false }) as T;
+    case "ntce_desc":
+      return qq.order("bid_ntce_date", { ascending: false, nullsFirst: false }) as T;
+    case "close":
+    default:
+      return qq.order("bid_clse_date") as T;
+  }
+}
+
+/** 빠른 active 공고 카운트 (dedupe 없는 raw row count, head only). 홈 화면 신뢰 신호용. */
+export async function fetchActiveNoticesRoughCount(): Promise<number> {
   const c = getServerSupabase();
   const today = new Date().toISOString().slice(0, 10);
-  // 같은 공고번호가 여러 차수로 존재할 수 있어 limit*2 가져온 뒤 dedupe
-  let query = c
+  const { count } = await c
     .from("bid_notices")
-    .select(
-      "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn"
-    )
-    .gte("bid_clse_date", today)
-    .order("bid_clse_date")
-    .limit(limit * 2);
-  if (bsnsDiv) query = query.eq("bsns_div_nm", bsnsDiv);
-  const { data } = await query;
-  const rows = (data as NoticeSummary[]) ?? [];
+    .select("bid_ntce_no", { count: "exact", head: true })
+    .gte("bid_clse_date", today);
+  return count ?? 0;
+}
 
-  // dedupe by bid_ntce_no (최근 ord가 마지막에 오므로 first occurrence 유지)
+/** 한 번 fetch로 카테고리 분류·필터·페이지네이션 모두 처리.
+ *  카테고리 필터는 DB로 못 거니까(키워드 OR 사전 60개+) 메모리에서 처리.
+ *  fetchBrowseNoticesCount와 fetchBrowseNotices를 통합한 형태.
+ */
+export interface BrowsePage {
+  rows: NoticeSummary[];
+  totalCount: number;
+  categoryCounts: Record<NoticeCategory, number>;
+}
+
+export async function fetchBrowsePage(
+  filters: NoticeFilters = {},
+  page = 1,
+  pageSize = 100
+): Promise<BrowsePage> {
+  const c = getServerSupabase();
+  const today = new Date().toISOString().slice(0, 10);
+  const PAGE = 1000;
+
+  // 1) DB 레벨 필터(업무·마감·예산·지역)로 후보 풀 페이징 수집
+  const collected: NoticeSummary[] = [];
   const seen = new Set<string>();
-  const deduped: NoticeSummary[] = [];
-  for (const r of rows) {
-    if (seen.has(r.bid_ntce_no)) continue;
-    seen.add(r.bid_ntce_no);
-    deduped.push(r);
-    if (deduped.length >= limit) break;
+  let offset = 0;
+  while (true) {
+    let q = c
+      .from("bid_notices")
+      .select(
+        "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn"
+      );
+    q = applyFilters(q, today, filters);
+    q = orderClause(q, filters.sort);
+    q = q.range(offset, offset + PAGE - 1);
+    const { data } = await q;
+    const rows = (data as NoticeSummary[]) ?? [];
+    if (rows.length === 0) break;
+    for (const r of rows) {
+      if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
+      seen.add(r.bid_ntce_no);
+      collected.push(r);
+    }
+    if (rows.length < PAGE) break;
+    offset += PAGE;
+    if (offset > 500000) break;
   }
-  return deduped;
+
+  // 2) 카테고리 집계 — 카테고리 필터 적용 전 풀 전체로 (사용자가 다른 카테고리 클릭할 때 카운트 보여주기 위해)
+  const categoryCounts: Record<NoticeCategory, number> = {
+    it: 0,
+    medical: 0,
+    construction: 0,
+    environment: 0,
+    education: 0,
+    consulting: 0,
+    other: 0,
+  };
+  for (const r of collected) {
+    for (const cat of categoriesOf(r)) {
+      categoryCounts[cat]++;
+    }
+  }
+
+  // 3) 카테고리 필터 적용
+  const filtered = filters.category
+    ? collected.filter((r) => categoriesOf(r).includes(filters.category!))
+    : collected;
+
+  // 4) 페이지 slice
+  const start = (page - 1) * pageSize;
+  const rows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows,
+    totalCount: filtered.length,
+    categoryCounts,
+  };
 }

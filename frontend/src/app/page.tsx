@@ -1,169 +1,66 @@
-import { BidCard } from "@/components/BidCard";
-import { EmailCaptureForm } from "@/components/EmailCaptureForm";
-import { FeatureCard } from "@/components/FeatureCard";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SearchForm } from "@/components/SearchForm";
-import { StatCard } from "@/components/StatCard";
-import { MOCK_BIDS } from "@/lib/mock-data";
+import { fetchActiveNoticesRoughCount } from "@/lib/notice";
 
-export default function HomePage() {
+export const revalidate = 3600;
+
+export default async function HomePage() {
+  const activeCount = await fetchActiveNoticesRoughCount().catch(() => 0);
+
   return (
     <>
       <Header />
-      <main className="flex-1">
-        <Hero />
-        <TrustStrip />
-        <HowItWorks />
-        <ResultPreview />
-        <EmailCapture />
+      {/* Hero가 헤더(64px)를 뺀 뷰포트 전체를 차지 — 푸터는 스크롤해야 보이게 */}
+      <main className="flex flex-col justify-center min-h-[calc(100vh-4rem)]">
+        <Hero activeCount={activeCount} />
       </main>
       <Footer />
     </>
   );
 }
 
-function Hero() {
+function Hero({ activeCount }: { activeCount: number }) {
   return (
-    <section className="relative">
-      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20">
-        <div className="text-center max-w-[760px] mx-auto rise">
+    <section className="w-full">
+      <div className="mx-auto max-w-[880px] px-5 sm:px-8 py-12 sm:py-16">
+        <div className="text-center max-w-[880px] mx-auto rise">
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary/10 px-3 py-1.5 text-[12.5px] font-bold text-primary">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-            공공조달 입찰 디스커버리
+            나라장터 입찰 디스커버리
           </span>
 
-          <h1 className="mt-6 text-[40px] sm:text-[60px] font-extrabold leading-[1.15] tracking-[-0.02em] text-foreground">
-            우리 회사가 검토할 만한
-            <br />
-            공공입찰을 골라드려요.
+          <h1 className="mt-6 text-[36px] sm:text-[52px] font-extrabold leading-[1.15] tracking-[-0.02em] text-foreground break-keep">
+            회사에 맞는 <span className="text-primary">나라장터</span> 공고를 검토 우선순위로 정리합니다.
           </h1>
 
-          <p className="mt-6 text-[17px] sm:text-[19px] leading-[1.65] text-muted-foreground max-w-[600px] mx-auto">
-            회사명만 입력하면 <span className="text-foreground font-semibold">등록업종·공급물품·수주 이력</span>을
-            함께 분석해<br className="hidden sm:inline" />
-            지금 참여 가능성이 높은 공고 <span className="text-primary font-bold">TOP 5</span>를 알려드려요.
+          <p className="mt-6 text-[17px] sm:text-[19px] leading-[1.65] text-muted-foreground max-w-[640px] mx-auto break-keep">
+            <span className="text-foreground font-semibold">회사명·사업자번호</span> 또는 관심 <span className="text-foreground font-semibold">키워드</span>를 입력합니다.
+            등록업종·공급물품·수주 이력을 바탕으로 검토할 만한 나라장터 공고 <span className="text-primary font-bold">5건</span>을 정리합니다.
           </p>
         </div>
 
-        {/* Search */}
+        {/* Search — 탭 + 모드별 예시 칩 통합 */}
         <div className="mt-10 sm:mt-12 max-w-[640px] mx-auto rise [animation-delay:120ms]">
-          <SearchForm autoFocus />
+          <SearchForm
+            autoFocus
+            examples={{
+              company: ["삼성SDS", "LG CNS", "메가존클라우드", "비트컴퓨터"],
+              keywords: ["교육 IT 유지보수", "도로 정비공사", "의약품 단가계약", "조경 유지관리"],
+            }}
+          />
         </div>
 
-        {/* Quick chips */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-1.5 rise [animation-delay:240ms]">
-          <span className="text-[13px] text-ink-5 mr-1">예시</span>
-          {["삼성SDS", "LG CNS", "메가존클라우드", "비트컴퓨터"].map((q) => (
-            <a
-              key={q}
-              href={`/recommendations?company=${encodeURIComponent(q)}`}
-              className="chip hover:bg-bg-soft-2 transition-colors"
-            >
-              {q}
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TrustStrip() {
-  return (
-    <section id="trust" className="border-y border-line bg-bg-soft">
-      <div className="mx-auto max-w-[1140px] grid grid-cols-2 lg:grid-cols-4 gap-y-8 px-5 sm:px-8 py-10 sm:py-12">
-        <StatCard
-          label="입찰공고 분석"
-          value="10,990"
-          suffix="건"
-          hint="최근 1주 신규"
-        />
-        <StatCard
-          label="등록 회사"
-          value="34,517"
-          suffix="개"
-          hint="누적 사업자번호"
-        />
-        <StatCard
-          label="추천 가능"
-          value="2,300+"
-          hint="수주 이력 보유"
-        />
-        <StatCard
-          label="갱신 주기"
-          value="매일"
-          hint="나라장터 OpenAPI"
-        />
-      </div>
-    </section>
-  );
-}
-
-function HowItWorks() {
-  return (
-    <section id="how" className="mx-auto max-w-[1140px] px-5 sm:px-8 py-20 sm:py-28">
-      <div className="text-center max-w-[640px] mx-auto">
-        <span className="text-[13px] font-bold text-primary">왜 jodalfit인가요?</span>
-        <h2 className="mt-3 text-[28px] sm:text-[36px] font-extrabold tracking-tight text-foreground">
-          키워드 알림으로 놓친 공고,<br />
-          회사 영역으로 찾아드려요.
-        </h2>
-      </div>
-
-      <div className="mt-12 sm:mt-14 grid gap-4 sm:grid-cols-3">
-        <FeatureCard
-          emoji="🏢"
-          title="회사 영역 기준 매칭"
-          body="등록업종·공급물품·과거 수주를 함께 분석해 우리 회사가 진짜 들어갈 수 있는 영역의 공고를 찾아드려요."
-        />
-        <FeatureCard
-          emoji="🛡️"
-          title="자격 안 맞는 공고는 제외"
-          body="참가 가능 업종, 지역 제한, 마감 임박도, 추정가 적합도까지 먼저 거릅니다."
-        />
-        <FeatureCard
-          emoji="💬"
-          title="왜 추천했는지 알려드려요"
-          body="추천 점수만 보여주지 않아요. 어떤 점이 맞는지를 자연어로 설명해드립니다."
-        />
-      </div>
-    </section>
-  );
-}
-
-function ResultPreview() {
-  const sample = MOCK_BIDS[0];
-  return (
-    <section id="preview" className="border-y border-line bg-bg-soft">
-      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-20 sm:py-28">
-        <div className="text-center max-w-[640px] mx-auto">
-          <span className="text-[13px] font-bold text-primary">실제 추천 결과</span>
-          <h2 className="mt-3 text-[28px] sm:text-[36px] font-extrabold tracking-tight text-foreground">
-            이런 식으로 추천해드려요.
-          </h2>
-          <p className="mt-4 text-[15.5px] leading-[1.65] text-muted-foreground">
-            한 카드 안에서 <span className="font-bold text-foreground">얼마나 맞나 · 왜 맞나 · 지금 검토할 가치</span>가
-            한눈에 들어와요.
-          </p>
-        </div>
-
-        <div className="mt-10 max-w-[820px] mx-auto">
-          <BidCard bid={sample} rank={1} preview />
-        </div>
-
-        <p className="mt-6 text-center text-[12.5px] text-ink-5">
-          ※ 샘플 데이터입니다. 실제 추천 결과가 아니에요.
+        {/* 신뢰 한 줄 */}
+        <p className="mt-10 text-center text-[13px] text-muted-foreground rise [animation-delay:360ms]">
+          <span className="font-bold text-foreground">나라장터(G2B)</span>
+          {" "}진행 중 공고{" "}
+          <span className="font-bold text-foreground tabular-nums">
+            {activeCount > 0 ? activeCount.toLocaleString("ko-KR") : "—"}건
+          </span>
+          {" "}· 매일 자동 갱신 · 공공 OpenAPI 기반
         </p>
       </div>
-    </section>
-  );
-}
-
-function EmailCapture() {
-  return (
-    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-20 sm:py-24">
-      <EmailCaptureForm />
     </section>
   );
 }

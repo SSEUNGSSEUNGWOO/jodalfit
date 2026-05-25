@@ -1,0 +1,43 @@
+criteria:
+  - name: "factual_accuracy"
+    description: "본문이 마크다운 안의 표·수치만 사용했는가. 표에 없는 숫자를 만들어내거나 추정한 곳이 있으면 감점. picks의 blurb은 공고 정보(기관/추정가/업무구분/마감일)만 사용했어야 함."
+    weight: 0.30
+    max_score: 5
+
+  - name: "concrete"
+    description: |
+      일반론·공허한 결론을 피했는가. 아래 표현 발견 시 강한 감점:
+      "활발한 동향", "활발한 움직임", "반영하고 있다", "주목할 만하다",
+      "다양한 분야", "꾸준히 증가", "전반적으로", "~할 가능성이 높다",
+      "~로 보입니다", "흥미로운 점", "핵심은 다음과 같습니다"
+      표 수치 자체를 한 번 더 풀어 쓰는 식의 동어반복도 감점.
+    weight: 0.25
+    max_score: 5
+
+  - name: "tone"
+    description: |
+      jodalfit 카피 원칙 준수:
+      금지 표현 — "따낼 만한"(→"검토할 만한"), "낙찰 가능성 X%"(→"매칭 점수"),
+      "AI가 추천", 과시 표현, 영어 감탄사("Wow", "Amazing").
+      허용 — 평이하고 사실 기반 한국어, 정중한 디스커버리 톤.
+    weight: 0.15
+    max_score: 5
+
+  - name: "relevance"
+    description: |
+      picks: 영업/대표가 한 번 보고 이 공고에 들어갈지 판단할 정보가 blurb에 들어갔는가
+      (규모/마감 텍스처/도메인 힌트 중 1개 이상).
+      market: 시장 관찰자에게 의미 있는 사실(특정 업무구분 비중, 특정 기관 발주량 등)이
+      narrative에 명시적으로 등장하는가.
+    weight: 0.15
+    max_score: 5
+
+  - name: "format"
+    description: |
+      마크다운 구조 무결성. 표가 깨지지 않고, 헤더 위계가 정상이며,
+      blurb이 12~25자 한 줄로 끝나는가(picks의 경우). narrative가 3~5문장인가(market).
+    weight: 0.15
+    max_score: 5
+
+pass_threshold: 4.0
+max_retries: 2

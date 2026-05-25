@@ -48,6 +48,14 @@ jobs:
         run: uv run python -m jobs.ingest_pre_spec_opinions --days-back 1
         continue-on-error: true
 
+      - name: 면허제한 수집 (자격 필터용)
+        run: uv run python -m jobs.ingest_license_limit --days-back 1
+        continue-on-error: true
+
+      - name: 참가지역 수집 (자격 필터용)
+        run: uv run python -m jobs.ingest_rgn_limit --days-back 1
+        continue-on-error: true
+
       - name: 입찰공고 임베딩 (신규)
         run: uv run python -m jobs.embed_bid_notices --limit 5000 --batch 50
         continue-on-error: true
@@ -83,8 +91,8 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: 회사 기본정보 갱신 (변경분 3일)
-        run: uv run python -m jobs.ingest_companies_userinfo --days-back 3
+      - name: 회사 기본정보 갱신 (변경분 14일 — stub 채우기 누락 방지)
+        run: uv run python -m jobs.ingest_companies_userinfo --days-back 14
         continue-on-error: true
 
       - name: 회사 업종/공급물품 풍부화 (4500개)

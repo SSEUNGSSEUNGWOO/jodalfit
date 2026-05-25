@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime
 from typing import Iterator
 
 import numpy as np
@@ -97,18 +97,31 @@ def chunks(seq: list[str], size: int) -> Iterator[list[str]]:
 
 
 def build_industry_text(
-    corp: dict, industries: list[str], products: list[str]
+    corp: dict,
+    industries: tuple[list[str], list[str]],
+    products: tuple[list[str], list[str]],
 ) -> str | None:
-    """업종 벡터용 입력 텍스트 — 등록업종 + 공급물품 + 기본 업무구분."""
-    parts = []
-    if industries:
-        parts.append(f"등록업종: {', '.join(industries[:10])}")
-    if products:
-        parts.append(f"공급물품: {', '.join(products[:10])}")
-    if corp.get("corp_bsns_div_nm"):
-        parts.append(f"업무구분: {corp['corp_bsns_div_nm']}")
-    if corp.get("mnfctr_div_nm"):
-        parts.append(f"제조구분: {corp['mnfctr_div_nm']}")
+    """업종 벡터용 입력 텍스트.
+
+    대표 업종/공급물품은 별도 줄로 prefix 강조 + 중복 노출 (벡터에 더 큰 영향).
+    그래서 등록업종 5~10개 회사도 정체성(대표)이 강하게 반영됨.
+
+    `corp_bsns_div_nm`/`mnfctr_div_nm`은 풍부화 회사 cover 0%(2026-05-25 측정)라 제외.
+    """
+    rep_ind, rest_ind = industries
+    rep_prd, rest_prd = products
+    parts: list[str] = []
+    if rep_ind:
+        # 대표 업종은 두 번 노출(헤더 + 본문) — 토큰 빈도 ↑로 벡터에 더 큰 영향
+        parts.append(f"대표 업종: {', '.join(rep_ind[:3])}")
+    if rep_prd:
+        parts.append(f"대표 공급물품: {', '.join(rep_prd[:3])}")
+    all_ind = rep_ind + rest_ind
+    if all_ind:
+        parts.append(f"등록업종: {', '.join(all_ind[:10])}")
+    all_prd = rep_prd + rest_prd
+    if all_prd:
+        parts.append(f"공급물품: {', '.join(all_prd[:10])}")
     return "\n".join(parts) if parts else None
 
 
@@ -138,14 +151,19 @@ def process_chunk(
         .execute()
         .data
     )
-    industries_by_biz: dict[str, list[str]] = defaultdict(list)
+    # (대표 리스트, 나머지 리스트) 튜플로 분리 — 대표는 텍스트에서 더 강조됨
+    industries_by_biz: dict[str, tuple[list[str], list[str]]] = defaultdict(
+        lambda: ([], [])
+    )
     for r in industries_rows:
-        if r.get("indstryty_nm"):
-            # 대표 업종 먼저
-            if r.get("rprsnt_indstryty_yn") == "Y":
-                industries_by_biz[r["bizrno"]].insert(0, r["indstryty_nm"])
-            else:
-                industries_by_biz[r["bizrno"]].append(r["indstryty_nm"])
+        nm = r.get("indstryty_nm")
+        if not nm:
+            continue
+        rep, rest = industries_by_biz[r["bizrno"]]
+        if r.get("rprsnt_indstryty_yn") == "Y":
+            rep.append(nm)
+        else:
+            rest.append(nm)
 
     # 3. 공급물품 한 번에
     supply_rows = (
@@ -155,18 +173,24 @@ def process_chunk(
         .execute()
         .data
     )
-    supply_by_biz: dict[str, list[str]] = defaultdict(list)
+    supply_by_biz: dict[str, tuple[list[str], list[str]]] = defaultdict(
+        lambda: ([], [])
+    )
     for r in supply_rows:
-        if r.get("dtl_prdct_clsfc_nm"):
-            if r.get("rprsnt_prdct_yn") == "Y":
-                supply_by_biz[r["bizrno"]].insert(0, r["dtl_prdct_clsfc_nm"])
-            else:
-                supply_by_biz[r["bizrno"]].append(r["dtl_prdct_clsfc_nm"])
+        nm = r.get("dtl_prdct_clsfc_nm")
+        if not nm:
+            continue
+        rep, rest = supply_by_biz[r["bizrno"]]
+        if r.get("rprsnt_prdct_yn") == "Y":
+            rep.append(nm)
+        else:
+            rest.append(nm)
 
-    # 4. 수주 시그널 — contracts → bid_notices.embedding 평균
+    # 4. 수주 시그널 — contracts → bid_notices.embedding 시간 가중 평균
+    # 반감기 365일 exp decay: weight = 0.5 ** (days_ago / 365)
     contracts = (
         client.table("contracts")
-        .select("rprsnt_corp_bizrno_norm,bid_ntce_no,bid_ntce_ord")
+        .select("rprsnt_corp_bizrno_norm,bid_ntce_no,bid_ntce_ord,cntrct_cncls_date")
         .in_("rprsnt_corp_bizrno_norm", chunk_bizrnos)
         .execute()
         .data
@@ -188,15 +212,42 @@ def process_chunk(
             if vec is not None:
                 emb_map[(r["bid_ntce_no"], r["bid_ntce_ord"])] = vec
 
-    suju_by_biz: dict[str, list[np.ndarray]] = defaultdict(list)
+    today = date.fromisoformat(datetime.now().date().isoformat())
+    HALF_LIFE = 365.0
+
+    suju_weighted: dict[str, list[tuple[float, np.ndarray]]] = defaultdict(list)
     suju_count_by_biz: dict[str, int] = defaultdict(int)
     for c in contracts:
         b = c["rprsnt_corp_bizrno_norm"]
         suju_count_by_biz[b] += 1
         key = (c["bid_ntce_no"], c["bid_ntce_ord"])
         v = emb_map.get(key)
-        if v is not None:
-            suju_by_biz[b].append(v)
+        if v is None:
+            continue
+        # 시간 가중치
+        ds = c.get("cntrct_cncls_date")
+        if ds:
+            try:
+                d = date.fromisoformat(ds[:10])
+                days_ago = max((today - d).days, 0)
+                w = 0.5 ** (days_ago / HALF_LIFE)
+            except Exception:
+                w = 1.0
+        else:
+            w = 1.0
+        suju_weighted[b].append((w, v))
+
+    # 평균(가중) 벡터 계산
+    suju_by_biz: dict[str, np.ndarray] = {}
+    for b, pairs in suju_weighted.items():
+        if not pairs:
+            continue
+        ws = np.array([p[0] for p in pairs], dtype=np.float32)
+        vs = np.stack([p[1] for p in pairs])
+        total_w = ws.sum()
+        if total_w == 0:
+            continue
+        suju_by_biz[b] = (vs * ws[:, None]).sum(axis=0) / total_w
 
     # 5. 업종 텍스트 배치 임베딩 (회사당 1 텍스트, 한 번에)
     industry_texts: list[str] = []
@@ -207,8 +258,8 @@ def process_chunk(
             continue
         text = build_industry_text(
             corp,
-            industries_by_biz.get(corp["bizrno"], []),
-            supply_by_biz.get(corp["bizrno"], []),
+            industries_by_biz.get(corp["bizrno"], ([], [])),
+            supply_by_biz.get(corp["bizrno"], ([], [])),
         )
         if text:
             industry_texts.append(text)
@@ -230,20 +281,16 @@ def process_chunk(
             skipped += 1
             continue
 
-        suju_vecs = suju_by_biz.get(bizrno_norm, [])
+        suju_v = suju_by_biz.get(bizrno_norm)  # 이미 시간 가중 평균
         suju_count = suju_count_by_biz.get(bizrno_norm, 0)
         industry_vec = industry_by_biz.get(bizrno_norm)
 
-        # 가용 시그널 확인
-        suju_v = (
-            np.mean(suju_vecs, axis=0) if suju_vecs else None
-        )
         # 관심 시그널은 v0.2.1에서 (회사명 매핑 후) — 일단 0
         interest_v = None
 
-        # 가용한 시그널만으로 가중합
+        # 가용한 시그널만으로 가중합. dynamic_weights는 수주 건수 기반
         signals: list[tuple[float, np.ndarray]] = []
-        weights = dynamic_weights(len(suju_vecs), interest_v is not None)
+        weights = dynamic_weights(suju_count, interest_v is not None)
         if industry_vec is not None:
             signals.append((weights["industry"], industry_vec))
         if suju_v is not None:

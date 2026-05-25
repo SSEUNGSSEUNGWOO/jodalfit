@@ -9,23 +9,23 @@ export function Footer() {
           <Brand size="md" />
           <p className="mt-3 max-w-md text-[13.5px] leading-relaxed text-ink-4">
             jodalfit은 나라장터(국가종합전자조달) 공공데이터를 기반으로
-            입찰공고를 추천해요. 낙찰 결과를 보장하지 않으며 의사결정의 보조 도구예요.
+            입찰공고를 추천합니다. 낙찰 결과를 보장하지 않으며 의사결정의 보조 도구입니다.
           </p>
           <p className="mt-3 text-[12.5px] text-ink-5">
-            데이터 출처 · 조달청 공공데이터 개방표준 · 매일 갱신
+            데이터 출처 · 공공데이터포털 OpenAPI · 매일 갱신
           </p>
         </div>
         <div>
           <span className="text-[13px] font-bold text-ink">서비스</span>
           <ul className="mt-3 space-y-2 text-[13.5px] text-ink-3">
             <li>
-              <a href="/#how" className="hover:text-ink transition-colors">
-                추천 방식
+              <a href="/notices" className="hover:text-ink transition-colors">
+                공고 둘러보기
               </a>
             </li>
             <li>
-              <a href="/#preview" className="hover:text-ink transition-colors">
-                결과 샘플
+              <a href="/insights" className="hover:text-ink transition-colors">
+                주간 인사이트
               </a>
             </li>
             <li>

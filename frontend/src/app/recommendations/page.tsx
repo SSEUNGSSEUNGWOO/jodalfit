@@ -8,9 +8,14 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { KeywordFallback } from "@/components/KeywordFallback";
 import { SearchForm } from "@/components/SearchForm";
+import { SlimBidRow } from "@/components/SlimBidRow";
 import { getRecommendations } from "@/lib/api";
 import { MOCK_RESPONSE } from "@/lib/mock-data";
 import type { RecommendationResponse } from "@/types/recommendations";
+
+const TOP_N = 5;
+
+type Mode = "company" | "keywords";
 
 interface PageProps {
   searchParams: Promise<{
@@ -21,21 +26,21 @@ interface PageProps {
 }
 
 export default async function RecommendationsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const isKeywords = params.mode === "keywords";
-  const companyQuery = (params.company ?? "").trim();
-  const keywordsQuery = (params.q ?? "").trim();
+  const p = await searchParams;
+  const companyQuery = (p.company ?? "").trim();
+  const keywordsQuery = (p.q ?? "").trim();
+  const mode: Mode = companyQuery ? "company" : "keywords";
+  const query = companyQuery || keywordsQuery;
 
   return (
     <>
       <Header />
       <main className="flex-1">
-        <Suspense fallback={<LoadingState label={isKeywords ? keywordsQuery : companyQuery} />}>
+        <Suspense fallback={<LoadingState label={query} mode={mode} />}>
           <Results
-            companyQuery={companyQuery}
-            keywordsQuery={keywordsQuery}
-            isKeywords={isKeywords}
-            useMock={params.mode === "mock"}
+            mode={mode}
+            query={query}
+            useMock={p.mode === "mock"}
           />
         </Suspense>
       </main>
@@ -45,29 +50,16 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
 }
 
 async function Results({
-  companyQuery,
-  keywordsQuery,
-  isKeywords,
+  mode,
+  query,
   useMock,
 }: {
-  companyQuery: string;
-  keywordsQuery: string;
-  isKeywords: boolean;
+  mode: Mode;
+  query: string;
   useMock: boolean;
 }) {
-  // 입력 자체가 비어있으면 폴백 UI 노출
-  if (isKeywords && !keywordsQuery) {
-    return (
-      <div className="mx-auto max-w-[720px] px-5 sm:px-8 py-16 sm:py-20">
-        <KeywordFallback
-          title="키워드를 입력해주세요"
-          subtitle="관심 있는 공고의 영역을 자유롭게 적어주세요."
-        />
-      </div>
-    );
-  }
-  if (!isKeywords && !companyQuery) {
-    return <EmptyState query="" />;
+  if (!query) {
+    return <EmptyState mode={mode} />;
   }
 
   let data: RecommendationResponse;
@@ -75,47 +67,39 @@ async function Results({
     data = MOCK_RESPONSE;
   } else {
     data = await getRecommendations({
-      query: isKeywords ? keywordsQuery : companyQuery,
-      mode: isKeywords ? "keywords" : "company",
-      limit: 5,
+      query,
+      mode,
+      limit: 20,
       with_explanation: true,
     });
   }
 
-  // 키워드 모드: 회사 카드 없음, 결과만
-  if (isKeywords || data.mode === "keywords") {
-    return (
-      <KeywordResults query={keywordsQuery} data={data} companyContext={companyQuery} />
-    );
+  if (mode === "company") {
+    // 회사 식별 실패 또는 벡터 없음 → 키워드 폴백 안내
+    if (data.fallback === "keywords" || !data.company) {
+      return (
+        <CompanyFallback
+          query={query}
+          company={data.company}
+          message={data.error || undefined}
+        />
+      );
+    }
+    return <CompanyResults query={query} data={data} />;
   }
-
-  // 회사 식별 실패 또는 벡터 없음 → 키워드 폴백
-  if (data.fallback === "keywords") {
-    return (
-      <CompanyFallback
-        companyQuery={companyQuery}
-        company={data.company}
-        message={data.error}
-      />
-    );
-  }
-
-  // 회사 식별 실패 (404 케이스도 fallback 제공 안 한 경우)
-  if (!data.company) {
-    return <EmptyState query={companyQuery} error={data.error} />;
-  }
-
-  return <CompanyResults query={companyQuery} data={data} />;
+  return <KeywordResults query={query} data={data} />;
 }
 
 function SubHeader({
   title,
   subtitle,
   searchDefault,
+  mode,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   searchDefault?: string;
+  mode: Mode;
 }) {
   return (
     <section className="border-b border-border bg-muted/30">
@@ -131,10 +115,66 @@ function SubHeader({
         <SearchForm
           variant="compact"
           defaultValue={searchDefault ?? ""}
+          initialMode={mode}
           className="w-full sm:w-[280px]"
         />
       </div>
     </section>
+  );
+}
+
+function ResultsList({
+  results,
+  noResultText,
+  semanticHintQuery,
+}: {
+  results: RecommendationResponse["results"];
+  noResultText: string;
+  semanticHintQuery?: string;
+}) {
+  if (results.length === 0) {
+    return (
+      <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
+        <h3 className="text-[18px] font-bold text-foreground">{noResultText}</h3>
+      </div>
+    );
+  }
+  const top = results.slice(0, TOP_N);
+  const slim = results.slice(TOP_N);
+  return (
+    <>
+      <div className="flex flex-col gap-4">
+        {top.map((bid, i) => (
+          <BidCard
+            key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
+            bid={bid}
+            rank={i + 1}
+            semanticHintQuery={semanticHintQuery}
+          />
+        ))}
+      </div>
+      {slim.length > 0 && (
+        <section className="mt-10">
+          <div className="flex items-baseline justify-between mb-3 px-3">
+            <h3 className="text-[15px] font-bold text-foreground">
+              관련 공고 {slim.length}개 더
+            </h3>
+            <span className="text-[11.5px] text-muted-foreground font-medium">
+              점수 / 마감 / 예산
+            </span>
+          </div>
+          <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
+            {slim.map((bid, i) => (
+              <SlimBidRow
+                key={`slim-${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
+                bid={bid}
+                rank={TOP_N + i + 1}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -149,55 +189,41 @@ function CompanyResults({
   return (
     <>
       <SubHeader
+        mode="company"
         title={
           <>
             {query}
             <span className="ml-2 text-[15px] font-medium text-muted-foreground">
-              의 추천 공고
+              의 검토 우선순위
             </span>
           </>
         }
-        subtitle={`과거 낙찰 이력 + 유사 공고 분석 · 매일 갱신 · ${today}`}
+        subtitle={`등록업종·공급물품·수주 이력 기준 정리 · 매일 갱신 · ${today}`}
         searchDefault={query}
       />
 
       <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
-        {data.company && (
-          <CompanyCard
-            company={data.company}
-            meta={{
-              contractCount: 14,
-              primarySectors: ["교육기관", "공공기관 SI", "유지보수"],
-            }}
-          />
-        )}
+        {data.company && <CompanyCard company={data.company} meta={undefined} />}
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_240px] lg:gap-10">
           <div>
             <div className="flex items-baseline justify-between mb-5">
               <h2 className="text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground">
-                TOP {data.results.length} 공고
+                검토 우선순위 {data.results.length}건
               </h2>
-              <span className="text-[12.5px] text-muted-foreground font-medium">
-                점수 순
-              </span>
+              <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
             </div>
-
-            <div className="flex flex-col gap-4">
-              {data.results.map((bid, i) => (
-                <BidCard
-                  key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-                  bid={bid}
-                  rank={i + 1}
-                />
-              ))}
-            </div>
-
+            <p className="mb-5 text-[12.5px] text-muted-foreground break-keep">
+              매칭 점수는 검토 우선순위입니다. 낙찰 가능성이나 최종 입찰 가능 여부를 의미하지 않습니다.
+            </p>
+            <ResultsList
+              results={data.results}
+              noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 넓히거나 다른 모드로 시도해보세요."
+            />
             <div className="mt-12">
               <EmailCaptureForm />
             </div>
           </div>
-
           <div className="lg:order-2">
             <FilterPanel />
           </div>
@@ -210,66 +236,48 @@ function CompanyResults({
 function KeywordResults({
   query,
   data,
-  companyContext,
 }: {
   query: string;
   data: RecommendationResponse;
-  companyContext?: string;
 }) {
   const today = new Date().toLocaleDateString("ko-KR");
   return (
     <>
       <SubHeader
+        mode="keywords"
         title={
           <>
             <span className="font-serif italic">“{query}”</span>
             <span className="ml-2 text-[15px] font-medium text-muted-foreground">
-              키워드로 매칭한 공고
+              에 의미가 가까운 공고
             </span>
           </>
         }
-        subtitle={`키워드 임베딩 매칭 · 매일 갱신 · ${today}`}
-        searchDefault={companyContext || ""}
+        subtitle={`AI 임베딩(1536차원)으로 의미 유사도 매칭 · 같은 단어가 없어도 비슷한 의미의 공고를 찾아드려요 · 매일 갱신 · ${today}`}
+        searchDefault={query}
       />
 
       <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
         <div className="grid gap-8 lg:grid-cols-[1fr_240px] lg:gap-10">
           <div>
-            {data.results.length > 0 ? (
-              <>
-                <div className="flex items-baseline justify-between mb-5">
-                  <h2 className="text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground">
-                    TOP {data.results.length} 공고
-                  </h2>
-                  <span className="text-[12.5px] text-muted-foreground font-medium">
-                    유사도 순
-                  </span>
-                </div>
-                <div className="flex flex-col gap-4">
-                  {data.results.map((bid, i) => (
-                    <BidCard
-                      key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-                      bid={bid}
-                      rank={i + 1}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
-                <h3 className="text-[18px] font-bold text-foreground">
-                  매칭되는 공고가 없어요.
-                </h3>
-                <p className="mt-2 text-[14px] text-muted-foreground">
-                  키워드를 좀 더 구체적으로 입력해보세요.
-                </p>
-              </div>
-            )}
+            <div className="flex items-baseline justify-between mb-5">
+              <h2 className="text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground">
+                의미 매칭 공고 {data.results.length}건
+              </h2>
+              <span className="text-[12.5px] text-muted-foreground font-medium">
+                유사도 순
+              </span>
+            </div>
+            <ResultsList
+              results={data.results}
+              noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 더 구체적으로 입력하거나 다른 영역으로 시도해보세요."
+              semanticHintQuery={query}
+            />
 
             <div className="mt-10">
               <KeywordFallback
                 title="다른 키워드로도 찾아볼까요?"
-                subtitle="여러 영역을 시도해보면 더 적합한 공고를 발견할 수 있어요."
+                subtitle="여러 영역을 시도하면 더 적합한 공고를 발견할 수 있어요."
                 defaultQuery={query}
               />
             </div>
@@ -278,7 +286,6 @@ function KeywordResults({
               <EmailCaptureForm />
             </div>
           </div>
-
           <div className="lg:order-2">
             <FilterPanel />
           </div>
@@ -289,11 +296,11 @@ function KeywordResults({
 }
 
 function CompanyFallback({
-  companyQuery,
+  query,
   company,
   message,
 }: {
-  companyQuery: string;
+  query: string;
   company: RecommendationResponse["company"];
   message?: string;
 }) {
@@ -301,38 +308,32 @@ function CompanyFallback({
   return (
     <>
       <SubHeader
+        mode="company"
         title={
           <>
-            {companyQuery}
+            {query}
             <span className="ml-2 text-[15px] font-medium text-muted-foreground">
               {company ? "의 추천 공고" : ""}
             </span>
           </>
         }
         subtitle={`회사 식별 ${company ? "완료" : "실패"} · ${today}`}
-        searchDefault={companyQuery}
+        searchDefault={query}
       />
 
       <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
         {company && (
-          <CompanyCard
-            company={company}
-            meta={undefined}
-            className="opacity-90"
-          />
+          <CompanyCard company={company} meta={undefined} className="opacity-90" />
         )}
-
         {message && (
-          <div className="mt-5 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 text-[13.5px] text-foreground">
-            <span className="font-bold text-orange-700 mr-1">분석 데이터 부족:</span>
-            {message}
+          <div className="mt-5 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 text-[13.5px] text-foreground break-keep">
+            <span className="font-bold text-orange-700 mr-1">회사 데이터 부족:</span>
+            회사 데이터가 부족해 추천 정확도가 낮을 수 있습니다. 키워드 검색으로 관심 영역을 직접 탐색할 수 있습니다.
           </div>
         )}
-
         <div className="mt-8">
           <KeywordFallback />
         </div>
-
         <div className="mt-12 max-w-[820px]">
           <EmailCaptureForm />
         </div>
@@ -341,38 +342,40 @@ function CompanyFallback({
   );
 }
 
-function LoadingState({ label }: { label: string }) {
+function LoadingState({ label, mode }: { label: string; mode: Mode }) {
   return (
     <div className="mx-auto max-w-[640px] px-5 py-24 sm:py-28 text-center">
       <Loader2 className="mx-auto h-7 w-7 animate-spin text-primary" aria-hidden />
       <p className="mt-6 text-[15.5px] text-muted-foreground">
-        <span className="font-bold text-foreground">{label || "—"}</span>에 맞는 공고를 분석하는 중...
+        나라장터 공고와 {mode === "company" ? "회사 정보" : "검색 키워드"}를 대조하고 있습니다.
+        {label && (
+          <>
+            <br />
+            <span className="font-bold text-foreground">{label}</span>
+          </>
+        )}
       </p>
-      <p className="mt-1.5 text-[12.5px] text-muted-foreground/70">보통 5~12초 걸려요</p>
+      <p className="mt-1.5 text-[12.5px] text-muted-foreground/70">보통 5~12초 소요됩니다.</p>
     </div>
   );
 }
 
-function EmptyState({ query, error }: { query: string; error?: string }) {
+function EmptyState({ mode }: { mode: Mode }) {
   return (
     <div className="mx-auto max-w-[720px] px-5 py-16 sm:py-24">
       <div className="text-center mb-8">
         <h2 className="text-[26px] font-extrabold tracking-tight text-foreground">
-          {query ? "회사를 찾지 못했어요." : "회사명을 입력해주세요."}
+          {mode === "company" ? "회사명을 입력해주세요." : "키워드를 입력해주세요."}
         </h2>
-        <p className="mt-3 text-[14.5px] text-muted-foreground">
-          {error ||
-            "정확한 회사명 또는 사업자번호로 다시 검색하거나, 관심 키워드로 추천 받을 수 있어요."}
+        <p className="mt-3 text-[14.5px] text-muted-foreground break-keep">
+          {mode === "company"
+            ? "회사명 또는 사업자번호를 입력하면 회사 기준으로 검토할 만한 공고를 추천합니다."
+            : "관심 영역을 입력하면 의미가 가까운 공고를 찾습니다."}
         </p>
         <div className="mt-6">
-          <SearchForm defaultValue={query} />
+          <SearchForm initialMode={mode} />
         </div>
       </div>
-
-      <KeywordFallback
-        title="회사명이 없어도 괜찮아요"
-        subtitle="관심 있는 공고 영역을 직접 입력해주시면 그 키워드로 가장 잘 맞는 공고를 찾아드릴게요."
-      />
     </div>
   );
 }

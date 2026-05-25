@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { fetchActiveCompaniesForSitemap } from "@/lib/company";
 import { fetchRecentNoticesForSitemap } from "@/lib/notice";
+import { listAllInsights } from "@/lib/insights";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://jodalfit.co.kr";
 
@@ -23,7 +24,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.7,
     },
+    {
+      url: `${BASE_URL}/insights`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/about`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
   ];
+
+  // Insights (주간 발행, weekly)
+  let insightRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const items = await listAllInsights();
+    insightRoutes = items.map((i) => ({
+      url: `${BASE_URL}/insights/${i.type}/${i.slug}`,
+      lastModified: new Date(i.published_at),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+  } catch {
+    // 인사이트 폴더 없으면 skip
+  }
 
   // Dynamic: companies
   let companyRoutes: MetadataRoute.Sitemap = [];
@@ -57,5 +84,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 데이터 없으면 skip
   }
 
-  return [...staticRoutes, ...companyRoutes, ...noticeRoutes];
+  return [...staticRoutes, ...insightRoutes, ...companyRoutes, ...noticeRoutes];
 }

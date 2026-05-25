@@ -15,12 +15,26 @@ export function BidCard({
   rank,
   preview = false,
   className,
+  semanticHintQuery,
 }: {
   bid: BidRecommendation;
   rank?: number;
   preview?: boolean;
   className?: string;
+  /** 키워드 모드에서 의미 매칭을 강조하기 위한 검색어. 검색어가 공고명/업종에 직접 포함되지 않으면 "의미 매칭" 배지 표시 */
+  semanticHintQuery?: string;
 }) {
+  const tokens = (semanticHintQuery ?? "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2);
+  const haystack = (
+    (bid.bid_ntce_nm ?? "") +
+    " " +
+    (bid.bidprc_psbl_indstryty_nm ?? "")
+  ).toLowerCase();
+  const isSemanticOnly =
+    tokens.length > 0 && !tokens.some((t) => haystack.includes(t));
   return (
     <Card
       className={cn(
@@ -41,6 +55,15 @@ export function BidCard({
             <Badge variant="secondary" className="bg-primary/10 text-primary font-semibold">
               {bid.bsns_div_nm || "공고"}
             </Badge>
+            {isSemanticOnly && (
+              <Badge
+                variant="outline"
+                className="text-[11px] font-bold border-primary/40 text-primary"
+                title={`검색어 "${semanticHintQuery}"가 공고에 직접 들어가지 않지만 의미가 가까워서 매칭됐어요`}
+              >
+                ✨ 의미 매칭
+              </Badge>
+            )}
             <span className="hidden sm:inline text-xs tabular tabular-nums text-muted-foreground">
               {bid.bid_ntce_no}
             </span>

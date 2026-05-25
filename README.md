@@ -1,11 +1,11 @@
 # jodalfit
 
-> **"우리 회사가 따낼 만한 공공입찰, 30초 만에."**
-> 회사명을 입력하면 과거 낙찰 이력 기반 임베딩 매칭으로 적합 입찰공고 TOP 5를 추천합니다.
+> **"우리 회사가 검토할 만한 공공입찰, 30초 만에."**
+> 회사명을 입력하면 **등록업종 · 공급물품 · 수주 이력**을 함께 분석해 적합 입찰공고 TOP 5를 추천합니다.
 
 [![GitHub](https://img.shields.io/badge/repo-SSEUNGSSEUNGWOO%2Fjodalfit-black?logo=github)](https://github.com/SSEUNGSSEUNGWOO/jodalfit)
 ![Status](https://img.shields.io/badge/status-WIP%20MVP-orange)
-![Stack](https://img.shields.io/badge/stack-FastAPI%20%2B%20Next.js%20%2B%20Supabase-2563EB)
+![Stack](https://img.shields.io/badge/stack-FastAPI%20%2B%20Next.js%20%2B%20Supabase-166534)
 
 ---
 
@@ -15,36 +15,51 @@
 
 **컨셉:**
 1. 사용자가 **회사명** 또는 **사업자번호**를 입력
-2. 그 회사가 과거에 따낸 계약을 분석해 **회사 임베딩 벡터** 생성
+2. **등록업종 · 공급물품 (메인)** + **과거 수주 이력 (보조)**을 합쳐 회사 임베딩 벡터 생성
 3. 신규 입찰공고와 의미적으로 비교 → **TOP 5** 반환
-4. **LLM**이 "왜 이 공고가 맞는지" 자연어로 설명
+4. **LLM**이 "왜 이 공고가 맞는지" 자연어로 설명 (병렬 호출로 ~3초)
 
-**경쟁사 대비 차별화 (검증된 3가지):**
+회사명/벡터 미확보 시에는 **자유 키워드 모드**로 폴백 — 콜드스타트에도 즉시 추천.
+
+**경쟁사 대비 차별화:**
 
 | 일반 입찰 알리미 | jodalfit |
 | --- | --- |
-| 키워드 알림 | **과거 낙찰 이력 기반 임베딩 매칭** |
+| 키워드 알림 | **등록업종/공급물품 + 수주 이력 통합 임베딩 매칭** |
 | 점수 없음 | 매칭 점수 + 게이지 + 적합도 라벨 |
 | 이유 없음 | **LLM이 "왜 추천했는지" 자연어 설명** ⭐ |
+| 단일 공고 페이지만 | **발주계획 → 사전규격 → 공고 → 낙찰 → 계약 라이프사이클 페이지** ⭐ |
 | 자격 미확인 공고 다수 | **자격(면허/지역/마감) 하드 필터** |
 
 ---
 
-## 2. 핵심 알고리즘
+## 2. 핵심 알고리즘 (2026-05-25 PIVOT — 업종 메인 + 동적 가중치)
 
-**회사 벡터 = 3가지 시그널 가중합**
+> 초기 설계는 수주 메인(α=0.7)이었으나, 실데이터 검증 결과 수주 매칭 커버리지가 1.1%에 그쳐 추천 자체가 불가능했습니다.
+> "이 회사가 **뭐 하는 회사인가**"가 메인 시그널이고, **과거에 뭘 따냈는가**는 보조라는 사용자 직관 + 코덱스 재검토를 반영해 **γ(업종)을 메인**으로 옮기고 가중치를 동적으로 산출합니다.
+
+**회사 벡터 = 3가지 시그널의 동적 가중합**
 
 ```
-회사 벡터 = α · 수주벡터 + β · 관심벡터 + γ · 업종벡터   (α+β+γ = 1)
+회사 벡터 = α · 수주벡터 + β · 관심벡터 + γ · 업종벡터   (α+β+γ = 1, 회사 데이터별 동적)
 ```
 
-| 시그널 | 소스 | 가중치 | 의미 |
-| --- | --- | --- | --- |
-| **수주(α)** | 계약 정보 → 따낸 공고들의 임베딩 평균 | 0.7 | 실제 revealed preference, 가장 강함 |
-| **관심(β)** | 사전규격 의견 → 의견 낸 사양 임베딩 평균 | 0.1 | 부드러운 신호, 회사명 매핑 불확실 |
-| **업종(γ)** | UsrInfoService 등록업종 + 공급물품 텍스트 | 0.2 | 콜드스타트(수주 0인 신생 회사) 대응 |
+| 회사 상태 | 업종 γ | 수주 α | 관심 β | 메모 |
+| --- | --- | --- | --- | --- |
+| 수주 **0건** (콜드스타트) | **1.00** | 0.00 | 0.00 | 등록업종만으로 추천 |
+| 수주 1~5건 (균형) | **0.65** | 0.30 | 0.05 | 업종 메인, 수주 보조 |
+| 수주 **6건+** (수주 풍부) | **0.50** | 0.45 | 0.05 | 업종/수주 비등 |
 
-가용한 시그널만 정규화해서 가중합 → 콜드스타트 회사도 추천 가능.
+**시그널 소스**
+
+| 시그널 | 소스 |
+| --- | --- |
+| **업종(γ)** | `company_industries` 등록업종 + `company_supply_products` 공급물품 + `corp_bsns_div_nm` + `mnfctr_div_nm` 텍스트 (회사당 1회 임베딩) |
+| **수주(α)** | `contracts` → 따낸 공고들의 `bid_notices.embedding` 평균 |
+| **관심(β)** | 사전규격 의견 (v0.2.1 — 회사명 매핑 후 활성화) |
+
+가용한 시그널만 정규화해서 가중합 → 콜드스타트도 즉시 추천 가능.
+회사 식별/벡터가 없으면 **키워드 모드**(자유 텍스트 → 직접 임베딩)로 폴백.
 
 **추천 파이프라인:**
 
@@ -59,13 +74,15 @@
     ↓
 [4] 휴리스틱 rerank  ← 마감 임박 패널티, 지역 매칭 보너스 등
     ↓
-[5] LLM 설명 생성  ← gpt-4o-mini로 "왜 추천했는지"
+[5] LLM 설명 생성  ← gpt-4o-mini, ThreadPoolExecutor(5) 병렬 호출 (~3초)
     ↓
 TOP 5 + 매칭 이유 반환
 ```
 
-**핵심 통찰** *(코덱스 협의 결과)*:
-**"의미 유사도" 보다 "실제 입찰 가능성"이 더 큰 결정 요인**입니다. 자격이 안 맞으면 매칭 점수 100점이어도 못 들어갑니다. 그래서 하드 필터가 메인, 임베딩은 후보 정렬용 보조.
+**핵심 통찰**:
+1. **회사 정체성(업종/공급물품)이 메인 시그널** — "내 회사는 SI"라는 정신 모델이 "과거에 한 번 청소용역 했음"보다 강함.
+2. **"의미 유사도"보다 "실제 입찰 가능성"이 더 큰 결정 요인** — 자격이 안 맞으면 매칭 100점이어도 못 들어감. 그래서 하드 필터가 메인, 임베딩은 후보 정렬용 보조.
+3. 우리 서비스 성격은 "낙찰 예측"이 아니라 **"검토할 만한 공고 디스커버리"** — 카피와 점수 표현 모두 이 방향.
 
 ---
 
@@ -144,25 +161,33 @@ jodalfit/
 │   ├── uv.lock
 │   └── .env.example           NARAJANGTEO_API_KEY, OPENAI_API_KEY, SUPABASE_*
 │
-├── frontend/                  Next.js 16 + TS + Tailwind v4
+├── frontend/                  Next.js 16 + TS + Tailwind v4 + shadcn/ui (base-nova)
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── page.tsx                  랜딩 페이지
-│   │   │   ├── recommendations/page.tsx  추천 결과
-│   │   │   ├── layout.tsx                Pretendard 폰트, 메타데이터
-│   │   │   └── globals.css               컬러 토큰 (Navy/Teal/Ink)
-│   │   ├── components/                   13개 UI 컴포넌트
-│   │   │   ├── BidCard.tsx               ★ 가장 중요한 카드
-│   │   │   ├── MatchScore.tsx
-│   │   │   ├── ExplanationBlock.tsx      LLM 추천 이유 (편집 quote rail)
-│   │   │   ├── DDayBadge.tsx             마감 임박 색상 단계
-│   │   │   └── ...
+│   │   │   ├── page.tsx                            랜딩 (Hero + 검색 + 차별화 + 결과 미리보기)
+│   │   │   ├── recommendations/page.tsx            추천 결과 (mode=company|keywords)
+│   │   │   ├── companies/page.tsx                  활동 기업 인덱스
+│   │   │   ├── companies/[bizrno]/page.tsx         ★ 회사별 SEO 페이지 (분석 + 추천 + 수주 표)
+│   │   │   ├── notices/page.tsx                    진행 공고 인덱스 (업무구분 탭)
+│   │   │   ├── notices/[bid_ntce_no]/page.tsx      ★★ 공고 라이프사이클 6 stages
+│   │   │   ├── sitemap.ts                          정적 + 회사/공고 동적 (~2,002 URL)
+│   │   │   ├── robots.ts                           /icon.svg (favicon)
+│   │   │   ├── layout.tsx                          Pretendard, 메타데이터
+│   │   │   └── globals.css                         컬러 토큰 (Forest Green primary)
+│   │   ├── components/                             Brand(Halves 로고), BidCard, CompanyCard,
+│   │   │                                           MatchScore, ExplanationBlock, DDayBadge,
+│   │   │                                           KeywordFallback, Header, Lifecycle, …
 │   │   ├── lib/
-│   │   │   ├── api.ts                    백엔드 호출 + Mock fallback
-│   │   │   ├── mock-data.ts              UI 미리보기용
-│   │   │   └── utils.ts                  cn, maskBizrno, formatKRW, scoreLabel
+│   │   │   ├── api.ts                              백엔드 호출 + Mock fallback
+│   │   │   ├── supabase-server.ts                  server-only Supabase client
+│   │   │   ├── mock-data.ts
+│   │   │   └── utils.ts                            cn, maskBizrno, formatKRW, daysUntil, scoreLabel
 │   │   └── types/recommendations.ts
+│   ├── public/brand/                               Halves 로고 SVG 자산
 │   └── package.json
+│
+├── .github/workflows/
+│   └── daily-sync.yml         매일 KST 5시 cron — 신규 공고/계약/임베딩 + 일요일 회사 풍부화
 │
 ├── supabase/
 │   └── migrations/             스키마 + RPC
@@ -387,10 +412,18 @@ curl -X POST http://localhost:8000/recommendations \
 
 | 버전 | 상태 | 핵심 변화 |
 | --- | --- | --- |
-| **v0.1** | ✅ 진행 중 | 수주 시그널 + 코사인 + 마감/지역 하드 필터 + LLM 설명 |
-| v0.2 | ⏳ | 자격 하드 필터 강화 (면허제한 정밀 매칭), 관심 시그널 활성화 |
-| v0.3 | ⏳ | 참가업체 시그널(개찰결과) 적재, 시간가중 exp decay (반감기 1년) |
-| v0.4 | ⏳ | LightGBM learning-to-rank (수주/참여/노출 데이터 누적 후) |
+| v0.1 | ✅ 완료 | 수주 시그널 + 코사인 + 하드 필터 + LLM 설명 (α=0.7 수주 메인) |
+| **v0.2** | 🔄 진행 중 | **PIVOT** — 업종/공급물품 메인(γ), 동적 가중치, 회사 풍부화 8.4k/16k, 라이프사이클 페이지, GitHub Actions cron, LLM 병렬 |
+| v0.3 | ⏳ | 자격 하드 필터 강화 (면허제한 정밀 매칭), 관심 시그널(사전규격 의견) 활성화 |
+| v0.4 | ⏳ | 참가업체 시그널(개찰결과) 적재, 시간가중 exp decay (반감기 1년) |
+| v0.5 | ⏳ | LightGBM learning-to-rank (수주/참여/노출 데이터 누적 후) |
+
+### 현재 데이터 상태 (2026-05-25)
+- `bid_notices` 10,990건 (모두 임베딩 완료)
+- `contracts` 32,580건
+- `companies` 34,517개
+- `company_industries` 40,384행 / `company_supply_products` 74,553행
+- **풍부화 진행률: enriched 8,393 / active 16,236 = 51.7%** (UsrInfoService02 일일 한도 4,500/일로 분산 처리 중)
 
 자세한 결정 근거는 [`docs/`](./docs/) 또는 깃 커밋 히스토리.
 
@@ -399,6 +432,8 @@ curl -X POST http://localhost:8000/recommendations \
 ## 12. 사용 카피 원칙 (어기지 말기)
 
 - ❌ "낙찰 가능성 92%" → ✅ **"매칭 점수 92 / 매우 적합"**
+- ❌ "따낼 만한 공고" → ✅ **"검토할 만한 공고"** (낙찰 예측이 아니라 디스커버리)
+- ❌ "과거 낙찰 이력만 분석" → ✅ **"등록업종 · 공급물품 · 수주 이력을 함께 분석"**
 - ❌ 사업자번호 전체 노출 → ✅ **"137-XX-X4567" 형식 마스킹**
 - ❌ "AI가 다 해준다" → ✅ **"왜 추천했는지" 자연어 설명**
 - ❌ 데이터 출처/갱신일 누락 → ✅ **"매일 갱신 · 나라장터 기반" 항상 명시**
@@ -408,18 +443,24 @@ curl -X POST http://localhost:8000/recommendations \
 
 ## 13. 디자인 토큰
 
+토스 톤(깨끗한 흰색 + 큰 한국어 카피 + 부드러운 카드) + 딥 포레스트 그린 primary.
+로고 컨셉: **Halves** — 채워진 삼각형(회사 이력) + 윤곽 삼각형(공고)이 대각선으로 맞물려 사각형(=fit).
+
 ```css
-/* Korean Financial Bureau — refined data SaaS */
---color-navy:  #12355B;   /* 헤더, 주요 텍스트, 신뢰 영역 */
---color-blue:  #2563EB;   /* CTA, 링크, 선택 상태 */
---color-teal:  #14B8A6;   /* 매칭 점수, 적합도, 긍정 신호 */
---color-bg:    #F7F9FC;   /* 배경 */
---color-ink:   #111827;   /* 본문 */
---color-warning: #F59E0B; /* 마감 임박 (D-3 ~ D-5) */
---color-danger:  #DC2626; /* 마감 직전 (D-1 ~ D-2) */
+/* jodalfit — Toss tone + Deep Forest accent */
+--color-primary: #166534;  /* CTA, 강조, 매칭 점수 */
+--color-bg:      #FFFFFF;  /* 배경 (clean white) */
+--color-surface: #F7F9FC;  /* 카드/섹션 */
+--color-ink:     #111827;  /* 본문 */
+--color-muted:   #6B7280;  /* 메타 */
+--color-border:  #E5E7EB;
+--color-warning: #F59E0B;  /* 마감 임박 (D-3 ~ D-5) */
+--color-danger:  #DC2626;  /* 마감 직전 (D-1 ~ D-2) */
 
 --font-sans: 'Pretendard Variable', system-ui, ...;
 ```
+
+UI 라이브러리: **shadcn/ui base-nova preset** (@base-ui/react 기반). `Button`은 base-ui라 `asChild` 미지원 — 링크는 `<a>` 직접 스타일.
 
 ---
 

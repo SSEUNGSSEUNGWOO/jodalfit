@@ -29,9 +29,14 @@ export interface BidRecommendation {
 export interface RecommendationResponse {
   company: CompanyDigest | null;
   results: BidRecommendation[];
-  error?: string;
-  mode?: "company" | "keywords";
+  error?: string | null;
+  mode?: "company" | "keywords" | "auto";
   query?: string;
   /** "keywords"면 회사 벡터 없거나 식별 실패 — 프론트가 키워드 폴백 UI 노출 */
   fallback?: "keywords";
+  /** auto 모드 — 회사 매칭과 키워드 매칭 중 어느 쪽을 메인 탭으로 띄울지 */
+  primary?: "company" | "keywords";
+  /** auto 모드 — 키워드 매칭 결과 (메인이 company여도 함께 노출) */
+  keyword_query?: string;
+  keyword_results?: BidRecommendation[];
 }

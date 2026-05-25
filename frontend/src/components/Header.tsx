@@ -3,8 +3,8 @@ import { Brand } from "./Brand";
 
 const NAV_ITEMS = [
   { href: "/notices", label: "공고 둘러보기" },
-  { href: "/companies", label: "기업 둘러보기" },
-  { href: "/#how", label: "추천 방식" },
+  { href: "/insights", label: "주간 인사이트" },
+  { href: "/about", label: "jodalfit이란" },
 ];
 
 export function Header() {

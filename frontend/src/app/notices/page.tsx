@@ -1,38 +1,49 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Calendar, MapPin, Building2, Gavel } from "lucide-react";
-import { DDayBadge } from "@/components/DDayBadge";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { Pagination } from "@/components/Pagination";
 import { SearchForm } from "@/components/SearchForm";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { fetchBrowseNotices } from "@/lib/notice";
-import { cn, formatDateKR, formatKRW } from "@/lib/utils";
+import { SlimNoticeRow } from "@/components/SlimNoticeRow";
+import {
+  fetchBrowsePage,
+  CATEGORY_LABELS,
+  type NoticeCategory,
+  type NoticeFilters,
+} from "@/lib/notice";
+import { cn } from "@/lib/utils";
 
 interface Props {
-  searchParams: Promise<{ bsns_div?: string }>;
+  searchParams: Promise<{
+    bsns_div?: string;
+    dday?: string;
+    price?: string;
+    rgn?: string;
+    cat?: string;
+    sort?: string;
+    page?: string;
+  }>;
+}
+
+const CATEGORY_VALUES: NoticeCategory[] = [
+  "it",
+  "medical",
+  "construction",
+  "environment",
+  "education",
+  "consulting",
+  "other",
+];
+
+function isCategory(v: string | undefined): v is NoticeCategory {
+  return !!v && (CATEGORY_VALUES as string[]).includes(v);
 }
 
 export const revalidate = 1800;
 
-export async function generateMetadata({
-  searchParams,
-}: Props): Promise<Metadata> {
-  const { bsns_div } = await searchParams;
-  const title = bsns_div
-    ? `진행 중인 ${bsns_div} 입찰 공고 | jodalfit`
-    : "진행 중인 공공입찰 공고 둘러보기 | jodalfit";
-  return {
-    title,
-    description: bsns_div
-      ? `현재 마감 전인 ${bsns_div} 부문 나라장터 입찰공고. 각 공고의 라이프사이클(발주계획→사전규격→낙찰) 분석 제공.`
-      : "현재 마감 전인 나라장터 입찰공고 모음. 각 공고의 발주계획부터 낙찰까지 전 과정을 분석합니다.",
-    alternates: { canonical: "/notices" },
-  };
-}
+const PAGE_SIZE = 100;
 
-const TABS = [
+const BSNS_TABS = [
   { label: "전체", value: undefined },
   { label: "용역", value: "용역" },
   { label: "물품", value: "물품" },
@@ -40,159 +51,233 @@ const TABS = [
   { label: "외자", value: "외자" },
 ];
 
+const DDAY_OPTIONS: { label: string; value: NoticeFilters["dday"] | undefined }[] = [
+  { label: "전체 마감", value: undefined },
+  { label: "D-7 이내", value: 7 },
+  { label: "D-14 이내", value: 14 },
+  { label: "D-30 이내", value: 30 },
+];
+
+const PRICE_OPTIONS: { label: string; value: NoticeFilters["priceBucket"] | undefined }[] = [
+  { label: "전체 예산", value: undefined },
+  { label: "1억 미만", value: "lt1" },
+  { label: "1억~10억", value: "1to10" },
+  { label: "10억~50억", value: "10to50" },
+  { label: "50억 이상", value: "gt50" },
+];
+
+const REGIONS = [
+  "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+  "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
+];
+
+const SORT_OPTIONS: { label: string; value: NoticeFilters["sort"] }[] = [
+  { label: "마감 임박순", value: "close" },
+  { label: "추정가 높은순", value: "price_desc" },
+  { label: "공고일 신규순", value: "ntce_desc" },
+];
+
+function parseFilters(s: Awaited<Props["searchParams"]>): NoticeFilters {
+  const f: NoticeFilters = {};
+  if (s.bsns_div) f.bsnsDiv = s.bsns_div;
+  if (s.dday === "7" || s.dday === "14" || s.dday === "30") {
+    f.dday = parseInt(s.dday, 10) as 7 | 14 | 30;
+  }
+  if (s.price === "lt1" || s.price === "1to10" || s.price === "10to50" || s.price === "gt50") {
+    f.priceBucket = s.price;
+  }
+  if (s.rgn) f.rgn = s.rgn;
+  if (isCategory(s.cat)) f.category = s.cat;
+  if (s.sort === "price_desc" || s.sort === "ntce_desc" || s.sort === "close") {
+    f.sort = s.sort;
+  }
+  return f;
+}
+
+function urlOf(filters: NoticeFilters, page?: number, replace?: Partial<NoticeFilters & { page?: number | null }>): string {
+  const merged = { ...filters, ...replace } as NoticeFilters & { page?: number | null };
+  const params = new URLSearchParams();
+  if (merged.bsnsDiv) params.set("bsns_div", merged.bsnsDiv);
+  if (merged.dday) params.set("dday", String(merged.dday));
+  if (merged.priceBucket) params.set("price", merged.priceBucket);
+  if (merged.rgn) params.set("rgn", merged.rgn);
+  if (merged.category) params.set("cat", merged.category);
+  if (merged.sort && merged.sort !== "close") params.set("sort", merged.sort);
+  const p = replace && "page" in replace ? replace.page : page;
+  if (p && p > 1) params.set("page", String(p));
+  const qs = params.toString();
+  return qs ? `/notices?${qs}` : "/notices";
+}
+
+export async function generateMetadata({
+  searchParams,
+}: Props): Promise<Metadata> {
+  const s = await searchParams;
+  const pageNum = parseInt(s.page ?? "1", 10) || 1;
+  const titleBase = s.bsns_div
+    ? `진행 중인 ${s.bsns_div} 입찰 공고`
+    : "진행 중인 공공입찰 공고";
+  const title = pageNum > 1 ? `${titleBase} ${pageNum}페이지 | jodalfit` : `${titleBase} | jodalfit`;
+  return {
+    title,
+    description: "현재 마감 전인 나라장터 입찰공고를 마감·추정가·지역으로 필터링하여 둘러볼 수 있습니다.",
+  };
+}
+
 export default async function NoticesIndexPage({ searchParams }: Props) {
-  const { bsns_div } = await searchParams;
-  const notices = await fetchBrowseNotices(40, bsns_div);
+  const s = await searchParams;
+  const filters = parseFilters(s);
+  const currentPage = Math.max(1, parseInt(s.page ?? "1", 10) || 1);
+
+  const { rows: notices, totalCount, categoryCounts } = await fetchBrowsePage(
+    filters,
+    currentPage,
+    PAGE_SIZE
+  );
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startRank = (safePage - 1) * PAGE_SIZE;
+  const sort = filters.sort ?? "close";
 
   return (
     <>
       <Header />
       <main className="flex-1">
         <section className="border-b border-border bg-muted/30">
-          <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+          <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-12">
             <h1 className="text-[28px] sm:text-[36px] font-extrabold tracking-tight text-foreground">
               진행 중인 공공입찰
             </h1>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-muted-foreground">
-              현재 마감 전인 나라장터 입찰공고예요. 공고를 클릭하면 발주계획부터 낙찰까지
-              전 과정을 한 페이지에서 확인할 수 있어요.
+              필터 조건에 맞는 공고 <span className="font-bold text-foreground">{totalCount.toLocaleString("ko-KR")}건</span>.
+              공고를 클릭하면 발주계획부터 낙찰까지 전 과정을 한 페이지에서 확인할 수 있어요.
             </p>
             <div className="mt-6 max-w-[520px]">
               <SearchForm />
             </div>
+          </div>
+        </section>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <div className="flex flex-wrap gap-1.5">
-                {TABS.map((t) => {
-                  const active = t.value === bsns_div;
-                  return (
-                    <Link
-                      key={t.label}
-                      href={t.value ? `/notices?bsns_div=${t.value}` : "/notices"}
-                      className={cn(
-                        "px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-background border border-border text-foreground hover:bg-muted"
-                      )}
-                    >
-                      {t.label}
-                    </Link>
-                  );
-                })}
-              </div>
-              <span className="text-[12.5px] text-muted-foreground font-medium ml-auto">
-                {notices.length}건 · 마감 임박 순
+        {/* 필터 바 */}
+        <section className="border-b border-border bg-background sticky top-16 z-30 backdrop-blur">
+          <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-4 space-y-2.5">
+            <FilterRow label="분야">
+              <ChipLink
+                active={!filters.category}
+                href={urlOf(filters, undefined, { category: undefined, page: null })}
+              >
+                전체
+              </ChipLink>
+              {CATEGORY_VALUES.map((cat) => (
+                <ChipLink
+                  key={cat}
+                  active={filters.category === cat}
+                  href={urlOf(filters, undefined, { category: cat, page: null })}
+                >
+                  {CATEGORY_LABELS[cat]}
+                  <span className="ml-1 text-[10.5px] opacity-70 tabular-nums">
+                    {categoryCounts[cat].toLocaleString("ko-KR")}
+                  </span>
+                </ChipLink>
+              ))}
+            </FilterRow>
+            <FilterRow label="업무">
+              {BSNS_TABS.map((t) => (
+                <ChipLink
+                  key={t.label}
+                  active={t.value === filters.bsnsDiv}
+                  href={urlOf(filters, undefined, { bsnsDiv: t.value, page: null })}
+                >
+                  {t.label}
+                </ChipLink>
+              ))}
+            </FilterRow>
+            <FilterRow label="마감">
+              {DDAY_OPTIONS.map((t) => (
+                <ChipLink
+                  key={t.label}
+                  active={t.value === filters.dday}
+                  href={urlOf(filters, undefined, { dday: t.value, page: null })}
+                >
+                  {t.label}
+                </ChipLink>
+              ))}
+            </FilterRow>
+            <FilterRow label="예산">
+              {PRICE_OPTIONS.map((t) => (
+                <ChipLink
+                  key={t.label}
+                  active={t.value === filters.priceBucket}
+                  href={urlOf(filters, undefined, { priceBucket: t.value, page: null })}
+                >
+                  {t.label}
+                </ChipLink>
+              ))}
+            </FilterRow>
+            <FilterRow label="지역">
+              <ChipLink
+                active={!filters.rgn}
+                href={urlOf(filters, undefined, { rgn: undefined, page: null })}
+              >
+                전체
+              </ChipLink>
+              {REGIONS.map((r) => (
+                <ChipLink
+                  key={r}
+                  active={filters.rgn === r}
+                  href={urlOf(filters, undefined, { rgn: r, page: null })}
+                >
+                  {r}
+                </ChipLink>
+              ))}
+            </FilterRow>
+            <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-border/60">
+              <span className="text-[12px] font-bold text-muted-foreground w-[44px] shrink-0">정렬</span>
+              {SORT_OPTIONS.map((o) => (
+                <ChipLink
+                  key={o.value}
+                  active={sort === o.value}
+                  href={urlOf(filters, undefined, { sort: o.value, page: null })}
+                >
+                  {o.label}
+                </ChipLink>
+              ))}
+              <span className="text-[12.5px] text-muted-foreground font-medium ml-auto tabular-nums">
+                {safePage}/{totalPages} 페이지
               </span>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
           <h2 className="sr-only">공고 목록</h2>
           {notices.length === 0 ? (
-            <p className="text-[14.5px] text-muted-foreground">
-              해당 조건의 진행 중 공고가 없어요.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {notices.map((n) => (
-                <Link
-                  key={n.bid_ntce_no}
-                  href={`/notices/${n.bid_ntce_no}`}
-                  className="group"
-                >
-                  <Card className="h-full transition-shadow hover:shadow-md gap-0 py-0">
-                    <CardContent className="p-5">
-                      {/* Top row: badges */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {n.bsns_div_nm && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-primary/10 text-primary font-semibold"
-                          >
-                            {n.bsns_div_nm}
-                          </Badge>
-                        )}
-                        {n.cntrct_cncls_mthd_nm && (
-                          <Badge variant="secondary" className="font-medium">
-                            {n.cntrct_cncls_mthd_nm}
-                          </Badge>
-                        )}
-                        {n.rgn_lmt_yn === "Y" && (
-                          <Badge variant="outline" className="text-[11px] font-semibold">
-                            지역제한
-                          </Badge>
-                        )}
-                        {n.bid_clse_date && (
-                          <span className="ml-auto">
-                            <DDayBadge date={n.bid_clse_date} />
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="mt-3 text-[16.5px] font-bold leading-[1.4] text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                        {n.bid_ntce_nm}
-                      </h3>
-
-                      {/* Institution */}
-                      <div className="mt-2.5 flex items-center gap-1.5 text-[13px] text-foreground/80">
-                        <Building2 className="h-3 w-3 text-muted-foreground" aria-hidden />
-                        <span className="font-medium line-clamp-1">
-                          {n.dmnd_instt_nm ?? n.ntce_instt_nm ?? "—"}
-                        </span>
-                      </div>
-
-                      {/* Meta rows */}
-                      <div className="mt-3 grid grid-cols-2 gap-y-1.5 gap-x-3 text-[12px]">
-                        {n.bidprc_psbl_indstryty_nm && (
-                          <MetaRow icon={<Gavel className="h-3 w-3" />} label="자격">
-                            <span className="line-clamp-1">
-                              {n.bidprc_psbl_indstryty_nm}
-                            </span>
-                          </MetaRow>
-                        )}
-                        {n.prtcpt_psbl_rgn_nm && (
-                          <MetaRow icon={<MapPin className="h-3 w-3" />} label="지역">
-                            <span className="line-clamp-1">{n.prtcpt_psbl_rgn_nm}</span>
-                          </MetaRow>
-                        )}
-                        {n.bid_ntce_date && (
-                          <MetaRow icon={<Calendar className="h-3 w-3" />} label="공고일">
-                            {formatDateKR(n.bid_ntce_date)}
-                          </MetaRow>
-                        )}
-                        {n.openg_date && (
-                          <MetaRow icon={<Calendar className="h-3 w-3" />} label="개찰">
-                            {formatDateKR(n.openg_date)}
-                          </MetaRow>
-                        )}
-                      </div>
-
-                      {/* Bottom: price + CTA */}
-                      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                        <div>
-                          <div className="text-[11px] font-semibold text-muted-foreground">
-                            추정가
-                          </div>
-                          <div className="text-[16px] font-extrabold tabular tabular-nums text-foreground">
-                            {formatKRW(n.presmpt_prce)}
-                          </div>
-                        </div>
-                        <span className="inline-flex items-center gap-1 text-[12px] font-bold text-muted-foreground group-hover:text-primary transition-colors">
-                          라이프사이클 <ArrowUpRight className="h-3.5 w-3.5" />
-                        </span>
-                      </div>
-
-                      <div className="mt-2 text-[10.5px] tabular tabular-nums text-muted-foreground/70">
-                        {n.bid_ntce_no}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+            <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
+              <h3 className="text-[18px] font-bold text-foreground">
+                해당 조건의 진행 중 공고가 없어요.
+              </h3>
+              <p className="mt-2 text-[14px] text-muted-foreground">
+                필터를 조금 풀어보세요.
+              </p>
             </div>
+          ) : (
+            <>
+              <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
+                {notices.map((n, i) => (
+                  <SlimNoticeRow
+                    key={`${n.bid_ntce_no}-${safePage}-${i}`}
+                    notice={n}
+                    rank={startRank + i + 1}
+                  />
+                ))}
+              </div>
+
+              <Pagination
+                current={safePage}
+                totalPages={totalPages}
+                hrefFor={(p) => urlOf(filters, p)}
+              />
+            </>
           )}
         </section>
       </main>
@@ -201,22 +286,37 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
   );
 }
 
-function MetaRow({
-  icon,
-  label,
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[12px] font-bold text-muted-foreground w-[44px] shrink-0">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function ChipLink({
+  href,
+  active,
   children,
 }: {
-  icon: React.ReactNode;
-  label: string;
+  href: string;
+  active: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-      <span className="text-muted-foreground/70 shrink-0">{icon}</span>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.06em] shrink-0">
-        {label}
-      </span>
-      <span className="text-foreground/80 truncate">{children}</span>
-    </div>
+    <Link
+      href={href}
+      className={cn(
+        "px-2.5 py-1 rounded-full text-[12.5px] font-semibold transition-colors",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-background border border-border text-foreground hover:bg-muted"
+      )}
+    >
+      {children}
+    </Link>
   );
 }
