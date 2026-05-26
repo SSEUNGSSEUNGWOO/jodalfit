@@ -67,7 +67,7 @@ jobs:
   enrich-companies:
     # 주 1회 (월요일) 회사 마스터 풍부화 (UsrInfoService02 한도 분산)
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 90
     if: github.event.schedule == '0 20 * * 0' || github.event_name == 'workflow_dispatch'
     defaults:
       run:
@@ -95,8 +95,9 @@ jobs:
         run: uv run python -m jobs.ingest_companies_userinfo --days-back 14
         continue-on-error: true
 
-      - name: 회사 업종/공급물품 풍부화 (4500개)
-        run: uv run python -m jobs.ingest_company_details --limit 4500
+      - name: 회사 업종/공급물품 풍부화 (1500개)
+        # 회사당 2개 API 호출 × ~1초 → 1500개에 ~50분. 더 늘리면 timeout 위험.
+        run: uv run python -m jobs.ingest_company_details --limit 1500
         continue-on-error: true
 
       - name: 회사 벡터 재계산
