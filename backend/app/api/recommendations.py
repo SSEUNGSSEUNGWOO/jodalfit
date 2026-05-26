@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.core.rate_limit import limiter
 from app.services.explain import (
     explain_batch,
     explain_keyword_batch,
@@ -19,6 +20,8 @@ from app.services.explain import (
 )
 from app.services.recommend import recommend
 from app.services.search_log import log_search
+
+RATE_LIMIT = "15/minute;100/day"
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
@@ -45,9 +48,10 @@ class RecommendRequest(BaseModel):
 
 
 @router.post("")
+@limiter.limit(RATE_LIMIT)
 def post_recommendations(
-    req: RecommendRequest,
     request: Request,
+    req: RecommendRequest,
     background: BackgroundTasks,
 ):
     t0 = time.time()
@@ -108,9 +112,10 @@ def post_recommendations(
 
 
 @router.post("/stream")
+@limiter.limit(RATE_LIMIT)
 def post_recommendations_stream(
-    req: RecommendRequest,
     request: Request,
+    req: RecommendRequest,
     background: BackgroundTasks,
 ):
     """ndjson streaming — 추천 결과 즉시 전송 + LLM 설명 도착 순서대로 push.

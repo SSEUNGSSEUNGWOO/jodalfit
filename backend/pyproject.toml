@@ -10,6 +10,7 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.1",
     "python-dotenv>=1.2.2",
+    "slowapi>=0.1.9",
     "supabase>=2.30.0",
     "uvicorn[standard]>=0.47.0",
 ]
