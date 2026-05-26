@@ -45,6 +45,16 @@ def map_item(it: dict) -> dict:
     }
 
 
+def _dedupe(rows: list[dict]) -> list[dict]:
+    """같은 batch에 (bf_spec_rgst_no, opnin_no) 중복 시 PostgreSQL ON CONFLICT가
+    "cannot affect row a second time" 에러를 내므로 dict로 dedupe (뒤값 우선)."""
+    seen: dict[tuple, dict] = {}
+    for row in rows:
+        key = (row["bf_spec_rgst_no"], row["opnin_no"])
+        seen[key] = row
+    return list(seen.values())
+
+
 def run(days_back: int = 1, batch_size: int = 500) -> None:
     end = datetime.now()
     begin = end - timedelta(days=days_back)
@@ -65,12 +75,14 @@ def run(days_back: int = 1, batch_size: int = 500) -> None:
                 continue
             batch.append(row)
             if len(batch) >= batch_size:
-                upsert_rows("pre_spec_opinions", batch, on_conflict="bf_spec_rgst_no,opnin_no")
-                total += len(batch)
+                deduped = _dedupe(batch)
+                upsert_rows("pre_spec_opinions", deduped, on_conflict="bf_spec_rgst_no,opnin_no")
+                total += len(deduped)
                 batch.clear()
         if batch:
-            upsert_rows("pre_spec_opinions", batch, on_conflict="bf_spec_rgst_no,opnin_no")
-            total += len(batch)
+            deduped = _dedupe(batch)
+            upsert_rows("pre_spec_opinions", deduped, on_conflict="bf_spec_rgst_no,opnin_no")
+            total += len(deduped)
         log_ingest_finish(run_id, "success", rows_inserted=total)
         print(f"[{JOB_NAME}] done. {total} rows upserted")
     except Exception as e:
