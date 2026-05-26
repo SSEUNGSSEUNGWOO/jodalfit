@@ -64,34 +64,35 @@ def _format_amount(v) -> str:
 
 
 def _strongest_signal(detail: dict) -> str | None:
-    """bonus_detail 중 가장 큰 양의 시그널을 한국어로 표현."""
+    """bonus_detail 중 가장 강한 회사↔공고 매칭 시그널을 한국어로 표현.
+
+    dday_sweet 같은 운영 편의 시그널(검토 시간 여유 등)은 매칭 이유가 아니므로
+    제외 — dict 형태로 들어온 매칭 시그널만 후보로 인정.
+    """
     if not detail:
         return None
-    # 점수 추출 — dict면 score, 숫자면 그대로
     candidates: list[tuple[float, str]] = []
     for k, v in detail.items():
-        if isinstance(v, dict):
-            score = v.get("score", 0)
-            if k == "institution_familiar":
-                candidates.append((score, f"과거 거래 기관 '{v.get('instt')}'과 정확히 일치"))
-            elif k == "industry_tokens":
-                matched = v.get("matched") or []
-                if matched:
-                    candidates.append(
-                        (score, f"회사 등록업종/공급물품의 토큰 {len(matched)}개 일치: {', '.join(matched[:3])}")
-                    )
-            elif k == "amount_fit":
-                ratio = v.get("ratio")
-                cm = _format_amount(v.get("company_median"))
-                np = _format_amount(v.get("notice_price"))
+        if not isinstance(v, dict):
+            continue
+        score = v.get("score", 0)
+        if k == "institution_familiar":
+            candidates.append((score, f"과거 거래 기관 '{v.get('instt')}'과 정확히 일치"))
+        elif k == "industry_tokens":
+            matched = v.get("matched") or []
+            if matched:
                 candidates.append(
-                    (score, f"회사 평균 수주가 {cm} vs 공고 {np} (ratio {ratio}) — 체급 적합")
+                    (score, f"회사 등록업종/공급물품의 토큰 {len(matched)}개 일치: {', '.join(matched[:3])}")
                 )
-            elif k == "region_match":
-                candidates.append((score, f"회사 지역과 공고 참가가능지역 '{v.get('rgn')}'이 일치"))
-        elif isinstance(v, (int, float)) and v > 0:
-            label = {"dday_sweet": "마감 6~14일 안 사이로 검토 시간 여유"}.get(k, k)
-            candidates.append((v, label))
+        elif k == "amount_fit":
+            ratio = v.get("ratio")
+            cm = _format_amount(v.get("company_median"))
+            np = _format_amount(v.get("notice_price"))
+            candidates.append(
+                (score, f"회사 평균 수주가 {cm} vs 공고 {np} (ratio {ratio}) — 체급 적합")
+            )
+        elif k == "region_match":
+            candidates.append((score, f"회사 지역과 공고 참가가능지역 '{v.get('rgn')}'이 일치"))
     if not candidates:
         return None
     candidates.sort(key=lambda x: x[0], reverse=True)
