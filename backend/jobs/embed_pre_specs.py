@@ -14,7 +14,11 @@ from datetime import datetime
 
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
-from jobs._common import log_ingest_finish, log_ingest_start
+from jobs._common import (
+    log_ingest_finish,
+    log_ingest_start,
+    upsert_embeddings_with_retry,
+)
 
 JOB_NAME = "embed_pre_specs"
 
@@ -59,7 +63,9 @@ def run(limit: int = 5000, batch: int = 200) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            client.rpc("update_pre_specs_embeddings", {"updates": updates}).execute()
+            upsert_embeddings_with_retry(
+                client, "update_pre_specs_embeddings", updates
+            )
             total += len(rows)
             print(f"  embedded {total}")
         log_ingest_finish(run_id, "success", rows_updated=total)

@@ -16,44 +16,17 @@
 from __future__ import annotations
 
 import argparse
-import time
 from datetime import datetime
-
-from postgrest.exceptions import APIError
 
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
-from jobs._common import log_ingest_finish, log_ingest_start
+from jobs._common import (
+    log_ingest_finish,
+    log_ingest_start,
+    upsert_embeddings_with_retry,
+)
 
 JOB_NAME = "embed_bid_notices"
-RETRIES = 3
-
-
-def upsert_embeddings_with_retry(client, updates: list[dict]) -> None:
-    """RPC 호출 — cold pool/HNSW 부하로 인한 57014 timeout 대응.
-
-    같은 batch로 지수 backoff retry → 그래도 실패하면 절반 분할 재귀.
-    배치 1개까지 줄여도 실패하면 raise.
-    """
-    for attempt in range(RETRIES):
-        try:
-            client.rpc(
-                "update_bid_notice_embeddings", {"updates": updates}
-            ).execute()
-            return
-        except APIError as e:
-            if e.code != "57014":
-                raise
-            if attempt < RETRIES - 1:
-                wait = 2 * (attempt + 1)
-                print(f"    rpc timeout (n={len(updates)}), retry in {wait}s")
-                time.sleep(wait)
-    if len(updates) <= 1:
-        raise RuntimeError(f"rpc timeout even with n=1 ({len(updates)} rows)")
-    mid = len(updates) // 2
-    print(f"    splitting batch {len(updates)} -> {mid} + {len(updates) - mid}")
-    upsert_embeddings_with_retry(client, updates[:mid])
-    upsert_embeddings_with_retry(client, updates[mid:])
 
 
 def build_text(r: dict) -> str:
@@ -136,7 +109,9 @@ def run(limit: int = 5000, batch: int = 200, reembed_all: bool = False) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            upsert_embeddings_with_retry(client, updates)
+            upsert_embeddings_with_retry(
+                client, "update_bid_notice_embeddings", updates
+            )
             total += len(rows)
             print(f"  embedded {total:,}")
         log_ingest_finish(run_id, "success", rows_updated=total)

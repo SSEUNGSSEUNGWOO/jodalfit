@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from datetime import datetime
 from typing import Any, Iterator
 
 import httpx
 from dotenv import load_dotenv
+from postgrest.exceptions import APIError
 
 from app.services.supabase_client import get_admin_client
 
@@ -121,6 +123,43 @@ def iter_all_items(
         if page * rows_per_page >= total:
             return
         page += 1
+
+
+# ----- 임베딩 RPC 호출 (HNSW timeout 대응) -----
+
+EMBED_RPC_RETRIES = 3
+
+
+def upsert_embeddings_with_retry(
+    client, rpc_name: str, updates: list[dict]
+) -> None:
+    """임베딩 batch update RPC 호출 — Postgres 57014 statement timeout 대응.
+
+    HNSW 인덱스 업데이트나 cold connection pool로 인해 첫 호출이 자주
+    timeout나서, 같은 batch로 지수 backoff retry → 그래도 실패하면
+    절반 분할 재귀. 1까지 줄여도 실패하면 raise.
+    """
+    for attempt in range(EMBED_RPC_RETRIES):
+        try:
+            client.rpc(rpc_name, {"updates": updates}).execute()
+            return
+        except APIError as e:
+            if e.code != "57014":
+                raise
+            if attempt < EMBED_RPC_RETRIES - 1:
+                wait = 2 * (attempt + 1)
+                print(
+                    f"    rpc {rpc_name} timeout (n={len(updates)}), retry in {wait}s"
+                )
+                time.sleep(wait)
+    if len(updates) <= 1:
+        raise RuntimeError(f"rpc {rpc_name} timeout even with n=1")
+    mid = len(updates) // 2
+    print(
+        f"    splitting {rpc_name} batch {len(updates)} -> {mid} + {len(updates) - mid}"
+    )
+    upsert_embeddings_with_retry(client, rpc_name, updates[:mid])
+    upsert_embeddings_with_retry(client, rpc_name, updates[mid:])
 
 
 # ----- ingest_runs 로깅 -----

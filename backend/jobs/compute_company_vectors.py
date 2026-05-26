@@ -31,7 +31,11 @@ import numpy as np
 
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
-from jobs._common import log_ingest_finish, log_ingest_start
+from jobs._common import (
+    log_ingest_finish,
+    log_ingest_start,
+    upsert_embeddings_with_retry,
+)
 
 JOB_NAME = "compute_company_vectors"
 
@@ -344,7 +348,9 @@ def run(limit: int = 25000, chunk_size: int = 100) -> None:
         for ch in chunks(target, chunk_size):
             updates, skipped = process_chunk(client, ch)
             if updates:
-                client.rpc("update_company_embeddings", {"updates": updates}).execute()
+                upsert_embeddings_with_retry(
+                    client, "update_company_embeddings", updates
+                )
             total += len(updates)
             total_skipped += skipped
             chunks_done += 1
