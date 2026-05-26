@@ -1,5 +1,9 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
+
+const SUMMARY_COLS =
+  "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn";
 
 export interface BidNotice {
   bid_ntce_no: string;
@@ -401,25 +405,126 @@ export interface BrowsePage {
   categoryCounts: Record<NoticeCategory, number>;
 }
 
+/** 카테고리 카운트 — 활성 공고 전체 기준, 다른 필터는 적용 안 함.
+ *  unstable_cache로 1시간 캐싱. 사용자 필터 조합과 무관해서 cache key 단일.
+ *  UX: 필터 켜도 카테고리 탭 숫자는 전체 기준으로 표시 (정밀 카운트는 옵션 B로 후속). */
+const fetchCategoryCountsCached = unstable_cache(
+  async (): Promise<Record<NoticeCategory, number>> => {
+    const c = getServerSupabase();
+    const today = new Date().toISOString().slice(0, 10);
+    const counts: Record<NoticeCategory, number> = {
+      it: 0,
+      medical: 0,
+      construction: 0,
+      environment: 0,
+      education: 0,
+      consulting: 0,
+      other: 0,
+    };
+    const seen = new Set<string>();
+    const PAGE = 1000;
+    let offset = 0;
+    while (true) {
+      const { data } = await c
+        .from("bid_notices")
+        .select("bid_ntce_no,bid_ntce_nm,bidprc_psbl_indstryty_nm,bsns_div_nm")
+        .gte("bid_clse_date", today)
+        .range(offset, offset + PAGE - 1);
+      const rows = (data as Array<Parameters<typeof categoriesOf>[0] & { bid_ntce_no: string }>) ?? [];
+      if (rows.length === 0) break;
+      for (const r of rows) {
+        if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
+        seen.add(r.bid_ntce_no);
+        for (const cat of categoriesOf(r)) counts[cat]++;
+      }
+      if (rows.length < PAGE) break;
+      offset += PAGE;
+      if (offset > 500000) break;
+    }
+    return counts;
+  },
+  ["notice-category-counts-v1"],
+  { revalidate: 3600 }
+);
+
 export async function fetchBrowsePage(
   filters: NoticeFilters = {},
   page = 1,
   pageSize = 100
 ): Promise<BrowsePage> {
+  // 카테고리 필터 있을 때만 메모리 분류 위해 풀 fetch (느린 경로)
+  if (filters.category) {
+    return fetchBrowsePageWithCategory(filters, page, pageSize);
+  }
+
+  // Fast path: 카테고리 필터 없으면 페이지 깊이만큼만 fetch
+  const c = getServerSupabase();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const countPromise = (async () => {
+    let q = c.from("bid_notices").select("bid_ntce_no", {
+      count: "exact",
+      head: true,
+    });
+    q = applyFilters(q, today, filters);
+    return q;
+  })();
+
+  const listPromise = (async () => {
+    const target = page * pageSize + pageSize; // 깊이 + 한 페이지 여유
+    const collected: NoticeSummary[] = [];
+    const seen = new Set<string>();
+    const PAGE = 1000;
+    let offset = 0;
+    while (collected.length < target) {
+      let q = c.from("bid_notices").select(SUMMARY_COLS);
+      q = applyFilters(q, today, filters);
+      q = orderClause(q, filters.sort);
+      q = q.range(offset, offset + PAGE - 1);
+      const { data } = await q;
+      const rows = (data as NoticeSummary[]) ?? [];
+      if (rows.length === 0) break;
+      for (const r of rows) {
+        if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
+        seen.add(r.bid_ntce_no);
+        collected.push(r);
+      }
+      if (rows.length < PAGE) break;
+      offset += PAGE;
+      if (offset > 500000) break;
+    }
+    const start = (page - 1) * pageSize;
+    return collected.slice(start, start + pageSize);
+  })();
+
+  const [{ count: totalCount }, rows, categoryCounts] = await Promise.all([
+    countPromise,
+    listPromise,
+    fetchCategoryCountsCached(),
+  ]);
+
+  return {
+    rows,
+    totalCount: totalCount ?? 0,
+    categoryCounts,
+  };
+}
+
+/** 카테고리 필터가 있을 때만 사용: 메모리 분류를 위해 활성 공고 풀을 모두 fetch. */
+async function fetchBrowsePageWithCategory(
+  filters: NoticeFilters,
+  page: number,
+  pageSize: number
+): Promise<BrowsePage> {
   const c = getServerSupabase();
   const today = new Date().toISOString().slice(0, 10);
   const PAGE = 1000;
 
-  // 1) DB 레벨 필터(업무·마감·예산·지역)로 후보 풀 페이징 수집
   const collected: NoticeSummary[] = [];
   const seen = new Set<string>();
   let offset = 0;
   while (true) {
-    let q = c
-      .from("bid_notices")
-      .select(
-        "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn"
-      );
+    let q = c.from("bid_notices").select(SUMMARY_COLS);
     q = applyFilters(q, today, filters);
     q = orderClause(q, filters.sort);
     q = q.range(offset, offset + PAGE - 1);
@@ -436,30 +541,13 @@ export async function fetchBrowsePage(
     if (offset > 500000) break;
   }
 
-  // 2) 카테고리 집계 — 카테고리 필터 적용 전 풀 전체로 (사용자가 다른 카테고리 클릭할 때 카운트 보여주기 위해)
-  const categoryCounts: Record<NoticeCategory, number> = {
-    it: 0,
-    medical: 0,
-    construction: 0,
-    environment: 0,
-    education: 0,
-    consulting: 0,
-    other: 0,
-  };
-  for (const r of collected) {
-    for (const cat of categoriesOf(r)) {
-      categoryCounts[cat]++;
-    }
-  }
-
-  // 3) 카테고리 필터 적용
-  const filtered = filters.category
-    ? collected.filter((r) => categoriesOf(r).includes(filters.category!))
-    : collected;
-
-  // 4) 페이지 slice
+  const filtered = collected.filter((r) =>
+    categoriesOf(r).includes(filters.category!)
+  );
   const start = (page - 1) * pageSize;
   const rows = filtered.slice(start, start + pageSize);
+
+  const categoryCounts = await fetchCategoryCountsCached();
 
   return {
     rows,
