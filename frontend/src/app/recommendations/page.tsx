@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { BidCard } from "@/components/BidCard";
 import { CompanyCard } from "@/components/CompanyCard";
 import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -8,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { KeywordFallback } from "@/components/KeywordFallback";
 import { SearchForm } from "@/components/SearchForm";
-import { SlimBidRow } from "@/components/SlimBidRow";
+import { StreamingResultsList } from "@/components/StreamingResultsList";
 import { getRecommendations } from "@/lib/api";
 import { MOCK_RESPONSE } from "@/lib/mock-data";
 import type { RecommendationResponse } from "@/types/recommendations";
@@ -66,11 +65,12 @@ async function Results({
   if (useMock) {
     data = MOCK_RESPONSE;
   } else {
+    // 첫 fetch는 LLM 설명 없이 빠르게 (~1초) — explanation은 client에서 stream으로 채움
     data = await getRecommendations({
       query,
       mode,
       limit: 20,
-      with_explanation: true,
+      with_explanation: false,
     });
   }
 
@@ -85,9 +85,9 @@ async function Results({
         />
       );
     }
-    return <CompanyResults query={query} data={data} />;
+    return <CompanyResults query={query} data={data} useMock={useMock} />;
   }
-  return <KeywordResults query={query} data={data} />;
+  return <KeywordResults query={query} data={data} useMock={useMock} />;
 }
 
 function SubHeader({
@@ -123,67 +123,14 @@ function SubHeader({
   );
 }
 
-function ResultsList({
-  results,
-  noResultText,
-  semanticHintQuery,
-}: {
-  results: RecommendationResponse["results"];
-  noResultText: string;
-  semanticHintQuery?: string;
-}) {
-  if (results.length === 0) {
-    return (
-      <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
-        <h3 className="text-[18px] font-bold text-foreground">{noResultText}</h3>
-      </div>
-    );
-  }
-  const top = results.slice(0, TOP_N);
-  const slim = results.slice(TOP_N);
-  return (
-    <>
-      <div className="flex flex-col gap-4">
-        {top.map((bid, i) => (
-          <BidCard
-            key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-            bid={bid}
-            rank={i + 1}
-            semanticHintQuery={semanticHintQuery}
-          />
-        ))}
-      </div>
-      {slim.length > 0 && (
-        <section className="mt-10">
-          <div className="flex items-baseline justify-between mb-3 px-3">
-            <h3 className="text-[15px] font-bold text-foreground">
-              관련 공고 {slim.length}개 더
-            </h3>
-            <span className="text-[11.5px] text-muted-foreground font-medium">
-              점수 / 마감 / 예산
-            </span>
-          </div>
-          <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
-            {slim.map((bid, i) => (
-              <SlimBidRow
-                key={`slim-${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-                bid={bid}
-                rank={TOP_N + i + 1}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-    </>
-  );
-}
-
 function CompanyResults({
   query,
   data,
+  useMock,
 }: {
   query: string;
   data: RecommendationResponse;
+  useMock: boolean;
 }) {
   const today = new Date().toLocaleDateString("ko-KR");
   return (
@@ -216,9 +163,12 @@ function CompanyResults({
             <p className="mb-5 text-[12.5px] text-muted-foreground break-keep">
               매칭 점수는 검토 우선순위입니다. 낙찰 가능성이나 최종 입찰 가능 여부를 의미하지 않습니다.
             </p>
-            <ResultsList
+            <StreamingResultsList
+              query={query}
+              mode="company"
               results={data.results}
               noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 넓히거나 다른 모드로 시도해보세요."
+              skipStream={useMock}
             />
             <div className="mt-12">
               <EmailCaptureForm />
@@ -236,9 +186,11 @@ function CompanyResults({
 function KeywordResults({
   query,
   data,
+  useMock,
 }: {
   query: string;
   data: RecommendationResponse;
+  useMock: boolean;
 }) {
   const today = new Date().toLocaleDateString("ko-KR");
   return (
@@ -268,10 +220,13 @@ function KeywordResults({
                 유사도 순
               </span>
             </div>
-            <ResultsList
+            <StreamingResultsList
+              query={query}
+              mode="keywords"
               results={data.results}
               noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 더 구체적으로 입력하거나 다른 영역으로 시도해보세요."
               semanticHintQuery={query}
+              skipStream={useMock}
             />
 
             <div className="mt-10">
