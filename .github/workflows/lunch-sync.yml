@@ -1,0 +1,42 @@
+name: Lunch Bid Sync
+
+# KST 12:30 예정 (UTC 03:30). 정각 회피, GH Actions 지연 5~30분 흔함.
+# 당일 오전 신규 공고를 빨리 캐치하기 위한 보조 사이클.
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      NARAJANGTEO_API_KEY: ${{ secrets.NARAJANGTEO_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          version: "0.11.11"
+
+      - name: Setup Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: 입찰공고 수집 (최근 24h)
+        run: uv run python -m jobs.ingest_bid_notices --days-back 1
+        continue-on-error: true
+
+      - name: 입찰공고 임베딩 (신규)
+        run: uv run python -m jobs.embed_bid_notices --limit 5000 --batch 50
+        continue-on-error: true
