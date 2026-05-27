@@ -1,0 +1,128 @@
+.section {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 500px at 50% 0%, #E3F1E8 0%, rgba(227, 241, 232, 0) 60%),
+    linear-gradient(180deg, #F1F8F2 0%, #FFFFFF 70%);
+  z-index: 0;
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.floorSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.iso {
+  will-change: transform;
+  filter: drop-shadow(0 18px 22px rgba(11, 58, 29, 0.10)) drop-shadow(0 3px 6px rgba(11, 58, 29, 0.06));
+}
+
+.float1 { animation: floatY 5.6s ease-in-out infinite; }
+.float2 { animation: floatY 6.4s ease-in-out infinite; animation-delay: -1.2s; }
+.float3 { animation: floatY 7.0s ease-in-out infinite; animation-delay: -2.4s; }
+.float4 { animation: floatY 5.2s ease-in-out infinite; animation-delay: -3.0s; }
+.float5 { animation: floatY 6.8s ease-in-out infinite; animation-delay: -1.8s; }
+.float6 { animation: floatY 6.0s ease-in-out infinite; animation-delay: -4.0s; }
+.float7 { animation: floatY 5.4s ease-in-out infinite; animation-delay: -2.0s; }
+.float8 { animation: floatY 6.6s ease-in-out infinite; animation-delay: -3.4s; }
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.tinyAcc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform;
+  opacity: 0.55;
+}
+
+.twinkle {
+  animation: twinkle 3.2s ease-in-out infinite;
+  transform-origin: center;
+}
+.tw1 { animation-delay: -0.4s; }
+.tw2 { animation-delay: -1.2s; }
+.tw3 { animation-delay: -2.0s; }
+.tw4 { animation-delay: -2.6s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.85); }
+  50% { opacity: 0.55; transform: scale(1.1); }
+}
+
+.shelf {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  overflow: visible;
+  pointer-events: none;
+}
+.shelf::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -60px;
+  height: 80px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 60%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+.trackWrap {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.track {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(20px, 3vw, 56px);
+  width: max-content;
+  padding: 24px 0;
+  animation: conveyor 50s linear infinite;
+  will-change: transform;
+}
+.track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes conveyor {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+    transform: translate3d(-25%, 0, 0);
+  }
+}
+
+@media (max-width: 900px) {
+  .track { gap: 18px; }
+  .track .iso { transform: scale(0.85); }
+}
+
+@media (max-width: 640px) {
+  .shelf { display: none; }
+}
+
+.checkBadge { margin-bottom: 18px; }
+.coin { margin-bottom: 24px; }
