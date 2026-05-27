@@ -23,10 +23,17 @@ export async function getRecommendations(
     return new Promise((resolve) => setTimeout(() => resolve(MOCK_RESPONSE), 400));
   }
 
+  // SSR 자체 호출(`node` UA + referer 없음)이 봇 차단에 걸리지 않도록 시크릿 토큰 첨부.
+  // `NEXT_PUBLIC_` 접두 없이 = 서버 사이드에서만 읽힘. 클라이언트 번들엔 노출 X.
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (typeof window === "undefined" && process.env.INTERNAL_API_TOKEN) {
+    headers["X-Internal-Token"] = process.env.INTERNAL_API_TOKEN;
+  }
+
   try {
     const res = await fetch(`${API_BASE}/recommendations`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         query: input.query,
         mode: input.mode ?? "company",

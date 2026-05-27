@@ -7,10 +7,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.core.bot_guard import guard_external_traffic
 from app.core.rate_limit import limiter
 from app.services.explain import (
     explain_batch,
@@ -47,7 +48,7 @@ class RecommendRequest(BaseModel):
     with_explanation: bool = Field(False, description="LLM 추천 이유 생성 (OpenAI 비용 발생)")
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(guard_external_traffic)])
 @limiter.limit(RATE_LIMIT)
 def post_recommendations(
     request: Request,
@@ -111,7 +112,7 @@ def post_recommendations(
     return result
 
 
-@router.post("/stream")
+@router.post("/stream", dependencies=[Depends(guard_external_traffic)])
 @limiter.limit(RATE_LIMIT)
 def post_recommendations_stream(
     request: Request,
