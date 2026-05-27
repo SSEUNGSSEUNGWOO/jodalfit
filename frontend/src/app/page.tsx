@@ -14,7 +14,7 @@ export default async function HomePage() {
       <Header />
       {/* Hero가 헤더(64px)를 뺀 뷰포트 전체를 차지 — 푸터는 스크롤해야 보이게.
           pb-72(=288px) 으로 컨베이어 영역 확보, BackgroundC가 absolute 배경. */}
-      <main className="relative overflow-hidden flex flex-col justify-center min-h-[calc(100vh-4rem)] pb-72">
+      <main className="relative overflow-hidden flex flex-col justify-center min-h-[calc(100vh-4rem)] pt-[88px] pb-72">
         <BackgroundC />
         <div className="relative z-10">
           <Hero activeCount={activeCount} />
