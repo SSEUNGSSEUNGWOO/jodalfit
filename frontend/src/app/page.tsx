@@ -12,9 +12,8 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-      {/* Hero가 헤더(64px)를 뺀 뷰포트 전체를 차지 — 푸터는 스크롤해야 보이게.
-          pb-72(=288px) 으로 컨베이어 영역 확보, BackgroundC가 absolute 배경. */}
-      <main className="relative overflow-hidden flex flex-col justify-center min-h-[calc(100vh-4rem)] pt-[88px] pb-72">
+      {/* Hero+컨베이어가 한 화면에 들어오게 — pb는 컨베이어용 최소, Hero padding은 모바일에서만 살짝. */}
+      <main className="relative overflow-hidden flex flex-col justify-center min-h-[calc(100vh-4rem)] pb-48 sm:pb-56">
         <BackgroundC />
         <div className="relative z-10">
           <Hero activeCount={activeCount} />
@@ -28,7 +27,7 @@ export default async function HomePage() {
 function Hero({ activeCount }: { activeCount: number }) {
   return (
     <section className="w-full">
-      <div className="mx-auto max-w-[880px] px-5 sm:px-8 py-12 sm:py-16">
+      <div className="mx-auto max-w-[880px] px-5 sm:px-8 py-4 sm:py-8">
         <div className="text-center max-w-[880px] mx-auto rise">
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary/10 px-3 py-1.5 text-[12.5px] font-bold text-primary">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
