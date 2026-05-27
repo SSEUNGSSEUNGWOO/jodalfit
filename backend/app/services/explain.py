@@ -22,6 +22,14 @@ SYSTEM_COMPANY = """당신은 한국 공공조달(나라장터) 입찰공고 추
 - "귀사", "이 회사는" 같은 헤지 호칭 X — 사실 1줄로 바로 시작
 - 매번 다른 시그널을 강조해 5건 설명이 서로 다르게 보이도록
 
+# amount_fit(금액 ratio) 시그널 처리
+- 시그널 텍스트엔 결론이 아니라 숫자만 제공됨. ratio 값을 보고 솔직하게 표현.
+- ratio 0.8~1.3 → "사업 체급이 맞물린다"
+- ratio 1.4~1.5 → "회사 평균보다 다소 큰 사업이라 도전적 매칭이다"
+- ratio 0.7 → "회사 평균보다 작은 규모로 가벼운 검토에 적합하다"
+- ratio가 위 범위 밖이면 amount_fit 시그널이 안 들어옴(점수 로직에서 컷). 그래도 들어오면 솔직히 표현.
+- "체급이 적합하다"고 단정적으로 쓰지 말 것 — ratio 값에 맞게.
+
 # 좋은 예
 - "과거 한국에너지공단과 거래 이력이 있어 같은 기관의 후속 사업과 정확히 겹친다."
 - "회사 평균 수주가 7억대인데 이 공고도 6.5억 규모로 사업 체급이 맞물린다."
@@ -32,6 +40,7 @@ SYSTEM_COMPANY = """당신은 한국 공공조달(나라장터) 입찰공고 추
 - "이 공고는 귀사의 업무와 잘 맞아 추천드립니다."
 - "과거 수주 이력과 유사한 분야의 공고입니다."
 - "회사의 강점이 발휘될 수 있는 사업입니다."
+- "회사 평균 1.8억인데 공고 8천만 규모로 체급이 적합하다." (절반인데 적합? ❌)
 """
 
 
@@ -63,40 +72,53 @@ def _format_amount(v) -> str:
     return f"{int(v):,}"
 
 
+# 카테고리 우선순위 — 도메인·이력이 메인. amount/region은 부수.
+# 같은 카테고리 안에서만 score로 정렬.
+_SIGNAL_PRIORITY = {
+    "institution_familiar": 0,
+    "industry_tokens": 1,
+    "region_match": 2,
+    "amount_fit": 3,
+}
+
+
 def _strongest_signal(detail: dict) -> str | None:
     """bonus_detail 중 가장 강한 회사↔공고 매칭 시그널을 한국어로 표현.
 
-    dday_sweet 같은 운영 편의 시그널(검토 시간 여유 등)은 매칭 이유가 아니므로
-    제외 — dict 형태로 들어온 매칭 시그널만 후보로 인정.
+    카테고리 우선순위 우선 → 같은 카테고리 안에서 score로 정렬.
+    dday_sweet 같은 운영 편의 시그널은 dict가 아니라 float이라 자동 제외.
     """
     if not detail:
         return None
-    candidates: list[tuple[float, str]] = []
+    candidates: list[tuple[int, float, str]] = []  # (priority, -score, text)
     for k, v in detail.items():
         if not isinstance(v, dict):
             continue
         score = v.get("score", 0)
+        priority = _SIGNAL_PRIORITY.get(k, 99)
+        text: str | None = None
         if k == "institution_familiar":
-            candidates.append((score, f"과거 거래 기관 '{v.get('instt')}'과 정확히 일치"))
+            text = f"과거 거래 기관 '{v.get('instt')}'과 정확히 일치"
         elif k == "industry_tokens":
             matched = v.get("matched") or []
             if matched:
-                candidates.append(
-                    (score, f"회사 등록업종/공급물품의 토큰 {len(matched)}개 일치: {', '.join(matched[:3])}")
+                text = (
+                    f"회사 등록업종/공급물품의 토큰 {len(matched)}개 일치: "
+                    f"{', '.join(matched[:3])}"
                 )
         elif k == "amount_fit":
             ratio = v.get("ratio")
             cm = _format_amount(v.get("company_median"))
             np = _format_amount(v.get("notice_price"))
-            candidates.append(
-                (score, f"회사 평균 수주가 {cm} vs 공고 {np} (ratio {ratio}) — 체급 적합")
-            )
+            text = f"회사 평균 수주 {cm}, 공고 추정가 {np} (ratio {ratio})"
         elif k == "region_match":
-            candidates.append((score, f"회사 지역과 공고 참가가능지역 '{v.get('rgn')}'이 일치"))
+            text = f"회사 지역과 공고 참가가능지역 '{v.get('rgn')}'이 일치"
+        if text:
+            candidates.append((priority, -score, text))
     if not candidates:
         return None
-    candidates.sort(key=lambda x: x[0], reverse=True)
-    return candidates[0][1]
+    candidates.sort()
+    return candidates[0][2]
 
 
 def build_company_prompt(company: dict, bid: dict) -> str:

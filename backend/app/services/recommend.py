@@ -65,12 +65,12 @@ def rerank(
 ) -> list[dict]:
     """후보 공고를 재랭킹.
 
-    bonus 구성:
+    bonus 구성 (v0.3 — 도메인·이력 우대):
       - 마감 임박 -0.20 / 6~14일 적정 +0.05
       - 회사 지역 ↔ 공고 참가가능지역 일치 +0.05
-      - 회사 등록업종·공급물품 토큰 ↔ 공고 토큰 공통수 (최대 +0.10)
-      - 회사 과거 거래 기관 ↔ 공고 발주기관 일치 +0.08
-      - 회사 과거 수주 중간값 vs 공고 추정가 적합성 (0.3x~3x +0.05, 외곽 -0.05)
+      - 회사 등록업종·공급물품 토큰 ↔ 공고 토큰 공통수 (1개 +0.06 ~ 3개+ +0.18)
+      - 회사 과거 거래 기관 ↔ 공고 발주기관 일치 +0.15
+      - 회사 과거 수주 중간값 vs 공고 추정가 적합성 (0.7x~1.5x +0.03, 외곽 -0.05)
     """
     today = date.today()
     rgn = company_rgn.split()[0] if company_rgn else None
@@ -103,7 +103,7 @@ def rerank(
             overlap_set = company_terms & notice_terms
             overlap = len(overlap_set)
             if overlap > 0:
-                inc = min(0.04 + 0.03 * (overlap - 1), 0.10)
+                inc = min(0.06 + 0.05 * (overlap - 1), 0.18)
                 bonus += inc
                 detail["industry_tokens"] = {
                     "score": round(inc, 3),
@@ -114,18 +114,18 @@ def rerank(
         if company_institutions:
             instt = (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
             if instt and instt in company_institutions:
-                bonus += 0.08
-                detail["institution_familiar"] = {"score": 0.08, "instt": instt}
+                bonus += 0.15
+                detail["institution_familiar"] = {"score": 0.15, "instt": instt}
 
-        # 금액대 적합성
+        # 금액대 적합성 — 부수 시그널. 좁은 영역만 적합 인정.
         if company_amt_median and company_amt_median > 0:
             price = r.get("presmpt_prce") or r.get("asign_bdgt_amt")
             if price and price > 0:
                 ratio = price / company_amt_median
-                if 0.3 <= ratio <= 3.0:
-                    bonus += 0.05
+                if 0.7 <= ratio <= 1.5:
+                    bonus += 0.03
                     detail["amount_fit"] = {
-                        "score": 0.05,
+                        "score": 0.03,
                         "ratio": round(ratio, 2),
                         "company_median": company_amt_median,
                         "notice_price": price,
