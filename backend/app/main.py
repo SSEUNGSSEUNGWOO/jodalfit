@@ -11,7 +11,13 @@ from app.core.rate_limit import limiter
 
 settings = get_settings()
 
-app = FastAPI(title="jodalfit API", version="0.0.1")
+app = FastAPI(
+    title="jodalfit API",
+    version="0.0.1",
+    docs_url="/docs" if settings.enable_docs else None,
+    redoc_url="/redoc" if settings.enable_docs else None,
+    openapi_url="/openapi.json" if settings.enable_docs else None,
+)
 
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)

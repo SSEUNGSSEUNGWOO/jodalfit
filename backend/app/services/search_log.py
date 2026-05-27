@@ -7,13 +7,16 @@ from __future__ import annotations
 
 import hashlib
 
+from app.core.config import get_settings
 from app.services.supabase_client import get_admin_client
 
 
 def _hash_ip(ip: str | None) -> str | None:
+    """IPv4 주소 공간(~4B)은 솔트 없는 sha256이면 사전계산 가능 → IP_HASH_SALT 필수."""
     if not ip:
         return None
-    return hashlib.sha256(ip.encode()).hexdigest()[:16]
+    salt = get_settings().ip_hash_salt or ""
+    return hashlib.sha256(f"{ip}{salt}".encode()).hexdigest()[:16]
 
 
 def log_search(

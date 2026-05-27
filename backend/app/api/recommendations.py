@@ -35,7 +35,9 @@ def _client_ip(request: Request) -> str | None:
 
 
 class RecommendRequest(BaseModel):
-    query: str = Field(..., min_length=1, description="회사명/사업자번호 또는 관심 키워드")
+    query: str = Field(
+        ..., min_length=1, max_length=200, description="회사명/사업자번호 또는 관심 키워드"
+    )
     mode: Literal["company", "keywords", "auto"] = Field(
         "company",
         description="company: 회사 벡터 / keywords: 키워드 직접 임베딩 / auto: 자동 라우팅 + 양쪽 결과",

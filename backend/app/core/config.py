@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     internal_api_token: str | None = None
     allowed_referer_hosts: list[str] = []
 
+    # IP 해시 솔트 — search_log.py의 ip_hash 사전계산 방어. 미설정 시 빈 솔트(약함).
+    ip_hash_salt: str | None = None
+
+    # FastAPI /docs, /redoc 활성 여부 — 운영에서는 false 권장.
+    enable_docs: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:
