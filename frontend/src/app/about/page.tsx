@@ -191,10 +191,10 @@ function Contact() {
       <p>
         문의·제안·버그 리포트: {" "}
         <a
-          href="mailto:hello@jodalfit.co.kr"
+          href="mailto:jsw7980@gmail.com"
           className="text-primary font-semibold underline underline-offset-2 hover:opacity-80"
         >
-          hello@jodalfit.co.kr
+          jsw7980@gmail.com
         </a>
       </p>
       <p className="text-[14px] text-muted-foreground">

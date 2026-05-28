@@ -30,7 +30,7 @@ export function Footer() {
             </li>
             <li>
               <a
-                href="mailto:hello@jodalfit.co.kr"
+                href="mailto:jsw7980@gmail.com"
                 className="hover:text-ink transition-colors"
               >
                 문의

@@ -23,7 +23,7 @@ export function Header() {
             </Link>
           ))}
           <Link
-            href="mailto:hello@jodalfit.co.kr"
+            href="mailto:jsw7980@gmail.com"
             className="px-3 py-2 text-[14px] font-semibold text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
           >
             문의
