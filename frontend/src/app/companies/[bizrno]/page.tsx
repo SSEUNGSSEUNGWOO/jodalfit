@@ -15,8 +15,11 @@ import {
   fetchCompanyProfile,
   summarizeContracts,
 } from "@/lib/company";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { getRecommendations } from "@/lib/api";
 import { fetchGoldenTimeMap } from "@/lib/golden-time";
+import { fetchCompanyDomainAnalysis } from "@/lib/company-profile";
 import { formatKRW, maskBizrno } from "@/lib/utils";
 
 interface Props {
@@ -74,6 +77,12 @@ export default async function CompanyPage({ params }: Props) {
         <CompanyHero company={company} />
         <Suspense fallback={null}>
           <ProfileSection bizrno={company.bizrno} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <DomainAnalysisSection
+            bizrnoNorm={normalized}
+            companyName={company.corp_nm}
+          />
         </Suspense>
         <Suspense fallback={<SectionSkeleton />}>
           <RecommendationsSection company={company} />
@@ -210,6 +219,81 @@ async function ProfileSection({ bizrno }: { bizrno: string }) {
               </CardContent>
             </Card>
           )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+async function DomainAnalysisSection({
+  bizrnoNorm,
+  companyName,
+}: {
+  bizrnoNorm: string;
+  companyName: string;
+}) {
+  const analysis = await fetchCompanyDomainAnalysis(bizrnoNorm);
+  if (!analysis.isMultiDept || analysis.domains.length === 0) return null;
+
+  const topDomains = analysis.domains.slice(0, 5);
+
+  return (
+    <section className="border-b border-border bg-amber-50/40">
+      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
+        <div className="rounded-2xl border border-amber-300 bg-white p-5 sm:p-7">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-amber-600" strokeWidth={2.5} />
+            <h2 className="text-[18px] sm:text-[20px] font-extrabold text-amber-950 tracking-tight">
+              jodalfit이 본 활동 영역
+            </h2>
+          </div>
+          <p className="text-[14px] text-foreground/75 leading-relaxed">
+            <span className="font-bold text-foreground">{companyName}</span>은 여러 영역에서 활동하는 회사로 보여요.
+            회사 단위 추천은 영역들이 섞여 나올 수 있어요 — 특정 영역에 관심 있으시면 아래 키워드로 좁혀 검색하시면 더 정확해요.
+          </p>
+
+          {/* 영역 분포 막대 */}
+          <div className="mt-5 space-y-2.5">
+            {topDomains.map((d) => (
+              <div key={d.domain}>
+                <div className="flex items-center justify-between text-[12.5px] mb-1">
+                  <span className="font-bold text-foreground">{d.label}</span>
+                  <span className="text-muted-foreground tabular tabular-nums">
+                    {Math.round(d.ratio * 100)}%
+                    <span className="text-foreground/40 ml-1.5 font-medium">· {d.count}회 언급</span>
+                  </span>
+                </div>
+                <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full"
+                    style={{ width: `${Math.max(d.ratio * 100, 2)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 키워드 칩 */}
+          <div className="mt-6 pt-5 border-t border-amber-200">
+            <div className="text-[13px] font-bold text-foreground mb-2.5">
+              어떤 영역의 공고를 보시겠어요?
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {topDomains.map((d) => (
+                <Link
+                  key={d.domain}
+                  href={`/recommendations?q=${encodeURIComponent(d.suggestedKeyword)}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-400 bg-white px-3.5 py-1.5 text-[13px] font-bold text-amber-900 hover:bg-amber-100 hover:border-amber-500 transition-colors"
+                >
+                  {d.label}
+                  <span className="text-[11px] font-medium text-amber-600">
+                    → &quot;{d.suggestedKeyword}&quot;
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
