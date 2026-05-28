@@ -14,6 +14,15 @@ export function Footer() {
           <p className="mt-3 text-[12.5px] text-ink-5">
             데이터 출처 · 공공데이터포털 OpenAPI · 매일 갱신
           </p>
+          <p className="mt-3 text-[12.5px] text-ink-4">
+            의견·문의 ·{" "}
+            <a
+              href="mailto:jsw7980@gmail.com?subject=jodalfit%20%EC%9D%98%EA%B2%AC"
+              className="font-semibold text-ink hover:underline"
+            >
+              jsw7980@gmail.com
+            </a>
+          </p>
         </div>
         <div>
           <span className="text-[13px] font-bold text-ink">서비스</span>

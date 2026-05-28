@@ -35,17 +35,17 @@ function Hero({ activeCount }: { activeCount: number }) {
       <div className="mx-auto max-w-[880px] px-5 sm:px-8 py-4 sm:py-8">
         <div className="text-center max-w-[880px] mx-auto rise">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary/10 px-3 py-1.5 text-[12.5px] font-bold text-primary">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-              나라장터 입찰 디스커버리
-            </span>
             <a
               href="mailto:jsw7980@gmail.com?subject=jodalfit%20%EC%9D%98%EA%B2%AC"
-              className="inline-flex items-center gap-1.5 rounded-pill border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[12.5px] font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-pill border border-rose-300 bg-rose-50 px-3 py-1.5 text-[12.5px] font-bold text-rose-800 hover:bg-rose-100 transition-colors"
             >
               <span aria-hidden>🌱</span>
               초기 버전 · 의견 환영해요
             </a>
+            <span className="inline-flex items-center gap-1.5 rounded-pill bg-primary/10 px-3 py-1.5 text-[12.5px] font-bold text-primary">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+              나라장터 입찰 디스커버리
+            </span>
           </div>
 
           <h1 className="mt-6 text-[36px] sm:text-[52px] font-extrabold leading-[1.15] tracking-[-0.02em] text-foreground break-keep">
