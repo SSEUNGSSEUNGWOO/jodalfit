@@ -136,6 +136,7 @@ export function SearchForm({
           aria-label={isCompany ? "회사명·사업자번호" : "관심 키워드"}
           className={cn(
             "w-full h-[68px] pl-14 pr-[150px] rounded-2xl bg-muted",
+            "border-2 border-foreground",
             "text-[18px] font-semibold text-foreground",
             "placeholder:font-normal placeholder:text-muted-foreground",
             "outline-none transition-all",

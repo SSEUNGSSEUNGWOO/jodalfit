@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SearchForm } from "@/components/SearchForm";
-import { BackgroundC } from "@/components/hero-bg/BackgroundC";
 import { fetchActiveNoticesRoughCount } from "@/lib/notice";
 
 export const revalidate = 3600;
@@ -17,12 +16,14 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-      {/* Hero+컨베이어가 한 화면에 들어오게 — pb는 컨베이어용 최소, Hero padding은 모바일에서만 살짝. */}
-      <main className="relative overflow-hidden flex flex-col justify-center min-h-[calc(100vh-4rem)] pb-48 sm:pb-56">
-        <BackgroundC />
-        <div className="relative z-10">
-          <Hero activeCount={activeCount} />
-        </div>
+      <main
+        className="flex flex-col justify-center min-h-[calc(100vh-4rem)]"
+        style={{
+          background:
+            "radial-gradient(900px 500px at 50% 0%, #E3F1E8 0%, rgba(227, 241, 232, 0) 60%), linear-gradient(180deg, #F1F8F2 0%, #FFFFFF 70%)",
+        }}
+      >
+        <Hero activeCount={activeCount} />
       </main>
       <Footer />
     </>
@@ -37,7 +38,7 @@ function Hero({ activeCount }: { activeCount: number }) {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <a
               href="mailto:jsw7980@gmail.com?subject=jodalfit%20%EC%9D%98%EA%B2%AC"
-              className="inline-flex items-center gap-1.5 rounded-pill border border-rose-300 bg-rose-50 px-3 py-1.5 text-[12.5px] font-bold text-rose-800 hover:bg-rose-100 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-pill border border-orange-300 bg-orange-50 px-3 py-1.5 text-[12.5px] font-bold text-orange-800 hover:bg-orange-100 transition-colors"
             >
               <span aria-hidden>🌱</span>
               초기 버전 · 의견 환영해요
@@ -58,15 +59,9 @@ function Hero({ activeCount }: { activeCount: number }) {
           </p>
         </div>
 
-        {/* Search — 탭 + 모드별 예시 칩 통합 */}
+        {/* Search — 탭 + 입력창만, 예시 칩 제거 */}
         <div className="mt-10 sm:mt-12 max-w-[640px] mx-auto rise [animation-delay:120ms]">
-          <SearchForm
-            autoFocus
-            examples={{
-              company: ["삼성SDS", "LG CNS", "메가존클라우드", "비트컴퓨터"],
-              keywords: ["교육 IT 유지보수", "도로 정비공사", "의약품 단가계약", "조경 유지관리"],
-            }}
-          />
+          <SearchForm autoFocus />
         </div>
 
         {/* 신뢰 한 줄 */}
