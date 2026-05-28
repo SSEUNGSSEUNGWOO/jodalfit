@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Bookmark, BarChart3 } from "lucide-react";
+import { ArrowUpRight, Bookmark, BarChart3, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { ExplanationBlock } from "./ExplanationBlock";
 import { MatchScore } from "./MatchScore";
 import { cn, formatKRW } from "@/lib/utils";
 import type { BidRecommendation } from "@/types/recommendations";
+import type { GoldenTimeInfo } from "@/lib/golden-time";
 
 export function BidCard({
   bid,
@@ -16,6 +17,7 @@ export function BidCard({
   preview = false,
   className,
   semanticHintQuery,
+  golden,
 }: {
   bid: BidRecommendation;
   rank?: number;
@@ -23,7 +25,12 @@ export function BidCard({
   className?: string;
   /** 키워드 모드에서 의미 매칭을 강조하기 위한 검색어. 검색어가 공고명/업종에 직접 포함되지 않으면 "의미 매칭" 배지 표시 */
   semanticHintQuery?: string;
+  /** 골든타임(사전규격공개) 정보. spec_open/spec_closing일 때만 뱃지 노출 */
+  golden?: GoldenTimeInfo;
 }) {
+  const isGolden =
+    golden?.status === "spec_open" || golden?.status === "spec_closing";
+  const isGoldenClosing = golden?.status === "spec_closing";
   const tokens = (semanticHintQuery ?? "")
     .toLowerCase()
     .split(/\s+/)
@@ -55,6 +62,28 @@ export function BidCard({
             <Badge variant="secondary" className="bg-primary/10 text-primary font-semibold">
               {bid.bsns_div_nm || "공고"}
             </Badge>
+            {isGolden && (
+              <Badge
+                className={cn(
+                  "font-bold gap-1",
+                  isGoldenClosing
+                    ? "bg-amber-500 text-white hover:bg-amber-500"
+                    : "bg-amber-100 text-amber-900 hover:bg-amber-100 border border-amber-300"
+                )}
+                title={
+                  isGoldenClosing
+                    ? "사전규격 의견 마감 임박 — 사양 반영 마지막 기회"
+                    : "사전규격 공개중 — 의견 등록 가능"
+                }
+              >
+                <Sparkles className="h-3 w-3" strokeWidth={2.5} />
+                {golden?.opinionDaysLeft !== null && golden?.opinionDaysLeft !== undefined
+                  ? golden.opinionDaysLeft === 0
+                    ? "골든타임 마감 오늘"
+                    : `골든타임 D-${golden.opinionDaysLeft}`
+                  : "골든타임"}
+              </Badge>
+            )}
             {isSemanticOnly && (
               <Badge
                 variant="outline"
