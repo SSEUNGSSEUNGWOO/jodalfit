@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SearchForm } from "@/components/SearchForm";
@@ -5,6 +6,10 @@ import { BackgroundC } from "@/components/hero-bg/BackgroundC";
 import { fetchActiveNoticesRoughCount } from "@/lib/notice";
 
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const activeCount = await fetchActiveNoticesRoughCount().catch(() => 0);

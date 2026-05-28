@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "주간 인사이트 — jodalfit",
   description:
     "공공조달 주간 인사이트 모음. 이번 주 검토할 만한 공고 TOP 10 (픽)과 시장 동향 리포트를 매주 발행합니다.",
+  alternates: { canonical: "/insights" },
 };
 
 export default async function InsightsIndex() {

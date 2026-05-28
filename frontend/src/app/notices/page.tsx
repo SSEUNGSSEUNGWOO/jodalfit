@@ -118,9 +118,11 @@ export async function generateMetadata({
     ? `진행 중인 ${s.bsns_div} 입찰 공고`
     : "진행 중인 공공입찰 공고";
   const title = pageNum > 1 ? `${titleBase} ${pageNum}페이지 | jodalfit` : `${titleBase} | jodalfit`;
+  const canonical = urlOf(parseFilters(s), pageNum);
   return {
     title,
     description: "현재 마감 전인 나라장터 입찰공고를 마감·추정가·지역으로 필터링하여 둘러볼 수 있습니다.",
+    alternates: { canonical },
   };
 }
 

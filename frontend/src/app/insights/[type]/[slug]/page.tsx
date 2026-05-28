@@ -21,6 +21,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: `${insight.meta.title} — jodalfit`,
     description: insight.meta.summary,
+    alternates: { canonical: `/insights/${type}/${slug}` },
     openGraph: {
       title: insight.meta.title,
       description: insight.meta.summary,
