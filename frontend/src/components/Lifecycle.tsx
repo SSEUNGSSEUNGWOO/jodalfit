@@ -1,6 +1,7 @@
-import { Check, Calendar, FileText, MessageSquare, Megaphone, Award, FileSignature } from "lucide-react";
+import { Check, Calendar, FileText, MessageSquare, Megaphone, Award, FileSignature, Sparkles, ExternalLink } from "lucide-react";
 import { cn, formatDateKR, formatKRW } from "@/lib/utils";
 import type { NoticeLifecycle } from "@/lib/notice";
+import { analyzeGoldenTime, isGoldenTime } from "@/lib/golden-time";
 
 interface Stage {
   key: "plan" | "spec" | "opinion" | "notice" | "award" | "contract";
@@ -9,8 +10,10 @@ interface Stage {
   icon: React.ReactNode;
   active: boolean;
   done: boolean;
+  golden?: boolean;
   count?: number;
   detail?: string;
+  dDay?: { label: string; tone: "urgent" | "normal" };
 }
 
 export function Lifecycle({ data }: { data: NoticeLifecycle }) {
@@ -24,6 +27,25 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
 
   const noticeActive = ntceDt !== null && (!clseDt || today <= clseDt);
   const noticeDone = clseDt !== null && today > clseDt;
+
+  const gt = analyzeGoldenTime(data);
+  const goldenActive = isGoldenTime(gt.status);
+
+  const opinionDDay =
+    gt.opinionDaysLeft !== null && goldenActive
+      ? {
+          label:
+            gt.opinionDaysLeft === 0
+              ? "의견 마감 오늘"
+              : gt.opinionDaysLeft < 0
+                ? "의견 마감 지남"
+                : `의견 마감 D-${gt.opinionDaysLeft}`,
+          tone:
+            gt.status === "spec_closing"
+              ? ("urgent" as const)
+              : ("normal" as const),
+        }
+      : undefined;
 
   const stages: Stage[] = [
     {
@@ -45,6 +67,7 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
       icon: <FileText className="h-3.5 w-3.5" />,
       active: data.preSpecs.length > 0 && !noticeActive && !noticeDone,
       done: data.preSpecs.length > 0,
+      golden: goldenActive,
       count: data.preSpecs.length,
       detail: data.preSpecs[0]?.rgst_dt
         ? formatDateKR(data.preSpecs[0].rgst_dt.split(" ")[0])
@@ -55,9 +78,11 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
       label: "의견 수렴",
       sub: "참여 업체 의견",
       icon: <MessageSquare className="h-3.5 w-3.5" />,
-      active: data.opinions.length > 0 && !noticeActive && !noticeDone,
+      active: goldenActive,
       done: data.opinions.length > 0,
+      golden: goldenActive,
       count: data.opinions.length,
+      dDay: opinionDDay,
     },
     {
       key: "notice",
@@ -120,28 +145,43 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
           <div
             className={cn(
               "h-full rounded-xl border p-3 sm:p-4 transition-colors",
-              s.active
-                ? "border-primary bg-primary/5"
-                : s.done
-                  ? "border-primary/40 bg-background"
-                  : "border-border bg-muted/30"
+              s.golden
+                ? "border-amber-500 bg-amber-50 ring-1 ring-amber-400/40"
+                : s.active
+                  ? "border-primary bg-primary/5"
+                  : s.done
+                    ? "border-primary/40 bg-background"
+                    : "border-border bg-muted/30"
             )}
           >
             <div className="flex items-center gap-2">
               <div
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold",
-                  s.done
-                    ? "bg-primary text-primary-foreground"
-                    : s.active
-                      ? "bg-primary/15 text-primary"
-                      : "bg-muted text-muted-foreground"
+                  s.golden
+                    ? "bg-amber-500 text-white"
+                    : s.done
+                      ? "bg-primary text-primary-foreground"
+                      : s.active
+                        ? "bg-primary/15 text-primary"
+                        : "bg-muted text-muted-foreground"
                 )}
               >
-                {s.done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : s.icon}
+                {s.golden ? (
+                  <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+                ) : s.done ? (
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                ) : (
+                  s.icon
+                )}
               </div>
-              <div className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                STEP {String(i + 1).padStart(2, "0")}
+              <div
+                className={cn(
+                  "text-[10.5px] font-bold uppercase tracking-[0.12em]",
+                  s.golden ? "text-amber-700" : "text-muted-foreground"
+                )}
+              >
+                {s.golden ? "골든타임" : `STEP ${String(i + 1).padStart(2, "0")}`}
               </div>
             </div>
 
@@ -149,7 +189,11 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
               <div
                 className={cn(
                   "text-[14px] font-bold",
-                  s.done || s.active ? "text-foreground" : "text-muted-foreground"
+                  s.golden
+                    ? "text-amber-900"
+                    : s.done || s.active
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                 )}
               >
                 {s.label}
@@ -157,8 +201,25 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
               <div className="text-[11.5px] text-muted-foreground mt-0.5">
                 {s.sub}
               </div>
-              {s.count !== undefined && s.done && (
-                <div className="mt-2 text-[11.5px] font-bold text-primary">
+              {s.dDay && (
+                <div
+                  className={cn(
+                    "mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11.5px] font-bold tabular tabular-nums",
+                    s.dDay.tone === "urgent"
+                      ? "bg-amber-500 text-white"
+                      : "bg-amber-100 text-amber-900"
+                  )}
+                >
+                  {s.dDay.label}
+                </div>
+              )}
+              {s.count !== undefined && s.done && !s.dDay && (
+                <div
+                  className={cn(
+                    "mt-2 text-[11.5px] font-bold",
+                    s.golden ? "text-amber-700" : "text-primary"
+                  )}
+                >
                   {s.count}건
                 </div>
               )}
@@ -166,6 +227,16 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
                 <div className="mt-2 text-[11px] text-foreground/70 leading-[1.5]">
                   {s.detail}
                 </div>
+              )}
+              {s.key === "spec" && s.golden && gt.hasSpecPdf && data.preSpecs[0]?.spec_doc_file_url_1 && (
+                <a
+                  href={data.preSpecs[0].spec_doc_file_url_1}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-700 hover:underline"
+                >
+                  사양서 PDF <ExternalLink className="h-3 w-3" />
+                </a>
               )}
             </div>
           </div>

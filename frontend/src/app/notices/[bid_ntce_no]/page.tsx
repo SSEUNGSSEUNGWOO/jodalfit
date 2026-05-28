@@ -8,7 +8,9 @@ import { Lifecycle } from "@/components/Lifecycle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Suspense } from "react";
+import { Sparkles } from "lucide-react";
 import { fetchLifecycle, fetchSimilarNotices } from "@/lib/notice";
+import { analyzeGoldenTime, isGoldenTime } from "@/lib/golden-time";
 import { cn, formatDateKR, formatKRW, maskBizrno } from "@/lib/utils";
 
 interface Props {
@@ -58,11 +60,52 @@ export default async function NoticePage({ params }: Props) {
   if (!lifecycle) notFound();
 
   const { notice, preSpecs, opinions, orderPlans, awards, contracts } = lifecycle;
+  const gt = analyzeGoldenTime(lifecycle);
+  const goldenActive = isGoldenTime(gt.status);
+  const specPdfUrl = preSpecs[0]?.spec_doc_file_url_1;
 
   return (
     <>
       <Header />
       <main className="flex-1">
+        {goldenActive && (
+          <div className="bg-amber-500 text-white">
+            <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] font-semibold">
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4" strokeWidth={2.5} />
+                <span className="font-extrabold tracking-tight">골든타임</span>
+              </span>
+              <span className="text-white/90">
+                {gt.opinionDaysLeft !== null
+                  ? gt.opinionDaysLeft === 0
+                    ? "오늘이 의견 등록 마감일이에요"
+                    : `의견 등록 마감 D-${gt.opinionDaysLeft}`
+                  : "사전규격 공개중 — 의견 등록 가능"}
+                {gt.opinionDeadline && (
+                  <span className="ml-1.5 text-white/70 font-medium">
+                    ({formatDateKR(gt.opinionDeadline)})
+                  </span>
+                )}
+              </span>
+              {gt.opinionCount > 0 && (
+                <span className="text-white/80">
+                  · 의견 {gt.opinionCount}건 등록됨
+                </span>
+              )}
+              {specPdfUrl && (
+                <a
+                  href={specPdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto inline-flex items-center gap-1 rounded-md bg-white/15 hover:bg-white/25 px-2.5 py-1 text-[12.5px] font-bold transition-colors"
+                >
+                  사양서 PDF 보기
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Hero */}
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
