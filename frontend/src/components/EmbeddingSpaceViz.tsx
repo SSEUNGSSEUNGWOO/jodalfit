@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { VizData } from "@/types/recommendations";
 
 interface Props {
@@ -10,12 +13,19 @@ const PADDING = 60;
 const CENTER = SIZE / 2;
 const RADIUS = CENTER - PADDING;
 
+type HoverInfo = {
+  cx: number;
+  cy: number;
+  title: string;
+  subtitle?: string;
+  tone: "primary" | "amber" | "muted";
+};
+
 function toSvg(x: number, y: number) {
   return [CENTER + x * RADIUS, CENTER + y * RADIUS] as const;
 }
 
 function scoreColor(score: number) {
-  // 0.5~0.95 → amber → primary 그라데이션
   if (score >= 0.85) return "#166534";
   if (score >= 0.7) return "#3f9a5f";
   if (score >= 0.55) return "#a78a3a";
@@ -23,20 +33,19 @@ function scoreColor(score: number) {
 }
 
 function scoreRadius(score: number) {
-  // 6~12
   return 6 + Math.max(0, Math.min(1, (score - 0.5) / 0.5)) * 6;
 }
 
 function labelAnchor(angle: number): "start" | "middle" | "end" {
-  // 라벨이 anchor 점 바깥쪽에 위치하도록 정렬
   const norm = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  if (norm < Math.PI / 4 || norm > (7 * Math.PI) / 4) return "middle"; // 12시 근처
-  if (norm < (3 * Math.PI) / 4) return "start"; // 오른쪽
-  if (norm < (5 * Math.PI) / 4) return "middle"; // 6시 근처
-  return "end"; // 왼쪽
+  if (norm < Math.PI / 4 || norm > (7 * Math.PI) / 4) return "middle";
+  if (norm < (3 * Math.PI) / 4) return "start";
+  if (norm < (5 * Math.PI) / 4) return "middle";
+  return "end";
 }
 
 export function EmbeddingSpaceViz({ viz, companyName }: Props) {
+  const [hover, setHover] = useState<HoverInfo | null>(null);
   if (!viz || !viz.anchors?.length) return null;
 
   const cx = toSvg(viz.company.x, viz.company.y);
@@ -57,7 +66,10 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
           색·크기는 매칭 점수예요.
         </p>
 
-        <div className="flex justify-center">
+        <div
+          className="relative flex justify-center"
+          onMouseLeave={() => setHover(null)}
+        >
           <svg
             viewBox={`0 0 ${SIZE} ${SIZE}`}
             width="100%"
@@ -65,7 +77,6 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
             role="img"
             aria-label={`${companyName}의 임베딩 공간 위치`}
           >
-            {/* 가이드 원 */}
             <circle
               cx={CENTER}
               cy={CENTER}
@@ -84,7 +95,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
               strokeDasharray="3 4"
             />
 
-            {/* anchor 점 + 라벨 */}
+            {/* anchor */}
             {viz.anchors.map((a) => {
               const [ax, ay] = toSvg(a.x, a.y);
               const angle = Math.atan2(a.y, a.x);
@@ -92,7 +103,23 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
               const ly = CENTER + a.y * (RADIUS + 22);
               return (
                 <g key={a.key}>
-                  <circle cx={ax} cy={ay} r={4} fill="#9ca3af" />
+                  <circle
+                    cx={ax}
+                    cy={ay}
+                    r={10}
+                    fill="transparent"
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={() =>
+                      setHover({
+                        cx: ax,
+                        cy: ay,
+                        title: a.label,
+                        subtitle: "도메인 anchor — 의미 좌표의 고정 기준점",
+                        tone: "muted",
+                      })
+                    }
+                  />
+                  <circle cx={ax} cy={ay} r={4} fill="#9ca3af" pointerEvents="none" />
                   <text
                     x={lx}
                     y={ly}
@@ -101,6 +128,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                     fontSize={12}
                     fontWeight={600}
                     fill="#374151"
+                    pointerEvents="none"
                   >
                     {a.label}
                   </text>
@@ -108,23 +136,31 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
               );
             })}
 
-            {/* 결과 점 (회사 아래에 그려서 회사가 위로 보이게) */}
+            {/* 결과 점 */}
             {viz.results.map((r) => {
               const [rx, ry] = toSvg(r.x, r.y);
+              const rad = scoreRadius(r.score);
               return (
-                <g key={`${r.bid_ntce_no}-${r.bid_ntce_ord}`}>
-                  <circle
-                    cx={rx}
-                    cy={ry}
-                    r={scoreRadius(r.score)}
-                    fill={scoreColor(r.score)}
-                    fillOpacity={0.7}
-                    stroke="#fff"
-                    strokeWidth={1.5}
-                  >
-                    <title>{`${r.bid_ntce_nm ?? "-"}\n매칭 점수 ${(r.score * 100).toFixed(0)}`}</title>
-                  </circle>
-                </g>
+                <circle
+                  key={`${r.bid_ntce_no}-${r.bid_ntce_ord}`}
+                  cx={rx}
+                  cy={ry}
+                  r={rad}
+                  fill={scoreColor(r.score)}
+                  fillOpacity={0.7}
+                  stroke="#fff"
+                  strokeWidth={1.5}
+                  style={{ cursor: "pointer" }}
+                  onMouseEnter={() =>
+                    setHover({
+                      cx: rx,
+                      cy: ry,
+                      title: r.bid_ntce_nm ?? "—",
+                      subtitle: `매칭 점수 ${(r.score * 100).toFixed(0)}`,
+                      tone: r.score >= 0.7 ? "primary" : "amber",
+                    })
+                  }
+                />
               );
             })}
 
@@ -133,19 +169,30 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
               <circle
                 cx={cx[0]}
                 cy={cx[1]}
-                r={14}
-                fill="#166534"
-                stroke="#fff"
-                strokeWidth={3}
-              />
-              <circle
-                cx={cx[0]}
-                cy={cx[1]}
                 r={20}
                 fill="none"
                 stroke="#166534"
                 strokeOpacity={0.3}
                 strokeWidth={2}
+                pointerEvents="none"
+              />
+              <circle
+                cx={cx[0]}
+                cy={cx[1]}
+                r={14}
+                fill="#166534"
+                stroke="#fff"
+                strokeWidth={3}
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() =>
+                  setHover({
+                    cx: cx[0],
+                    cy: cx[1],
+                    title: companyName,
+                    subtitle: "회사 위치 — 등록업종·공급물품·수주 임베딩 평균",
+                    tone: "primary",
+                  })
+                }
               />
               <text
                 x={cx[0]}
@@ -154,11 +201,38 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                 fontSize={12}
                 fontWeight={700}
                 fill="#166534"
+                pointerEvents="none"
               >
                 {companyName}
               </text>
             </g>
           </svg>
+
+          {/* floating tooltip — SVG viewBox 좌표를 컨테이너 상대 위치로 환산 */}
+          {hover && (
+            <div
+              className={[
+                "pointer-events-none absolute z-10 max-w-[260px] rounded-md px-3 py-2 shadow-md border text-[12px] leading-snug",
+                hover.tone === "primary"
+                  ? "bg-[#166534] text-white border-[#166534]"
+                  : hover.tone === "amber"
+                    ? "bg-amber-50 text-amber-900 border-amber-300"
+                    : "bg-white text-foreground border-border",
+              ].join(" ")}
+              style={{
+                // SVG viewBox 좌표 → 비율(SIZE) → 컨테이너 max-width의 비율
+                left: `calc(${(hover.cx / SIZE) * 100}% + 12px)`,
+                top: `calc(${(hover.cy / SIZE) * 100}% - 10px)`,
+              }}
+            >
+              <div className="font-bold break-keep">{hover.title}</div>
+              {hover.subtitle && (
+                <div className={hover.tone === "primary" ? "opacity-90 mt-0.5" : "text-muted-foreground mt-0.5"}>
+                  {hover.subtitle}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11.5px] text-muted-foreground">
