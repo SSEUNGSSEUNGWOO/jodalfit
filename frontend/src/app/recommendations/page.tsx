@@ -1,18 +1,13 @@
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
-import { CompanyCard } from "@/components/CompanyCard";
-import { EmailCaptureForm } from "@/components/EmailCaptureForm";
-import { FilterPanel } from "@/components/FilterPanel";
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { KeywordFallback } from "@/components/KeywordFallback";
+import { RecommendationsView } from "@/components/RecommendationsView";
 import { SearchForm } from "@/components/SearchForm";
-import { StreamingResultsList } from "@/components/StreamingResultsList";
-import { getRecommendations } from "@/lib/api";
-import { MOCK_RESPONSE } from "@/lib/mock-data";
-import type { RecommendationResponse } from "@/types/recommendations";
 
-const TOP_N = 5;
+export const metadata: Metadata = {
+  // 개인화된 검색 결과 페이지 — 검색엔진 인덱스 X, 봇 크롤 차단 효과도 겸함
+  robots: { index: false, follow: false },
+};
 
 type Mode = "company" | "keywords";
 
@@ -30,288 +25,20 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   const keywordsQuery = (p.q ?? "").trim();
   const mode: Mode = companyQuery ? "company" : "keywords";
   const query = companyQuery || keywordsQuery;
+  const useMock = p.mode === "mock";
 
   return (
     <>
       <Header />
       <main className="flex-1">
-        <Suspense fallback={<LoadingState label={query} mode={mode} />}>
-          <Results
-            mode={mode}
-            query={query}
-            useMock={p.mode === "mock"}
-          />
-        </Suspense>
+        {query ? (
+          <RecommendationsView query={query} mode={mode} useMock={useMock} />
+        ) : (
+          <EmptyState mode={mode} />
+        )}
       </main>
       <Footer />
     </>
-  );
-}
-
-async function Results({
-  mode,
-  query,
-  useMock,
-}: {
-  mode: Mode;
-  query: string;
-  useMock: boolean;
-}) {
-  if (!query) {
-    return <EmptyState mode={mode} />;
-  }
-
-  let data: RecommendationResponse;
-  if (useMock) {
-    data = MOCK_RESPONSE;
-  } else {
-    // 첫 fetch는 LLM 설명 없이 빠르게 (~1초) — explanation은 client에서 stream으로 채움
-    data = await getRecommendations({
-      query,
-      mode,
-      limit: 20,
-      with_explanation: false,
-    });
-  }
-
-  if (mode === "company") {
-    // 회사 식별 실패 또는 벡터 없음 → 키워드 폴백 안내
-    if (data.fallback === "keywords" || !data.company) {
-      return (
-        <CompanyFallback
-          query={query}
-          company={data.company}
-          message={data.error || undefined}
-        />
-      );
-    }
-    return <CompanyResults query={query} data={data} useMock={useMock} />;
-  }
-  return <KeywordResults query={query} data={data} useMock={useMock} />;
-}
-
-function SubHeader({
-  title,
-  subtitle,
-  searchDefault,
-  mode,
-}: {
-  title: React.ReactNode;
-  subtitle?: React.ReactNode;
-  searchDefault?: string;
-  mode: Mode;
-}) {
-  return (
-    <section className="border-b border-border bg-muted/30">
-      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-7 sm:py-9 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[24px] sm:text-[28px] font-extrabold tracking-tight text-foreground">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="mt-1 text-[12.5px] text-muted-foreground">{subtitle}</p>
-          )}
-        </div>
-        <SearchForm
-          variant="compact"
-          defaultValue={searchDefault ?? ""}
-          initialMode={mode}
-          className="w-full sm:w-[280px]"
-        />
-      </div>
-    </section>
-  );
-}
-
-function CompanyResults({
-  query,
-  data,
-  useMock,
-}: {
-  query: string;
-  data: RecommendationResponse;
-  useMock: boolean;
-}) {
-  const today = new Date().toLocaleDateString("ko-KR");
-  return (
-    <>
-      <SubHeader
-        mode="company"
-        title={
-          <>
-            {query}
-            <span className="ml-2 text-[15px] font-medium text-muted-foreground">
-              의 검토 우선순위
-            </span>
-          </>
-        }
-        subtitle={`등록업종·공급물품·수주 이력 기준 정리 · 매일 갱신 · ${today}`}
-        searchDefault={query}
-      />
-
-      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
-        {data.company && <CompanyCard company={data.company} meta={undefined} />}
-
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_240px] lg:gap-10">
-          <div>
-            <div className="flex items-baseline justify-between mb-5">
-              <h2 className="text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground">
-                검토 우선순위 {data.results.length}건
-              </h2>
-              <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
-            </div>
-            <p className="mb-5 text-[12.5px] text-muted-foreground break-keep">
-              매칭 점수는 검토 우선순위입니다. 낙찰 가능성이나 최종 입찰 가능 여부를 의미하지 않습니다.
-            </p>
-            <StreamingResultsList
-              query={query}
-              mode="company"
-              results={data.results}
-              noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 넓히거나 다른 모드로 시도해보세요."
-              skipStream={useMock}
-            />
-            <div className="mt-12">
-              <EmailCaptureForm />
-            </div>
-          </div>
-          <div className="lg:order-2">
-            <FilterPanel />
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function KeywordResults({
-  query,
-  data,
-  useMock,
-}: {
-  query: string;
-  data: RecommendationResponse;
-  useMock: boolean;
-}) {
-  const today = new Date().toLocaleDateString("ko-KR");
-  return (
-    <>
-      <SubHeader
-        mode="keywords"
-        title={
-          <>
-            <span className="font-serif italic">“{query}”</span>
-            <span className="ml-2 text-[15px] font-medium text-muted-foreground">
-              에 의미가 가까운 공고
-            </span>
-          </>
-        }
-        subtitle={`AI 임베딩(1536차원)으로 의미 유사도 매칭 · 같은 단어가 없어도 비슷한 의미의 공고를 찾아드려요 · 매일 갱신 · ${today}`}
-        searchDefault={query}
-      />
-
-      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
-        <div className="grid gap-8 lg:grid-cols-[1fr_240px] lg:gap-10">
-          <div>
-            <div className="flex items-baseline justify-between mb-5">
-              <h2 className="text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground">
-                의미 매칭 공고 {data.results.length}건
-              </h2>
-              <span className="text-[12.5px] text-muted-foreground font-medium">
-                유사도 순
-              </span>
-            </div>
-            <StreamingResultsList
-              query={query}
-              mode="keywords"
-              results={data.results}
-              noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 더 구체적으로 입력하거나 다른 영역으로 시도해보세요."
-              semanticHintQuery={query}
-              skipStream={useMock}
-            />
-
-            <div className="mt-10">
-              <KeywordFallback
-                title="다른 키워드로도 찾아볼까요?"
-                subtitle="여러 영역을 시도하면 더 적합한 공고를 발견할 수 있어요."
-                defaultQuery={query}
-              />
-            </div>
-
-            <div className="mt-12">
-              <EmailCaptureForm />
-            </div>
-          </div>
-          <div className="lg:order-2">
-            <FilterPanel />
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function CompanyFallback({
-  query,
-  company,
-  message,
-}: {
-  query: string;
-  company: RecommendationResponse["company"];
-  message?: string;
-}) {
-  const today = new Date().toLocaleDateString("ko-KR");
-  return (
-    <>
-      <SubHeader
-        mode="company"
-        title={
-          <>
-            {query}
-            <span className="ml-2 text-[15px] font-medium text-muted-foreground">
-              {company ? "의 추천 공고" : ""}
-            </span>
-          </>
-        }
-        subtitle={`회사 식별 ${company ? "완료" : "실패"} · ${today}`}
-        searchDefault={query}
-      />
-
-      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10">
-        {company && (
-          <CompanyCard company={company} meta={undefined} className="opacity-90" />
-        )}
-        {message && (
-          <div className="mt-5 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 text-[13.5px] text-foreground break-keep">
-            <span className="font-bold text-orange-700 mr-1">회사 데이터 부족:</span>
-            회사 데이터가 부족해 추천 정확도가 낮을 수 있습니다. 키워드 검색으로 관심 영역을 직접 탐색할 수 있습니다.
-          </div>
-        )}
-        <div className="mt-8">
-          <KeywordFallback />
-        </div>
-        <div className="mt-12 max-w-[820px]">
-          <EmailCaptureForm />
-        </div>
-      </div>
-    </>
-  );
-}
-
-function LoadingState({ label, mode }: { label: string; mode: Mode }) {
-  return (
-    <div className="mx-auto max-w-[640px] px-5 py-24 sm:py-28 text-center">
-      <Loader2 className="mx-auto h-7 w-7 animate-spin text-primary" aria-hidden />
-      <p className="mt-6 text-[15.5px] text-muted-foreground">
-        나라장터 공고와 {mode === "company" ? "회사 정보" : "검색 키워드"}를 대조하고 있습니다.
-        {label && (
-          <>
-            <br />
-            <span className="font-bold text-foreground">{label}</span>
-          </>
-        )}
-      </p>
-      <p className="mt-1.5 text-[12.5px] text-muted-foreground/70">보통 5~12초 소요됩니다.</p>
-    </div>
   );
 }
 

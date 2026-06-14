@@ -1,24 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { BidCard } from "@/components/BidCard";
 import { SlimBidRow } from "@/components/SlimBidRow";
 import type { RecommendationResponse, BidRecommendation } from "@/types/recommendations";
 
 const TOP_N = 5;
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-
-type StreamMode = "company" | "keywords" | "auto";
 
 interface Props {
-  query: string;
-  mode: StreamMode;
   results: RecommendationResponse["results"];
+  explanations: Record<string, string>;
+  streamDone: boolean;
   noResultText: string;
   semanticHintQuery?: string;
-  /** mock 모드면 stream 호출하지 않음 (이미 explanation 포함된 응답). */
-  skipStream?: boolean;
 }
 
 function bidKey(b: { bid_ntce_no: string; bid_ntce_ord: string }) {
@@ -26,79 +20,12 @@ function bidKey(b: { bid_ntce_no: string; bid_ntce_ord: string }) {
 }
 
 export function StreamingResultsList({
-  query,
-  mode,
   results,
+  explanations,
+  streamDone,
   noResultText,
   semanticHintQuery,
-  skipStream,
 }: Props) {
-  const [explanations, setExplanations] = useState<Record<string, string>>({});
-  const [streamDone, setStreamDone] = useState(false);
-
-  useEffect(() => {
-    if (skipStream || results.length === 0) {
-      setStreamDone(true);
-      return;
-    }
-    const controller = new AbortController();
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/recommendations/stream`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query,
-            mode,
-            limit: 20,
-            candidate_pool: 200,
-            explain_top: TOP_N,
-            with_explanation: true,
-          }),
-          signal: controller.signal,
-        });
-        if (!res.ok || !res.body) {
-          setStreamDone(true);
-          return;
-        }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-        while (!cancelled) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split("\n");
-          buf = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const evt = JSON.parse(line);
-              if (evt.type === "explanation" && evt.scope === "primary") {
-                const k = `${evt.bid_ntce_no}-${evt.bid_ntce_ord}`;
-                setExplanations((prev) => ({ ...prev, [k]: evt.text as string }));
-              } else if (evt.type === "done") {
-                setStreamDone(true);
-              }
-            } catch {
-              // 무시 — 끊긴 라인일 수 있음
-            }
-          }
-        }
-        setStreamDone(true);
-      } catch {
-        setStreamDone(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [query, mode, results, skipStream]);
-
   if (results.length === 0) {
     return (
       <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
