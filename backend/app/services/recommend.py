@@ -25,7 +25,12 @@ KEYWORDS_WEIGHT = 0.4
 
 
 def find_company(query: str) -> dict | None:
-    """회사명 또는 사업자번호로 식별. 가장 매칭 좋은 1개 반환."""
+    """회사명 또는 사업자번호로 식별. 가장 매칭 좋은 1개 반환.
+
+    한국어 회사명 fuzzy 매칭에서 공백 위치 변형이 trigram 점수에 영향(예:
+    "케이브레인 컴퍼니"가 "케이 컴퍼니"와 trigram 더 많이 겹쳐 잘못 매칭).
+    원본과 공백 제거 query를 둘 다 시도해서 similarity 더 높은 쪽 채택.
+    """
     client = get_admin_client()
     digits = "".join(ch for ch in query if ch.isdigit())
     if len(digits) == 10:
@@ -42,15 +47,28 @@ def find_company(query: str) -> dict | None:
             return res.data[0]
 
     res = client.rpc("find_companies", {"query_name": query, "max_count": 1}).execute()
-    if not res.data:
+    best = res.data[0] if res.data else None
+
+    normalized = "".join(query.split())
+    if normalized and normalized != query:
+        res2 = client.rpc(
+            "find_companies", {"query_name": normalized, "max_count": 1}
+        ).execute()
+        cand = res2.data[0] if res2.data else None
+        if cand and (
+            not best
+            or (cand.get("similarity") or 0) > (best.get("similarity") or 0)
+        ):
+            best = cand
+
+    if not best:
         return None
-    top = res.data[0]
     full = (
         client.table("companies")
         .select(
             "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
         )
-        .eq("bizrno", top["bizrno"])
+        .eq("bizrno", best["bizrno"])
         .limit(1)
         .execute()
     )
@@ -186,11 +204,18 @@ def _blend_embeddings(
 def _search_pre_specs(
     embedding_str: str, limit: int, candidate_pool: int
 ) -> list[dict]:
-    """사전규격(골든타임) 매칭 — 단순 코사인 정렬. 자격/지역 보너스 없음."""
+    """사전규격(골든타임) 매칭 — 단순 코사인 정렬. 자격/지역 보너스 없음.
+
+    의견 마감일이 지난 사전규격은 RPC 단계에서 제외(골든타임 카피와 일관).
+    """
     client = get_admin_client()
     res = client.rpc(
         "match_pre_specs",
-        {"query_embedding": embedding_str, "match_count": candidate_pool},
+        {
+            "query_embedding": embedding_str,
+            "match_count": candidate_pool,
+            "min_opnin_clse_date": date.today().isoformat(),
+        },
     ).execute()
     raw = res.data or []
     seen: set[str] = set()
