@@ -7,6 +7,8 @@ import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { KeywordFallback } from "@/components/KeywordFallback";
+import { OrderPlanSection } from "@/components/OrderPlanSection";
+import { PreSpecSection } from "@/components/PreSpecSection";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -442,6 +444,9 @@ async function RecommendationsSection({
           )}
         </>
       )}
+
+      <PreSpecSection results={data.pre_spec_results ?? []} />
+      <OrderPlanSection results={data.order_plan_results ?? []} />
     </section>
     </>
   );
