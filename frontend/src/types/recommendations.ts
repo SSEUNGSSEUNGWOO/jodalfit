@@ -69,6 +69,26 @@ export interface OrderPlanRecommendation {
   score: number;
 }
 
+export interface VizAnchor {
+  key: string;
+  label: string;
+  x: number;
+  y: number;
+}
+export interface VizResultPoint {
+  bid_ntce_no: string;
+  bid_ntce_ord: string;
+  x: number;
+  y: number;
+  score: number;
+  bid_ntce_nm: string | null;
+}
+export interface VizData {
+  anchors: VizAnchor[];
+  company: { x: number; y: number };
+  results: VizResultPoint[];
+}
+
 export interface RecommendationResponse {
   company: CompanyDigest | null;
   results: BidRecommendation[];
@@ -78,6 +98,8 @@ export interface RecommendationResponse {
   order_plan_results?: OrderPlanRecommendation[];
   /** v0.3 회사+키워드 하이브리드 시 입력된 키워드 echo */
   keywords?: string | null;
+  /** v0.4 임베딩 공간 시각화 — anchor 기반 좌표 */
+  viz?: VizData | null;
   error?: string | null;
   mode?: "company" | "keywords" | "auto";
   query?: string;

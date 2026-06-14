@@ -19,9 +19,11 @@ import numpy as np
 
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
+from app.services.viz import anchor_positions, project_many, project_point
 
 COMPANY_WEIGHT = 0.6
 KEYWORDS_WEIGHT = 0.4
+VIZ_RESULT_LIMIT = 10  # viz에 띄울 입찰공고 결과 점 개수
 
 
 def find_company(query: str) -> dict | None:
@@ -179,6 +181,65 @@ def rerank(
         r["score"] = r["base_similarity"] + bonus
 
     return sorted(rows, key=lambda r: r["score"], reverse=True)
+
+
+def _fetch_result_embeddings(
+    client, results: list[dict]
+) -> dict[tuple[str, str], list[float]]:
+    """추천 입찰공고들의 임베딩을 한 번에 fetch (viz 좌표 계산용)."""
+    keys = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in results if r.get("bid_ntce_no")]
+    if not keys:
+        return {}
+    bid_nos = list({k[0] for k in keys})
+    rows = (
+        client.table("bid_notices")
+        .select("bid_ntce_no,bid_ntce_ord,embedding")
+        .in_("bid_ntce_no", bid_nos)
+        .not_.is_("embedding", "null")
+        .execute()
+        .data
+        or []
+    )
+    out: dict[tuple[str, str], list[float]] = {}
+    for r in rows:
+        emb = r.get("embedding")
+        if isinstance(emb, str):
+            inner = emb.strip()[1:-1]
+            emb = [float(x) for x in inner.split(",")] if inner else []
+        if emb:
+            out[(r["bid_ntce_no"], r["bid_ntce_ord"])] = emb
+    return out
+
+
+def _build_viz(
+    company_vec: list[float],
+    results: list[dict],
+    result_embs: dict[tuple[str, str], list[float]],
+) -> dict:
+    """회사 + 추천 TOP N 좌표를 anchor 기반으로 계산."""
+    cx, cy = project_point(company_vec)
+    top = results[:VIZ_RESULT_LIMIT]
+    paired = [
+        (r, result_embs[(r["bid_ntce_no"], r["bid_ntce_ord"])])
+        for r in top
+        if (r["bid_ntce_no"], r["bid_ntce_ord"]) in result_embs
+    ]
+    coords = project_many([e for _, e in paired]) if paired else []
+    return {
+        "anchors": anchor_positions(),
+        "company": {"x": cx, "y": cy},
+        "results": [
+            {
+                "bid_ntce_no": r["bid_ntce_no"],
+                "bid_ntce_ord": r["bid_ntce_ord"],
+                "x": x,
+                "y": y,
+                "score": r.get("score", 0),
+                "bid_ntce_nm": r.get("bid_ntce_nm"),
+            }
+            for (r, _), (x, y) in zip(paired, coords)
+        ],
+    }
 
 
 def _blend_embeddings(
@@ -655,6 +716,13 @@ def _recommend_by_company(
     pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
     order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
 
+    # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영
+    try:
+        result_embs = _fetch_result_embeddings(client, ranked[:VIZ_RESULT_LIMIT])
+        viz = _build_viz(raw_company_vec, ranked, result_embs)
+    except Exception:  # 시각화 실패해도 본 응답은 영향 없음
+        viz = None
+
     return {
         "company": {
             "bizrno": company["bizrno"],
@@ -667,4 +735,5 @@ def _recommend_by_company(
         "results": ranked,
         "pre_spec_results": pre_specs,
         "order_plan_results": order_plans,
+        "viz": viz,
     }

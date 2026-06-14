@@ -6,6 +6,7 @@ import { SlimBidRow } from "@/components/SlimBidRow";
 import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { EmbeddingSpaceViz } from "@/components/EmbeddingSpaceViz";
 import { KeywordFallback } from "@/components/KeywordFallback";
 import { OrderPlanSection } from "@/components/OrderPlanSection";
 import { PreSpecSection } from "@/components/PreSpecSection";
@@ -448,6 +449,10 @@ async function RecommendationsSection({
       <PreSpecSection results={data.pre_spec_results ?? []} />
       <OrderPlanSection results={data.order_plan_results ?? []} />
     </section>
+
+    {data.viz && (
+      <EmbeddingSpaceViz viz={data.viz} companyName={company.corp_nm} />
+    )}
     </>
   );
 }
