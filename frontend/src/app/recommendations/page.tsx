@@ -15,6 +15,7 @@ interface PageProps {
   searchParams: Promise<{
     company?: string;
     q?: string;
+    keywords?: string;
     mode?: string;
   }>;
 }
@@ -23,6 +24,7 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   const p = await searchParams;
   const companyQuery = (p.company ?? "").trim();
   const keywordsQuery = (p.q ?? "").trim();
+  const hybridKeywords = (p.keywords ?? "").trim();
   const mode: Mode = companyQuery ? "company" : "keywords";
   const query = companyQuery || keywordsQuery;
   const useMock = p.mode === "mock";
@@ -32,7 +34,12 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
       <Header />
       <main className="flex-1">
         {query ? (
-          <RecommendationsView query={query} mode={mode} useMock={useMock} />
+          <RecommendationsView
+            query={query}
+            mode={mode}
+            useMock={useMock}
+            keywords={mode === "company" ? hybridKeywords || undefined : undefined}
+          />
         ) : (
           <EmptyState mode={mode} />
         )}

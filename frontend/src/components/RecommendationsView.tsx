@@ -7,11 +7,18 @@ import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import { FilterPanel } from "@/components/FilterPanel";
 import { KeywordFallback } from "@/components/KeywordFallback";
 import { SearchForm } from "@/components/SearchForm";
+import { SlimOrderPlanRow } from "@/components/SlimOrderPlanRow";
+import { SlimPreSpecRow } from "@/components/SlimPreSpecRow";
 import { StreamingResultsList } from "@/components/StreamingResultsList";
 import { MOCK_RESPONSE } from "@/lib/mock-data";
-import type { RecommendationResponse } from "@/types/recommendations";
+import type {
+  OrderPlanRecommendation,
+  PreSpecRecommendation,
+  RecommendationResponse,
+} from "@/types/recommendations";
 
 const TOP_N = 5;
+const STAGE_LIMIT = 5;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 type Mode = "company" | "keywords";
@@ -20,9 +27,11 @@ interface Props {
   query: string;
   mode: Mode;
   useMock: boolean;
+  /** 회사 모드에서만 의미 — 회사 벡터 × 키워드 임베딩 0.6/0.4 하이브리드 블렌딩 */
+  keywords?: string;
 }
 
-export function RecommendationsView({ query, mode, useMock }: Props) {
+export function RecommendationsView({ query, mode, useMock, keywords }: Props) {
   const [data, setData] = useState<RecommendationResponse | null>(
     useMock ? MOCK_RESPONSE : null
   );
@@ -50,6 +59,7 @@ export function RecommendationsView({ query, mode, useMock }: Props) {
           body: JSON.stringify({
             query,
             mode,
+            keywords: keywords || null,
             limit: 20,
             candidate_pool: 200,
             explain_top: TOP_N,
@@ -121,7 +131,7 @@ export function RecommendationsView({ query, mode, useMock }: Props) {
       cancelled = true;
       controller.abort();
     };
-  }, [query, mode, useMock]);
+  }, [query, mode, useMock, keywords]);
 
   if (!data) {
     return <LoadingState label={query} mode={mode} />;
@@ -140,6 +150,7 @@ export function RecommendationsView({ query, mode, useMock }: Props) {
     return (
       <CompanyResults
         query={query}
+        keywords={keywords}
         data={data}
         explanations={explanations}
         streamDone={streamDone}
@@ -191,16 +202,21 @@ function SubHeader({
 
 function CompanyResults({
   query,
+  keywords,
   data,
   explanations,
   streamDone,
 }: {
   query: string;
+  keywords?: string;
   data: RecommendationResponse;
   explanations: Record<string, string>;
   streamDone: boolean;
 }) {
   const today = new Date().toLocaleDateString("ko-KR");
+  const subtitle = keywords
+    ? `등록업종·공급물품·수주 이력 + "${keywords}" 키워드로 좁힘 · 매일 갱신 · ${today}`
+    : `등록업종·공급물품·수주 이력 기준 정리 · 매일 갱신 · ${today}`;
   return (
     <>
       <SubHeader
@@ -211,9 +227,14 @@ function CompanyResults({
             <span className="ml-2 text-[15px] font-medium text-muted-foreground">
               의 검토 우선순위
             </span>
+            {keywords && (
+              <span className="ml-2 inline-flex items-center rounded-full border border-amber-400 bg-amber-50 px-2.5 py-0.5 text-[12px] font-semibold text-amber-800 align-middle">
+                + {keywords}
+              </span>
+            )}
           </>
         }
-        subtitle={`등록업종·공급물품·수주 이력 기준 정리 · 매일 갱신 · ${today}`}
+        subtitle={subtitle}
         searchDefault={query}
       />
 
@@ -237,6 +258,10 @@ function CompanyResults({
               streamDone={streamDone}
               noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 넓히거나 다른 모드로 시도해보세요."
             />
+
+            <PreSpecSection results={data.pre_spec_results ?? []} />
+            <OrderPlanSection results={data.order_plan_results ?? []} />
+
             <div className="mt-12">
               <EmailCaptureForm />
             </div>
@@ -296,6 +321,9 @@ function KeywordResults({
               noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 더 구체적으로 입력하거나 다른 영역으로 시도해보세요."
               semanticHintQuery={query}
             />
+
+            <PreSpecSection results={data.pre_spec_results ?? []} />
+            <OrderPlanSection results={data.order_plan_results ?? []} />
 
             <div className="mt-10">
               <KeywordFallback
@@ -362,6 +390,70 @@ function CompanyFallback({
         </div>
       </div>
     </>
+  );
+}
+
+function PreSpecSection({ results }: { results: PreSpecRecommendation[] }) {
+  if (results.length === 0) return null;
+  const top = results.slice(0, STAGE_LIMIT);
+  return (
+    <section className="mt-10 rounded-xl border border-amber-200 bg-amber-50/40 p-4 sm:p-5">
+      <div className="flex items-baseline justify-between mb-2 px-1">
+        <h3 className="text-[15.5px] sm:text-[16px] font-extrabold tracking-tight text-amber-900">
+          사전규격 단계 · 골든타임
+          <span className="ml-2 text-[12px] font-medium text-amber-700">
+            {top.length}건
+          </span>
+        </h3>
+        <span className="text-[11.5px] text-amber-700 font-medium">
+          의견 마감 / 예산 / 유사도
+        </span>
+      </div>
+      <p className="px-1 mb-3 text-[12px] text-amber-800/80 break-keep">
+        본공고 전 사양에 의견을 낼 수 있는 시점입니다. 의견 마감일을 우선 확인하세요.
+      </p>
+      <div className="rounded-lg bg-white border border-amber-200 overflow-hidden divide-y divide-amber-100">
+        {top.map((spec, i) => (
+          <SlimPreSpecRow
+            key={`prespec-${spec.bf_spec_rgst_no}`}
+            spec={spec}
+            rank={i + 1}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function OrderPlanSection({ results }: { results: OrderPlanRecommendation[] }) {
+  if (results.length === 0) return null;
+  const top = results.slice(0, STAGE_LIMIT);
+  return (
+    <section className="mt-10">
+      <div className="flex items-baseline justify-between mb-2 px-1">
+        <h3 className="text-[15.5px] sm:text-[16px] font-extrabold tracking-tight text-foreground">
+          발주계획 단계 · 선행지표
+          <span className="ml-2 text-[12px] font-medium text-muted-foreground">
+            {top.length}건
+          </span>
+        </h3>
+        <span className="text-[11.5px] text-muted-foreground font-medium">
+          발주 예정 / 예산 / 유사도
+        </span>
+      </div>
+      <p className="px-1 mb-3 text-[12px] text-muted-foreground break-keep">
+        아직 사양이 확정되지 않은 발주계획입니다. 본공고까지 1~3개월 여유 있는 사전 신호로 활용하세요.
+      </p>
+      <div className="rounded-lg border border-border bg-card overflow-hidden divide-y divide-border">
+        {top.map((plan, i) => (
+          <SlimOrderPlanRow
+            key={`plan-${plan.order_plan_unty_no}`}
+            plan={plan}
+            rank={i + 1}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

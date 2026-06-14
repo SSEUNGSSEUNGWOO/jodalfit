@@ -283,7 +283,7 @@ async function DomainAnalysisSection({
               {topDomains.map((d) => (
                 <Link
                   key={d.domain}
-                  href={`/recommendations?q=${encodeURIComponent(d.suggestedKeyword)}`}
+                  href={`/recommendations?company=${encodeURIComponent(companyName)}&keywords=${encodeURIComponent(d.suggestedKeyword)}`}
                   className="inline-flex items-center gap-1.5 rounded-full border border-amber-400 bg-white px-3.5 py-1.5 text-[13px] font-bold text-amber-900 hover:bg-amber-100 hover:border-amber-500 transition-colors"
                 >
                   {d.label}
