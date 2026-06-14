@@ -42,6 +42,11 @@ class RecommendRequest(BaseModel):
         "company",
         description="company: 회사 벡터 / keywords: 키워드 직접 임베딩 / auto: 자동 라우팅 + 양쪽 결과",
     )
+    keywords: str | None = Field(
+        None,
+        max_length=200,
+        description="회사 모드 한정 하이브리드 키워드 (회사 벡터 0.6 + 키워드 임베딩 0.4). 다부서 회사 부서 좁힘.",
+    )
     limit: int = Field(20, ge=1, le=40)
     candidate_pool: int = Field(200, ge=10, le=500)
     explain_top: int = Field(
@@ -63,6 +68,7 @@ def post_recommendations(
         limit=req.limit,
         candidate_pool=req.candidate_pool,
         mode=req.mode,
+        keywords=req.keywords,
     )
 
     has_any_results = bool(result.get("results") or result.get("keyword_results"))
@@ -134,6 +140,7 @@ def post_recommendations_stream(
         limit=req.limit,
         candidate_pool=req.candidate_pool,
         mode=req.mode,
+        keywords=req.keywords,
     )
 
     has_any_results = bool(result.get("results") or result.get("keyword_results"))

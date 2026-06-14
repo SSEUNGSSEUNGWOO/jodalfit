@@ -1,8 +1,13 @@
 """추천 비즈니스 로직.
 
-두 가지 모드:
+모드:
 - mode="company": 회사명/사업자번호 → 회사 벡터로 매칭 (기본)
 - mode="keywords": 관심 키워드 텍스트 → 직접 임베딩으로 매칭 (콜드스타트 대응)
+- mode="auto": 입력 자동 감지 + 양쪽 결과
+
+v0.3 (단계 풀 확장 + 키워드 하이브리드):
+- 추천 풀 = 입찰공고 + 사전규격(골든타임) + 발주계획(선행지표)
+- keywords 파라미터: 회사 벡터에 키워드 임베딩을 0.6/0.4로 가중합 → 다부서 회사 부서 좁힘
 """
 
 from __future__ import annotations
@@ -10,8 +15,13 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Literal
 
+import numpy as np
+
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
+
+COMPANY_WEIGHT = 0.6
+KEYWORDS_WEIGHT = 0.4
 
 
 def find_company(query: str) -> dict | None:
@@ -153,6 +163,78 @@ def rerank(
     return sorted(rows, key=lambda r: r["score"], reverse=True)
 
 
+def _blend_embeddings(
+    company_vec: list[float] | np.ndarray,
+    keyword_vec: list[float] | np.ndarray,
+    wc: float = COMPANY_WEIGHT,
+    wk: float = KEYWORDS_WEIGHT,
+) -> list[float]:
+    """회사 벡터 × 키워드 임베딩 가중합 후 정규화.
+
+    회사 벡터와 키워드 임베딩 모두 unit vector(compute_company_vectors / OpenAI)이므로
+    가중합 후 L2 정규화만 하면 cosine 유사도 검색에 그대로 쓸 수 있다.
+    """
+    cv = np.asarray(company_vec, dtype=np.float32)
+    kv = np.asarray(keyword_vec, dtype=np.float32)
+    blended = wc * cv + wk * kv
+    n = float(np.linalg.norm(blended))
+    if n > 0:
+        blended = blended / n
+    return blended.tolist()
+
+
+def _search_pre_specs(
+    embedding_str: str, limit: int, candidate_pool: int
+) -> list[dict]:
+    """사전규격(골든타임) 매칭 — 단순 코사인 정렬. 자격/지역 보너스 없음."""
+    client = get_admin_client()
+    res = client.rpc(
+        "match_pre_specs",
+        {"query_embedding": embedding_str, "match_count": candidate_pool},
+    ).execute()
+    raw = res.data or []
+    seen: set[str] = set()
+    out: list[dict] = []
+    for r in raw:
+        n = r.get("bf_spec_rgst_no")
+        if not n or n in seen:
+            continue
+        seen.add(n)
+        r["stage"] = "pre_spec"
+        r["base_similarity"] = r.get("similarity", 0)
+        r["score"] = r["base_similarity"]
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _search_order_plans(
+    embedding_str: str, limit: int, candidate_pool: int
+) -> list[dict]:
+    """발주계획(선행지표) 매칭 — 단순 코사인 정렬."""
+    client = get_admin_client()
+    res = client.rpc(
+        "match_order_plans",
+        {"query_embedding": embedding_str, "match_count": candidate_pool},
+    ).execute()
+    raw = res.data or []
+    seen: set[str] = set()
+    out: list[dict] = []
+    for r in raw:
+        n = r.get("order_plan_unty_no")
+        if not n or n in seen:
+            continue
+        seen.add(n)
+        r["stage"] = "order_plan"
+        r["base_similarity"] = r.get("similarity", 0)
+        r["score"] = r["base_similarity"]
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def _search_with_embedding(
     embedding_str: str,
     company_rgn: str | None,
@@ -182,6 +264,7 @@ def _search_with_embedding(
         if not n or n in seen:
             continue
         seen.add(n)
+        r["stage"] = "notice"
         deduped.append(r)
         if len(deduped) >= candidate_pool:
             break
@@ -382,38 +465,48 @@ def recommend(
     limit: int = 5,
     candidate_pool: int = 100,
     mode: Literal["company", "keywords", "auto"] = "company",
+    keywords: str | None = None,
 ) -> dict[str, Any]:
     """추천 메인 진입점.
 
-    company 모드: query는 회사명/사업자번호
-    keywords 모드: query는 자유 텍스트
+    company 모드: query는 회사명/사업자번호. keywords가 있으면 회사 벡터에 하이브리드 블렌딩
+    keywords 모드: query는 자유 텍스트 (keywords 파라미터는 무시)
     auto 모드: 입력 자동 감지 + 회사/키워드 결과 둘 다 반환 (UI 탭)
+
+    응답 공통:
+    - results: 입찰공고 매칭 (기존)
+    - pre_spec_results: 사전규격 매칭 (v0.3)
+    - order_plan_results: 발주계획 매칭 (v0.3)
     """
     if mode == "auto":
-        return _recommend_auto(query, limit, candidate_pool)
+        return _recommend_auto(query, limit, candidate_pool, keywords)
     if mode == "keywords":
         return _recommend_by_keywords(query, limit, candidate_pool)
-    return _recommend_by_company(query, limit, candidate_pool)
+    return _recommend_by_company(query, limit, candidate_pool, keywords)
 
 
-def _recommend_auto(query: str, limit: int, candidate_pool: int) -> dict[str, Any]:
+def _recommend_auto(
+    query: str, limit: int, candidate_pool: int, keywords: str | None = None
+) -> dict[str, Any]:
     """입력 자동 라우팅 + 양쪽 결과 합치기.
 
     - 숫자 10자리: 사업자번호 → company 모드만 (키워드 매칭 의미 없음)
     - 그 외: company + keywords 둘 다 호출, 회사 식별 실패해도 키워드 결과 반환
+
+    keywords 파라미터는 회사 결과의 하이브리드 블렌딩에만 영향 (보조 키워드 결과는 query 그대로).
     """
     digits = "".join(ch for ch in query if ch.isdigit())
     is_bizrno = len(digits) == 10
 
     if is_bizrno:
-        result = _recommend_by_company(query, limit, candidate_pool)
+        result = _recommend_by_company(query, limit, candidate_pool, keywords)
         result["mode"] = "auto"
         result["primary"] = "company"
         result["keyword_results"] = []
         return result
 
     # 텍스트 입력: 두 모드 병렬 실행 (단순 직렬, 비용 거의 동일)
-    company_result = _recommend_by_company(query, limit, candidate_pool)
+    company_result = _recommend_by_company(query, limit, candidate_pool, keywords)
     keyword_result = _recommend_by_keywords(query, limit, candidate_pool)
 
     company_hit = bool(company_result.get("company")) and bool(company_result.get("results"))
@@ -422,9 +515,14 @@ def _recommend_auto(query: str, limit: int, candidate_pool: int) -> dict[str, An
         "mode": "auto",
         "primary": "company" if company_hit else "keywords",
         "company": company_result.get("company"),
-        "results": company_result.get("results", []),  # 회사 매칭 (없으면 빈 배열)
+        "keywords": keywords,
+        "results": company_result.get("results", []),
+        "pre_spec_results": company_result.get("pre_spec_results", []),
+        "order_plan_results": company_result.get("order_plan_results", []),
         "keyword_query": query,
         "keyword_results": keyword_result.get("results", []),
+        "keyword_pre_spec_results": keyword_result.get("pre_spec_results", []),
+        "keyword_order_plan_results": keyword_result.get("order_plan_results", []),
         "error": None if company_hit or keyword_result.get("results") else "결과가 없습니다",
     }
 
@@ -434,22 +532,33 @@ def _recommend_by_keywords(
 ) -> dict[str, Any]:
     text = query.strip()
     if not text:
-        return {"company": None, "mode": "keywords", "error": "키워드를 입력해주세요", "results": []}
+        return {
+            "company": None,
+            "mode": "keywords",
+            "error": "키워드를 입력해주세요",
+            "results": [],
+            "pre_spec_results": [],
+            "order_plan_results": [],
+        }
 
     embedding = embed_texts([f"관심 영역: {text}"])[0]
     embedding_str = vector_to_pgvector_str(embedding)
     ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
+    pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
+    order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
 
     return {
         "company": None,
         "mode": "keywords",
         "query": text,
         "results": ranked,
+        "pre_spec_results": pre_specs,
+        "order_plan_results": order_plans,
     }
 
 
 def _recommend_by_company(
-    query: str, limit: int, candidate_pool: int
+    query: str, limit: int, candidate_pool: int, keywords: str | None = None
 ) -> dict[str, Any]:
     company = find_company(query)
     if not company:
@@ -459,6 +568,8 @@ def _recommend_by_company(
             "error": "회사를 찾을 수 없습니다",
             "fallback": "keywords",
             "results": [],
+            "pre_spec_results": [],
+            "order_plan_results": [],
         }
     if company.get("is_restricted"):
         return {
@@ -466,6 +577,8 @@ def _recommend_by_company(
             "mode": "company",
             "error": "부정당 제재 회사입니다",
             "results": [],
+            "pre_spec_results": [],
+            "order_plan_results": [],
         }
     if not company.get("embedding"):
         return {
@@ -479,11 +592,24 @@ def _recommend_by_company(
             "error": "회사 벡터가 아직 생성되지 않았습니다 (수주 이력 부족)",
             "fallback": "keywords",
             "results": [],
+            "pre_spec_results": [],
+            "order_plan_results": [],
         }
 
-    embedding = company["embedding"]
-    if isinstance(embedding, list):
-        embedding = vector_to_pgvector_str(embedding)
+    # 회사 벡터 준비 — keywords 있으면 키워드 임베딩과 가중합
+    raw_company_vec = company["embedding"]
+    if isinstance(raw_company_vec, str):
+        # pgvector "[a,b,...]" 문자열 → list[float]
+        inner = raw_company_vec.strip()[1:-1]
+        raw_company_vec = [float(x) for x in inner.split(",")] if inner else []
+
+    keywords_text = (keywords or "").strip()
+    if keywords_text:
+        keyword_vec = embed_texts([f"관심 영역: {keywords_text}"])[0]
+        blended = _blend_embeddings(raw_company_vec, keyword_vec)
+        embedding_str = vector_to_pgvector_str(blended)
+    else:
+        embedding_str = vector_to_pgvector_str(raw_company_vec)
 
     client = get_admin_client()
     company_terms = _fetch_company_terms(client, company["bizrno"])
@@ -492,7 +618,7 @@ def _recommend_by_company(
     company_institutions, company_amt_median = _fetch_company_history(client, bizrno_norm)
 
     ranked = _search_with_embedding(
-        embedding,
+        embedding_str,
         company.get("rgn_nm"),
         limit,
         candidate_pool,
@@ -501,6 +627,8 @@ def _recommend_by_company(
         company_amt_median=company_amt_median,
         company_industry_names=company_industry_names,
     )
+    pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
+    order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
 
     return {
         "company": {
@@ -510,5 +638,8 @@ def _recommend_by_company(
             "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
         },
         "mode": "company",
+        "keywords": keywords_text or None,
         "results": ranked,
+        "pre_spec_results": pre_specs,
+        "order_plan_results": order_plans,
     }
