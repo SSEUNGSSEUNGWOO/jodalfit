@@ -82,23 +82,36 @@ def run_one(label: str, url: str, extra: dict, batch_size: int) -> int:
     return total
 
 
+CHUNK_DAYS = 30  # 공공데이터포털 단일 호출 범위 제한 회피 (07 코드 입력범위값 초과)
+
+
 def run(days_back: int = 3, batch_size: int = 500) -> None:
     end = datetime.now()
-    begin = end - timedelta(days=days_back)
-    extra_base = {
-        "inqryDiv": "1",
-        "inqryBgnDt": begin.strftime(DATE_FMT),
-        "inqryEndDt": end.strftime(DATE_FMT),
-    }
     run_id = log_ingest_start(JOB_NAME, {"days_back": days_back})
-    print(f"[{JOB_NAME}] {extra_base['inqryBgnDt']} ~ {extra_base['inqryEndDt']}")
+    print(f"[{JOB_NAME}] days_back={days_back}, chunk={CHUNK_DAYS}d")
 
     grand_total = 0
     try:
-        for label, url in ENDPOINTS.items():
-            n = run_one(label, url, extra_base, batch_size)
-            print(f"  {label}: {n} winners")
-            grand_total += n
+        # 큰 days_back을 CHUNK_DAYS 단위로 슬라이스 (최신 → 과거 방향)
+        cursor = end
+        remaining = days_back
+        chunk_idx = 0
+        while remaining > 0:
+            span = min(CHUNK_DAYS, remaining)
+            chunk_begin = cursor - timedelta(days=span)
+            extra_base = {
+                "inqryDiv": "1",
+                "inqryBgnDt": chunk_begin.strftime(DATE_FMT),
+                "inqryEndDt": cursor.strftime(DATE_FMT),
+            }
+            chunk_idx += 1
+            print(f"  [chunk {chunk_idx}] {extra_base['inqryBgnDt']} ~ {extra_base['inqryEndDt']}")
+            for label, url in ENDPOINTS.items():
+                n = run_one(label, url, extra_base, batch_size)
+                print(f"    {label}: {n} winners")
+                grand_total += n
+            cursor = chunk_begin
+            remaining -= span
         log_ingest_finish(run_id, "success", rows_inserted=grand_total)
         print(f"[{JOB_NAME}] done. total {grand_total} winners")
     except Exception as e:
