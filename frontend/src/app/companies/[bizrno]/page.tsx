@@ -45,7 +45,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
   const title = `${company.corp_nm} 공공입찰 추천 | jodalfit`;
-  const desc = `${company.corp_nm}의 과거 나라장터 수주 이력 분석과 적합한 신규 공공입찰 공고 TOP 5 추천. 매일 갱신.`;
+
+  // 데이터 가용성별 3단 후킹 (CTR 개선용)
+  // 1) awards 있으면: 낙찰 건수 + 평균 투찰율
+  // 2) contracts만 있으면: 누적 계약 건수
+  // 3) 둘 다 없으면: 기본 톤
+  const awards = await fetchCompanyAwards(normalized, 50);
+  const awardSummary = summarizeAwards(awards);
+  let desc: string;
+  if (awardSummary.count >= 3 && awardSummary.avg_rate !== null) {
+    desc = `${company.corp_nm} 공공입찰 분석 — 나라장터 낙찰 ${awardSummary.count}건, 평균 투찰율 ${awardSummary.avg_rate.toFixed(1)}%. 비슷한 신규 공고 TOP 5 매일 추천.`;
+  } else if (company.contract_count >= 1) {
+    desc = `${company.corp_nm}의 공공조달 수주 이력 ${company.contract_count}건 분석. 검토할 만한 신규 나라장터 공고 TOP 5를 매일 추천합니다.`;
+  } else {
+    desc = `${company.corp_nm}의 등록업종·공급물품 기반으로 적합한 신규 나라장터 공고 TOP 5를 추천합니다. 매일 갱신.`;
+  }
+
   // 추천 벡터도 없고 수주 이력도 없는 깡통 페이지는 색인 제외
   // (구글 "발견됨-색인 생성되지 않음" 보류 해소)
   const isThin = !company.has_embedding && company.contract_count === 0;
