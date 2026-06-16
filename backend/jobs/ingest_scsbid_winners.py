@@ -82,7 +82,9 @@ def run_one(label: str, url: str, extra: dict, batch_size: int) -> int:
     return total
 
 
-CHUNK_DAYS = 30  # 공공데이터포털 단일 호출 범위 제한 회피 (07 코드 입력범위값 초과)
+CHUNK_DAYS = 15  # 봄철(2~3월) 데이터 폭증 시 30일 청크도 페이지네이션 한계(07 입력범위값 초과)
+# 걸리는 케이스 확인 → 15일로 줄임. iter_all_items rows_per_page=500 × max_pages=200 환경에서
+# 한 카테고리당 ~6.5k건이면 13페이지 정도라 안전 마진 충분.
 
 
 def run(days_back: int = 3, batch_size: int = 500) -> None:
