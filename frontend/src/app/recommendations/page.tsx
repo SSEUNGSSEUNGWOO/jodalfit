@@ -49,6 +49,19 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   );
 }
 
+// 콜드스타트 보강 — 키워드 모드에서 자주 검색되는 도메인을 미리 큐레이션.
+// 단일 단어보다 2~3개 복합 키워드로 의미 매칭 정확도 향상.
+const CATEGORY_KEYWORDS = [
+  "위탁교육 직무역량",
+  "정보시스템 유지보수",
+  "콘텐츠 영상 제작",
+  "AI 데이터 분석",
+  "컨설팅 진단",
+  "디자인 브랜딩",
+  "행사 운영",
+  "클라우드 전환",
+];
+
 function EmptyState({ mode }: { mode: Mode }) {
   return (
     <div className="mx-auto max-w-[720px] px-5 py-16 sm:py-24">
@@ -62,7 +75,10 @@ function EmptyState({ mode }: { mode: Mode }) {
             : "관심 영역을 입력하면 의미가 가까운 공고를 찾습니다."}
         </p>
         <div className="mt-6">
-          <SearchForm initialMode={mode} />
+          <SearchForm
+            initialMode={mode}
+            examples={{ keywords: CATEGORY_KEYWORDS }}
+          />
         </div>
       </div>
     </div>
