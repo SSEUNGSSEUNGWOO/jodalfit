@@ -21,7 +21,6 @@ import {
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { getRecommendations } from "@/lib/api";
-import { fetchGoldenTimeMap } from "@/lib/golden-time";
 import { fetchCompanyDomainAnalysis } from "@/lib/company-profile";
 import { formatKRW, maskBizrno } from "@/lib/utils";
 
@@ -338,75 +337,18 @@ async function RecommendationsSection({
     with_explanation: true,
   });
 
-  // 추천 결과 전체에 골든타임 정보 조회 (별도 섹션 + TOP 5 뱃지 모두에 사용)
-  const goldenMap = await fetchGoldenTimeMap(
-    data.results.map((b) => ({
-      bid_ntce_no: b.bid_ntce_no,
-      bid_ntce_date: b.bid_ntce_date,
-      bid_clse_date: b.bid_clse_date,
-    }))
-  );
-
-  // 골든타임(사전규격 공개중) 공고만 별도 섹션. spec_closing 우선, 그 안에서 점수순.
-  const goldenRecs = data.results
-    .filter((b) => {
-      const g = goldenMap.get(b.bid_ntce_no);
-      return g?.status === "spec_open" || g?.status === "spec_closing";
-    })
-    .sort((a, b) => {
-      const ga = goldenMap.get(a.bid_ntce_no);
-      const gb = goldenMap.get(b.bid_ntce_no);
-      const aClosing = ga?.status === "spec_closing" ? 1 : 0;
-      const bClosing = gb?.status === "spec_closing" ? 1 : 0;
-      if (aClosing !== bClosing) return bClosing - aClosing;
-      return b.score - a.score;
-    })
-    .slice(0, 3);
-  const goldenSet = new Set(goldenRecs.map((b) => b.bid_ntce_no));
-  const regularRecs = data.results.filter((b) => !goldenSet.has(b.bid_ntce_no));
-
   const TOP = 5;
-  const top = regularRecs.slice(0, TOP);
-  const slim = regularRecs.slice(TOP);
+  const top = data.results.slice(0, TOP);
+  const slim = data.results.slice(TOP);
 
   return (
     <>
-      {goldenRecs.length > 0 && (
-        <section className="mx-auto max-w-[1140px] px-5 sm:px-8 pt-10 sm:pt-14">
-          <div className="rounded-2xl border-2 border-amber-400 bg-amber-50/60 p-5 sm:p-7">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-white text-[13px] font-extrabold">
-                  ⚡
-                </span>
-                <h2 className="text-[20px] sm:text-[24px] font-extrabold text-amber-950 tracking-tight">
-                  지금 의견 낼 수 있는 공고 {goldenRecs.length}건
-                </h2>
-              </div>
-              <span className="text-[12px] text-amber-800 font-semibold">
-                사전규격 단계 · 의견 등록으로 사양 반영 가능
-              </span>
-            </div>
-            <p className="text-[13.5px] text-amber-900/80 mb-4 leading-relaxed">
-              입찰공고가 뜨면 사양이 굳어져 변경이 어려워요. 지금이 사양에 의견을 낼 수 있는 마지막 타이밍이에요.
-            </p>
-            <div className="flex flex-col gap-3">
-              {goldenRecs.map((bid) => (
-                <BidCard
-                  key={`golden-${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-                  bid={bid}
-                  golden={goldenMap.get(bid.bid_ntce_no)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
     <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-      <div className="flex items-baseline justify-between mb-5">
+      <PreSpecSection results={data.pre_spec_results ?? []} />
+
+      <div className="flex items-baseline justify-between mt-10 mb-5">
         <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
-          {company.corp_nm}에 맞는 공고 {regularRecs.length}건
+          {company.corp_nm}에 맞는 공고 {data.results.length}건
         </h2>
         <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
       </div>
@@ -422,7 +364,6 @@ async function RecommendationsSection({
                 key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
                 bid={bid}
                 rank={i + 1}
-                golden={goldenMap.get(bid.bid_ntce_no)}
               />
             ))}
           </div>
@@ -450,7 +391,6 @@ async function RecommendationsSection({
         </>
       )}
 
-      <PreSpecSection results={data.pre_spec_results ?? []} />
       <OrderPlanSection results={data.order_plan_results ?? []} />
     </section>
 
