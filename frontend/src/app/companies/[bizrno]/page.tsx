@@ -17,6 +17,7 @@ import {
   fetchCompanyByBizrno,
   fetchCompanyContracts,
   fetchCompanyProfile,
+  fetchPeerRateByInstitution,
   summarizeAwards,
   summarizeContracts,
 } from "@/lib/company";
@@ -373,6 +374,11 @@ async function RecommendationsSection({
   const top = data.results.slice(0, TOP);
   const slim = data.results.slice(TOP);
 
+  // 추천 TOP 5의 발주기관별 과거 평균 투찰율 batch 조회
+  const peerMap = await fetchPeerRateByInstitution(
+    top.map((b) => b.dmnd_instt_nm).filter((x): x is string => !!x)
+  );
+
   return (
     <>
     <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
@@ -396,6 +402,7 @@ async function RecommendationsSection({
                 key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
                 bid={bid}
                 rank={i + 1}
+                peerStat={bid.dmnd_instt_nm ? peerMap.get(bid.dmnd_instt_nm) : undefined}
               />
             ))}
           </div>

@@ -43,6 +43,66 @@ export interface AwardSummary {
   total_amt: number;
 }
 
+export interface PeerRateStat {
+  /** 표본 평균 투찰율 (%) */
+  avg: number;
+  /** 표본 크기 */
+  n: number;
+}
+
+/** 발주기관별 과거 낙찰 평균 투찰율 batch 조회.
+ *  추천 카드에 "이 기관 비슷한 공고 평균 XX% (n건)" 인사이트용. */
+export async function fetchPeerRateByInstitution(
+  institutionNames: string[]
+): Promise<Map<string, PeerRateStat>> {
+  const out = new Map<string, PeerRateStat>();
+  const names = Array.from(new Set(institutionNames.filter(Boolean)));
+  if (names.length === 0) return out;
+  const c = getServerSupabase();
+  // award_results에서 직접 dmnd_instt_nm로 join — bid_notices와 매번 join 비용 회피
+  // award_results에는 dmnd_instt_nm 없으니 bid_notices에서 (bid_ntce_no) 모은 후 rate fetch.
+  // → 두 단계: 기관별 bid_ntce_no 모음 → rate 모음.
+  const { data: noticeRows } = await c
+    .from("bid_notices")
+    .select("bid_ntce_no,bid_ntce_ord,dmnd_instt_nm")
+    .in("dmnd_instt_nm", names)
+    .limit(5000);
+  type NoticeRow = { bid_ntce_no: string; bid_ntce_ord: string; dmnd_instt_nm: string | null };
+  const noticeToInstt = new Map<string, string>();
+  for (const r of (noticeRows as NoticeRow[]) ?? []) {
+    if (r.dmnd_instt_nm) noticeToInstt.set(`${r.bid_ntce_no}|${r.bid_ntce_ord}`, r.dmnd_instt_nm);
+  }
+  if (noticeToInstt.size === 0) return out;
+
+  const bidNos = Array.from(new Set([...noticeToInstt.keys()].map((k) => k.split("|")[0])));
+  type RateRow = { bid_ntce_no: string; bid_ntce_ord: string; bid_rate: number | null };
+  const ratesByInstt: Record<string, number[]> = {};
+  // bid_nos가 많을 수 있어 페이지 단위로
+  const PAGE = 500;
+  for (let i = 0; i < bidNos.length; i += PAGE) {
+    const sub = bidNos.slice(i, i + PAGE);
+    const { data: rateRows } = await c
+      .from("award_results")
+      .select("bid_ntce_no,bid_ntce_ord,bid_rate")
+      .in("bid_ntce_no", sub)
+      .eq("is_winner", true)
+      .not("bid_rate", "is", null);
+    for (const r of (rateRows as RateRow[]) ?? []) {
+      const instt = noticeToInstt.get(`${r.bid_ntce_no}|${r.bid_ntce_ord}`);
+      if (!instt || r.bid_rate == null) continue;
+      (ratesByInstt[instt] ??= []).push(r.bid_rate);
+    }
+  }
+  for (const [instt, rates] of Object.entries(ratesByInstt)) {
+    if (rates.length === 0) continue;
+    out.set(instt, {
+      avg: rates.reduce((s, v) => s + v, 0) / rates.length,
+      n: rates.length,
+    });
+  }
+  return out;
+}
+
 export interface CompanySectors {
   bsns_div_counts: Record<string, number>;
   top_institutions: string[];

@@ -10,6 +10,7 @@ import { MatchScore } from "./MatchScore";
 import { cn, formatKRW } from "@/lib/utils";
 import type { BidRecommendation } from "@/types/recommendations";
 import type { GoldenTimeInfo } from "@/lib/golden-time";
+import type { PeerRateStat } from "@/lib/company";
 
 export function BidCard({
   bid,
@@ -18,6 +19,7 @@ export function BidCard({
   className,
   semanticHintQuery,
   golden,
+  peerStat,
 }: {
   bid: BidRecommendation;
   rank?: number;
@@ -27,6 +29,8 @@ export function BidCard({
   semanticHintQuery?: string;
   /** 골든타임(사전규격공개) 정보. spec_open/spec_closing일 때만 뱃지 노출 */
   golden?: GoldenTimeInfo;
+  /** 같은 발주기관의 과거 낙찰 평균 투찰율 (n>=3일 때만 카드에 표시) */
+  peerStat?: PeerRateStat;
 }) {
   const isGolden =
     golden?.status === "spec_open" || golden?.status === "spec_closing";
@@ -144,6 +148,23 @@ export function BidCard({
             {bid.evidence.map((tag) => (
               <EvidenceTag key={tag}>{tag}</EvidenceTag>
             ))}
+          </div>
+        )}
+
+        {/* Peer 통계 — 같은 발주기관 과거 낙찰 평균 투찰율 (n>=3) */}
+        {peerStat && peerStat.n >= 3 && (
+          <div
+            className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
+            title="같은 발주기관의 과거 낙찰 평균 투찰율 — 참고용 시그널이지 예측치 아님"
+          >
+            <BarChart3 className="h-3.5 w-3.5 text-primary/70" aria-hidden />
+            <span>
+              이 기관 비슷한 공고{" "}
+              <span className="font-bold text-foreground">
+                평균 {peerStat.avg.toFixed(1)}%
+              </span>{" "}
+              <span className="tabular tabular-nums">(n={peerStat.n})</span>
+            </span>
           </div>
         )}
       </CardContent>
