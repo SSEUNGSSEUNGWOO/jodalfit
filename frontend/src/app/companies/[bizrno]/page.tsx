@@ -44,10 +44,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const title = `${company.corp_nm} 공공입찰 추천 | jodalfit`;
   const desc = `${company.corp_nm}의 과거 나라장터 수주 이력 분석과 적합한 신규 공공입찰 공고 TOP 5 추천. 매일 갱신.`;
+  // 추천 벡터도 없고 수주 이력도 없는 깡통 페이지는 색인 제외
+  // (구글 "발견됨-색인 생성되지 않음" 보류 해소)
+  const isThin = !company.has_embedding && company.contract_count === 0;
   return {
     title,
     description: desc,
     alternates: { canonical: `/companies/${normalized}` },
+    robots: isThin ? { index: false, follow: true } : undefined,
     openGraph: {
       title,
       description: desc,

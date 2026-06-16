@@ -12,6 +12,7 @@ export interface CompanyDetail {
   mnfctr_div_nm: string | null;
   has_embedding: boolean;
   is_restricted: boolean;
+  contract_count: number;
 }
 
 export interface ContractRow {
@@ -68,7 +69,7 @@ export async function fetchCompanyByBizrno(
   const { data } = await c
     .from("companies")
     .select(
-      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted"
+      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count"
     )
     .eq("bizrno_norm", bizrnoNorm)
     .limit(1)
@@ -86,6 +87,7 @@ export async function fetchCompanyByBizrno(
     mnfctr_div_nm: data.mnfctr_div_nm,
     has_embedding: !!data.embedding,
     is_restricted: !!data.is_restricted,
+    contract_count: data.contract_count ?? 0,
   };
 }
 
@@ -125,15 +127,17 @@ export function summarizeContracts(
   };
 }
 
-/** 회사 마스터 페이지 SEO용 — 사업자번호로 활동 회사들 페이지네이션 */
+/** 회사 마스터 페이지 SEO용 — 추천/이력 있는 회사만 포함 (깡통 페이지 sitemap 배제) */
 export async function fetchActiveCompaniesForSitemap(
   limit = 5000
 ): Promise<{ bizrno_norm: string; updated_at: string }[]> {
   const c = getServerSupabase();
   const { data } = await c
     .from("companies")
-    .select("bizrno_norm,updated_at")
+    .select("bizrno_norm,updated_at,embedded_at,contract_count")
     .not("bizrno_norm", "is", null)
+    .or("embedded_at.not.is.null,contract_count.gt.0")
+    .order("embedded_at", { ascending: false, nullsFirst: false })
     .limit(limit);
   return (data as { bizrno_norm: string; updated_at: string }[]) ?? [];
 }
