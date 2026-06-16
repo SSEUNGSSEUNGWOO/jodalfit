@@ -16,6 +16,7 @@ export default async function InsightsIndex() {
 
   const picks = items.filter((i) => i.type === "picks");
   const market = items.filter((i) => i.type === "market");
+  const guides = items.filter((i) => i.type === "guide");
 
   return (
     <>
@@ -77,6 +78,40 @@ export default async function InsightsIndex() {
             </ul>
           )}
         </section>
+
+        {guides.length > 0 && (
+          <section className="mb-14">
+            <div className="flex items-baseline justify-between mb-5">
+              <h2 className="text-[22px] font-bold text-foreground">
+                공공조달 가이드
+                <span className="ml-3 text-[14px] font-medium text-muted-foreground">
+                  처음 시작하는 회사용
+                </span>
+              </h2>
+              <span className="text-[14px] text-muted-foreground">{guides.length}개</span>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {guides.map((i) => (
+                <li key={`${i.type}-${i.slug}`}>
+                  <Link
+                    href={`/insights/${i.type}/${i.slug}`}
+                    className="block rounded-lg border border-border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all"
+                  >
+                    <div className="text-[12px] font-semibold uppercase tracking-wider text-primary mb-1">
+                      가이드
+                    </div>
+                    <div className="text-[16px] font-bold text-foreground leading-snug">
+                      {i.title}
+                    </div>
+                    <div className="mt-2 text-[13px] text-muted-foreground line-clamp-2">
+                      {i.summary}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section>
           <div className="flex items-baseline justify-between mb-5">

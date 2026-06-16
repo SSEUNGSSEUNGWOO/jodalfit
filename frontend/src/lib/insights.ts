@@ -19,7 +19,7 @@ function parseFront(raw: string) {
 
 const CONTENT_DIR = path.join(process.cwd(), "src", "content", "insights");
 
-export type InsightType = "picks" | "market";
+export type InsightType = "picks" | "market" | "guide";
 
 export interface ChartDatum {
   label: string;
@@ -31,8 +31,9 @@ export interface InsightFrontmatter {
   summary: string;
   type: InsightType;
   slug: string;
-  week_start: string;
-  week_end: string;
+  // weekly (picks/market) 전용 — guide는 이 필드 없음
+  week_start?: string;
+  week_end?: string;
   published_at: string;
   total_notices?: number;
   prev_total?: number;
@@ -71,8 +72,8 @@ export interface InsightIndexItem {
   slug: string;
   title: string;
   summary: string;
-  week_start: string;
-  week_end: string;
+  week_start?: string;
+  week_end?: string;
   published_at: string;
   evaluation_score?: number;
 }
@@ -106,11 +107,12 @@ async function readAllOfType(type: InsightType): Promise<InsightIndexItem[]> {
 }
 
 export async function listAllInsights(): Promise<InsightIndexItem[]> {
-  const [picks, market] = await Promise.all([
+  const [picks, market, guide] = await Promise.all([
     readAllOfType("picks"),
     readAllOfType("market"),
+    readAllOfType("guide"),
   ]);
-  return [...picks, ...market].sort((a, b) => (a.slug < b.slug ? 1 : -1));
+  return [...picks, ...market, ...guide].sort((a, b) => (a.slug < b.slug ? 1 : -1));
 }
 
 export async function listInsightsByType(

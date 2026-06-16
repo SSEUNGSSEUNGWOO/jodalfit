@@ -10,7 +10,7 @@ import { fetchInsight, listInsightsByType, type InsightType } from "@/lib/insigh
 type Params = Promise<{ type: string; slug: string }>;
 
 function isType(t: string): t is InsightType {
-  return t === "picks" || t === "market";
+  return t === "picks" || t === "market" || t === "guide";
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -32,11 +32,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export async function generateStaticParams() {
-  const [picks, market] = await Promise.all([
+  const [picks, market, guide] = await Promise.all([
     listInsightsByType("picks"),
     listInsightsByType("market"),
+    listInsightsByType("guide"),
   ]);
-  return [...picks, ...market].map((i) => ({ type: i.type, slug: i.slug }));
+  return [...picks, ...market, ...guide].map((i) => ({ type: i.type, slug: i.slug }));
 }
 
 export default async function InsightPage({ params }: { params: Params }) {
@@ -45,7 +46,8 @@ export default async function InsightPage({ params }: { params: Params }) {
   const insight = await fetchInsight(type, slug);
   if (!insight) notFound();
 
-  const typeLabel = type === "picks" ? "이번 주 픽" : "이번 주 동향";
+  const typeLabel =
+    type === "picks" ? "이번 주 픽" : type === "market" ? "이번 주 동향" : "가이드";
   const heroSrc =
     insight.meta.cover_image && insight.meta.cover_image.trim()
       ? insight.meta.cover_image
@@ -57,7 +59,10 @@ export default async function InsightPage({ params }: { params: Params }) {
       <main className="mx-auto max-w-[820px] px-5 sm:px-8 py-10">
         <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wider text-primary">
           <span className="inline-block size-1.5 rounded-full bg-primary" />
-          {typeLabel} · {insight.meta.week_start} ~ {insight.meta.week_end}
+          {typeLabel}
+          {insight.meta.week_start && insight.meta.week_end && (
+            <> · {insight.meta.week_start} ~ {insight.meta.week_end}</>
+          )}
         </div>
 
         {/* Hero — cover_image 우선, 없으면 자동 OG */}
