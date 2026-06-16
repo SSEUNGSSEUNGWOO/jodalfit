@@ -124,39 +124,55 @@ export async function fetchCompanyContracts(
   return (data as ContractRow[]) ?? [];
 }
 
-/** 회사의 낙찰 이력 — bid_rate(투찰율) 회고용. award_results와 bid_notices(공고명/발주기관) 조인. */
+/** 회사의 낙찰 이력 — bid_rate(투찰율) 회고용.
+ *  award_results와 bid_notices 사이 FK가 없어 2번 쿼리 후 JS에서 매칭. */
 export async function fetchCompanyAwards(
   bizrnoNorm: string,
   limit = 50
 ): Promise<AwardRow[]> {
   const c = getServerSupabase();
-  const { data } = await c
+  const { data: awardData } = await c
     .from("award_results")
-    .select(
-      "bid_ntce_no,bid_ntce_ord,bid_amt,bid_rate,bsns_div_nm,bid_notices(bid_ntce_nm,dmnd_instt_nm,bid_clse_date)"
-    )
+    .select("bid_ntce_no,bid_ntce_ord,bid_amt,bid_rate,bsns_div_nm")
     .eq("bizrno", bizrnoNorm)
     .eq("is_winner", true)
     .order("bid_ntce_no", { ascending: false })
     .limit(limit);
-  type JoinedNotice = { bid_ntce_nm: string | null; dmnd_instt_nm: string | null; bid_clse_date: string | null };
-  type RawRow = {
+  type AwardOnly = {
     bid_ntce_no: string;
     bid_ntce_ord: string;
     bid_amt: number | null;
     bid_rate: number | null;
     bsns_div_nm: string | null;
-    // supabase-js는 FK 조인을 배열로 타입 추론 (복합 PK 매칭이라 실제 0/1개)
-    bid_notices: JoinedNotice[] | JoinedNotice | null;
   };
-  return ((data as unknown as RawRow[]) ?? []).map((r) => {
-    const n = Array.isArray(r.bid_notices) ? r.bid_notices[0] : r.bid_notices;
+  const awards = (awardData as AwardOnly[]) ?? [];
+  if (awards.length === 0) return [];
+
+  const bidNos = Array.from(new Set(awards.map((a) => a.bid_ntce_no)));
+  const { data: noticeData } = await c
+    .from("bid_notices")
+    .select("bid_ntce_no,bid_ntce_ord,bid_ntce_nm,dmnd_instt_nm,bid_clse_date")
+    .in("bid_ntce_no", bidNos);
+  type NoticeMeta = {
+    bid_ntce_no: string;
+    bid_ntce_ord: string;
+    bid_ntce_nm: string | null;
+    dmnd_instt_nm: string | null;
+    bid_clse_date: string | null;
+  };
+  const noticeMap = new Map<string, NoticeMeta>();
+  for (const n of (noticeData as NoticeMeta[]) ?? []) {
+    noticeMap.set(`${n.bid_ntce_no}|${n.bid_ntce_ord}`, n);
+  }
+
+  return awards.map((a) => {
+    const n = noticeMap.get(`${a.bid_ntce_no}|${a.bid_ntce_ord}`);
     return {
-      bid_ntce_no: r.bid_ntce_no,
-      bid_ntce_ord: r.bid_ntce_ord,
-      bid_amt: r.bid_amt,
-      bid_rate: r.bid_rate,
-      bsns_div_nm: r.bsns_div_nm,
+      bid_ntce_no: a.bid_ntce_no,
+      bid_ntce_ord: a.bid_ntce_ord,
+      bid_amt: a.bid_amt,
+      bid_rate: a.bid_rate,
+      bsns_div_nm: a.bsns_div_nm,
       bid_ntce_nm: n?.bid_ntce_nm ?? null,
       dmnd_instt_nm: n?.dmnd_instt_nm ?? null,
       bid_clse_date: n?.bid_clse_date ?? null,
