@@ -62,19 +62,22 @@ def map_item(it: dict, bsns_div: str) -> dict:
 
 
 def run_one(label: str, url: str, extra: dict, batch_size: int) -> int:
+    """배치 안에 같은 (bid_ntce_no, bid_ntce_ord, openg_rank) 중복이 있으면
+    Postgres가 ON CONFLICT 처리 못 함. 페이지네이션이 같은 공고를 여러 페이지에
+    노출하는 경우가 있어 마지막 값만 남기고 dedupe."""
     total = 0
-    batch: list[dict] = []
+    batch: dict[tuple, dict] = {}
     for it in iter_all_items(url, extra):
         row = map_item(it, label)
         if not row["bid_ntce_no"]:
             continue
-        batch.append(row)
+        batch[(row["bid_ntce_no"], row["bid_ntce_ord"], row["openg_rank"])] = row
         if len(batch) >= batch_size:
-            upsert_rows("award_results", batch, on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank")
+            upsert_rows("award_results", list(batch.values()), on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank")
             total += len(batch)
             batch.clear()
     if batch:
-        upsert_rows("award_results", batch, on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank")
+        upsert_rows("award_results", list(batch.values()), on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank")
         total += len(batch)
     return total
 

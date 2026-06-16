@@ -40,6 +40,10 @@ jobs:
         run: uv run python -m jobs.ingest_contracts --days-back 1
         continue-on-error: true
 
+      - name: 낙찰자 수집 (회사 투찰율 신호)
+        run: uv run python -m jobs.ingest_scsbid_winners --days-back 1
+        continue-on-error: true
+
       - name: 사전규격 수집 (SW)
         run: uv run python -m jobs.ingest_pre_specs --days-back 1
         continue-on-error: true
