@@ -24,6 +24,25 @@ export interface ContractRow {
   dmnd_instt_nm: string | null;
 }
 
+export interface AwardRow {
+  bid_ntce_no: string;
+  bid_ntce_ord: string;
+  bid_amt: number | null;
+  bid_rate: number | null;
+  bsns_div_nm: string | null;
+  bid_ntce_nm: string | null;
+  dmnd_instt_nm: string | null;
+  bid_clse_date: string | null;
+}
+
+export interface AwardSummary {
+  count: number;
+  avg_rate: number | null;
+  min_rate: number | null;
+  max_rate: number | null;
+  total_amt: number;
+}
+
 export interface CompanySectors {
   bsns_div_counts: Record<string, number>;
   top_institutions: string[];
@@ -103,6 +122,62 @@ export async function fetchCompanyContracts(
     .order("cntrct_cncls_date", { ascending: false })
     .limit(limit);
   return (data as ContractRow[]) ?? [];
+}
+
+/** 회사의 낙찰 이력 — bid_rate(투찰율) 회고용. award_results와 bid_notices(공고명/발주기관) 조인. */
+export async function fetchCompanyAwards(
+  bizrnoNorm: string,
+  limit = 50
+): Promise<AwardRow[]> {
+  const c = getServerSupabase();
+  const { data } = await c
+    .from("award_results")
+    .select(
+      "bid_ntce_no,bid_ntce_ord,bid_amt,bid_rate,bsns_div_nm,bid_notices(bid_ntce_nm,dmnd_instt_nm,bid_clse_date)"
+    )
+    .eq("bizrno", bizrnoNorm)
+    .eq("is_winner", true)
+    .order("bid_ntce_no", { ascending: false })
+    .limit(limit);
+  type JoinedNotice = { bid_ntce_nm: string | null; dmnd_instt_nm: string | null; bid_clse_date: string | null };
+  type RawRow = {
+    bid_ntce_no: string;
+    bid_ntce_ord: string;
+    bid_amt: number | null;
+    bid_rate: number | null;
+    bsns_div_nm: string | null;
+    // supabase-js는 FK 조인을 배열로 타입 추론 (복합 PK 매칭이라 실제 0/1개)
+    bid_notices: JoinedNotice[] | JoinedNotice | null;
+  };
+  return ((data as unknown as RawRow[]) ?? []).map((r) => {
+    const n = Array.isArray(r.bid_notices) ? r.bid_notices[0] : r.bid_notices;
+    return {
+      bid_ntce_no: r.bid_ntce_no,
+      bid_ntce_ord: r.bid_ntce_ord,
+      bid_amt: r.bid_amt,
+      bid_rate: r.bid_rate,
+      bsns_div_nm: r.bsns_div_nm,
+      bid_ntce_nm: n?.bid_ntce_nm ?? null,
+      dmnd_instt_nm: n?.dmnd_instt_nm ?? null,
+      bid_clse_date: n?.bid_clse_date ?? null,
+    };
+  });
+}
+
+export function summarizeAwards(rows: AwardRow[]): AwardSummary {
+  const rates = rows
+    .map((r) => r.bid_rate)
+    .filter((v): v is number => v !== null && v > 0);
+  const amts = rows
+    .map((r) => r.bid_amt)
+    .filter((v): v is number => v !== null && v > 0);
+  return {
+    count: rows.length,
+    avg_rate: rates.length > 0 ? rates.reduce((s, v) => s + v, 0) / rates.length : null,
+    min_rate: rates.length > 0 ? Math.min(...rates) : null,
+    max_rate: rates.length > 0 ? Math.max(...rates) : null,
+    total_amt: amts.reduce((s, v) => s + v, 0),
+  };
 }
 
 export function summarizeContracts(

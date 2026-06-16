@@ -13,9 +13,11 @@ import { PreSpecSection } from "@/components/PreSpecSection";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  fetchCompanyAwards,
   fetchCompanyByBizrno,
   fetchCompanyContracts,
   fetchCompanyProfile,
+  summarizeAwards,
   summarizeContracts,
 } from "@/lib/company";
 import Link from "next/link";
@@ -95,6 +97,9 @@ export default async function CompanyPage({ params }: Props) {
         </Suspense>
         <Suspense fallback={<SectionSkeleton />}>
           <HistorySection bizrnoNorm={normalized} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <AwardHistorySection bizrnoNorm={normalized} />
         </Suspense>
         <CTASection company={company} />
       </main>
@@ -502,6 +507,102 @@ function CTASection({
   return (
     <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-12 sm:py-16">
       <EmailCaptureForm />
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+async function AwardHistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
+  const awards = await fetchCompanyAwards(bizrnoNorm, 50);
+  if (awards.length === 0) return null;
+  const summary = summarizeAwards(awards);
+  const fmtRate = (v: number | null) => (v == null ? "—" : `${v.toFixed(1)}%`);
+
+  return (
+    <section className="border-t border-border bg-background">
+      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+          낙찰 패턴 회고
+        </h2>
+        <p className="mt-1 text-[14px] text-muted-foreground">
+          최근 {awards.length}건의 낙찰가율 분포예요. 비슷한 공고 검토 시 참고하세요.
+        </p>
+
+        {/* 통계 카드 */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-[12.5px] font-semibold text-muted-foreground">
+                평균 낙찰가율
+              </div>
+              <div className="mt-2 text-[28px] font-extrabold tabular tabular-nums text-primary leading-none">
+                {fmtRate(summary.avg_rate)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-[12.5px] font-semibold text-muted-foreground">
+                범위 (최저 ~ 최고)
+              </div>
+              <div className="mt-2 text-[18px] font-extrabold tabular tabular-nums text-foreground leading-none">
+                {fmtRate(summary.min_rate)} ~ {fmtRate(summary.max_rate)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-[12.5px] font-semibold text-muted-foreground">
+                낙찰 총액 (최근)
+              </div>
+              <div className="mt-2 text-[18px] font-extrabold tabular tabular-nums text-foreground leading-none">
+                {formatKRW(summary.total_amt)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 낙찰 리스트 */}
+        <div className="mt-7 overflow-hidden rounded-xl border border-border bg-background">
+          <table className="w-full text-[13.5px]">
+            <thead className="bg-muted/60 text-[12px] font-semibold text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2.5 text-left">공고명</th>
+                <th className="px-4 py-2.5 text-left">발주 기관</th>
+                <th className="px-4 py-2.5 text-right">낙찰가</th>
+                <th className="px-4 py-2.5 text-right">투찰율</th>
+              </tr>
+            </thead>
+            <tbody>
+              {awards.slice(0, 10).map((a) => (
+                <tr key={`${a.bid_ntce_no}-${a.bid_ntce_ord}`} className="border-t border-border">
+                  <td className="px-4 py-2.5 font-medium text-foreground">
+                    {a.bid_ntce_nm ? (
+                      <Link
+                        href={`/notices/${a.bid_ntce_no}`}
+                        className="hover:text-primary transition-colors"
+                      >
+                        {a.bid_ntce_nm}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground tabular tabular-nums">{a.bid_ntce_no}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
+                    {a.dmnd_instt_nm || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular tabular-nums font-bold text-foreground">
+                    {formatKRW(a.bid_amt)}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular tabular-nums font-bold text-primary">
+                    {fmtRate(a.bid_rate)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
   );
 }
