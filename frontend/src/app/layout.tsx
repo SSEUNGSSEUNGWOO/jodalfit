@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { organizationJsonLd, serializeJsonLd, websiteJsonLd } from "@/lib/jsonld";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +22,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full">
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd([organizationJsonLd(), websiteJsonLd()]),
+          }}
+        />
         {children}
       </body>
     </html>

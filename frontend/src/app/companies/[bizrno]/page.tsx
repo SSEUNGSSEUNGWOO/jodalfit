@@ -24,6 +24,7 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { getRecommendations } from "@/lib/api";
 import { fetchCompanyDomainAnalysis } from "@/lib/company-profile";
+import { companyOrganizationJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { formatKRW, maskBizrno } from "@/lib/utils";
 
 interface Props {
@@ -78,8 +79,19 @@ export default async function CompanyPage({ params }: Props) {
   const company = await fetchCompanyByBizrno(normalized);
   if (!company) notFound();
 
+  const jsonLd = companyOrganizationJsonLd({
+    bizrnoNorm: normalized,
+    corpNm: company.corp_nm,
+    ceoNm: company.ceo_nm,
+    rgnNm: company.rgn_nm,
+  });
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <Header />
       <main className="flex-1">
         <CompanyHero company={company} />

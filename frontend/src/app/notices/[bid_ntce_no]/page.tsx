@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import { Sparkles } from "lucide-react";
 import { fetchLifecycle, fetchSimilarNotices } from "@/lib/notice";
 import { analyzeGoldenTime, isGoldenTime } from "@/lib/golden-time";
+import { noticeJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { cn, formatDateKR, formatKRW, maskBizrno } from "@/lib/utils";
 
 interface Props {
@@ -64,8 +65,24 @@ export default async function NoticePage({ params }: Props) {
   const goldenActive = isGoldenTime(gt.status);
   const specPdfUrl = preSpecs[0]?.spec_doc_file_url_1;
 
+  const jsonLd = noticeJsonLd({
+    bidNtceNo: notice.bid_ntce_no,
+    bidNtceNm: notice.bid_ntce_nm,
+    description: `${notice.dmnd_instt_nm ?? notice.ntce_instt_nm ?? ""}${
+      notice.bsns_div_nm ? ` · ${notice.bsns_div_nm}` : ""
+    } · 추정 ${formatKRW(notice.presmpt_prce)} · 마감 ${formatDateKR(notice.bid_clse_date)}`,
+    instituionName: notice.dmnd_instt_nm ?? notice.ntce_instt_nm,
+    regionName: notice.prtcpt_psbl_rgn_nm,
+    validFrom: notice.bid_ntce_date,
+    validThrough: notice.bid_clse_date,
+  });
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <Header />
       <main className="flex-1">
         {goldenActive && (
