@@ -117,7 +117,7 @@ export async function generateMetadata({
   const titleBase = s.bsns_div
     ? `진행 중인 ${s.bsns_div} 입찰 공고`
     : "진행 중인 공공입찰 공고";
-  const title = pageNum > 1 ? `${titleBase} ${pageNum}페이지 | jodalfit` : `${titleBase} | jodalfit`;
+  const title = pageNum > 1 ? `${titleBase} ${pageNum}페이지 | 조달핏` : `${titleBase} | 조달핏`;
   const canonical = urlOf(parseFilters(s), pageNum);
   return {
     title,

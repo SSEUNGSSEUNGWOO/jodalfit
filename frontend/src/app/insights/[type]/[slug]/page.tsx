@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const insight = await fetchInsight(type, slug);
   if (!insight) return {};
   return {
-    title: `${insight.meta.title} — jodalfit`,
+    title: `${insight.meta.title} — 조달핏`,
     description: insight.meta.summary,
     alternates: { canonical: `/insights/${type}/${slug}` },
     openGraph: {

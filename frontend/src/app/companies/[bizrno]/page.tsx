@@ -41,11 +41,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const company = await fetchCompanyByBizrno(normalized);
   if (!company) {
     return {
-      title: "회사 정보 없음 | jodalfit",
+      title: "회사 정보 없음 | 조달핏",
       robots: { index: false },
     };
   }
-  const title = `${company.corp_nm} 공공입찰 추천 | jodalfit`;
+  const title = `${company.corp_nm} 공공입찰 추천 | 조달핏`;
 
   // 데이터 가용성별 3단 후킹 (CTR 개선용)
   // 1) awards 있으면: 낙찰 건수 + 평균 투찰율

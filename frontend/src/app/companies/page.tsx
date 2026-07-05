@@ -19,7 +19,7 @@ import { formatDateKR, formatKRW, maskBizrno } from "@/lib/utils";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "공공조달 활동 기업 둘러보기 | jodalfit",
+  title: "공공조달 활동 기업 둘러보기 | 조달핏",
   description:
     "나라장터 수주 이력이 분석된 기업들. 각 회사의 활동 영역과 적합한 공공입찰 공고를 한눈에 확인하세요.",
   alternates: { canonical: "/companies" },

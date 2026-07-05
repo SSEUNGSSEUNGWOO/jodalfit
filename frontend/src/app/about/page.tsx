@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "jodalfit이란 — 나라장터 입찰 디스커버리",
+  title: "조달핏이란 — 나라장터 입찰 디스커버리",
   description:
     "jodalfit은 회사 등록업종·공급물품·수주 이력을 분석해 나라장터 공공입찰 중 검토할 만한 공고를 골라주는 디스커버리 도구입니다. 알고리즘 동작 방식과 데이터 출처를 안내합니다.",
   alternates: { canonical: "/about" },

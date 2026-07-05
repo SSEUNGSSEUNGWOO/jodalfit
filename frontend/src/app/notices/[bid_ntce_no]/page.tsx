@@ -25,12 +25,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const lifecycle = await fetchLifecycle(bid_ntce_no);
   if (!lifecycle) {
     return {
-      title: "공고 정보 없음 | jodalfit",
+      title: "공고 정보 없음 | 조달핏",
       robots: { index: false },
     };
   }
   const { notice } = lifecycle;
-  const title = `${notice.bid_ntce_nm} | jodalfit`;
+  const title = `${notice.bid_ntce_nm} | 조달핏`;
   const desc = `${notice.dmnd_instt_nm ?? notice.ntce_instt_nm ?? ""} ${
     notice.bsns_div_nm ? `· ${notice.bsns_div_nm}` : ""
   } · 추정 ${formatKRW(notice.presmpt_prce)} · 마감 ${formatDateKR(notice.bid_clse_date)}. 발주계획부터 낙찰까지 전 과정 분석.`;
