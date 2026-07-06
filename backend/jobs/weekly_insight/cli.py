@@ -19,7 +19,7 @@ from app.services.supabase_client import get_admin_client
 
 from . import evaluator, proofreader, writer
 from .fetchers import dedupe_by_no, fetch_window_notices
-from .selectors import market_stats, pick_top10
+from .selectors import DOMAIN_LABELS, market_stats, pick_top_by_category
 from .templates import render_market, render_picks
 
 
@@ -40,7 +40,74 @@ def parse_year_week(s: str) -> tuple[date, date]:
 
 # ---------------------------------------------------------------------------
 
-def run_picks(monday: date, sunday: date, slug: str) -> Path:
+def _run_picks_for_category(
+    monday: date,
+    sunday: date,
+    base_slug: str,
+    domain: str,
+    label: str,
+    picks: list[dict],
+    total_notices: int,
+) -> Path:
+    """단일 카테고리 발행. writer → evaluator (재시도) → image → proofreader → 저장."""
+    slug = f"{base_slug}-picks-{domain}"
+    print(f"\n[picks/{domain}] {label} — {len(picks)}건")
+
+    feedback: str | None = None
+    rubric = evaluator.load_rubric()
+    max_retries = rubric.get("max_retries", 2)
+    evaluation = None
+    final_blurbs: list[str] = []
+
+    for attempt in range(1, max_retries + 2):
+        print(f"[picks/{domain}] Writer 시도 {attempt}")
+        final_blurbs = writer.write_picks_blurbs(picks, feedback=feedback)
+        draft_md = render_picks(
+            slug, monday, sunday, picks, final_blurbs, total_notices,
+            None, category_label=label,
+        )
+
+        print(f"[picks/{domain}] Evaluator 시도 {attempt}")
+        evaluation = evaluator.evaluate(draft_md, content_type="picks")
+        print(
+            f"[picks/{domain}] score={evaluation['weighted_score']} "
+            f"pass={evaluation['pass']} scores={evaluation.get('scores')}"
+        )
+        if evaluation["pass"]:
+            break
+        feedback = evaluation.get("feedback") or ""
+        if attempt > max_retries:
+            print(f"[picks/{domain}] 최대 재시도 초과. 마지막 draft로 발행.")
+            break
+
+    print(f"[picks/{domain}] Image Prompt 생성")
+    top_summary = "\n".join(
+        f"- {p.get('bid_ntce_nm')} / {p.get('bsns_div_nm')} / "
+        f"{p.get('dmnd_instt_nm') or p.get('ntce_instt_nm')}"
+        for p in picks[:5]
+    )
+    image_prompt = writer.write_image_prompt(
+        "picks",
+        f"기간 {monday}~{sunday}, {label} 분야 TOP {len(picks)}.\n주요:\n{top_summary}",
+    )
+
+    md = render_picks(
+        slug, monday, sunday, picks, final_blurbs, total_notices,
+        evaluation, image_prompt, category_label=label,
+    )
+
+    print(f"[picks/{domain}] Proofreader")
+    md = proofreader.proofread(md)
+
+    out = CONTENT_DIR / "picks" / f"{slug}.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(md, encoding="utf-8")
+    print(f"[picks/{domain}] wrote {out}")
+    return out
+
+
+def run_picks(monday: date, sunday: date, slug: str) -> list[Path]:
+    """카테고리별 TOP 5 발행. 카테고리 후보 <5면 스킵."""
     client = get_admin_client()
     print(f"[picks] fetching notices {monday} ~ {sunday}...")
     raw = fetch_window_notices(client, monday, sunday)
@@ -48,57 +115,29 @@ def run_picks(monday: date, sunday: date, slug: str) -> Path:
     print(f"[picks] {len(raw)} rows, {len(notices)} unique notices")
 
     today = date.today()
-    picks = pick_top10(notices, today)
-    print(f"[picks] selected {len(picks)} picks")
+    by_domain = pick_top_by_category(notices, today, per_cat=5, min_cat=5)
 
-    feedback: str | None = None
-    rubric = evaluator.load_rubric()
-    max_retries = rubric.get("max_retries", 2)
-    evaluation = None
-    md = ""
+    if not by_domain:
+        print("[picks] 발행할 카테고리 없음 (모두 후보 <5). 종료.")
+        return []
 
-    final_blurbs: list[str] = []
-    for attempt in range(1, max_retries + 2):
-        print(f"\n[picks] === Writer 시도 {attempt} ===")
-        final_blurbs = writer.write_picks_blurbs(picks, feedback=feedback)
-        draft_md = render_picks(slug, monday, sunday, picks, final_blurbs, len(notices), None)
+    print(f"[picks] 발행 카테고리 {len(by_domain)}개: "
+          f"{', '.join(f'{d}({len(p)})' for d, p in by_domain.items())}")
 
-        print(f"[picks] === Evaluator 시도 {attempt} ===")
-        evaluation = evaluator.evaluate(draft_md, content_type="picks")
-        print(
-            f"[picks] score={evaluation['weighted_score']} "
-            f"pass={evaluation['pass']} "
-            f"scores={evaluation.get('scores')}"
-        )
-        print(f"[picks] feedback: {evaluation.get('feedback', '')[:300]}")
-        if evaluation["pass"]:
-            break
-        feedback = evaluation.get("feedback") or ""
-        if attempt > max_retries:
-            print("[picks] 최대 재시도 초과. 마지막 draft로 발행.")
-            break
+    outputs: list[Path] = []
+    for domain, picks in by_domain.items():
+        label = DOMAIN_LABELS[domain]
+        try:
+            out = _run_picks_for_category(
+                monday, sunday, slug, domain, label, picks, len(notices),
+            )
+            outputs.append(out)
+        except Exception as e:
+            print(f"[picks/{domain}] 실패: {e}")
+            continue
 
-    print("\n[picks] === Image Prompt 생성 ===")
-    top_summary = "\n".join(
-        f"- {p.get('bid_ntce_nm')} / {p.get('bsns_div_nm')} / {p.get('dmnd_instt_nm') or p.get('ntce_instt_nm')}"
-        for p in picks[:5]
-    )
-    image_prompt = writer.write_image_prompt(
-        "picks",
-        f"기간 {monday}~{sunday}, 신규 공고 {len(notices):,}건 중 TOP 10.\n주요 5건:\n{top_summary}",
-    )
-    print(f"[picks] image_prompt: {image_prompt[:120]}...")
-
-    md = render_picks(slug, monday, sunday, picks, final_blurbs, len(notices), evaluation, image_prompt)
-
-    print("\n[picks] === Proofreader ===")
-    md = proofreader.proofread(md)
-
-    out = CONTENT_DIR / "picks" / f"{slug}.md"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(md, encoding="utf-8")
-    print(f"\n[picks] wrote {out}")
-    return out
+    print(f"\n[picks] 완료: {len(outputs)}개 카테고리 발행")
+    return outputs
 
 
 def run_market(monday: date, sunday: date, slug: str) -> Path:

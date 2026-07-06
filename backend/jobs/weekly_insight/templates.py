@@ -25,12 +25,21 @@ def render_picks(
     total_count: int,
     evaluation: dict | None = None,
     image_prompt: str | None = None,
+    category_label: str | None = None,
 ) -> str:
-    title = f"이번 주 검토할 만한 공공입찰 TOP {len(picks)}"
-    summary = (
-        f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} 신규 공고 "
-        f"{total_count:,}건 중 추정가 1억 이상, 마감 여유 있는 공고를 jodalfit이 선별했습니다."
-    )
+    if category_label:
+        title = f"이번 주 {category_label} 공공입찰 TOP {len(picks)}"
+        summary = (
+            f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} 신규 공고 "
+            f"{total_count:,}건 중 {category_label} 분야에서 추정가 1억 이상, "
+            f"마감 여유 있는 공고를 jodalfit이 선별했습니다."
+        )
+    else:
+        title = f"이번 주 검토할 만한 공공입찰 TOP {len(picks)}"
+        summary = (
+            f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} 신규 공고 "
+            f"{total_count:,}건 중 추정가 1억 이상, 마감 여유 있는 공고를 jodalfit이 선별했습니다."
+        )
 
     front_lines = [
         "---",
@@ -44,6 +53,8 @@ def render_picks(
         f"total_notices: {total_count}",
         f"picks_count: {len(picks)}",
     ]
+    if category_label:
+        front_lines.append(f'category: "{category_label}"')
     if evaluation:
         front_lines.append(f"evaluation_score: {evaluation.get('weighted_score', 0)}")
     if image_prompt:
