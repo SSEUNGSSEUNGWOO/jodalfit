@@ -157,35 +157,30 @@ export default async function InsightPage({ params }: { params: Params }) {
           </ReactMarkdown>
         </article>
 
-        {/* 이미지 프롬프트 박스 — cover_image 미설정 + image_prompt 존재 시 */}
-        {!insight.meta.cover_image?.trim() && insight.meta.image_prompt && (
-          <aside className="mt-10 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-5">
-            <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-primary mb-2">
-              <span className="inline-block size-1.5 rounded-full bg-primary" />
-              운영자 메모 · 커버 이미지 프롬프트
-            </div>
-            <p className="text-[14px] text-foreground leading-relaxed whitespace-pre-line">
-              {insight.meta.image_prompt}
-            </p>
-            <p className="mt-3 text-[12px] text-muted-foreground leading-relaxed">
-              위 프롬프트로 외부 도구(클로드 디자인, DALL-E, Imagen 등)에서 이미지를 만들고
-              <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-[11px]">
-                frontmatter cover_image: /...
-              </code>
-              에 경로를 적어주세요. 비어 있을 동안에는 자동 OG가 hero로 사용됩니다.
-            </p>
-          </aside>
-        )}
+        {/* 운영자 메모 — 개발 환경에서만 표시. cover_image 미채운 페이지에서 프롬프트 카피용. */}
+        {process.env.NODE_ENV === "development" &&
+          !insight.meta.cover_image?.trim() &&
+          insight.meta.image_prompt && (
+            <aside className="mt-10 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-5">
+              <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-primary mb-2">
+                <span className="inline-block size-1.5 rounded-full bg-primary" />
+                운영자 메모 · 커버 이미지 프롬프트
+              </div>
+              <p className="text-[14px] text-foreground leading-relaxed whitespace-pre-line">
+                {insight.meta.image_prompt}
+              </p>
+              <p className="mt-3 text-[12px] text-muted-foreground leading-relaxed">
+                위 프롬프트로 외부 도구(클로드 디자인, DALL-E, Imagen 등)에서 이미지를 만들고
+                <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-[11px]">
+                  frontmatter cover_image: /...
+                </code>
+                에 경로를 적어주세요. 비어 있을 동안에는 자동 OG가 hero로 사용됩니다.
+              </p>
+            </aside>
+          )}
 
         <footer className="mt-10 pt-6 border-t border-border flex justify-between items-center text-[13px] text-muted-foreground">
-          <div>
-            발행 {new Date(insight.meta.published_at).toLocaleDateString("ko-KR")}
-            {insight.meta.evaluation_score && (
-              <span className="ml-3">
-                품질 점수 {insight.meta.evaluation_score.toFixed(2)}/5
-              </span>
-            )}
-          </div>
+          <div>발행 {new Date(insight.meta.published_at).toLocaleDateString("ko-KR")}</div>
           <a href="/insights" className="text-primary font-semibold hover:opacity-80">
             ← 다른 주차 인사이트
           </a>

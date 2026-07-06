@@ -67,11 +67,6 @@ export default async function InsightsIndex() {
                     <div className="mt-2 text-[13px] text-muted-foreground line-clamp-2">
                       {i.summary}
                     </div>
-                    {i.evaluation_score && (
-                      <div className="mt-3 text-[11px] text-muted-foreground">
-                        품질 {i.evaluation_score.toFixed(2)}/5
-                      </div>
-                    )}
                   </Link>
                 </li>
               ))}
@@ -144,11 +139,6 @@ export default async function InsightsIndex() {
                     <div className="mt-2 text-[13px] text-muted-foreground line-clamp-2">
                       {i.summary}
                     </div>
-                    {i.evaluation_score && (
-                      <div className="mt-3 text-[11px] text-muted-foreground">
-                        품질 {i.evaluation_score.toFixed(2)}/5
-                      </div>
-                    )}
                   </Link>
                 </li>
               ))}
