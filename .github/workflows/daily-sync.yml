@@ -68,6 +68,10 @@ jobs:
         run: uv run python -m jobs.embed_pre_specs --limit 1000 --batch 50
         continue-on-error: true
 
+      - name: sitemap warm-up (Google이 신선한 sitemap 보도록 강제 히트)
+        run: curl -sS -o /dev/null -w "sitemap status=%{http_code} time=%{time_total}s\n" https://jodalfit.co.kr/sitemap.xml
+        continue-on-error: true
+
   enrich-companies:
     # 주 1회 (월요일) 회사 마스터 풍부화 (UsrInfoService02 한도 분산)
     runs-on: ubuntu-latest

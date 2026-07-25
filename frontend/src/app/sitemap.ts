@@ -5,7 +5,10 @@ import { listAllInsights } from "@/lib/insights";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://jodalfit.co.kr";
 
-export const revalidate = 86400; // 1 day
+// Vercel ISR이 revalidate=86400을 무시하고 며칠~수주간 stale로 서빙하는 이슈로
+// Google이 sitemap을 "죽은 사이트"로 판단해 랭킹을 낮춘 사례가 있어 강제 dynamic.
+// (히트 빈도 하루 몇 번 수준이라 DB 부담 없음)
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
