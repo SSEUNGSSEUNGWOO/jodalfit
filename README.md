@@ -319,6 +319,9 @@ uv run python -m jobs.ingest_rgn_limit --days-back 7
 # 낙찰자 목록 (참여 신호)
 uv run python -m jobs.ingest_scsbid_winners --days-back 7
 
+# 참가업체 rank 2+ (회사 참가 시그널 — 낙찰자 수집 후 실행)
+uv run python -m jobs.ingest_bid_participants --days-back 7 --limit 2000
+
 
 # === 2. 임베딩 생성 ===
 uv run python -m jobs.embed_bid_notices --limit 100000 --batch 50

@@ -56,8 +56,12 @@ def normalize(v: np.ndarray) -> np.ndarray:
     return v / n if n > 0 else v
 
 
-def dynamic_weights(suju_count: int, has_interest: bool) -> dict[str, float]:
-    """수주 데이터 풍부도에 따른 동적 가중치 (코덱스 협의 결과)."""
+def dynamic_weights(suju_count: float, has_interest: bool) -> dict[str, float]:
+    """수주 데이터 풍부도에 따른 동적 가중치 (코덱스 협의 결과).
+
+    suju_count는 유효 건수 = 낙찰 + 0.4×참가 — 참가만 있는 회사도
+    수주 시그널 티어에 진입한다 (참가 = 실제로 노리는 공고라는 의도 시그널).
+    """
     if suju_count == 0:
         # 콜드스타트: 업종 메인, 관심 있으면 보조
         return {"suju": 0.0, "interest": 0.1 if has_interest else 0.0,
@@ -70,10 +74,15 @@ def dynamic_weights(suju_count: int, has_interest: bool) -> dict[str, float]:
 
 
 def fetch_active_bizrnos(client) -> list[str]:
-    """contracts에 등장한 unique bizrno_norm 페이지로 수집."""
+    """contracts 낙찰사 ∪ award_results 참가사 unique bizrno.
+
+    참가만 하고 수주 못 한 회사도 벡터를 만들어야 키워드 폴백 없이 추천 가능.
+    (양쪽 모두 숫자만 남긴 정규화 사업자번호)
+    """
     bizrnos: set[str] = set()
-    offset = 0
     PAGE = 1000
+
+    offset = 0
     while True:
         r = (
             client.table("contracts")
@@ -92,6 +101,28 @@ def fetch_active_bizrnos(client) -> list[str]:
         if len(r) < PAGE:
             break
         offset += PAGE
+
+    offset = 0
+    while True:
+        r = (
+            client.table("award_results")
+            .select("bizrno")
+            .eq("is_winner", False)
+            .not_.is_("bizrno", "null")
+            .range(offset, offset + PAGE - 1)
+            .execute()
+            .data
+        )
+        if not r:
+            break
+        for row in r:
+            v = row.get("bizrno")
+            if v:
+                bizrnos.add(v)
+        if len(r) < PAGE:
+            break
+        offset += PAGE
+
     return sorted(bizrnos)
 
 
@@ -190,8 +221,9 @@ def process_chunk(
         else:
             rest.append(nm)
 
-    # 4. 수주 시그널 — contracts → bid_notices.embedding 시간 가중 평균
-    # 반감기 365일 exp decay: weight = 0.5 ** (days_ago / 365)
+    # 4. 수주 시그널 — 낙찰(contracts) + 참가(award_results) → bid_notices.embedding
+    # 시간 가중 평균. 반감기 365일 exp decay: weight = 0.5 ** (days_ago / 365)
+    # 재료 가중: 낙찰 1.0 vs 참가 0.4 (참가는 의도 시그널이지만 검증 강도가 낮음)
     contracts = (
         client.table("contracts")
         .select("rprsnt_corp_bizrno_norm,bid_ntce_no,bid_ntce_ord,cntrct_cncls_date")
@@ -199,7 +231,18 @@ def process_chunk(
         .execute()
         .data
     )
-    bid_nos = list({c["bid_ntce_no"] for c in contracts if c.get("bid_ntce_no")})
+    participations = (
+        client.table("award_results")
+        .select("bizrno,bid_ntce_no,bid_ntce_ord,created_at,bidprc_dt:raw->>bidprcDt")
+        .in_("bizrno", chunk_bizrnos)
+        .eq("is_winner", False)
+        .execute()
+        .data
+    )
+    bid_nos = list(
+        {c["bid_ntce_no"] for c in contracts if c.get("bid_ntce_no")}
+        | {p["bid_ntce_no"] for p in participations if p.get("bid_ntce_no")}
+    )
     emb_map: dict[tuple[str, str], np.ndarray] = {}
     EMB_PAGE = 300
     for sub in chunks(bid_nos, EMB_PAGE):
@@ -218,28 +261,36 @@ def process_chunk(
 
     today = date.fromisoformat(datetime.now().date().isoformat())
     HALF_LIFE = 365.0
+    PARTICIPATION_WEIGHT = 0.4
+
+    def time_weight(ds: str | None) -> float:
+        if not ds:
+            return 1.0
+        try:
+            d = date.fromisoformat(ds[:10])
+            days_ago = max((today - d).days, 0)
+            return 0.5 ** (days_ago / HALF_LIFE)
+        except Exception:
+            return 1.0
 
     suju_weighted: dict[str, list[tuple[float, np.ndarray]]] = defaultdict(list)
-    suju_count_by_biz: dict[str, int] = defaultdict(int)
+    suju_count_by_biz: dict[str, float] = defaultdict(float)
     for c in contracts:
         b = c["rprsnt_corp_bizrno_norm"]
         suju_count_by_biz[b] += 1
-        key = (c["bid_ntce_no"], c["bid_ntce_ord"])
-        v = emb_map.get(key)
+        v = emb_map.get((c["bid_ntce_no"], c["bid_ntce_ord"]))
         if v is None:
             continue
-        # 시간 가중치
-        ds = c.get("cntrct_cncls_date")
-        if ds:
-            try:
-                d = date.fromisoformat(ds[:10])
-                days_ago = max((today - d).days, 0)
-                w = 0.5 ** (days_ago / HALF_LIFE)
-            except Exception:
-                w = 1.0
-        else:
-            w = 1.0
-        suju_weighted[b].append((w, v))
+        suju_weighted[b].append((time_weight(c.get("cntrct_cncls_date")), v))
+
+    for p in participations:
+        b = p["bizrno"]
+        suju_count_by_biz[b] += PARTICIPATION_WEIGHT
+        v = emb_map.get((p["bid_ntce_no"], p["bid_ntce_ord"]))
+        if v is None:
+            continue
+        w = time_weight(p.get("bidprc_dt") or p.get("created_at"))
+        suju_weighted[b].append((w * PARTICIPATION_WEIGHT, v))
 
     # 평균(가중) 벡터 계산
     suju_by_biz: dict[str, np.ndarray] = {}

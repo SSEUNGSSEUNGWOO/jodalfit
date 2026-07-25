@@ -44,6 +44,11 @@ jobs:
         run: uv run python -m jobs.ingest_scsbid_winners --days-back 1
         continue-on-error: true
 
+      - name: 참가업체 수집 (회사 참가 시그널)
+        # 낙찰자 수집 직후 실행 — 같은 공고의 rank 2+ 참가업체를 공고별 호출로 채움
+        run: uv run python -m jobs.ingest_bid_participants --days-back 2 --limit 2000
+        continue-on-error: true
+
       - name: 사전규격 수집 (SW)
         run: uv run python -m jobs.ingest_pre_specs --days-back 1
         continue-on-error: true
