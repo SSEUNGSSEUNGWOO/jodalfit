@@ -18,6 +18,7 @@ import {
   fetchCompanyContracts,
   fetchCompanyProfile,
   fetchPeerRateByInstitution,
+  fetchSimilarNoticeAwardees,
   summarizeAwards,
   summarizeContracts,
 } from "@/lib/company";
@@ -128,6 +129,9 @@ export default async function CompanyPage({ params }: Props) {
         </Suspense>
         <Suspense fallback={null}>
           <AwardHistorySection bizrnoNorm={normalized} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <CompetitorProfileSection bizrnoNorm={normalized} />
         </Suspense>
         <CTASection company={company} />
       </main>
@@ -562,6 +566,9 @@ async function AwardHistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
           최근 {awards.length}건의 낙찰가율 분포예요. 비슷한 공고 검토 시 참고하세요.
         </p>
 
+        {/* 낙찰율 히스토그램 — 60~100% 5% 단위 버킷 */}
+        <BidRateHistogram awards={awards} />
+
         {/* 통계 카드 */}
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <Card>
@@ -635,6 +642,137 @@ async function AwardHistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+// 낙찰율 히스토그램 — 회사 낙찰 이력의 bid_rate 분포를 5% 단위 버킷으로 시각화.
+// 공개 참가업체 데이터 없이 "경쟁 강도"의 대체 신호.
+function BidRateHistogram({
+  awards,
+}: {
+  awards: Awaited<ReturnType<typeof fetchCompanyAwards>>;
+}) {
+  const rates = awards
+    .map((a) => a.bid_rate)
+    .filter((v): v is number => v !== null && v > 0);
+  if (rates.length < 3) return null;
+
+  // 60% 미만은 하나 버킷, 이후 5% 단위로 100%까지
+  const buckets: { label: string; count: number; min: number; max: number }[] = [
+    { label: "<60", count: 0, min: 0, max: 60 },
+    { label: "60~65", count: 0, min: 60, max: 65 },
+    { label: "65~70", count: 0, min: 65, max: 70 },
+    { label: "70~75", count: 0, min: 70, max: 75 },
+    { label: "75~80", count: 0, min: 75, max: 80 },
+    { label: "80~85", count: 0, min: 80, max: 85 },
+    { label: "85~90", count: 0, min: 85, max: 90 },
+    { label: "90~95", count: 0, min: 90, max: 95 },
+    { label: "95+", count: 0, min: 95, max: 101 },
+  ];
+  for (const r of rates) {
+    const b = buckets.find((b) => r >= b.min && r < b.max);
+    if (b) b.count++;
+  }
+  const maxCount = Math.max(...buckets.map((b) => b.count));
+  if (maxCount === 0) return null;
+
+  return (
+    <div className="mt-6 rounded-xl border border-border bg-muted/20 p-5">
+      <div className="mb-3 flex items-baseline justify-between">
+        <div className="text-[13px] font-semibold text-foreground">낙찰율 분포</div>
+        <div className="text-[11.5px] text-muted-foreground">
+          낮을수록 경쟁 치열, 상한 근처면 경쟁 약함
+        </div>
+      </div>
+      <div className="flex items-end gap-1.5 h-24">
+        {buckets.map((b) => {
+          const h = maxCount === 0 ? 0 : (b.count / maxCount) * 100;
+          return (
+            <div key={b.label} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className={`w-full rounded-t transition-all ${
+                  b.count > 0 ? "bg-primary/70" : "bg-muted"
+                }`}
+                style={{ height: `${Math.max(h, b.count > 0 ? 6 : 2)}%` }}
+                title={`${b.label}%: ${b.count}건`}
+              />
+              <div className="text-[10px] font-medium text-muted-foreground tabular tabular-nums">
+                {b.label}
+              </div>
+              <div className="text-[10px] font-bold text-foreground tabular tabular-nums">
+                {b.count || ""}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+// 상시 경쟁자 후보 — 실제 참가업체 데이터는 공개 API에 없음.
+// 우회 신호: 회사의 낙찰 공고 → 유사 공고 → 그 공고들의 낙찰자.
+async function CompetitorProfileSection({ bizrnoNorm }: { bizrnoNorm: string }) {
+  const competitors = await fetchSimilarNoticeAwardees(bizrnoNorm, 10, 60, 30);
+  if (competitors.length === 0) return null;
+
+  return (
+    <section className="border-t border-border bg-muted/20">
+      <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+          유사 시장 상시 낙찰자
+        </h2>
+        <p className="mt-1 text-[14px] text-muted-foreground">
+          최근 낙찰 공고와 유사한 사업에서 자주 낙찰받은 회사들이에요.
+          실제 경쟁 참가업체는 아니지만, 같은 시장에서 자주 만나는 후보군으로
+          참고하세요.
+        </p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {competitors.map((c, i) => (
+            <div
+              key={c.bizrno}
+              className="rounded-xl border border-border bg-background p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-primary tabular tabular-nums">
+                      #{i + 1}
+                    </span>
+                    <div className="truncate text-[15px] font-bold text-foreground">
+                      {c.corp_nm}
+                    </div>
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-muted-foreground tabular tabular-nums">
+                    {maskBizrno(c.bizrno)}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-[20px] font-extrabold tabular tabular-nums text-foreground leading-none">
+                    {c.encounter_count}
+                  </div>
+                  <div className="text-[10.5px] text-muted-foreground">
+                    유사 낙찰
+                  </div>
+                </div>
+              </div>
+              {c.sample_notice_names.length > 0 && (
+                <ul className="mt-3 space-y-1 text-[12px] text-muted-foreground">
+                  {c.sample_notice_names.slice(0, 2).map((nm, idx) => (
+                    <li key={idx} className="truncate">
+                      · {nm}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -103,6 +103,35 @@ export async function fetchPeerRateByInstitution(
   return out;
 }
 
+/** 유사 공고 낙찰자 = 상시 경쟁자 후보 (실제 참가업체 아님).
+ *  나라장터 공개 API가 참가업체를 안 주므로 우회 신호로 사용. */
+export interface CompetitorProfile {
+  bizrno: string;
+  corp_nm: string;
+  encounter_count: number;
+  sample_notice_names: string[];
+}
+
+export async function fetchSimilarNoticeAwardees(
+  bizrnoNorm: string,
+  topN = 10,
+  similarPool = 60,
+  historyLimit = 30
+): Promise<CompetitorProfile[]> {
+  const c = getServerSupabase();
+  const { data, error } = await c.rpc("similar_notice_awardees", {
+    p_bizrno_norm: bizrnoNorm,
+    p_similar_pool: similarPool,
+    p_top_n: topN,
+    p_history_limit: historyLimit,
+  });
+  if (error) {
+    // RPC 미배포 or 낙찰 이력 없는 회사는 조용히 빈 배열.
+    return [];
+  }
+  return (data as CompetitorProfile[]) ?? [];
+}
+
 export interface CompanySectors {
   bsns_div_counts: Record<string, number>;
   top_institutions: string[];
