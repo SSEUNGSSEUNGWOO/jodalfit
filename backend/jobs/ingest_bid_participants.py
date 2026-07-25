@@ -2,8 +2,9 @@
 
 소스: ScsbidInfoService/getOpengResultListInfoOpengCompt (inqryDiv=2, 공고별 호출)
 
-큐: 최근 N일 award_results 낙찰 공고 중 bid_notices에 임베딩 있는 공고만.
+큐: 최근 N일 award_results 낙찰 공고(용역·물품) 중 bid_notices에 임베딩 있는 공고만.
   - 임베딩 없는 공고는 벡터 재료가 안 되므로 API 호출 낭비 (하루 5천건+ 한도 위험)
+  - 공사는 운찰제라 참가업체 수천 개 → 시그널 노이즈 + 페이지 호출 폭증(429)이라 제외
   - 이미 rank 2+ 행이 있는 공고는 수집 완료로 보고 스킵
 적재: rank 2+만 is_winner=False로 upsert. rank 1은 winners 잡 담당이라 안 건드림.
   (외자 다품목 공고는 rank=1이 복수라 PK 충돌 — rank 2+ 필터로 자연 회피)
@@ -17,7 +18,10 @@ from __future__ import annotations
 
 import argparse
 import re
+import time
 from datetime import datetime, timedelta
+
+import httpx
 
 from app.services.supabase_client import get_admin_client, upsert_rows
 from jobs._common import (
@@ -73,6 +77,7 @@ def fetch_queue(client, days_back: int, limit: int) -> list[dict]:
             client.table("award_results")
             .select("bid_ntce_no,bid_ntce_ord,bsns_div_nm")
             .eq("is_winner", True)
+            .in_("bsns_div_nm", ["용역", "물품"])
             .gte("created_at", since)
             .range(offset, offset + PAGE - 1)
             .execute()
@@ -124,6 +129,30 @@ def fetch_queue(client, days_back: int, limit: int) -> list[dict]:
     return queue
 
 
+RETRY_429 = 3
+
+
+def fetch_participants(bid_ntce_no: str) -> list[dict]:
+    """공고 하나의 개찰결과 전체. 429는 백오프 재시도 (데이터포털 단기 rate limit)."""
+    for attempt in range(RETRY_429):
+        try:
+            return list(
+                iter_all_items(
+                    ENDPOINT,
+                    {"inqryDiv": "2", "bidNtceNo": bid_ntce_no},
+                    rows_per_page=500,
+                    max_pages=5,
+                )
+            )
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != 429 or attempt == RETRY_429 - 1:
+                raise
+            wait = 60 * (attempt + 1)
+            print(f"  429 rate limited ({bid_ntce_no}), {wait}s 대기 후 재시도")
+            time.sleep(wait)
+    return []
+
+
 def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500) -> None:
     run_id = log_ingest_start(JOB_NAME, {"days_back": days_back, "limit": limit})
     client = get_admin_client()
@@ -137,12 +166,8 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500) -> None:
     try:
         for w in queue:
             calls += 1
-            for it in iter_all_items(
-                ENDPOINT,
-                {"inqryDiv": "2", "bidNtceNo": w["bid_ntce_no"]},
-                rows_per_page=500,
-                max_pages=5,
-            ):
+            time.sleep(0.1)
+            for it in fetch_participants(w["bid_ntce_no"]):
                 row = map_item(it, w.get("bsns_div_nm"))
                 if not row or not row["bid_ntce_no"]:
                     continue
