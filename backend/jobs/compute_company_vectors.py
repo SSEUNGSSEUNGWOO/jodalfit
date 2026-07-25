@@ -126,6 +126,31 @@ def fetch_active_bizrnos(client) -> list[str]:
     return sorted(bizrnos)
 
 
+def fetch_embedded_at_map(client) -> dict[str, str | None]:
+    """companies 페이지 스캔 → bizrno_norm별 embedded_at (없으면 None)."""
+    out: dict[str, str | None] = {}
+    PAGE = 1000
+    offset = 0
+    while True:
+        r = (
+            client.table("companies")
+            .select("bizrno_norm,embedded_at")
+            .not_.is_("bizrno_norm", "null")
+            .order("bizrno")
+            .range(offset, offset + PAGE - 1)
+            .execute()
+            .data
+        )
+        if not r:
+            break
+        for row in r:
+            out[row["bizrno_norm"]] = row.get("embedded_at")
+        if len(r) < PAGE:
+            break
+        offset += PAGE
+    return out
+
+
 def chunks(seq: list[str], size: int) -> Iterator[list[str]]:
     for i in range(0, len(seq), size):
         yield seq[i : i + size]
@@ -385,10 +410,18 @@ def run(limit: int = 25000, chunk_size: int = 100) -> None:
     print(f"[{JOB_NAME}] fetching active bizrnos from contracts...")
     active = fetch_active_bizrnos(client)
 
-    # 풍부화 안 된 회사 (등록업종 없음)도 포함 — 콜드스타트는 corp_bsns_div_nm 폴백
-    # active list에 없는 회사도 추가하고 싶다면 companies 전체 + active 합집합 가능
-    target = active[:limit]
-    print(f"[{JOB_NAME}] active={len(active):,} will_process={len(target):,}")
+    # active(~93k) > limit(25k)라 절단 필요 — 임베딩 없는 회사 먼저,
+    # 그다음 embedded_at 오래된 순으로 로테이션. companies에 없는 회사는
+    # process_chunk에서 어차피 스킵되므로 슬롯 낭비 방지 차원에서 제외.
+    emb_at = fetch_embedded_at_map(client)
+    known = [b for b in active if b in emb_at]
+    known.sort(key=lambda b: (emb_at[b] is not None, emb_at[b] or ""))
+    never_embedded = sum(1 for b in known if emb_at[b] is None)
+    target = known[:limit]
+    print(
+        f"[{JOB_NAME}] active={len(active):,} in_companies={len(known):,} "
+        f"never_embedded={never_embedded:,} will_process={len(target):,}"
+    )
 
     total = 0
     total_skipped = 0
