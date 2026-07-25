@@ -19,6 +19,7 @@ from app.services.explain import (
     explain_keyword_match,
     explain_recommendation,
 )
+from app.services.notice_events import log_impressions
 from app.services.recommend import recommend
 from app.services.search_log import log_search
 
@@ -47,6 +48,13 @@ class RecommendRequest(BaseModel):
         max_length=200,
         description="회사 모드 한정 하이브리드 키워드 (회사 벡터 0.6 + 키워드 임베딩 0.4). 다부서 회사 부서 좁힘.",
     )
+    algorithm: Literal["v1", "v2"] = Field(
+        "v1",
+        description="v1: 코사인+소프트 rerank / v2: 자격 하드필터+가중치 score+MMR (company 모드 한정)",
+    )
+    session_id: str | None = Field(
+        None, max_length=64, description="프론트 세션 ID — notice_events 상관관계용"
+    )
     limit: int = Field(20, ge=1, le=40)
     candidate_pool: int = Field(200, ge=10, le=500)
     explain_top: int = Field(
@@ -69,6 +77,7 @@ def post_recommendations(
         candidate_pool=req.candidate_pool,
         mode=req.mode,
         keywords=req.keywords,
+        algorithm=req.algorithm,
     )
 
     has_any_results = bool(result.get("results") or result.get("keyword_results"))
@@ -113,6 +122,14 @@ def post_recommendations(
         referer=request.headers.get("referer"),
         latency_ms=int((time.time() - t0) * 1000),
     )
+    if result.get("results"):
+        background.add_task(
+            log_impressions,
+            result["results"],
+            session_id=req.session_id,
+            target_bizrno=company.get("bizrno"),
+            algorithm_version=req.algorithm,
+        )
 
     if error_404:
         raise HTTPException(status_code=404, detail=result["error"])
@@ -141,6 +158,7 @@ def post_recommendations_stream(
         candidate_pool=req.candidate_pool,
         mode=req.mode,
         keywords=req.keywords,
+        algorithm=req.algorithm,
     )
 
     has_any_results = bool(result.get("results") or result.get("keyword_results"))
@@ -170,6 +188,14 @@ def post_recommendations_stream(
         referer=request.headers.get("referer"),
         latency_ms=int((time.time() - t0) * 1000),
     )
+    if result.get("results"):
+        background.add_task(
+            log_impressions,
+            result["results"],
+            session_id=req.session_id,
+            target_bizrno=company.get("bizrno"),
+            algorithm_version=req.algorithm,
+        )
 
     primary_top = (result.get("results") or [])[: req.explain_top]
     keyword_top = (result.get("keyword_results") or [])[: req.explain_top]

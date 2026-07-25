@@ -27,6 +27,25 @@ export interface BidRecommendation {
   score: number;
   explanation?: string;
   evidence?: string[];
+  /** v2 — 가중치 합산 raw 점수 (score는 표시용 0~1 정규화) */
+  score_raw?: number;
+  /** v2 — 시그널별 라벨·점수. label은 그대로 배지가 됨 */
+  score_breakdown?: ScoreSignal[];
+  /** v2 — 자격 하드필터 판정 상세 */
+  qualification?: {
+    passed: boolean;
+    unverified: boolean;
+    reasons: string[];
+    failures: string[];
+  };
+}
+
+/** v2 랭킹 시그널 1건 — 가산/감산 근거 */
+export interface ScoreSignal {
+  key: string;
+  label: string;
+  points: number;
+  [extra: string]: unknown;
 }
 
 /** 사전규격(골든타임) 매칭. 의견 마감일(opnin_rgst_clse_dt)이 핵심 */
@@ -102,6 +121,8 @@ export interface RecommendationResponse {
   viz?: VizData | null;
   error?: string | null;
   mode?: "company" | "keywords" | "auto";
+  /** A/B — 이 응답을 만든 랭킹 알고리즘 */
+  algorithm?: "v1" | "v2";
   query?: string;
   /** "keywords"면 회사 벡터 없거나 식별 실패 — 프론트가 키워드 폴백 UI 노출 */
   fallback?: "keywords";

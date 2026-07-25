@@ -5,6 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.requests import Request
 
+from app.api.events import router as events_router
 from app.api.recommendations import router as recommendations_router
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
@@ -49,3 +50,4 @@ def health() -> dict[str, str]:
 
 
 app.include_router(recommendations_router)
+app.include_router(events_router)

@@ -17,6 +17,7 @@ interface PageProps {
     q?: string;
     keywords?: string;
     mode?: string;
+    algorithm?: string;
   }>;
 }
 
@@ -28,6 +29,7 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   const mode: Mode = companyQuery ? "company" : "keywords";
   const query = companyQuery || keywordsQuery;
   const useMock = p.mode === "mock";
+  const algorithm = p.algorithm === "v2" ? "v2" : "v1";
 
   return (
     <>
@@ -39,6 +41,7 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
             mode={mode}
             useMock={useMock}
             keywords={mode === "company" ? hybridKeywords || undefined : undefined}
+            algorithm={algorithm}
           />
         ) : (
           <EmptyState mode={mode} />

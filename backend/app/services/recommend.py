@@ -330,6 +330,7 @@ def _search_with_embedding(
     company_institutions: set[str] | None = None,
     company_amt_median: float | None = None,
     company_industry_names: set[str] | None = None,
+    algorithm: str = "v1",
 ) -> list[dict]:
     client = get_admin_client()
     # 같은 bid_ntce_no 다른 ord가 여러 건일 수 있어 풀을 넉넉히 가져온 뒤 dedupe
@@ -354,6 +355,22 @@ def _search_with_embedding(
         deduped.append(r)
         if len(deduped) >= candidate_pool:
             break
+
+    if algorithm == "v2":
+        # v2: 하드 필터 + 가중치 score + MMR (lazy import — 순환 방지)
+        from app.recommender.pipeline import rank_v2
+
+        return rank_v2(
+            client,
+            deduped,
+            company_rgn=company_rgn,
+            company_terms=company_terms or set(),
+            company_institutions=company_institutions or set(),
+            company_amt_median=company_amt_median,
+            company_industry_names=company_industry_names or set(),
+            limit=limit,
+        )
+
     # 자격 데이터 한 번에 fetch + 미통과 표시 (소프트 감점은 rerank 안에서)
     if company_industry_names is not None or company_rgn is not None:
         bid_keys = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in deduped]
@@ -552,6 +569,7 @@ def recommend(
     candidate_pool: int = 100,
     mode: Literal["company", "keywords", "auto"] = "company",
     keywords: str | None = None,
+    algorithm: Literal["v1", "v2"] = "v1",
 ) -> dict[str, Any]:
     """추천 메인 진입점.
 
@@ -559,20 +577,29 @@ def recommend(
     keywords 모드: query는 자유 텍스트 (keywords 파라미터는 무시)
     auto 모드: 입력 자동 감지 + 회사/키워드 결과 둘 다 반환 (UI 탭)
 
+    algorithm (A/B):
+    - v1: 코사인 + 소프트 보너스 rerank (기존)
+    - v2: 자격 하드 필터 + 가중치 score + MMR — company 모드에만 적용
+      (키워드 모드는 회사 컨텍스트가 없어 자격/이력 시그널 부재 → 항상 v1)
+
     응답 공통:
     - results: 입찰공고 매칭 (기존)
     - pre_spec_results: 사전규격 매칭 (v0.3)
     - order_plan_results: 발주계획 매칭 (v0.3)
     """
     if mode == "auto":
-        return _recommend_auto(query, limit, candidate_pool, keywords)
+        return _recommend_auto(query, limit, candidate_pool, keywords, algorithm)
     if mode == "keywords":
         return _recommend_by_keywords(query, limit, candidate_pool)
-    return _recommend_by_company(query, limit, candidate_pool, keywords)
+    return _recommend_by_company(query, limit, candidate_pool, keywords, algorithm)
 
 
 def _recommend_auto(
-    query: str, limit: int, candidate_pool: int, keywords: str | None = None
+    query: str,
+    limit: int,
+    candidate_pool: int,
+    keywords: str | None = None,
+    algorithm: str = "v1",
 ) -> dict[str, Any]:
     """입력 자동 라우팅 + 양쪽 결과 합치기.
 
@@ -585,20 +612,21 @@ def _recommend_auto(
     is_bizrno = len(digits) == 10
 
     if is_bizrno:
-        result = _recommend_by_company(query, limit, candidate_pool, keywords)
+        result = _recommend_by_company(query, limit, candidate_pool, keywords, algorithm)
         result["mode"] = "auto"
         result["primary"] = "company"
         result["keyword_results"] = []
         return result
 
     # 텍스트 입력: 두 모드 병렬 실행 (단순 직렬, 비용 거의 동일)
-    company_result = _recommend_by_company(query, limit, candidate_pool, keywords)
+    company_result = _recommend_by_company(query, limit, candidate_pool, keywords, algorithm)
     keyword_result = _recommend_by_keywords(query, limit, candidate_pool)
 
     company_hit = bool(company_result.get("company")) and bool(company_result.get("results"))
 
     return {
         "mode": "auto",
+        "algorithm": algorithm,
         "primary": "company" if company_hit else "keywords",
         "company": company_result.get("company"),
         "keywords": keywords,
@@ -644,7 +672,11 @@ def _recommend_by_keywords(
 
 
 def _recommend_by_company(
-    query: str, limit: int, candidate_pool: int, keywords: str | None = None
+    query: str,
+    limit: int,
+    candidate_pool: int,
+    keywords: str | None = None,
+    algorithm: str = "v1",
 ) -> dict[str, Any]:
     company = find_company(query)
     if not company:
@@ -712,6 +744,7 @@ def _recommend_by_company(
         company_institutions=company_institutions,
         company_amt_median=company_amt_median,
         company_industry_names=company_industry_names,
+        algorithm=algorithm,
     )
     pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
     order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
@@ -731,6 +764,7 @@ def _recommend_by_company(
             "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
         },
         "mode": "company",
+        "algorithm": algorithm,
         "keywords": keywords_text or None,
         "results": ranked,
         "pre_spec_results": pre_specs,

@@ -10,6 +10,7 @@ import { OrderPlanSection } from "@/components/OrderPlanSection";
 import { PreSpecSection } from "@/components/PreSpecSection";
 import { SearchForm } from "@/components/SearchForm";
 import { StreamingResultsList } from "@/components/StreamingResultsList";
+import { getSessionId } from "@/lib/events";
 import { MOCK_RESPONSE } from "@/lib/mock-data";
 import type { RecommendationResponse } from "@/types/recommendations";
 
@@ -17,6 +18,7 @@ const TOP_N = 5;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 type Mode = "company" | "keywords";
+type Algorithm = "v1" | "v2";
 
 interface Props {
   query: string;
@@ -24,9 +26,17 @@ interface Props {
   useMock: boolean;
   /** 회사 모드에서만 의미 — 회사 벡터 × 키워드 임베딩 0.6/0.4 하이브리드 블렌딩 */
   keywords?: string;
+  /** A/B — v2: 자격 하드필터 + 가중치 score + MMR (company 모드 한정) */
+  algorithm?: Algorithm;
 }
 
-export function RecommendationsView({ query, mode, useMock, keywords }: Props) {
+export function RecommendationsView({
+  query,
+  mode,
+  useMock,
+  keywords,
+  algorithm = "v1",
+}: Props) {
   const [data, setData] = useState<RecommendationResponse | null>(
     useMock ? MOCK_RESPONSE : null
   );
@@ -55,6 +65,8 @@ export function RecommendationsView({ query, mode, useMock, keywords }: Props) {
             query,
             mode,
             keywords: keywords || null,
+            algorithm,
+            session_id: getSessionId(),
             limit: 20,
             candidate_pool: 200,
             explain_top: TOP_N,
@@ -126,7 +138,7 @@ export function RecommendationsView({ query, mode, useMock, keywords }: Props) {
       cancelled = true;
       controller.abort();
     };
-  }, [query, mode, useMock, keywords]);
+  }, [query, mode, useMock, keywords, algorithm]);
 
   if (!data) {
     return <LoadingState label={query} mode={mode} />;
@@ -252,6 +264,8 @@ function CompanyResults({
               explanations={explanations}
               streamDone={streamDone}
               noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 넓히거나 다른 모드로 시도해보세요."
+              algorithm={data.algorithm}
+              targetBizrno={data.company?.bizrno}
             />
 
             <PreSpecSection results={data.pre_spec_results ?? []} />
@@ -315,6 +329,7 @@ function KeywordResults({
               streamDone={streamDone}
               noResultText="조건에 맞는 공고를 찾지 못했습니다. 키워드를 더 구체적으로 입력하거나 다른 영역으로 시도해보세요."
               semanticHintQuery={query}
+              algorithm={data.algorithm}
             />
 
             <PreSpecSection results={data.pre_spec_results ?? []} />
