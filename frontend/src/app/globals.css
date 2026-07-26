@@ -6,12 +6,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* ── Brand palette — Deep Forest Green ───────────── */
+  /* ── Brand palette — Emerald Green ───────────────── */
   /* Brand */
-  --color-brand:        #166534;   /* 딥 포레스트 그린 */
-  --color-brand-strong: #14532d;
-  --color-brand-soft:   #dcfce7;
-  --color-brand-tint:   #f0fdf4;
+  --color-brand:        #047857;   /* 에메랄드 그린 (white 텍스트 AA 대비 충족) */
+  --color-brand-strong: #065f46;
+  --color-brand-soft:   #d1fae5;
+  --color-brand-tint:   #ecfdf5;
 
   /* Greys (토스 grey scale) */
   --color-ink:          #191f28;   /* text strong */
@@ -69,7 +69,7 @@
   --card-foreground:      #191f28;
   --popover:              #ffffff;
   --popover-foreground:   #191f28;
-  --primary:              #166534;        /* 딥 포레스트 그린 */
+  --primary:              #047857;        /* 에메랄드 그린 */
   --primary-foreground:   #ffffff;
   --secondary:            #f2f4f6;
   --secondary-foreground: #333d4b;
@@ -80,7 +80,7 @@
   --destructive:          #f04452;
   --border:               #e5e8eb;
   --input:                #e5e8eb;
-  --ring:                 #166534;
+  --ring:                 #047857;
   --chart-1:        oklch(0.87 0 0);
   --chart-2:        oklch(0.556 0 0);
   --chart-3:        oklch(0.439 0 0);

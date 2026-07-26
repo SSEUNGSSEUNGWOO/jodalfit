@@ -20,7 +20,7 @@ export default async function HomePage() {
       <main
         style={{
           background:
-            "radial-gradient(900px 500px at 50% 0%, #E3F1E8 0%, rgba(227, 241, 232, 0) 60%), linear-gradient(180deg, #F1F8F2 0%, #FFFFFF 70%)",
+            "radial-gradient(900px 500px at 50% 0%, #E7F7EF 0%, rgba(231, 247, 239, 0) 60%), linear-gradient(180deg, #F4FBF7 0%, #FFFFFF 70%)",
         }}
       >
         <div className="flex flex-col justify-center min-h-[calc(100vh-4rem)]">

@@ -26,8 +26,8 @@ function toSvg(x: number, y: number) {
 }
 
 function scoreColor(score: number) {
-  if (score >= 0.85) return "#166534";
-  if (score >= 0.7) return "#3f9a5f";
+  if (score >= 0.85) return "#047857";
+  if (score >= 0.7) return "#10b981";
   if (score >= 0.55) return "#a78a3a";
   return "#9ca3af";
 }
@@ -171,7 +171,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                 cy={cx[1]}
                 r={20}
                 fill="none"
-                stroke="#166534"
+                stroke="#047857"
                 strokeOpacity={0.3}
                 strokeWidth={2}
                 pointerEvents="none"
@@ -180,7 +180,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                 cx={cx[0]}
                 cy={cx[1]}
                 r={14}
-                fill="#166534"
+                fill="#047857"
                 stroke="#fff"
                 strokeWidth={3}
                 style={{ cursor: "pointer" }}
@@ -200,7 +200,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                 textAnchor="middle"
                 fontSize={12}
                 fontWeight={700}
-                fill="#166534"
+                fill="#047857"
                 pointerEvents="none"
               >
                 {companyName}
@@ -214,7 +214,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
               className={[
                 "pointer-events-none absolute z-10 max-w-[260px] rounded-md px-3 py-2 shadow-md border text-[12px] leading-snug",
                 hover.tone === "primary"
-                  ? "bg-[#166534] text-white border-[#166534]"
+                  ? "bg-[#047857] text-white border-[#047857]"
                   : hover.tone === "amber"
                     ? "bg-amber-50 text-amber-900 border-amber-300"
                     : "bg-white text-foreground border-border",
@@ -237,11 +237,11 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11.5px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#166534]" />
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#047857]" />
             회사
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#166534] opacity-70" />
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#047857] opacity-70" />
             점수 85+
           </span>
           <span className="inline-flex items-center gap-1.5">

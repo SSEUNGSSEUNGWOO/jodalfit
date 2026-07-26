@@ -5,7 +5,7 @@ export const alt = "jodalfit — 우리 회사가 검토할 만한 공공입찰"
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const PRIMARY = "#166534";
+const PRIMARY = "#047857";
 const INK = "#111827";
 const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
