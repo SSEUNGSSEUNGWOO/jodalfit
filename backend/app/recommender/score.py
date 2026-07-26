@@ -27,6 +27,8 @@ def score_notice(
     company_institutions: set[str],
     company_amt_median: float | None,
     today: date,
+    peer_instt_counts: dict[str, int] | None = None,
+    instt_stats: dict[str, dict] | None = None,
 ) -> tuple[float, list[dict]]:
     breakdown: list[dict] = []
 
@@ -36,6 +38,21 @@ def score_notice(
     instt = (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
     if instt and instt in company_institutions:
         breakdown.append({"key": "institution", "label": "재출현 기관", "points": 50, "instt": instt})
+    elif instt and peer_instt_counts and instt in peer_instt_counts:
+        # 재출현(+50)과 스택 방지 — 협업 시그널은 "발굴" 톤이라 미거래 기관에만
+        cnt = peer_instt_counts[instt]
+        pts = 80 if cnt >= 2 else 40
+        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": pts, "peer_awards": cnt})
+
+    if instt and instt_stats and instt in instt_stats:
+        st = instt_stats[instt]
+        total = st.get("total") or 0
+        if total >= 10:
+            repeat_ratio = 1 - (st.get("distinct_winners") or 0) / total
+            if repeat_ratio >= 0.5:
+                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": -20, "repeat_ratio": round(repeat_ratio, 2)})
+            elif repeat_ratio <= 0.25:
+                breakdown.append({"key": "instt_open", "label": "신규 진입 열린 기관", "points": 15, "repeat_ratio": round(repeat_ratio, 2)})
 
     sido = company_rgn.split()[0] if company_rgn else None
     if sido and r.get("prtcpt_psbl_rgn_nm") and sido in r["prtcpt_psbl_rgn_nm"]:

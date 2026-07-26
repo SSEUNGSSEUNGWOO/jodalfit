@@ -331,6 +331,7 @@ def _search_with_embedding(
     company_amt_median: float | None = None,
     company_industry_names: set[str] | None = None,
     algorithm: str = "v1",
+    company_bizrno_norm: str | None = None,
 ) -> list[dict]:
     client = get_admin_client()
     # 같은 bid_ntce_no 다른 ord가 여러 건일 수 있어 풀을 넉넉히 가져온 뒤 dedupe
@@ -369,6 +370,8 @@ def _search_with_embedding(
             company_amt_median=company_amt_median,
             company_industry_names=company_industry_names or set(),
             limit=limit,
+            company_embedding_str=embedding_str,
+            company_bizrno_norm=company_bizrno_norm,
         )
 
     # 자격 데이터 한 번에 fetch + 미통과 표시 (소프트 감점은 rerank 안에서)
@@ -745,6 +748,7 @@ def _recommend_by_company(
         company_amt_median=company_amt_median,
         company_industry_names=company_industry_names,
         algorithm=algorithm,
+        company_bizrno_norm=bizrno_norm,
     )
     pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
     order_plans = _search_order_plans(embedding_str, limit, candidate_pool)

@@ -102,26 +102,30 @@ def fetch_active_bizrnos(client) -> list[str]:
             break
         offset += PAGE
 
-    offset = 0
+    # is_winner=False에는 인덱스가 없어 offset 페이징이 timeout(57014) →
+    # bizrno 인덱스를 타는 keyset 페이지네이션 사용
+    last = ""
     while True:
-        r = (
+        q = (
             client.table("award_results")
             .select("bizrno")
             .eq("is_winner", False)
             .not_.is_("bizrno", "null")
-            .range(offset, offset + PAGE - 1)
-            .execute()
-            .data
+            .order("bizrno")
+            .limit(PAGE)
         )
+        if last:
+            q = q.gt("bizrno", last)
+        r = q.execute().data
         if not r:
             break
         for row in r:
             v = row.get("bizrno")
             if v:
                 bizrnos.add(v)
+        last = r[-1]["bizrno"]
         if len(r) < PAGE:
             break
-        offset += PAGE
 
     return sorted(bizrnos)
 

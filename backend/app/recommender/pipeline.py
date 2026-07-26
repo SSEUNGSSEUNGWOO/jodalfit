@@ -12,6 +12,10 @@ from __future__ import annotations
 
 from datetime import date
 
+from app.recommender.collaborative import (
+    fetch_institution_stats,
+    fetch_peer_institutions,
+)
 from app.recommender.mmr import mmr_diversify
 from app.recommender.qualifications import check_qualifications
 from app.recommender.score import score_notice
@@ -30,6 +34,8 @@ def rank_v2(
     company_amt_median: float | None,
     company_industry_names: set[str],
     limit: int,
+    company_embedding_str: str | None = None,
+    company_bizrno_norm: str | None = None,
 ) -> list[dict]:
     from app.services.recommend import _fetch_eligibility, _fetch_result_embeddings
 
@@ -50,6 +56,22 @@ def rank_v2(
         r["qualification"] = q
         passed.append(r)
 
+    peer_instt_counts: dict[str, int] = {}
+    instt_stats: dict[str, dict] = {}
+    try:
+        if company_embedding_str:
+            peer_instt_counts = fetch_peer_institutions(
+                client, company_embedding_str, company_bizrno_norm
+            )
+        cand_instts = {
+            (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
+            for r in passed
+        }
+        instt_stats = fetch_institution_stats(client, cand_instts)
+    except Exception as e:
+        # 0015 RPC 미적용 등 — 협업 시그널 없이 v2 나머지는 그대로 동작
+        print(f"[rank_v2] collaborative signals skipped: {e}")
+
     today = date.today()
     for r in passed:
         raw, breakdown = score_notice(
@@ -59,6 +81,8 @@ def rank_v2(
             company_institutions=company_institutions,
             company_amt_median=company_amt_median,
             today=today,
+            peer_instt_counts=peer_instt_counts,
+            instt_stats=instt_stats,
         )
         if r["qualification"]["unverified"]:
             breakdown.append(
