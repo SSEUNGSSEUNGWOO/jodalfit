@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SearchForm } from "@/components/SearchForm";
@@ -17,16 +18,64 @@ export default async function HomePage() {
     <>
       <Header />
       <main
-        className="flex flex-col justify-center min-h-[calc(100vh-4rem)]"
         style={{
           background:
             "radial-gradient(900px 500px at 50% 0%, #E3F1E8 0%, rgba(227, 241, 232, 0) 60%), linear-gradient(180deg, #F1F8F2 0%, #FFFFFF 70%)",
         }}
       >
-        <Hero activeCount={activeCount} />
+        <div className="flex flex-col justify-center min-h-[calc(100vh-4rem)]">
+          <Hero activeCount={activeCount} />
+        </div>
+        <Features />
       </main>
       <Footer />
     </>
+  );
+}
+
+const FEATURES = [
+  {
+    href: "/recommendations",
+    title: "회사 맞춤 추천",
+    desc: "등록업종·공급물품·수주 이력으로 회사 벡터를 만들어 검토할 만한 공고를 우선순위로 정리해요.",
+    cta: "회사명으로 검색",
+  },
+  {
+    href: "/notices",
+    title: "공고 라이프사이클",
+    desc: "발주계획 → 사전규격 → 공고 → 개찰 → 계약까지, 한 공고의 전 과정을 한 페이지에서 확인해요.",
+    cta: "공고 둘러보기",
+  },
+  {
+    href: "/insights",
+    title: "주간 인사이트",
+    desc: "분야별 검토할 만한 공고 픽과 시장 동향 리포트를 매주 월요일 발행해요.",
+    cta: "인사이트 보기",
+  },
+];
+
+function Features() {
+  return (
+    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 pb-20 sm:pb-24">
+      <h2 className="sr-only">조달핏이 도와드리는 것</h2>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {FEATURES.map((f) => (
+          <Link
+            key={f.href}
+            href={f.href}
+            className="group rounded-xl border border-border bg-card p-6 hover:border-primary/40 hover:shadow-sm transition-all"
+          >
+            <h3 className="text-[16.5px] font-bold text-foreground">{f.title}</h3>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground break-keep">
+              {f.desc}
+            </p>
+            <span className="mt-4 inline-block text-[13px] font-semibold text-primary group-hover:underline">
+              {f.cta} →
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -37,7 +86,7 @@ function Hero({ activeCount }: { activeCount: number }) {
         <div className="text-center max-w-[880px] mx-auto rise">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <a
-              href="mailto:jsw7980@gmail.com?subject=jodalfit%20%EC%9D%98%EA%B2%AC"
+              href="mailto:jsw7980@gmail.com?subject=%EC%A1%B0%EB%8B%AC%ED%95%8F%20%EC%9D%98%EA%B2%AC"
               className="inline-flex items-center gap-1.5 rounded-pill border border-orange-300 bg-orange-50 px-3 py-1.5 text-[12.5px] font-bold text-orange-800 hover:bg-orange-100 transition-colors"
             >
               <span aria-hidden>🌱</span>

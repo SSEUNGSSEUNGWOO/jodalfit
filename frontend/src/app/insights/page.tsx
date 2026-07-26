@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/insights" },
 };
 
+function weekLabel(slug: string) {
+  const m = slug.match(/^(\d{4})-w(\d+)/);
+  return m ? `${m[1]} W${m[2]}` : null;
+}
+
 export default async function InsightsIndex() {
   const items = await listAllInsights();
 
@@ -59,7 +64,7 @@ export default async function InsightsIndex() {
                     className="block rounded-lg border border-border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all"
                   >
                     <div className="text-[12px] font-semibold uppercase tracking-wider text-primary mb-1">
-                      {i.slug}
+                      {[weekLabel(i.slug), i.category].filter(Boolean).join(" · ") || i.slug}
                     </div>
                     <div className="text-[16px] font-bold text-foreground leading-snug">
                       {i.title}
@@ -131,7 +136,7 @@ export default async function InsightsIndex() {
                     className="block rounded-lg border border-border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all"
                   >
                     <div className="text-[12px] font-semibold uppercase tracking-wider text-primary mb-1">
-                      {i.slug}
+                      {[weekLabel(i.slug), i.category].filter(Boolean).join(" · ") || i.slug}
                     </div>
                     <div className="text-[16px] font-bold text-foreground leading-snug">
                       {i.title}

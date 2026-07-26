@@ -22,7 +22,7 @@ export function JodalfitHalvesSymbol({
       viewBox="0 0 200 200"
       className={className}
       role="img"
-      aria-label="jodalfit"
+      aria-label="조달핏"
     >
       <polygon points="35,35 165,35 35,165" fill="currentColor" />
       <polygon
@@ -45,10 +45,10 @@ export function JodalfitHalvesWordmark({
 }) {
   return (
     <svg
-      viewBox="0 0 720 200"
+      viewBox="0 0 600 200"
       className={className}
       role="img"
-      aria-label="jodalfit"
+      aria-label="조달핏"
     >
       <polygon points="35,35 165,35 35,165" fill="currentColor" />
       <polygon
@@ -60,14 +60,14 @@ export function JodalfitHalvesWordmark({
       />
       <text
         x="220"
-        y="138"
+        y="140"
         fill="currentColor"
-        fontFamily="Manrope, 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        fontFamily="'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif"
         fontWeight="700"
-        fontSize="120"
-        letterSpacing="-5"
+        fontSize="118"
+        letterSpacing="-3"
       >
-        jodalfit
+        조달핏
       </text>
     </svg>
   );
@@ -86,7 +86,7 @@ export function JodalfitRegistrationSymbol({
       viewBox="0 0 200 200"
       className={className}
       role="img"
-      aria-label="jodalfit"
+      aria-label="조달핏"
     >
       <g
         fill="none"
@@ -113,10 +113,10 @@ export function JodalfitRegistrationWordmark({
 }) {
   return (
     <svg
-      viewBox="0 0 720 200"
+      viewBox="0 0 600 200"
       className={className}
       role="img"
-      aria-label="jodalfit"
+      aria-label="조달핏"
     >
       <g
         fill="none"
@@ -132,14 +132,14 @@ export function JodalfitRegistrationWordmark({
       <circle cx="100" cy="100" r="13" fill="currentColor" />
       <text
         x="220"
-        y="138"
+        y="140"
         fill="currentColor"
-        fontFamily="Manrope, 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        fontFamily="'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif"
         fontWeight="700"
-        fontSize="120"
-        letterSpacing="-5"
+        fontSize="118"
+        letterSpacing="-3"
       >
-        jodalfit
+        조달핏
       </text>
     </svg>
   );
@@ -208,7 +208,7 @@ export function Brand({
     <Link
       href={href}
       className="inline-flex items-center hover:opacity-80 transition-opacity"
-      aria-label="jodalfit 홈"
+      aria-label="조달핏 홈"
     >
       {content}
     </Link>

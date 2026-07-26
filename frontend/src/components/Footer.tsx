@@ -8,7 +8,7 @@ export function Footer() {
         <div>
           <Brand size="md" />
           <p className="mt-3 max-w-md text-[13.5px] leading-relaxed text-ink-4">
-            jodalfit은 나라장터(국가종합전자조달) 공공데이터를 기반으로
+            조달핏은 나라장터(국가종합전자조달) 공공데이터를 기반으로
             입찰공고를 추천합니다. 낙찰 결과를 보장하지 않으며 의사결정의 보조 도구입니다.
           </p>
           <p className="mt-3 text-[12.5px] text-ink-5">
@@ -17,7 +17,7 @@ export function Footer() {
           <p className="mt-3 text-[12.5px] text-ink-4">
             의견·문의 ·{" "}
             <a
-              href="mailto:jsw7980@gmail.com?subject=jodalfit%20%EC%9D%98%EA%B2%AC"
+              href="mailto:jsw7980@gmail.com?subject=%EC%A1%B0%EB%8B%AC%ED%95%8F%20%EC%9D%98%EA%B2%AC"
               className="font-semibold text-ink hover:underline"
             >
               jsw7980@gmail.com
@@ -57,7 +57,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[12px] text-ink-5 sm:px-8">
-          <span>© {today.getFullYear()} jodalfit</span>
+          <span>© {today.getFullYear()} 조달핏 jodalfit</span>
           <span className="tabular">
             업데이트 ·{" "}
             {today.toLocaleDateString("ko-KR", {

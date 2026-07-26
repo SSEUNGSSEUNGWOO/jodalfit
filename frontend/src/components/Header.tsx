@@ -4,7 +4,7 @@ import { Brand } from "./Brand";
 const NAV_ITEMS = [
   { href: "/notices", label: "공고 둘러보기" },
   { href: "/insights", label: "주간 인사이트" },
-  { href: "/about", label: "jodalfit이란" },
+  { href: "/about", label: "조달핏이란" },
 ];
 
 export function Header() {
@@ -23,7 +23,7 @@ export function Header() {
             </Link>
           ))}
           <Link
-            href="mailto:jsw7980@gmail.com?subject=jodalfit%20%EC%9D%98%EA%B2%AC"
+            href="mailto:jsw7980@gmail.com?subject=%EC%A1%B0%EB%8B%AC%ED%95%8F%20%EC%9D%98%EA%B2%AC"
             title="jsw7980@gmail.com"
             className="px-3 py-2 text-[14px] font-semibold text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
           >

@@ -16,7 +16,8 @@ export function formatKRW(value: number | null | undefined) {
   if (value == null) return "—";
   if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}억`;
   if (value >= 10_000) return `${(value / 10_000).toFixed(0)}만`;
-  return value.toLocaleString("ko-KR");
+  // 나라장터 원천 데이터에 1원 등 placeholder 금액이 있어 미표기 처리
+  return "—";
 }
 
 export function formatKRWFull(value: number | null | undefined) {

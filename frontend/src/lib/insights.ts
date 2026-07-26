@@ -35,6 +35,7 @@ export interface InsightFrontmatter {
   week_start?: string;
   week_end?: string;
   published_at: string;
+  category?: string;
   total_notices?: number;
   prev_total?: number;
   picks_count?: number;
@@ -75,6 +76,7 @@ export interface InsightIndexItem {
   week_start?: string;
   week_end?: string;
   published_at: string;
+  category?: string;
   evaluation_score?: number;
 }
 
@@ -100,6 +102,7 @@ async function readAllOfType(type: InsightType): Promise<InsightIndexItem[]> {
       week_start: meta.week_start,
       week_end: meta.week_end,
       published_at: meta.published_at,
+      category: meta.category,
       evaluation_score: meta.evaluation_score,
     });
   }

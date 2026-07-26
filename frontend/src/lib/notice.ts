@@ -376,11 +376,12 @@ function orderClause<T>(q: T, sort: NoticeFilters["sort"]): T {
   switch (sort) {
     case "price_desc":
       return qq.order("presmpt_prce", { ascending: false, nullsFirst: false }) as T;
-    case "ntce_desc":
-      return qq.order("bid_ntce_date", { ascending: false, nullsFirst: false }) as T;
     case "close":
-    default:
       return qq.order("bid_clse_date") as T;
+    // 기본 신규순 — 마감 임박순이 기본이면 첫 화면이 D-1 일색이라 "늦은 공고만 있다" 인상을 줌
+    case "ntce_desc":
+    default:
+      return qq.order("bid_ntce_date", { ascending: false, nullsFirst: false }) as T;
   }
 }
 

@@ -72,9 +72,9 @@ const REGIONS = [
 ];
 
 const SORT_OPTIONS: { label: string; value: NoticeFilters["sort"] }[] = [
+  { label: "공고일 신규순", value: "ntce_desc" },
   { label: "마감 임박순", value: "close" },
   { label: "추정가 높은순", value: "price_desc" },
-  { label: "공고일 신규순", value: "ntce_desc" },
 ];
 
 function parseFilters(s: Awaited<Props["searchParams"]>): NoticeFilters {
@@ -102,7 +102,7 @@ function urlOf(filters: NoticeFilters, page?: number, replace?: Partial<NoticeFi
   if (merged.priceBucket) params.set("price", merged.priceBucket);
   if (merged.rgn) params.set("rgn", merged.rgn);
   if (merged.category) params.set("cat", merged.category);
-  if (merged.sort && merged.sort !== "close") params.set("sort", merged.sort);
+  if (merged.sort && merged.sort !== "ntce_desc") params.set("sort", merged.sort);
   const p = replace && "page" in replace ? replace.page : page;
   if (p && p > 1) params.set("page", String(p));
   const qs = params.toString();
@@ -139,7 +139,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const startRank = (safePage - 1) * PAGE_SIZE;
-  const sort = filters.sort ?? "close";
+  const sort = filters.sort ?? "ntce_desc";
 
   return (
     <>
