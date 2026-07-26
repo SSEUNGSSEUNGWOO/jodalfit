@@ -398,8 +398,31 @@ export default async function NoticePage({ params }: Props) {
                       <td className="px-4 py-2.5 text-right tabular tabular-nums font-bold">
                         {formatKRW(a.bid_amt)}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular tabular-nums text-muted-foreground">
-                        {a.bid_rate ? `${a.bid_rate.toFixed(2)}%` : "—"}
+                      <td className="px-4 py-2.5 text-right">
+                        {a.bid_rate ? (
+                          <span className="inline-flex items-center justify-end gap-2">
+                            {/* 낙찰률은 대부분 80~100%에 몰려 있어 70~100% 구간을 확대 표시 */}
+                            <span
+                              className="hidden sm:block h-1.5 w-14 rounded-full bg-muted overflow-hidden"
+                              aria-hidden
+                            >
+                              <span
+                                className={cn(
+                                  "block h-full rounded-full",
+                                  a.is_winner ? "bg-primary" : "bg-muted-foreground/35"
+                                )}
+                                style={{
+                                  width: `${Math.min(100, Math.max(4, ((a.bid_rate - 70) / 30) * 100))}%`,
+                                }}
+                              />
+                            </span>
+                            <span className="tabular tabular-nums text-muted-foreground">
+                              {a.bid_rate.toFixed(2)}%
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}

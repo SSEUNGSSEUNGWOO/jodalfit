@@ -55,7 +55,15 @@ export function SlimBidRow({ bid, rank }: Props) {
       <div className="flex items-center gap-4 text-[12.5px] tabular-nums shrink-0">
         {dlabel && <span className={ddayTone(d)}>{dlabel}</span>}
         <span className="text-foreground/80 w-[60px] text-right">{price}</span>
-        <span className="font-bold text-primary w-[40px] text-right">{score}</span>
+        <span className="flex flex-col items-end gap-1 w-[40px]">
+          <span className="font-bold text-primary leading-none">{score}</span>
+          <span className="h-1 w-9 rounded-full bg-muted overflow-hidden" aria-hidden>
+            <span
+              className="block h-full rounded-full bg-primary"
+              style={{ width: `${score}%` }}
+            />
+          </span>
+        </span>
       </div>
     </Link>
   );

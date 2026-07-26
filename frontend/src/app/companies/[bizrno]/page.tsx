@@ -450,6 +450,7 @@ async function HistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
   if (contracts.length === 0) return null;
   const summary = summarizeContracts(contracts);
   const totalAmt = contracts.reduce((s, r) => s + (r.cntrct_amt || 0), 0);
+  const maxAmt = Math.max(...contracts.slice(0, 10).map((c) => c.cntrct_amt || 0), 1);
 
   return (
     <section className="border-t border-border bg-muted/20">
@@ -523,8 +524,23 @@ async function HistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
                   <td className="px-4 py-2.5 text-muted-foreground">
                     {c.dmnd_instt_nm || "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular tabular-nums font-bold text-foreground">
-                    {formatKRW(c.cntrct_amt)}
+                  <td className="px-4 py-2.5 text-right">
+                    <span className="inline-flex items-center justify-end gap-2">
+                      <span
+                        className="hidden sm:block h-1.5 w-16 rounded-full bg-muted overflow-hidden"
+                        aria-hidden
+                      >
+                        <span
+                          className="block h-full rounded-full bg-primary/60"
+                          style={{
+                            width: `${Math.max(3, ((c.cntrct_amt || 0) / maxAmt) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                      <span className="tabular tabular-nums font-bold text-foreground">
+                        {formatKRW(c.cntrct_amt)}
+                      </span>
+                    </span>
                   </td>
                 </tr>
               ))}
