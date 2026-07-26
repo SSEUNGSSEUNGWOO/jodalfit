@@ -38,11 +38,10 @@ def score_notice(
     instt = (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
     if instt and instt in company_institutions:
         breakdown.append({"key": "institution", "label": "재출현 기관", "points": 50, "instt": instt})
-    elif instt and peer_instt_counts and instt in peer_instt_counts:
-        # 재출현(+50)과 스택 방지 — 협업 시그널은 "발굴" 톤이라 미거래 기관에만
-        cnt = peer_instt_counts[instt]
-        pts = 80 if cnt >= 2 else 40
-        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": pts, "peer_awards": cnt})
+    elif instt and peer_instt_counts and peer_instt_counts.get(instt, 0) >= 2:
+        # 재출현(+50)과 스택 방지 — 미거래 기관만. 1건짜리 기관은 노이즈라 2건+만,
+        # 점수는 재출현(50)보다 낮은 보조 시그널로
+        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": 30, "peer_awards": peer_instt_counts[instt]})
 
     if instt and instt_stats and instt in instt_stats:
         st = instt_stats[instt]
