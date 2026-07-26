@@ -29,7 +29,7 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   const mode: Mode = companyQuery ? "company" : "keywords";
   const query = companyQuery || keywordsQuery;
   const useMock = p.mode === "mock";
-  const algorithm = p.algorithm === "v2" ? "v2" : "v1";
+  const algorithm = p.algorithm === "v1" ? "v1" : "v2";
 
   return (
     <>

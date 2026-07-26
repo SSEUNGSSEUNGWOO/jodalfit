@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import time
+
 from app.services.openai_client import get_openai_client
 
 MODEL = "gpt-4o-mini"
@@ -232,6 +234,69 @@ def explain_batch(
             except Exception as e:
                 results[idx] = f"(설명 생성 실패: {type(e).__name__})"
     return results
+
+
+SYSTEM_SUMMARY = """당신은 한국 공공조달(나라장터) 추천 결과 요약 모듈입니다.
+
+회사의 이번 추천 TOP 공고들과 각각의 매칭 시그널(rule 기반 배지)을 받아
+페이지 상단에 띄울 2~3문장 요약을 씁니다.
+
+# 작성 규칙
+- 시그널 라벨(재출현 기관, 유사 회사 수주 기관, 예산대 매칭, 신규 진입 열린 기관 등)에
+  실제로 있는 내용만 요약. 시그널에 없는 주장 금지.
+- 이번 추천의 경향을 짚을 것: 어떤 도메인·기관 계열이 강세인지, 이력 기반 건이 몇 건인지
+  (예: "이번 추천은 교육·콘텐츠 계열이 강세이고, 과거 거래 기관 재출현 2건이 포함됐다.")
+- 고유명사(기관명·도메인)를 한 번 이상 인용, "귀사" 호칭 금지, 단정형 어미
+- 낙찰 가능성 언급 금지 — 검토 우선순위 톤 유지
+"""
+
+
+def _build_summary_prompt(company: dict, bids: list[dict]) -> str:
+    lines = [f"[회사] {company.get('corp_nm') or '—'}"]
+    if company.get("corp_bsns_div_nm"):
+        lines.append(f"       업무 {company['corp_bsns_div_nm']}")
+    lines.append("\n[이번 추천 TOP]")
+    for i, b in enumerate(bids, 1):
+        instt = b.get("dmnd_instt_nm") or b.get("ntce_instt_nm") or "—"
+        sigs = ", ".join(
+            s["label"] for s in (b.get("score_breakdown") or []) if s.get("key") != "vector"
+        )
+        lines.append(f"{i}. {b.get('bid_ntce_nm') or '—'} (발주 {instt})")
+        lines.append(f"   시그널: {sigs or '유사도만'}")
+    lines.append("\n→ 위 시그널 경향을 2~3문장으로 요약.")
+    return "\n".join(lines)
+
+
+_summary_cache: dict[tuple, tuple[float, str]] = {}
+SUMMARY_CACHE_TTL = 24 * 3600
+
+
+def explain_summary(company: dict, bids: list[dict]) -> str:
+    """v2 페이지 상단 요약 1회 — 카드별 설명 대신 breakdown 경향 해석.
+
+    같은 회사 + 같은 TOP 공고 조합이면 24시간 캐시 (일 1회 데이터 갱신이라 충분).
+    """
+    key = (company.get("bizrno"), frozenset(b.get("bid_ntce_no") for b in bids))
+    hit = _summary_cache.get(key)
+    if hit and time.time() - hit[0] < SUMMARY_CACHE_TTL:
+        return hit[1]
+
+    client = get_openai_client()
+    resp = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": SYSTEM_SUMMARY},
+            {"role": "user", "content": _build_summary_prompt(company, bids)},
+        ],
+        temperature=0.3,
+        max_tokens=300,
+    )
+    text = resp.choices[0].message.content.strip()
+    _summary_cache[key] = (time.time(), text)
+    if len(_summary_cache) > 500:
+        oldest = min(_summary_cache, key=lambda k: _summary_cache[k][0])
+        del _summary_cache[oldest]
+    return text
 
 
 def explain_keyword_batch(

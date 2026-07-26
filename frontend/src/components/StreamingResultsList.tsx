@@ -66,7 +66,8 @@ export function StreamingResultsList({
       <div className="flex flex-col gap-4">
         {top.map((bid, i) => {
           const filled = withExplanation(bid);
-          const pending = !filled.explanation && !streamDone;
+          // v2는 카드별 LLM 설명 대신 상단 요약 1회 → 카드 로더 없음
+          const pending = !filled.explanation && !streamDone && algorithm !== "v2";
           return (
             <div
               key={bidKey(bid)}

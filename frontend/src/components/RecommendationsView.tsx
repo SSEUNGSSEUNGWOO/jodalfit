@@ -35,12 +35,13 @@ export function RecommendationsView({
   mode,
   useMock,
   keywords,
-  algorithm = "v1",
+  algorithm = "v2",
 }: Props) {
   const [data, setData] = useState<RecommendationResponse | null>(
     useMock ? MOCK_RESPONSE : null
   );
   const [explanations, setExplanations] = useState<Record<string, string>>({});
+  const [summary, setSummary] = useState<string>("");
   const [streamDone, setStreamDone] = useState<boolean>(useMock);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function RecommendationsView({
     }
     setData(null);
     setExplanations({});
+    setSummary("");
     setStreamDone(false);
 
     const controller = new AbortController();
@@ -112,6 +114,8 @@ export function RecommendationsView({
                 const k = `${evt.bid_ntce_no}-${evt.bid_ntce_ord}`;
                 if (!cancelled)
                   setExplanations((prev) => ({ ...prev, [k]: evt.text as string }));
+              } else if (evt.type === "summary") {
+                if (!cancelled && evt.text) setSummary(evt.text as string);
               } else if (evt.type === "done") {
                 if (!cancelled) setStreamDone(true);
               }
@@ -160,6 +164,7 @@ export function RecommendationsView({
         keywords={keywords}
         data={data}
         explanations={explanations}
+        summary={summary}
         streamDone={streamDone}
       />
     );
@@ -212,12 +217,14 @@ function CompanyResults({
   keywords,
   data,
   explanations,
+  summary,
   streamDone,
 }: {
   query: string;
   keywords?: string;
   data: RecommendationResponse;
   explanations: Record<string, string>;
+  summary?: string;
   streamDone: boolean;
 }) {
   const today = new Date().toLocaleDateString("ko-KR");
@@ -259,6 +266,20 @@ function CompanyResults({
             <p className="mb-5 text-[12.5px] text-muted-foreground break-keep">
               매칭 점수는 검토 우선순위입니다. 낙찰 가능성이나 최종 입찰 가능 여부를 의미하지 않습니다.
             </p>
+            {summary ? (
+              <div className="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5 text-[13.5px] leading-relaxed text-foreground break-keep">
+                <span className="mr-1.5 font-bold text-primary">이번 추천 요약</span>
+                {summary}
+              </div>
+            ) : (
+              data.algorithm === "v2" &&
+              !streamDone && (
+                <div className="mb-5 flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3.5 text-[12.5px] text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  AI가 이번 추천의 경향을 요약하는 중…
+                </div>
+              )
+            )}
             <StreamingResultsList
               results={data.results}
               explanations={explanations}

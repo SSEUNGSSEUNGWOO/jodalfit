@@ -18,6 +18,7 @@ from app.services.explain import (
     explain_keyword_batch,
     explain_keyword_match,
     explain_recommendation,
+    explain_summary,
 )
 from app.services.notice_events import log_impressions
 from app.services.recommend import recommend
@@ -49,8 +50,8 @@ class RecommendRequest(BaseModel):
         description="회사 모드 한정 하이브리드 키워드 (회사 벡터 0.6 + 키워드 임베딩 0.4). 다부서 회사 부서 좁힘.",
     )
     algorithm: Literal["v1", "v2"] = Field(
-        "v1",
-        description="v1: 코사인+소프트 rerank / v2: 자격 하드필터+가중치 score+MMR (company 모드 한정)",
+        "v2",
+        description="v2(기본): 자격 하드필터+가중치 score+MMR (company 모드 한정) / v1: 코사인+소프트 rerank",
     )
     session_id: str | None = Field(
         None, max_length=64, description="프론트 세션 ID — notice_events 상관관계용"
@@ -149,6 +150,7 @@ def post_recommendations_stream(
     응답 라인 형식 (각 줄 = 1개 JSON):
       {"type":"results", "data": {...recommend 응답...}}
       {"type":"explanation", "bid_ntce_no":"...", "bid_ntce_ord":"...", "scope":"primary|keyword", "text":"..."}
+      {"type":"summary", "text":"..."}   ← v2 회사 모드: 카드별 설명 대신 상단 요약 1회
       {"type":"done"}
     """
     t0 = time.time()
@@ -200,6 +202,8 @@ def post_recommendations_stream(
     primary_top = (result.get("results") or [])[: req.explain_top]
     keyword_top = (result.get("keyword_results") or [])[: req.explain_top]
     use_company_ctx = bool(result.get("company"))
+    # v2 회사 모드: 카드는 rule 배지가 설명 역할 → LLM은 상단 요약 1회만 (호출 5회 → 1회)
+    use_summary = req.algorithm == "v2" and use_company_ctx and bool(primary_top)
 
     def _line(obj: dict) -> bytes:
         return (json.dumps(obj, ensure_ascii=False) + "\n").encode("utf-8")
@@ -208,6 +212,15 @@ def post_recommendations_stream(
         yield _line({"type": "results", "data": result})
 
         if req.explain_top <= 0 or (not primary_top and not keyword_top):
+            yield _line({"type": "done"})
+            return
+
+        if use_summary:
+            try:
+                text = explain_summary(company, primary_top)
+                yield _line({"type": "summary", "text": text})
+            except Exception as e:
+                yield _line({"type": "summary", "text": "", "error": type(e).__name__})
             yield _line({"type": "done"})
             return
 
