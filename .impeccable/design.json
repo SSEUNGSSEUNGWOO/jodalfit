@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-16T12:00:00+09:00",
+  "title": "Design System: 조달핏 — 개찰판(開札板) · 청색 장부 렌디션",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "장부지", "canonical": "#f6f8fb", "tonalRamp": ["oklch(0.15 0.005 250)", "oklch(0.27 0.005 250)", "oklch(0.38 0.005 250)", "oklch(0.50 0.005 250)", "oklch(0.61 0.005 250)", "oklch(0.73 0.005 250)", "oklch(0.84 0.005 250)", "oklch(0.975 0.005 250)"] },
+      "sheet": { "role": "neutral", "displayName": "판 시트", "canonical": "#ffffff", "tonalRamp": ["oklch(0.15 0 0)", "oklch(0.27 0 0)", "oklch(0.38 0 0)", "oklch(0.50 0 0)", "oklch(0.61 0 0)", "oklch(0.73 0 0)", "oklch(0.84 0 0)", "oklch(1 0 0)"] },
+      "band": { "role": "primary", "displayName": "네이비 밴드", "canonical": "#1e3a66", "tonalRamp": ["#1e3a66", "#3d5f94", "#7591bd", "#aebfda", "#dbe4f1"] },
+      "band-ink": { "role": "secondary", "displayName": "밴드 잉크", "canonical": "#c7d5ea", "tonalRamp": ["oklch(0.15 0.03 258)", "oklch(0.27 0.03 258)", "oklch(0.38 0.03 258)", "oklch(0.50 0.03 258)", "oklch(0.61 0.03 258)", "oklch(0.73 0.03 258)", "oklch(0.86 0.03 258)", "oklch(0.95 0.015 258)"] },
+      "band-hi": { "role": "secondary", "displayName": "밴드 하이", "canonical": "#f4f7fc", "tonalRamp": ["oklch(0.15 0.005 255)", "oklch(0.27 0.005 255)", "oklch(0.38 0.005 255)", "oklch(0.50 0.005 255)", "oklch(0.61 0.005 255)", "oklch(0.73 0.005 255)", "oklch(0.84 0.005 255)", "oklch(0.97 0.005 255)"] },
+      "tint": { "role": "secondary", "displayName": "틴트", "canonical": "#e5edf8", "tonalRamp": ["oklch(0.15 0.015 262)", "oklch(0.27 0.015 262)", "oklch(0.38 0.015 262)", "oklch(0.50 0.015 262)", "oklch(0.61 0.015 262)", "oklch(0.73 0.015 262)", "oklch(0.84 0.015 262)", "oklch(0.94 0.015 262)"] },
+      "tint-line": { "role": "secondary", "displayName": "틴트 선", "canonical": "#b9c9e0", "tonalRamp": ["oklch(0.15 0.035 258)", "oklch(0.27 0.035 258)", "oklch(0.38 0.035 258)", "oklch(0.50 0.035 258)", "oklch(0.61 0.035 258)", "oklch(0.73 0.035 258)", "oklch(0.82 0.035 258)", "oklch(0.95 0.015 258)"] },
+      "tint-ink": { "role": "secondary", "displayName": "틴트 잉크", "canonical": "#2f4a75", "tonalRamp": ["oklch(0.15 0.08 262)", "oklch(0.27 0.08 262)", "oklch(0.40 0.08 262)", "oklch(0.50 0.08 262)", "oklch(0.61 0.07 262)", "oklch(0.73 0.05 262)", "oklch(0.84 0.03 262)", "oklch(0.95 0.01 262)"] },
+      "ink": { "role": "primary", "displayName": "청람 잉크", "canonical": "#17233a", "tonalRamp": ["oklch(0.15 0.04 262)", "oklch(0.27 0.04 262)", "oklch(0.38 0.04 262)", "oklch(0.50 0.04 262)", "oklch(0.61 0.04 262)", "oklch(0.73 0.03 262)", "oklch(0.84 0.02 262)", "oklch(0.95 0.01 262)"] },
+      "ink-2": { "role": "primary", "displayName": "잉크-2", "canonical": "#3a4a66", "tonalRamp": ["oklch(0.15 0.05 260)", "oklch(0.27 0.05 260)", "oklch(0.40 0.05 260)", "oklch(0.50 0.05 260)", "oklch(0.61 0.04 260)", "oklch(0.73 0.03 260)", "oklch(0.84 0.02 260)", "oklch(0.95 0.01 260)"] },
+      "ink-3": { "role": "primary", "displayName": "잉크-3", "canonical": "#5c6b85", "tonalRamp": ["oklch(0.15 0.04 258)", "oklch(0.27 0.04 258)", "oklch(0.38 0.04 258)", "oklch(0.53 0.04 258)", "oklch(0.61 0.04 258)", "oklch(0.73 0.03 258)", "oklch(0.84 0.02 258)", "oklch(0.95 0.01 258)"] },
+      "rule": { "role": "neutral", "displayName": "괘선", "canonical": "#d9e0ea", "tonalRamp": ["oklch(0.15 0.015 255)", "oklch(0.27 0.015 255)", "oklch(0.38 0.015 255)", "oklch(0.50 0.015 255)", "oklch(0.61 0.015 255)", "oklch(0.73 0.015 255)", "oklch(0.90 0.015 255)", "oklch(0.96 0.008 255)"] },
+      "injuk": { "role": "tertiary", "displayName": "인주", "canonical": "#b23a2a", "tonalRamp": ["oklch(0.15 0.14 30)", "oklch(0.27 0.14 30)", "oklch(0.38 0.14 30)", "oklch(0.52 0.14 30)", "oklch(0.61 0.12 30)", "oklch(0.73 0.09 30)", "oklch(0.84 0.06 30)", "oklch(0.95 0.02 30)"] },
+      "injuk-deep": { "role": "tertiary", "displayName": "인주 딥", "canonical": "#93291b", "tonalRamp": ["oklch(0.15 0.14 30)", "oklch(0.27 0.14 30)", "oklch(0.44 0.14 30)", "oklch(0.52 0.14 30)", "oklch(0.61 0.12 30)", "oklch(0.73 0.09 30)", "oklch(0.84 0.06 30)", "oklch(0.95 0.02 30)"] },
+      "injuk-soft": { "role": "tertiary", "displayName": "인주 소프트", "canonical": "#f2e3dc", "tonalRamp": ["oklch(0.15 0.02 40)", "oklch(0.27 0.02 40)", "oklch(0.38 0.02 40)", "oklch(0.50 0.02 40)", "oklch(0.61 0.02 40)", "oklch(0.73 0.02 40)", "oklch(0.84 0.02 40)", "oklch(0.92 0.02 40)"] },
+      "amber": { "role": "tertiary", "displayName": "관보 앰버", "canonical": "#8a5b14", "tonalRamp": ["oklch(0.15 0.10 80)", "oklch(0.27 0.10 80)", "oklch(0.38 0.10 80)", "oklch(0.50 0.10 80)", "oklch(0.61 0.10 80)", "oklch(0.73 0.08 80)", "oklch(0.84 0.06 80)", "oklch(0.95 0.02 80)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "판머리·히어로 대활자", "purpose": "판머리(BoardHead) 제호와 랜딩 히어로 전용. 명조 900, break-keep. 밴드 위 band-hi / 지면 위 ink." },
+      "headline": { "displayName": "섹션 머리", "purpose": "지면 위에서 이중 괘선과 함께 등장하는 명조 900 섹션 표제·구독대 카피." },
+      "title": { "displayName": "행 공고명", "purpose": "개찰판 행의 공고명. 닫힌 행에서는 데스크톱 1줄 truncate." },
+      "body": { "displayName": "본문", "purpose": "총평·추천 근거·안내문. 최대 60~72ch, break-keep." },
+      "label": { "displayName": "라벨·각주", "purpose": "컬럼 머리·필터 라벨·※ 각주·칩·메타." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "gc-open", "value": "grid-template-rows 0.45s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "행 개봉 — 0fr→1fr 그리드 행 전개. 시그니처 인터랙션." },
+      { "name": "gc-stamp", "value": "0.3s cubic-bezier(0.2, 0.8, 0.3, 1) (scale 1.4→0.98→1, -8°→-4°)", "purpose": "검토 인장의 절제된 안착. 최종 자세 -4°." },
+      { "name": "gc-scan", "value": "1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite (translateX -100%→400%)", "purpose": "대조 중 — 1px 괘선 트랙 위 잉크 바 스캔 (indeterminate)." },
+      { "name": "rise", "value": "0.5s cubic-bezier(0.2, 0.7, 0.2, 1) (translateY 8px→0, 지연 스태거)", "purpose": "랜딩 히어로 등장 전용." },
+      { "name": "transition-colors", "value": "150ms", "purpose": "hover/포커스 등 일반 상태 전환. reduced-motion에서 gc-* 키프레임 3종은 모두 꺼진다." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "밴드 버튼",
+      "kind": "button",
+      "refersTo": "button-band",
+      "description": "지면 위 주 액션 — 조회 등. 네이비 배경 + 밴드 하이 글자, hover 시 잉크로 깊어진다.",
+      "html": "<button class=\"ds-btn-band\">조회</button>",
+      "css": ".ds-btn-band { height: 44px; padding: 0 20px; background: var(--color-gc-band, #1e3a66); color: var(--color-gc-band-hi, #f4f7fc); font-size: 15px; font-weight: 700; border: none; border-radius: 3px; cursor: pointer; transition: background-color 0.15s; } .ds-btn-band:hover { background: var(--color-gc-ink, #17233a); } .ds-btn-band:focus-visible { outline: 2px solid var(--color-gc-ink, #17233a); outline-offset: 2px; } .ds-btn-band:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "반전 버튼 (밴드 위)",
+      "kind": "button",
+      "refersTo": "button-on-band",
+      "description": "네이비 밴드 위 주 액션 — 구독대·판머리 compact. 밴드 하이 배경 + 네이비 글자, hover 순백.",
+      "html": "<div class=\"ds-band-ground\"><button class=\"ds-btn-on-band\">주간 브리핑 받기</button></div>",
+      "css": ".ds-band-ground { display: inline-block; padding: 14px; background: var(--color-gc-band, #1e3a66); border-radius: 3px; } .ds-btn-on-band { height: 44px; padding: 0 16px; background: var(--color-gc-band-hi, #f4f7fc); color: var(--color-gc-band, #1e3a66); font-size: 14px; font-weight: 700; border: none; border-radius: 3px; cursor: pointer; transition: background-color 0.15s; } .ds-btn-on-band:hover { background: #ffffff; }"
+    },
+    {
+      "name": "검토 인장 버튼",
+      "kind": "button",
+      "refersTo": "button-stamp",
+      "description": "저장 액션 — 인주 예약 사용처. aria-pressed 토글, 저장 시 인주 소프트 배경.",
+      "html": "<button class=\"ds-btn-stamp\" aria-pressed=\"false\">검토 인장 찍기</button> <button class=\"ds-btn-stamp ds-saved\" aria-pressed=\"true\">검토 인장 해제</button>",
+      "css": ".ds-btn-stamp { height: 36px; padding: 0 14px; background: transparent; color: var(--color-gc-injuk, #b23a2a); font-size: 13.5px; font-weight: 700; border: 1px solid var(--color-gc-injuk, #b23a2a); border-radius: 3px; cursor: pointer; transition: background-color 0.15s; } .ds-btn-stamp:hover { background: var(--color-gc-injuk-soft, #f2e3dc); } .ds-btn-stamp.ds-saved { background: var(--color-gc-injuk-soft, #f2e3dc); color: var(--color-gc-injuk-deep, #93291b); } .ds-btn-stamp:focus-visible { outline: 2px solid var(--color-gc-ink, #17233a); outline-offset: 2px; }"
+    },
+    {
+      "name": "필터 캡슐",
+      "kind": "chip",
+      "refersTo": "capsule-filter",
+      "description": "조회 조건 컨트롤 — 캡슐형. 활성 시 잉크 배경 + 틴트 점(검토 인장 필터만 인주 점).",
+      "html": "<button class=\"ds-capsule\" aria-pressed=\"false\">7일 이내</button> <button class=\"ds-capsule ds-active\" aria-pressed=\"true\"><span class=\"ds-dot\"></span>14일 이내</button>",
+      "css": ".ds-capsule { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; background: var(--color-gc-sheet, #ffffff); color: var(--color-gc-ink-2, #3a4a66); font-size: 12.5px; font-weight: 600; border: 1px solid var(--color-gc-rule, #d9e0ea); border-radius: 999px; white-space: nowrap; cursor: pointer; transition: border-color 0.15s, background-color 0.15s; } .ds-capsule:hover { border-color: var(--color-gc-ink-2, #3a4a66); } .ds-capsule.ds-active { background: var(--color-gc-ink, #17233a); color: var(--color-gc-paper, #f6f8fb); border-color: var(--color-gc-ink, #17233a); } .ds-dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--color-gc-tint, #e5edf8); } .ds-capsule:focus-visible { outline: 2px solid var(--color-gc-ink, #17233a); outline-offset: 2px; }"
+    },
+    {
+      "name": "밑줄 조회 입력",
+      "kind": "input",
+      "refersTo": "input-board",
+      "description": "히어로·본문의 괘선 밑줄 입력. 배경 없음, 2px 잉크 밑줄.",
+      "html": "<div class=\"ds-input-underline-wrap\"><input class=\"ds-input-underline\" placeholder=\"회사명 또는 사업자번호 10자리\" /></div>",
+      "css": ".ds-input-underline-wrap { border-bottom: 2px solid var(--color-gc-ink, #17233a); padding-bottom: 8px; max-width: 480px; } .ds-input-underline { width: 100%; background: transparent; border: none; outline: none; font-size: 19px; font-weight: 700; color: var(--color-gc-ink, #17233a); caret-color: var(--color-gc-ink, #17233a); } .ds-input-underline::placeholder { color: var(--color-gc-ink-3, #5c6b85); font-weight: 400; font-size: 16px; }"
+    },
+    {
+      "name": "박스 입력",
+      "kind": "input",
+      "refersTo": "input-board",
+      "description": "textarea·이메일 등 박스형 입력. 시트 배경 + 괘선 테두리, 포커스 시 잉크 테두리. 글로우 없음.",
+      "html": "<input class=\"ds-input-box\" placeholder=\"name@company.co.kr\" />",
+      "css": ".ds-input-box { height: 44px; padding: 0 14px; background: var(--color-gc-sheet, #ffffff); color: var(--color-gc-ink, #17233a); font-size: 14.5px; font-weight: 500; border: 1px solid var(--color-gc-rule, #d9e0ea); border-radius: 3px; outline: none; transition: border-color 0.15s; min-width: 260px; } .ds-input-box:focus { border-color: var(--color-gc-ink, #17233a); } .ds-input-box::placeholder { color: var(--color-gc-ink-3, #5c6b85); font-weight: 400; }"
+    },
+    {
+      "name": "시그널 칩",
+      "kind": "chip",
+      "refersTo": "capsule-filter",
+      "description": "개봉면의 근거 시그널·증거 표시. 정보용이므로 캡슐이 아닌 3px 직사각형. 긍정 = 청색 틴트.",
+      "html": "<span class=\"ds-chip ds-pos\">재출현 기관</span> <span class=\"ds-chip ds-neg\"><span aria-hidden>−</span> 지역 제한</span> <span class=\"ds-chip\">일반</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 2px; padding: 2px 8px; margin-right: 4px; font-size: 12px; font-weight: 600; border-radius: 3px; background: var(--color-gc-sheet, #ffffff); color: var(--color-gc-ink-3, #5c6b85); border: 1px solid var(--color-gc-rule, #d9e0ea); } .ds-chip.ds-pos { background: var(--color-gc-tint, #e5edf8); border-color: var(--color-gc-tint-line, #b9c9e0); color: var(--color-gc-tint-ink, #2f4a75); } .ds-chip.ds-neg { background: var(--color-gc-paper, #f6f8fb); }"
+    },
+    {
+      "name": "개찰판 행 (봉인)",
+      "kind": "custom",
+      "refersTo": "button-band",
+      "description": "시그니처 — 번호 행 + 공유 괘선 + 우측 하단 네이비 봉인 딱지. 행 전체가 개봉 토글.",
+      "html": "<ol class=\"ds-board\"><li class=\"ds-row\"><button class=\"ds-row-btn\" aria-expanded=\"false\"><span class=\"ds-row-rank\">01</span><span class=\"ds-row-main\"><span class=\"ds-row-title\">2026년 정보시스템 통합 유지보수 용역</span><span class=\"ds-row-meta\">한국지역정보개발원</span></span><span class=\"ds-row-num ds-urgent\">D-2</span><span class=\"ds-row-num\">3.2억</span><span class=\"ds-row-fit\">적합 <em>78</em></span><span class=\"ds-seal-tab\" aria-hidden=\"true\"></span></button></li></ol>",
+      "css": ".ds-board { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--color-gc-ink, #17233a); background: var(--color-gc-paper, #f6f8fb); font-variant-numeric: tabular-nums; } .ds-row { border-bottom: 1px solid var(--color-gc-rule, #d9e0ea); } .ds-row-btn { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) 70px 80px 90px; gap: 0 16px; align-items: baseline; width: 100%; padding: 15px 4px; background: transparent; border: none; text-align: left; cursor: pointer; font-family: inherit; transition: background-color 0.15s; } .ds-row-btn:hover { background: rgba(255, 255, 255, 0.6); } .ds-row-rank { text-align: right; padding-right: 4px; font-size: 15px; font-weight: 700; color: var(--color-gc-ink-2, #3a4a66); } .ds-row-title { display: block; font-size: 15.5px; font-weight: 700; line-height: 1.45; color: var(--color-gc-ink, #17233a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-row-meta { display: block; margin-top: 4px; font-size: 12.5px; font-weight: 600; color: var(--color-gc-ink-2, #3a4a66); } .ds-row-num { text-align: right; font-size: 14px; font-weight: 600; color: var(--color-gc-ink, #17233a); } .ds-row-num.ds-urgent { color: var(--color-gc-injuk, #b23a2a); font-weight: 700; } .ds-row-fit { text-align: right; font-size: 14px; font-weight: 700; color: var(--color-gc-ink, #17233a); } .ds-row-fit em { font-style: normal; font-size: 12px; font-weight: 400; color: var(--color-gc-ink-3, #5c6b85); } .ds-seal-tab { position: absolute; right: 48px; bottom: 0; transform: translateY(50%); width: 11px; height: 17px; border-radius: 1px; background: var(--color-gc-band, #1e3a66); }"
+    },
+    {
+      "name": "관인",
+      "kind": "custom",
+      "refersTo": "button-stamp",
+      "description": "판머리의 조달핏 관인(官印) — 흰 지면 판(sheet 0.95) 위 정방형 이중 테두리 인주 도장, -4° 안착. 도장은 종이 위에 찍힌다.",
+      "html": "<svg class=\"ds-seal\" width=\"62\" height=\"62\" viewBox=\"0 0 72 72\" role=\"img\" aria-label=\"조달핏 인\"><rect x=\"0\" y=\"0\" width=\"72\" height=\"72\" rx=\"6\" fill=\"#ffffff\" fill-opacity=\"0.95\"/><rect x=\"4\" y=\"4\" width=\"64\" height=\"64\" rx=\"7\" fill=\"none\" stroke=\"#b23a2a\" stroke-width=\"4.5\"/><rect x=\"12\" y=\"12\" width=\"48\" height=\"48\" rx=\"3\" fill=\"none\" stroke=\"#b23a2a\" stroke-width=\"1.5\" opacity=\"0.55\"/><text x=\"24.5\" y=\"31.5\" text-anchor=\"middle\" font-family=\"'Noto Serif KR', serif\" font-weight=\"900\" font-size=\"17\" fill=\"#b23a2a\">조</text><text x=\"47.5\" y=\"31.5\" text-anchor=\"middle\" font-family=\"'Noto Serif KR', serif\" font-weight=\"900\" font-size=\"17\" fill=\"#b23a2a\">달</text><text x=\"24.5\" y=\"55\" text-anchor=\"middle\" font-family=\"'Noto Serif KR', serif\" font-weight=\"900\" font-size=\"17\" fill=\"#b23a2a\">핏</text><text x=\"47.5\" y=\"55.5\" text-anchor=\"middle\" font-family=\"'Noto Serif KR', serif\" font-weight=\"900\" font-size=\"18\" fill=\"#b23a2a\">印</text></svg>",
+      "css": ".ds-seal { transform: rotate(-4deg); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "개찰판(開札板) — 청색 장부 렌디션",
+    "overview": "추천 결과는 카드 피드가 아니라 공식 개찰판이다. 봉인된 공고가 번호 행으로 도열하고, 행이 \"개봉\"되며 근거를 내보인다. SaaS 카드 대시보드 배치 — 부드러운 그림자 카드, 큰 라운드 — 를 명시적으로 거부한다. 물성은 관공서 장부다: 차가운 장부지(#F6F8FB) 지면 위 괘선 보드, 네이비(#1E3A66) 밴드가 판머리와 구독대를 소유하고, 청람 잉크(#17233A) 활자와 옅은 청색 틴트(#E5EDF8) 칩이 본문을 채운다. 인주(#B23A2A)는 마감 임박과 인장에만 남는 유일한 붉은 사건이다.\n\n타이포그래피가 곧 인터페이스다: 명조(Noto Serif KR) 블랙 대활자가 판머리와 섹션 머리를 소유하고, Pretendard가 본문 워크호스를 맡으며, 모든 수치는 tabular numerals로 공유 괘선 위에 정렬된다. 장식 일러스트·아이콘 장식·장난스러운 톤은 금기다. 진지하되 촌스럽지 않은, \"검토 우선순위\"라는 프레이밍에 걸맞은 공식 문서의 절제가 기준이다.",
+    "keyCharacteristics": [
+      "카드가 아닌 행(行) — 번호 붙은 괘선 목록이 기본 단위",
+      "명조 900 대활자 + Pretendard 워크호스 + 전 수치 tabular",
+      "장부지·네이비 밴드·청람 잉크의 단색조 위계, 인주는 예약된 유일한 붉은색",
+      "봉인 → 개봉 → 인장이라는 상태 문법",
+      "그림자 없음, 깊이는 네이비 밴드와 괘선으로"
+    ],
+    "rules": [
+      { "name": "인주 예약 규칙", "body": "인주(#B23A2A)는 (1) 마감 임박 D≤2(\"오늘\"/\"D-1\"/\"의견 오늘 마감\")과 (2) 인장·관인 — 관인 SVG, 검토 인장 스탬프, 인장 버튼, 저장 필터 캡슐의 점 — 에만 쓴다. 화면에서 유일한 붉은 사건이어야 하며, 청색 렌디션 전환과 함께 예외가 소멸했다(구 렌디션의 Header 활성 밑줄도 이제 네이비다). 일반 강조·링크·버튼에 붉은색 금지.", "section": "colors" },
+      { "name": "밴드 단위 색 커밋 규칙", "body": "색은 요소 단위가 아니라 영역 단위로 commit한다 — 판머리·구독대는 네이비 밴드 전체, 본문은 장부지 전체. 밴드 위 텍스트는 반드시 band-hi(제호·강조) 또는 band-ink(보조)를 쓰고, 밴드는 괘선 없이 면 자체로 선다.", "section": "colors" },
+      { "name": "명조 900 단일 웨이트 규칙", "body": "명조는 표제 전용이며 웨이트는 900(font-black) 하나만 쓴다. 본문·UI 컨트롤에 명조를 쓰지 않는다 (예외: 인장 내부 각자刻字).", "section": "typography" },
+      { "name": "전 수치 tabular 규칙", "body": "화면의 모든 숫자 — 순번, D-day, 금액, %, 날짜 — 는 tabular numerals다. 순번은 2자리 zero-pad(\"01\", \"02\")로 판의 대장 대열을 만든다.", "section": "typography" },
+      { "name": "괘선 위계 규칙", "body": "이중 괘선(2px 잉크 + 3px 아래 1px 잉크, .gc-double-rule)은 장부지 위 판·섹션의 머리와 Header에만 쓴다. 네이비 밴드는 괘선 없이 면으로 선다. 2px 단일 잉크 선은 컬럼 머리 하단과 빈 판 테두리. 1px rule hairline은 행 구분. dashed tint-line은 절취선 — 개봉된 봉투의 뜯긴 자리 — 전용이다.", "section": "elevation" },
+      { "name": "종이 위 도장 규칙", "body": "도장은 어두운 밴드 위가 아니라 종이 위에 찍힌다 — 관인은 흰 지면 판(sheet 채움, 불투명도 0.95)을 깔고 네이비 밴드 위에 앉으며, 검토 인장은 paper 채움(0.85) 위에 인주 획을 얹는다. 인주 획을 어두운 배경에 직접 올리지 않는다.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do 새 표면·리디자인 표면은 루트에 .world-gc를 적용하고 이 문서의 gc 토큰만 사용한다.",
+      "Do 목록은 번호 행 + 공유 괘선으로 짠다 — 순번 zero-pad 2자리, 수치 컬럼 우측 정렬, 전 수치 tabular.",
+      "Do 장부지 위 섹션 머리는 명조 900 + 이중 괘선(.gc-double-rule) 조합으로 열고, 네이비 밴드는 괘선 없이 면으로 세운다.",
+      "Do 면책·주석은 \"※ \" 접두(마커는 aria-hidden) + ink-3 12~12.5px 각주로 쓴다.",
+      "Do 데이터 출처를 상시 명시한다 — \"{날짜} 조회 · 매일 갱신 · 나라장터 기반\", 사업자번호는 \"137-XX-X4567\" 마스킹.",
+      "Do 서술형 카피는 합니다체(\"대조하고 있습니다\", \"냅니다\")로 쓴다. 권유형 \"-세요\"까지는 허용.",
+      "Do 개봉·안착·스캔 모션에는 반드시 reduced-motion 해제를 함께 둔다.",
+      "Do 차트·래스터에는 네이비 순차 램프(#1E3A66→#DBE4F1)와 PRIMARY #1E3A66을 쓴다 — 화면과 산출물이 같은 축이어야 한다."
+    ],
+    "donts": [
+      "Don't 카드 그리드·box-shadow·큰 라운드(3px 초과, 캡슐 컨트롤·배지 제외)를 쓰지 않는다 — SaaS 대시보드 문법은 이 세계의 안티테제다. 레거시 유틸(.card-soft, .btn-primary, --shadow-*)은 미이관 표면의 잔여물이며 새 표면에 들이지 않는다.",
+      "Don't 인주를 예약 사용처(마감 D≤2, 인장·관인) 밖에서 쓰지 않는다 — 화면에서 유일한 붉은 사건. 일반 강조·링크·버튼에 붉은색 금지.",
+      "Don't 인주 획을 어두운 배경에 직접 올리지 않는다 — 도장은 항상 종이(흰 지면 판) 위에 찍는다.",
+      "Don't \"낙찰 가능성 X%\"·\"따낼 만한\" 카피 금지 — 항상 \"검토 우선순위\"·\"검토할 만한\" + \"적합도는 검토 우선순위이며 낙찰 가능성이 아닙니다\" 면책.",
+      "Don't 명조를 본문·컨트롤에 쓰거나 900 외의 웨이트로 쓰지 않는다.",
+      "Don't 장식 이모지·글리프 장식·장난스러운 톤을 넣지 않는다. 아이콘은 기능적 스트로크 아이콘(셰브론, 외부 링크 화살표) 최소한으로.",
+      "Don't 없는 증거(후기·도입 사례·언론 보도)를 만들지 않는다 — 예시 데이터에는 \"예시 데이터로 표시 중입니다\" 각주를 단다."
+    ]
+  }
+}
