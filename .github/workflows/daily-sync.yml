@@ -78,10 +78,11 @@ jobs:
         continue-on-error: true
 
   enrich-companies:
-    # 주 1회 (월요일) 회사 마스터 풍부화 (UsrInfoService02 한도 분산)
+    # 매일 회사 마스터 풍부화 — 1,500개/일 (UsrInfoService02 엔드포인트별 일 10k 한도 내)
+    # 주의: 기존 주 1회 조건(schedule == '0 20 * * 0')은 등록 cron이 '0 20 * * *'뿐이라
+    # 스케줄로는 한 번도 매칭되지 않던 버그였음 → 조건 제거로 매일 실행.
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    if: github.event.schedule == '0 20 * * 0' || github.event_name == 'workflow_dispatch'
     defaults:
       run:
         working-directory: backend
@@ -104,11 +105,11 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: 회사 기본정보 갱신 (변경분 14일 — stub 채우기 누락 방지)
-        run: uv run python -m jobs.ingest_companies_userinfo --days-back 14
+      - name: 회사 기본정보 갱신 (변경분 2일 — 매일 실행이라 짧게, stub 채우기 누락 방지)
+        run: uv run python -m jobs.ingest_companies_userinfo --days-back 2
         continue-on-error: true
 
-      - name: 회사 업종/공급물품 풍부화 (1500개)
+      - name: 회사 업종/공급물품 풍부화 (1500개, 검색·최근수주 회사 우선)
         # 회사당 2개 API 호출 × ~1초 → 1500개에 ~50분. 더 늘리면 timeout 위험.
         run: uv run python -m jobs.ingest_company_details --limit 1500
         continue-on-error: true

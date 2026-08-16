@@ -8,7 +8,10 @@
 - getPrcrmntCorpSplyPrdctInfo02 (필수: bizno)
 
 전략:
-- contracts에 등장한 active 회사 (15,779개) 우선
+- contracts에 등장한 active 회사만 대상
+- 우선순위: ① 유저가 검색한 회사 (search_logs, 최근 검색 순)
+           ② 최근 계약 체결 회사 (cntrct_cncls_date desc)
+           ③ 나머지 active 회사
 - 이미 enriched된 회사는 skip
 - 회사당 2개 API 호출
 - 일일 한도 각 10k → 한 잡 실행에 4500 회사 처리 (안전 마진)
@@ -86,8 +89,72 @@ def fetch_supply(bizrno_norm: str) -> list[dict[str, Any]]:
         return []
 
 
+def fetch_priority_ranks(client) -> dict[str, tuple[int, int]]:
+    """bizrno_norm → (tier, rank) 우선순위 맵.
+
+    tier 0 = 유저가 검색한 회사 (최근 검색 순)
+    tier 1 = 최근 계약 체결 회사 (계약일 desc, 상위 ~10k행)
+    맵에 없으면 tier 2 (나머지 active).
+    """
+    ranks: dict[str, tuple[int, int]] = {}
+
+    # tier 1: 최근 계약 체결 순 (상위 10k행 — 대략 최근 1~2주 분량이면 충분)
+    print("  ↳ 최근 계약 회사 순위 수집 중...")
+    offset = 0
+    idx = 0
+    while offset < 10000:
+        r = (
+            client.table("contracts")
+            .select("rprsnt_corp_bizrno_norm")
+            .not_.is_("rprsnt_corp_bizrno_norm", "null")
+            .order("cntrct_cncls_date", desc=True)
+            .range(offset, offset + 999)
+            .execute()
+            .data
+        )
+        if not r:
+            break
+        for row in r:
+            v = row.get("rprsnt_corp_bizrno_norm")
+            if v and v not in ranks:
+                ranks[v] = (1, idx)
+                idx += 1
+        if len(r) < 1000:
+            break
+        offset += 1000
+
+    # tier 0: 유저가 검색한 회사 (최근 검색 순) — tier 1보다 우선하므로 덮어씀
+    print("  ↳ 검색된 회사 순위 수집 중...")
+    offset = 0
+    idx = 0
+    while offset < 10000:
+        r = (
+            client.table("search_logs")
+            .select("matched_bizrno")
+            .not_.is_("matched_bizrno", "null")
+            .order("created_at", desc=True)
+            .range(offset, offset + 999)
+            .execute()
+            .data
+        )
+        if not r:
+            break
+        for row in r:
+            norm = "".join(ch for ch in (row.get("matched_bizrno") or "") if ch.isdigit())
+            if norm and ranks.get(norm, (9, 0))[0] > 0:
+                ranks[norm] = (0, idx)
+                idx += 1
+        if len(r) < 1000:
+            break
+        offset += 1000
+
+    searched = sum(1 for t, _ in ranks.values() if t == 0)
+    print(f"  ↳ priority: 검색된 회사 {searched:,} / 최근 수주 {len(ranks) - searched:,}")
+    return ranks
+
+
 def fetch_candidate_companies(client, limit: int) -> list[dict]:
-    """active 회사 중 아직 업종 풍부화 안 된 회사를 우선 가져옴."""
+    """active 회사 중 아직 업종 풍부화 안 된 회사를 우선순위 순으로 가져옴."""
     # 1. active bizrno_norm set (contracts에서)
     print("  ↳ active bizrnos 수집 중...")
     active = set()
@@ -135,11 +202,15 @@ def fetch_candidate_companies(client, limit: int) -> list[dict]:
         offset += 1000
     print(f"  ↳ enriched = {len(enriched):,}")
 
-    # 3. companies 순회 — bizrno_norm in active AND bizrno not in enriched
+    # 3. 우선순위 맵 (검색된 회사 / 최근 수주 회사)
+    ranks = fetch_priority_ranks(client)
+
+    # 4. companies 전체 순회 — bizrno_norm in active AND bizrno not in enriched
+    #    (우선순위 정렬을 위해 limit에서 멈추지 않고 전부 모은 뒤 sort)
     print("  ↳ candidates 추출 중...")
     candidates: list[dict] = []
     offset = 0
-    while len(candidates) < limit:
+    while True:
         r = (
             client.table("companies")
             .select("bizrno,bizrno_norm,corp_nm")
@@ -156,12 +227,21 @@ def fetch_candidate_companies(client, limit: int) -> list[dict]:
                 and row["bizrno"] not in enriched
             ):
                 candidates.append(row)
-                if len(candidates) >= limit:
-                    break
         if len(r) < 1000:
             break
         offset += 1000
-    return candidates
+
+    fallback = (2, 0)
+    candidates.sort(key=lambda row: ranks.get(row["bizrno_norm"], fallback))
+    picked = candidates[:limit]
+    tier_counts = [0, 0, 0]
+    for row in picked:
+        tier_counts[ranks.get(row["bizrno_norm"], fallback)[0]] += 1
+    print(
+        f"  ↳ 선정 {len(picked):,} / 후보 {len(candidates):,}"
+        f"  (검색됨 {tier_counts[0]:,} / 최근수주 {tier_counts[1]:,} / 기타 {tier_counts[2]:,})"
+    )
+    return picked
 
 
 def map_industry(it: dict, bizrno: str) -> dict | None:
