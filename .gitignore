@@ -58,3 +58,4 @@ supabase/.temp/
 # Cache
 .cache/
 *.tmp
+.playwright-mcp/

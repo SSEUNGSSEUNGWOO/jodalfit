@@ -1,7 +1,7 @@
 import type { ChartDatum } from "@/lib/insights";
 
-const PRIMARY = "#047857";
-const PALETTE = ["#047857", "#10b981", "#5eead4", "#a7f3d0", "#d1fae5"];
+const PRIMARY = "#1e3a66";
+const PALETTE = ["#1e3a66", "#3d5f94", "#7591bd", "#aebfda", "#dbe4f1"];
 
 function sum(data: ChartDatum[]) {
   return data.reduce((s, d) => s + d.value, 0);

@@ -7,7 +7,7 @@ export const alt = "jodalfit 회사 분석";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const PRIMARY = "#047857";
+const PRIMARY = "#1e3a66";
 const INK = "#111827";
 const MUTED = "#6B7280";
 const SURFACE = "#F7F9FC";

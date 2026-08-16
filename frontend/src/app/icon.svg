@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="32" height="32">
-  <polygon points="35,35 165,35 35,165" fill="#047857"/>
-  <polygon points="165,35 165,165 35,165" fill="none" stroke="#047857" stroke-width="12" stroke-linejoin="miter"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
+  <line x1="12" y1="21" x2="88" y2="21" stroke="#1e3a66" stroke-width="12" stroke-linecap="round"/>
+  <rect x="12" y="39" width="61" height="22" rx="5" fill="#1e3a66"/>
+  <circle cx="85" cy="50" r="10" fill="#b23a2a"/>
+  <line x1="12" y1="79" x2="88" y2="79" stroke="#1e3a66" stroke-width="12" stroke-linecap="round"/>
 </svg>

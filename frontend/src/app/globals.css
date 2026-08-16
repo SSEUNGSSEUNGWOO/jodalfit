@@ -1,4 +1,5 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,29 +7,29 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* ── Brand palette — Emerald Green ───────────────── */
+  /* ── Brand palette — 청색 장부 (개찰판 world와 동일 축) ── */
   /* Brand */
-  --color-brand:        #047857;   /* 에메랄드 그린 (white 텍스트 AA 대비 충족) */
-  --color-brand-strong: #065f46;
-  --color-brand-soft:   #d1fae5;
-  --color-brand-tint:   #ecfdf5;
+  --color-brand:        #1e3a66;   /* 네이비 (white 텍스트 AA 대비 충족) */
+  --color-brand-strong: #16294a;
+  --color-brand-soft:   #e5edf8;
+  --color-brand-tint:   #f0f5fb;
 
-  /* Greys (토스 grey scale) */
-  --color-ink:          #191f28;   /* text strong */
-  --color-ink-2:        #333d4b;
-  --color-ink-3:        #4e5968;   /* text body */
-  --color-ink-4:        #6b7684;
-  --color-ink-5:        #8b95a1;   /* muted */
-  --color-ink-6:        #b0b8c1;
-  --color-ink-7:        #d1d6db;
+  /* Greys (청람 blue-grey scale) */
+  --color-ink:          #17233a;   /* text strong */
+  --color-ink-2:        #2c3a54;
+  --color-ink-3:        #3a4a66;   /* text body */
+  --color-ink-4:        #5c6b85;
+  --color-ink-5:        #7a879c;   /* muted */
+  --color-ink-6:        #a6b1c2;
+  --color-ink-7:        #c9d2df;
 
   --color-bg:           #ffffff;
-  --color-bg-soft:      #f9fafb;
-  --color-bg-soft-2:    #f2f4f6;
+  --color-bg-soft:      #f6f8fb;
+  --color-bg-soft-2:    #eef2f8;
   --color-bg-card:      #ffffff;
 
-  --color-line:         #e5e8eb;
-  --color-line-soft:    #f2f4f6;
+  --color-line:         #dde3ec;
+  --color-line-soft:    #eef2f8;
 
   /* Semantic */
   --color-success:      #2ac56a;
@@ -39,7 +40,26 @@
   --color-danger-soft:  #fee9eb;
 
   /* Score 강조용 */
-  --color-score:        #3182f6;
+  --color-score:        #1e3a66;
+
+  /* ── 개찰판(開札板) world — 청색 장부 렌디션 (seed f3792acf) ── */
+  --color-gc-paper:     #f6f8fb;  /* 장부 지면 (차가운 흰) */
+  --color-gc-sheet:     #ffffff;  /* 판(보드) 시트 */
+  --color-gc-band:      #1e3a66;  /* 네이비 밴드 — 판머리·구독대 소유 */
+  --color-gc-band-ink:  #c7d5ea;  /* 밴드 위 보조 텍스트 (≥4.5:1) */
+  --color-gc-band-hi:   #f4f7fc;  /* 밴드 위 제호/강조 */
+  --color-gc-tint:      #e5edf8;  /* 옅은 청색 — 칩·캡슐 채움 */
+  --color-gc-tint-line: #b9c9e0;
+  --color-gc-tint-ink:  #2f4a75;  /* 틴트 위 텍스트 (≥4.5:1) */
+  --color-gc-ink:       #17233a;  /* 청람 잉크 */
+  --color-gc-ink-2:     #3a4a66;
+  --color-gc-ink-3:     #5c6b85;  /* 지면 위 muted (≥4.5:1) */
+  --color-gc-rule:      #d9e0ea;  /* 괘선 hairline */
+  --color-gc-injuk:     #b23a2a;  /* 인주 — 마감 임박·저장 인장 전용 */
+  --color-gc-injuk-deep: #93291b;
+  --color-gc-injuk-soft: #f2e3dc;
+  --color-gc-amber:      #8a5b14;  /* D-3~5 경계 텍스트 */
+  --font-gc-serif: "Noto Serif KR", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
 
   /* Typography */
   --font-sans: "Pretendard Variable", "Pretendard", -apple-system,
@@ -62,25 +82,25 @@
 
 :root {
   color-scheme: light;
-  /* shadcn semantic tokens mapped to 토스 톤 */
+  /* shadcn semantic tokens — 청색 장부 톤 */
   --background:           #ffffff;
-  --foreground:           #191f28;
+  --foreground:           #17233a;
   --card:                 #ffffff;
-  --card-foreground:      #191f28;
+  --card-foreground:      #17233a;
   --popover:              #ffffff;
-  --popover-foreground:   #191f28;
-  --primary:              #047857;        /* 에메랄드 그린 */
+  --popover-foreground:   #17233a;
+  --primary:              #1e3a66;        /* 네이비 */
   --primary-foreground:   #ffffff;
-  --secondary:            #f2f4f6;
-  --secondary-foreground: #333d4b;
-  --muted:                #f9fafb;
-  --muted-foreground:     #6b7684;
-  --accent:               #f2f4f6;
-  --accent-foreground:    #191f28;
+  --secondary:            #eef2f8;
+  --secondary-foreground: #2c3a54;
+  --muted:                #f6f8fb;
+  --muted-foreground:     #5c6b85;
+  --accent:               #eef2f8;
+  --accent-foreground:    #17233a;
   --destructive:          #f04452;
-  --border:               #e5e8eb;
-  --input:                #e5e8eb;
-  --ring:                 #047857;
+  --border:               #dde3ec;
+  --input:                #dde3ec;
+  --ring:                 #1e3a66;
   --chart-1:        oklch(0.87 0 0);
   --chart-2:        oklch(0.556 0 0);
   --chart-3:        oklch(0.439 0 0);
@@ -112,7 +132,7 @@ body {
 }
 
 ::selection {
-  background: rgba(49, 130, 246, 0.18);
+  background: rgba(185, 201, 224, 0.45);
 }
 
 /* Tabular */
@@ -181,9 +201,9 @@ body {
   color: var(--color-brand-strong);
 }
 
-/* Focus — Toss style */
+/* Focus */
 :focus-visible {
-  outline: 3px solid rgba(49, 130, 246, 0.35);
+  outline: 3px solid rgba(30, 58, 102, 0.4);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -198,6 +218,75 @@ body {
 /* Mobile */
 @media (max-width: 640px) {
   body { font-size: 15px; }
+}
+
+/* ── 개찰판 world utilities ─────────────────────────────── */
+.world-gc {
+  background: var(--color-gc-paper);
+  color: var(--color-gc-ink);
+  caret-color: var(--color-gc-ink);
+  scrollbar-color: var(--color-gc-tint-line) var(--color-gc-paper);
+}
+.world-gc ::selection {
+  background: rgba(185, 201, 224, 0.45);
+}
+.world-gc :focus-visible {
+  outline: 2px solid var(--color-gc-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 관보식 이중 괘선 — 굵은 선 + 가는 선 */
+.gc-double-rule {
+  position: relative;
+  border-top: 2px solid var(--color-gc-ink);
+}
+.gc-double-rule::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--color-gc-ink);
+}
+
+/* 행 개봉 — grid-rows 트랜지션 */
+.gc-open-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gc-open-wrap[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.gc-open-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 도장 설치 — 절제된 안착 */
+@keyframes gc-stamp {
+  from { transform: scale(1.4) rotate(-8deg); opacity: 0; }
+  70%  { transform: scale(0.98) rotate(-4deg); opacity: 1; }
+  to   { transform: scale(1) rotate(-4deg); opacity: 1; }
+}
+.gc-stamp-in {
+  animation: gc-stamp 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* 대조 중 — 괘선 스캔 (indeterminate) */
+@keyframes gc-scan {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(400%); }
+}
+.gc-scan-bar {
+  animation: gc-scan 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gc-open-wrap { transition: none; }
+  .gc-stamp-in { animation: none; }
+  .gc-scan-bar { animation: none; }
 }
 
 @theme inline {

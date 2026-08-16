@@ -1,9 +1,10 @@
 import { Brand } from "./Brand";
+import { cn } from "@/lib/utils";
 
-export function Footer() {
+export function Footer({ className }: { className?: string }) {
   const today = new Date();
   return (
-    <footer className="mt-24 bg-bg-soft border-t border-line">
+    <footer className={cn("mt-24 bg-bg-soft border-t border-line", className)}>
       <div className="mx-auto grid max-w-[1140px] gap-10 px-5 py-12 sm:px-8 sm:py-14 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <Brand size="md" />
