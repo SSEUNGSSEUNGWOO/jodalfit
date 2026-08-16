@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { SearchForm } from "@/components/SearchForm";
+import { BoardSearch } from "@/components/board/BoardSearch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchBrowseCompanies } from "@/lib/company";
@@ -31,18 +31,18 @@ export default async function CompaniesIndexPage() {
   return (
     <>
       <Header />
-      <main className="flex-1">
+      <main className="world-gc flex-1">
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-            <h1 className="text-[28px] sm:text-[36px] font-extrabold tracking-tight text-foreground">
+            <h1 className="font-gc-serif font-black text-[28px] sm:text-[36px] tracking-[-0.02em] text-gc-ink">
               공공조달 활동 기업
             </h1>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-muted-foreground">
               나라장터 수주 이력이 분석된 기업 {companies.length}곳. 회사를 클릭하면
               해당 회사에 맞는 추천 공고와 과거 수주 분석을 볼 수 있어요.
             </p>
-            <div className="mt-6 max-w-[520px]">
-              <SearchForm />
+            <div className="mt-6 max-w-[560px]">
+              <BoardSearch />
             </div>
           </div>
         </section>

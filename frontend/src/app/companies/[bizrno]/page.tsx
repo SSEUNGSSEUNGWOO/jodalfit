@@ -110,7 +110,7 @@ export default async function CompanyPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <Header />
-      <main className="flex-1">
+      <main className="world-gc flex-1">
         <CompanyHero company={company} />
         <Suspense fallback={null}>
           <ProfileSection bizrno={company.bizrno} />
@@ -157,7 +157,7 @@ function CompanyHero({
             <Badge variant="destructive">부정당 제재</Badge>
           )}
         </div>
-        <h1 className="text-[32px] sm:text-[44px] font-extrabold tracking-tight text-foreground leading-[1.1]">
+        <h1 className="font-gc-serif font-black text-[32px] sm:text-[44px] tracking-[-0.02em] text-gc-ink leading-[1.2]">
           {company.corp_nm}
         </h1>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] text-muted-foreground">
@@ -354,7 +354,7 @@ async function RecommendationsSection({
     return (
       <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
         <div className="mb-5">
-          <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+          <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
             추천 공고
           </h2>
           <p className="mt-1 text-[14px] text-muted-foreground">
@@ -374,6 +374,27 @@ async function RecommendationsSection({
     with_explanation: true,
   });
 
+  // 백엔드 오류를 "0건"으로 위장하지 않는다 — 오류는 오류로 알리고
+  // 실시간 조회 경로를 제공 (ISR 캐시에 오류가 1시간 박제되는 문제 방어)
+  if (data.error) {
+    return (
+      <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
+        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
+          추천 공고
+        </h2>
+        <p className="mt-2 text-[14.5px] text-muted-foreground break-keep">
+          추천을 불러오지 못했습니다. 실시간 조회로 바로 확인할 수 있어요.
+        </p>
+        <Link
+          href={`/recommendations?company=${encodeURIComponent(company.corp_nm)}`}
+          className="mt-4 inline-flex items-center h-11 px-4 rounded-lg bg-primary text-primary-foreground text-[14px] font-bold hover:bg-primary/90 transition-colors"
+        >
+          {company.corp_nm} 실시간 추천 열기 →
+        </Link>
+      </section>
+    );
+  }
+
   const TOP = 5;
   const top = data.results.slice(0, TOP);
   const slim = data.results.slice(TOP);
@@ -389,14 +410,21 @@ async function RecommendationsSection({
       <PreSpecSection results={data.pre_spec_results ?? []} />
 
       <div className="flex items-baseline justify-between mt-10 mb-5">
-        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
           {company.corp_nm}에 맞는 공고 {data.results.length}건
         </h2>
         <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
       </div>
       {data.results.length === 0 ? (
-        <p className="text-[14.5px] text-muted-foreground">
-          현재 매칭되는 신규 공고가 없어요. 나중에 다시 확인해보세요.
+        <p className="text-[14.5px] text-muted-foreground break-keep">
+          현재 매칭되는 신규 공고가 없어요.{" "}
+          <Link
+            href={`/recommendations?company=${encodeURIComponent(company.corp_nm)}`}
+            className="font-bold text-primary hover:underline"
+          >
+            실시간 조회로 다시 확인
+          </Link>
+          하거나 나중에 들러보세요.
         </p>
       ) : (
         <>
@@ -455,7 +483,7 @@ async function HistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
   return (
     <section className="border-t border-border bg-muted/20">
       <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
           과거 수주 이력
         </h2>
         <p className="mt-1 text-[14px] text-muted-foreground">
@@ -575,7 +603,7 @@ async function AwardHistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
   return (
     <section className="border-t border-border bg-background">
       <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
           낙찰 패턴 회고
         </h2>
         <p className="mt-1 text-[14px] text-muted-foreground">
@@ -740,7 +768,7 @@ async function CompetitorProfileSection({ bizrnoNorm }: { bizrnoNorm: string }) 
   return (
     <section className="border-t border-border bg-muted/20">
       <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-        <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
           유사 시장 상시 낙찰자
         </h2>
         <p className="mt-1 text-[14px] text-muted-foreground">

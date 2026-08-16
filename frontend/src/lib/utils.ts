@@ -42,13 +42,19 @@ export function formatDateKR(dateStr: string | null | undefined) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function scoreLabel(score: number) {
-  if (score >= 0.85) return { label: "매우 적합", tone: "primary" as const };
-  if (score >= 0.7) return { label: "적합", tone: "primary" as const };
-  if (score >= 0.55) return { label: "관련 있음", tone: "muted" as const };
-  return { label: "참고", tone: "muted" as const };
+export function scorePercent(score: number) {
+  // 표시 스케일 재보정 (2026-08): raw 0~1을 √로 펴서 상위 추천이 체감
+  // 점수대(75~95)에 오도록. 순위 보존 단조 변환 — "검토 우선순위" 표시용이며
+  // 낙찰 확률이 아님(면책 문구 상시 병기). 임베딩 코사인 특성상 raw가
+  // 0.5~0.8에 몰려 상위권도 60점대로 보이던 문제를 해소.
+  const s = Math.max(0, Math.min(1, score));
+  return Math.min(99, Math.round(Math.sqrt(s) * 100));
 }
 
-export function scorePercent(score: number) {
-  return Math.round(score * 100);
+export function scoreLabel(score: number) {
+  const p = scorePercent(score);
+  if (p >= 90) return { label: "매우 적합", tone: "primary" as const };
+  if (p >= 75) return { label: "적합", tone: "primary" as const };
+  if (p >= 60) return { label: "관련 있음", tone: "muted" as const };
+  return { label: "참고", tone: "muted" as const };
 }

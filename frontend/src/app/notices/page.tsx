@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Pagination } from "@/components/Pagination";
-import { SearchForm } from "@/components/SearchForm";
+import { BoardSearch } from "@/components/board/BoardSearch";
 import { SlimNoticeRow } from "@/components/SlimNoticeRow";
 import {
   fetchBrowsePage,
@@ -144,18 +144,18 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
   return (
     <>
       <Header />
-      <main className="flex-1">
+      <main className="world-gc flex-1">
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-12">
-            <h1 className="text-[28px] sm:text-[36px] font-extrabold tracking-tight text-foreground">
+            <h1 className="font-gc-serif font-black text-[28px] sm:text-[36px] tracking-[-0.02em] text-gc-ink">
               진행 중인 공공입찰
             </h1>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-muted-foreground">
               필터 조건에 맞는 공고 <span className="font-bold text-foreground">{totalCount.toLocaleString("ko-KR")}건</span>.
               공고를 클릭하면 발주계획부터 낙찰까지 전 과정을 한 페이지에서 확인할 수 있어요.
             </p>
-            <div className="mt-6 max-w-[520px]">
-              <SearchForm />
+            <div className="mt-6 max-w-[560px]">
+              <BoardSearch />
             </div>
           </div>
         </section>

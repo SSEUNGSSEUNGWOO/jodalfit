@@ -56,7 +56,7 @@ export default async function InsightPage({ params }: { params: Params }) {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-[820px] px-5 sm:px-8 py-10">
+      <main className="world-gc flex-1"><div className="mx-auto max-w-[820px] px-5 sm:px-8 py-10">
         <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wider text-primary">
           <span className="inline-block size-1.5 rounded-full bg-primary" />
           {typeLabel}
@@ -92,7 +92,7 @@ export default async function InsightPage({ params }: { params: Params }) {
             remarkPlugins={[remarkGfm]}
             components={{
               h1: ({ children }) => (
-                <h1 className="text-[34px] font-bold tracking-tight text-foreground leading-tight mt-2 mb-6">
+                <h1 className="font-gc-serif font-black text-[34px] tracking-[-0.02em] text-gc-ink leading-tight mt-2 mb-6">
                   {children}
                 </h1>
               ),
@@ -185,6 +185,7 @@ export default async function InsightPage({ params }: { params: Params }) {
             ← 다른 주차 인사이트
           </a>
         </footer>
+      </div>
       </main>
     </>
   );

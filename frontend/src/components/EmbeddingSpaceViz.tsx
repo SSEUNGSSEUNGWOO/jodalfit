@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { VizData } from "@/types/recommendations";
+import { scorePercent } from "@/lib/utils";
 
 interface Props {
   viz: VizData;
@@ -156,7 +157,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                       cx: rx,
                       cy: ry,
                       title: r.bid_ntce_nm ?? "—",
-                      subtitle: `매칭 점수 ${(r.score * 100).toFixed(0)}`,
+                      subtitle: `매칭 점수 ${scorePercent(r.score)}`,
                       tone: r.score >= 0.7 ? "primary" : "amber",
                     })
                   }

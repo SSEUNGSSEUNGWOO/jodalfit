@@ -13,7 +13,7 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main className="flex-1">
+      <main className="world-gc flex-1">
         <Hero />
         <What />
         <How />
@@ -46,7 +46,7 @@ function Section({
             {eyebrow}
           </div>
         )}
-        <h2 className="text-[24px] sm:text-[28px] font-extrabold tracking-tight text-foreground break-keep">
+        <h2 className="font-gc-serif font-black text-[24px] sm:text-[28px] tracking-[-0.02em] text-gc-ink break-keep">
           {title}
         </h2>
         <div className="mt-5 space-y-4 text-[15.5px] leading-[1.8] text-foreground/85 break-keep">
@@ -61,10 +61,7 @@ function Hero() {
   return (
     <section className="border-b border-border">
       <div className="mx-auto max-w-[820px] px-5 sm:px-8 py-16 sm:py-24">
-        <div className="text-[12.5px] font-bold uppercase tracking-wider text-primary">
-          About jodalfit
-        </div>
-        <h1 className="mt-3 text-[36px] sm:text-[52px] font-extrabold leading-[1.15] tracking-[-0.02em] text-foreground break-keep">
+        <h1 className="font-gc-serif font-black text-[34px] sm:text-[48px] leading-[1.25] tracking-[-0.02em] text-gc-ink break-keep">
           나라장터 공고를 회사 기준으로 정리하는 디스커버리 도구
         </h1>
         <p className="mt-6 text-[17px] leading-[1.7] text-muted-foreground break-keep">

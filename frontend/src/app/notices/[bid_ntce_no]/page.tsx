@@ -84,7 +84,7 @@ export default async function NoticePage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <Header />
-      <main className="flex-1">
+      <main className="world-gc flex-1">
         {goldenActive && (
           <div className="bg-amber-500 text-white">
             <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] font-semibold">
@@ -138,7 +138,7 @@ export default async function NoticePage({ params }: Props) {
               {notice.bid_clse_date && <DDayBadge date={notice.bid_clse_date} />}
             </div>
 
-            <h1 className="text-[26px] sm:text-[36px] font-extrabold tracking-tight leading-[1.2] text-foreground max-w-[40ch]">
+            <h1 className="font-gc-serif font-black text-[26px] sm:text-[36px] tracking-[-0.02em] leading-[1.3] text-gc-ink max-w-[40ch] break-keep">
               {notice.bid_ntce_nm}
             </h1>
 
@@ -197,7 +197,7 @@ export default async function NoticePage({ params }: Props) {
         {/* Lifecycle timeline */}
         <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
           <div className="mb-6">
-            <h2 className="text-[22px] sm:text-[26px] font-extrabold text-foreground">
+            <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
               공고 라이프사이클
             </h2>
             <p className="mt-1 text-[14px] text-muted-foreground">
