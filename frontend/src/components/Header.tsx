@@ -21,7 +21,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="world-gc sticky top-0 z-40 bg-gc-paper gc-double-rule border-t-0 border-b-2 border-b-gc-ink">
+    <header className="world-gc sticky top-0 z-40 bg-gc-paper">
       <div className="mx-auto flex h-16 max-w-[1080px] items-center justify-between px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2">
           <JodalfitSymbol className="h-[22px] w-[22px] text-gc-band shrink-0" />
@@ -104,6 +104,12 @@ export function Header() {
             </Link>
           </div>
         </nav>
+      </div>
+
+      {/* 관보식 이중 괘선 — .gc-double-rule은 position:relative로 sticky를 깨뜨려 별도 요소로 그림 */}
+      <div aria-hidden>
+        <div className="border-t-2 border-gc-ink" />
+        <div className="mt-px border-t border-gc-ink" />
       </div>
     </header>
   );

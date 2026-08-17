@@ -54,12 +54,7 @@ export function BoardFilterBar({
   const filtered = isFiltered(filters);
 
   return (
-    <div
-      className={cn(
-        "border-y border-gc-rule bg-gc-paper/95 backdrop-blur-sm",
-        className
-      )}
-    >
+    <div className={cn("border-b border-gc-rule bg-gc-paper", className)}>
       <div className="mx-auto max-w-[1080px] px-5 sm:px-8 py-2.5 flex items-center gap-4">
         <div className="flex-1 min-w-0 flex items-center gap-x-4 gap-y-2 overflow-x-auto [scrollbar-width:thin] sm:flex-wrap sm:overflow-visible">
         <Group label="구분">

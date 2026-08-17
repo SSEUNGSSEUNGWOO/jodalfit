@@ -319,7 +319,6 @@ function ResultsBoard({
       />
 
       <BoardFilterBar
-        className="sticky top-16 z-30"
         filters={filters}
         onChange={setFilters}
         divOptions={divOptions}
