@@ -19,15 +19,18 @@ from .selectors import format_amount
 CLAUDE_TIMEOUT = 180
 
 
-def _claude_call(prompt: str) -> str:
+def _claude_call(prompt: str, allow_web_search: bool = False) -> str:
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     claude_cmd = shutil.which("claude") or "claude"
+    args = [claude_cmd, "-p", "-"]
+    if allow_web_search:
+        args += ["--allowedTools", "WebSearch"]
     result = subprocess.run(
-        [claude_cmd, "-p", "-"],
+        args,
         input=prompt,
         capture_output=True,
         text=True,
-        timeout=CLAUDE_TIMEOUT,
+        timeout=CLAUDE_TIMEOUT * (2 if allow_web_search else 1),
         env=env,
         encoding="utf-8",
         shell=True,
@@ -58,7 +61,7 @@ def _extract_json(s: str):
 
 
 def write_picks_blurbs(picks: list[dict], feedback: str | None = None) -> list[str]:
-    """공고 10건 → 12~25자 blurb 10개 (JSON 한 번 호출)."""
+    """공고 N건 → 12~25자 blurb N개 (JSON 한 번 호출)."""
     items_json = json.dumps(
         [
             {
@@ -67,7 +70,7 @@ def write_picks_blurbs(picks: list[dict], feedback: str | None = None) -> list[s
                 "bsns": p.get("bsns_div_nm"),
                 "instt": p.get("dmnd_instt_nm") or p.get("ntce_instt_nm"),
                 "price": format_amount(p.get("_price")),
-                "dday": f"D-{p['_dday']}" if p["_dday"] else "D-Day",
+                "domain": p.get("_domain_label"),
             }
             for i, p in enumerate(picks)
         ],
@@ -80,17 +83,18 @@ def write_picks_blurbs(picks: list[dict], feedback: str | None = None) -> list[s
         else ""
     )
 
-    prompt = f"""당신은 한국 공공조달 큐레이션 에디터입니다. 공고 10건에 각각 12~25자 한국어 한 줄 blurb을 답니다.
+    prompt = f"""당신은 한국 공공조달 큐레이션 에디터입니다. 공고 {len(picks)}건에 각각 12~25자 한국어 한 줄 blurb을 답니다.
 
 규칙:
 - 사실 기반, 추측 금지, 헤지 표현 금지 ("~할 가능성", "~로 보입니다")
 - 공허한 일반론 금지 ("활발한", "주목할 만한", "다양한")
-- 제목을 그대로 줄이지 말고, 규모/마감 텍스처/도메인 힌트 중 1개를 골라 한 줄
+- 마감 잔여 일수(D-n, "마감 N일") 언급 금지 — 이 글은 아카이브로도 읽히므로 발행 후에도 유효한 문장만
+- 제목을 그대로 줄이지 말고, 규모/발주 배경/도메인 텍스처 중 1개를 골라 한 줄
 - 톤: jodalfit은 "검토할 만한" 디스커버리. "따낼 만한" 금지.
-- 좋은 예: "교육기관 IT 유지보수, 마감 여유 11일"
-           "150억 빗물펌프장 공사, 마감 임박 3일"
+- 좋은 예: "70억 규모 공공 클라우드 네이티브 전환"
+           "군 실증용 GPU 리스, 물품 발주로는 드문 규모"
 - 나쁜 예: "주목할 만한 공고, 검토 필요"
-           "공공기관의 활발한 발주"
+           "마감 여유 11일" (잔여 일수 금지)
 
 응답: JSON 배열만 출력. 다른 텍스트 금지.
 형식: [{{"i":1,"blurb":"..."}}, {{"i":2,"blurb":"..."}}, ...]
@@ -105,6 +109,67 @@ def write_picks_blurbs(picks: list[dict], feedback: str | None = None) -> list[s
     return [by_i.get(i + 1, "") for i in range(len(picks))]
 
 
+def write_picks_headline(
+    picks: list[dict], monday, sunday, total_count: int
+) -> dict:
+    """호별 고유 제목·요약 생성 — 매주 같은 템플릿 제목을 피한다."""
+    top_summary = "\n".join(
+        f"- {p.get('bid_ntce_nm')} / {p.get('_domain_label') or p.get('bsns_div_nm')} / "
+        f"{format_amount(p.get('_price'))} / {p.get('dmnd_instt_nm') or p.get('ntce_instt_nm')}"
+        for p in picks[:6]
+    )
+    prompt = f"""당신은 한국 공공조달 주간지 에디터입니다. 이번 호 픽 기사의 제목과 요약을 씁니다.
+
+규칙:
+- title: 25~45자. 이번 주 픽의 실제 내용(대표 공고·규모·분야 흐름)이 드러나는 고유한 제목.
+  "이번 주 픽:" 으로 시작. 예) "이번 주 픽: 클라우드 전환 70억부터 치안 데이터셋까지 12건"
+- summary: 1~2문장, 90자 이내. 기간과 선별 기준(신규 {total_count:,}건 중 추정가 1억 이상)을 자연스럽게 포함.
+- 사실만. 과장·추측·"주목할 만한" 류 금지. 마감 잔여 일수 금지.
+- 응답: JSON만. 형식: {{"title":"...","summary":"..."}}
+
+## 기간
+{monday.isoformat()} ~ {sunday.isoformat()}
+
+## 이번 주 픽 (상위)
+{top_summary}
+"""
+    raw = _claude_call(prompt)
+    parsed = _extract_json(raw)
+    return {
+        "title": str(parsed.get("title", "")).strip(),
+        "summary": str(parsed.get("summary", "")).strip(),
+    }
+
+
+def write_policy_signals(monday, sunday) -> str:
+    """정책 신호 섹션 — 해당 주 국무회의·부처 발표 중 조달 관련만 웹 검색으로 수집.
+
+    원칙: 발언·발표는 출처와 함께 사실만 인용, 해석은 조달 관점 한 줄로 한정.
+    관련 소식이 없으면 빈 문자열(섹션 생략).
+    """
+    prompt = f"""당신은 한국 공공조달 주간지의 정책 담당 에디터입니다. 웹 검색을 사용해 아래 기간의 정책 소식 중 "공공조달·정부 발주에 영향을 줄 만한 것"만 찾아 정리하세요.
+
+검색 대상 (이 기간: {monday.isoformat()} ~ {sunday.isoformat()}):
+- 국무회의 결과, 대통령·총리 주재 회의 발표
+- 기획재정부·행정안전부·과기정통부·조달청 보도자료
+- 추경·예산 편성, 신규 국가사업 발표
+
+작성 규칙:
+- 0~3건. 조달·발주와의 연결이 뚜렷한 것만. 없으면 정확히 "NONE"만 출력.
+- 건당 형식: "**[발표 주체·날짜]** 사실 요약 1문장. → 조달 관점 시사점 1문장. ([출처명](URL))"
+- 발언 인용은 사실 그대로, 정치적 평가·논평 절대 금지.
+- 확인 안 되는 내용은 쓰지 않는다. 추측·전망 남발 금지 ("~할 것으로 보인다" 최대 1회).
+- 응답은 마크다운 리스트 본문만. 머리말 X.
+"""
+    try:
+        text = _claude_call(prompt, allow_web_search=True).strip()
+    except Exception:
+        return ""
+    if not text or text.upper().startswith("NONE"):
+        return ""
+    return text
+
+
 def write_image_prompt(content_type: str, context: str) -> str:
     """주간 인사이트 커버 이미지용 한국어 프롬프트 생성.
 
@@ -112,8 +177,9 @@ def write_image_prompt(content_type: str, context: str) -> str:
     이미지를 만들고 frontmatter `cover_image:` 경로에 직접 등록.
     """
     style_brief = (
-        "jodalfit 비주얼 가이드: 토스 톤(깨끗한 흰색 배경, 미니멀, 큰 여백), "
-        "주조색은 딥 포레스트 그린(#166534), "
+        "조달핏 비주얼 가이드(청색 장부 세계): 차가운 흰 장부지 배경, 미니멀, 큰 여백, "
+        "주조색은 네이비(#1E3A66), 포인트는 인주 레드(#B23A2A) 한 곳만, "
+        "괘선(가는 가로줄)·도장·문서 모티프 환영, "
         "삽화는 평면적·기하학적·차분함, 사람 얼굴/캐릭터 금지, "
         "한글 텍스트 금지(이미지에 글자 X), 사진보다 일러스트레이션, "
         "1200x630 가로 와이드, 좌측에 비주얼·우측 여백(텍스트 오버레이용)."

@@ -132,7 +132,7 @@ def days_until(date_str: str | None, ref: date) -> int | None:
     return (d - ref).days
 
 
-def pick_top10(notices: list[dict], today: date) -> list[dict]:
+def pick_top10(notices: list[dict], today: date, count: int = 10) -> list[dict]:
     candidates = []
     for n in notices:
         instt = n.get("dmnd_instt_nm") or n.get("ntce_instt_nm")
@@ -181,8 +181,13 @@ def pick_top10(notices: list[dict], today: date) -> list[dict]:
             seen_keys.add(c["_key"])
         inst_count[instt] += 1
         bsns_count[bsns] += 1
-        if len(picked) >= 10:
+        if len(picked) >= count:
             break
+
+    # 통합 1편 발행용 분야 라벨 부착 (미분류는 None)
+    for c in picked:
+        domain = classify_notice(c)
+        c["_domain_label"] = DOMAIN_LABELS.get(domain) if domain else None
     return picked
 
 
@@ -206,33 +211,6 @@ def classify_notice(notice: dict) -> str | None:
             best_count = count
             best_domain = domain
     return best_domain
-
-
-def pick_top_by_category(
-    notices: list[dict],
-    today: date,
-    per_cat: int = 5,
-    min_cat: int = 5,
-) -> dict[str, list[dict]]:
-    """카테고리별로 분류한 뒤 각 카테고리 안에서 TOP `per_cat` 선별.
-
-    `per_cat` = 카테고리당 최종 픽 수, `min_cat` = 발행 임계값(픽 수 < min_cat이면 스킵).
-    반환은 domain → picks. 순서는 DOMAIN_LABELS 정의 순서.
-    """
-    # 1) 도메인별로 후보 집계 (필터링은 pick_top10과 동일 로직으로 아래에서 재사용)
-    by_domain: dict[str, list[dict]] = {d: [] for d in DOMAIN_LABELS}
-    for n in notices:
-        domain = classify_notice(n)
-        if domain is None:
-            continue
-        by_domain[domain].append(n)
-
-    result: dict[str, list[dict]] = {}
-    for domain, cat_notices in by_domain.items():
-        picks = pick_top10(cat_notices, today)[:per_cat]
-        if len(picks) >= min_cat:
-            result[domain] = picks
-    return result
 
 
 MIN_PREV_FOR_WOW = 200

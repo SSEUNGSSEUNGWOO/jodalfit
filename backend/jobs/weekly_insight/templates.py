@@ -25,26 +25,21 @@ def render_picks(
     total_count: int,
     evaluation: dict | None = None,
     image_prompt: str | None = None,
-    category_label: str | None = None,
+    headline: dict | None = None,
 ) -> str:
-    if category_label:
-        title = f"이번 주 {category_label} 공공입찰 TOP {len(picks)}"
-        summary = (
-            f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} 신규 공고 "
-            f"{total_count:,}건 중 {category_label} 분야에서 추정가 1억 이상, "
-            f"마감 여유 있는 공고를 jodalfit이 선별했습니다."
-        )
-    else:
-        title = f"이번 주 검토할 만한 공공입찰 TOP {len(picks)}"
-        summary = (
-            f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} 신규 공고 "
-            f"{total_count:,}건 중 추정가 1억 이상, 마감 여유 있는 공고를 jodalfit이 선별했습니다."
-        )
+    # 호별 고유 제목·요약 (writer 생성). 실패 시 템플릿 폴백.
+    title = (headline or {}).get("title") or (
+        f"이번 주 검토할 만한 공공입찰 {len(picks)}건"
+    )
+    summary = (headline or {}).get("summary") or (
+        f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} 신규 공고 "
+        f"{total_count:,}건 중 추정가 1억 이상 공고를 조달핏이 선별했습니다."
+    )
 
     front_lines = [
         "---",
-        f'title: "{title}"',
-        f'summary: "{summary}"',
+        f"title: {_yaml_quote(title)}",
+        f"summary: {_yaml_quote(summary)}",
         "type: picks",
         f"slug: {slug}",
         f"week_start: {monday.isoformat()}",
@@ -53,8 +48,6 @@ def render_picks(
         f"total_notices: {total_count}",
         f"picks_count: {len(picks)}",
     ]
-    if category_label:
-        front_lines.append(f'category: "{category_label}"')
     if evaluation:
         front_lines.append(f"evaluation_score: {evaluation.get('weighted_score', 0)}")
     if image_prompt:
@@ -64,13 +57,24 @@ def render_picks(
     front_lines.append("")
     front = "\n".join(front_lines)
 
-    body = [f"# {title}\n", f"> {summary}\n"]
+    period = (
+        f"{monday.strftime('%Y년 %m월 %d일')} ~ {sunday.strftime('%m월 %d일')} "
+        f"신규 공고 {total_count:,}건 중 추정가 1억 이상, 기관·분야가 겹치지 않게 선별했습니다."
+    )
+
+    body = [f"# {title}\n", f"> {summary}\n", f"{period}\n"]
     for i, p in enumerate(picks, 1):
-        instt = p.get("dmnd_instt_nm") or p.get("ntce_instt_nm") or "—"
+        # 공고기관(대행)과 수요기관이 다르면 둘 다 표기 — 제목 속 기관과의 혼선 방지
+        dmnd = (p.get("dmnd_instt_nm") or "").strip()
+        ntce = (p.get("ntce_instt_nm") or "").strip()
+        if dmnd and ntce and dmnd != ntce:
+            instt_line = f"- 수요기관: **{dmnd}** (공고: {ntce})"
+        else:
+            instt_line = f"- 기관: **{dmnd or ntce or '—'}**"
         bsns = p.get("bsns_div_nm") or "—"
+        domain = p.get("_domain_label")
+        bsns_line = f"{bsns} · {domain}" if domain else bsns
         price = format_amount(p.get("_price"))
-        dday = p["_dday"]
-        dday_label = "D-Day" if dday == 0 else f"D-{dday}"
         close = (p.get("bid_clse_date") or "")[:10]
         blurb = blurbs[i - 1] if i - 1 < len(blurbs) else ""
 
@@ -78,18 +82,19 @@ def render_picks(
         if blurb:
             body.append(f"_{blurb}_\n")
         body.append(
-            f"- 기관: **{instt}**\n"
-            f"- 업무구분: {bsns}\n"
+            f"{instt_line}\n"
+            f"- 구분: {bsns_line}\n"
             f"- 추정가: **{price}**\n"
-            f"- 마감일: {close} ({dday_label})\n"
+            f"- 입찰 마감일: {close}\n"
             f"- 공고번호: [{p.get('bid_ntce_no')}](/notices/{p.get('bid_ntce_no')})\n"
         )
 
     body.append(
         "\n---\n\n"
         "## 우리 회사 기준으로 추천 받기\n\n"
-        "위 공고들은 시장 전반에서 추정가·마감일 기준으로 선별한 것입니다. "
-        "회사 등록업종·공급물품·수주 이력에 맞춘 개인화 추천은 [홈에서 회사명을 입력](/)하시면 받을 수 있습니다.\n"
+        "위 공고들은 시장 전반에서 규모·기관 다양성 기준으로 선별한 것입니다. "
+        "회사 등록업종·공급물품·수주 이력에 맞춘 개인화 추천은 [홈에서 회사명을 입력](/)하시면 받을 수 있습니다. "
+        "마감일이 지난 공고는 각 공고 페이지에서 낙찰·계약 단계로 이어집니다.\n"
     )
     return front + "\n".join(body)
 
@@ -102,8 +107,12 @@ def render_market(
     narrative: str,
     evaluation: dict | None = None,
     image_prompt: str | None = None,
+    policy_signals: str = "",
 ) -> str:
-    title = f"{slug} 공공조달 시장 동향"
+    title = (
+        f"공공조달 주간 동향 — {monday.strftime('%m월 %d일')}"
+        f"~{sunday.strftime('%m월 %d일')}"
+    )
     wow = stats["wow_pct"]
     if wow is not None:
         wow_str = f"{wow:+.1f}% (w/w)"
@@ -180,6 +189,15 @@ def render_market(
 
     lines.append("\n## 이번 주 한 단락\n")
     lines.append(narrative)
+
+    # 정책 신호 — 국무회의·부처 발표 중 조달 관련만, 출처 포함 사실 인용
+    if policy_signals:
+        lines.append("\n## 정책 신호\n")
+        lines.append(
+            "_이번 주 정부 발표 중 공공조달·발주와 연결되는 것만 추렸습니다. "
+            "발표 내용은 출처 원문 기준이며, 시사점은 조달 관점의 참고 의견입니다._\n"
+        )
+        lines.append(policy_signals)
 
     lines.append(
         "\n---\n\n"
