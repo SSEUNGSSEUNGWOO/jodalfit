@@ -45,7 +45,7 @@ export default async function InsightsIndex() {
             <h2 className="font-gc-serif font-black text-[22px] tracking-[-0.02em] text-gc-ink">
               이번 주 픽
               <span className="ml-3 text-[14px] font-medium text-muted-foreground">
-                검토할 만한 공고 TOP 10
+                검토할 만한 공고 선별
               </span>
             </h2>
             <span className="text-[14px] text-muted-foreground">{picks.length}개 발행</span>
