@@ -21,11 +21,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1.0,
     },
+    // /recommendations는 noindex(개인화 결과)라 사이트맵에서 제외
     {
-      url: `${BASE_URL}/recommendations`,
+      url: `${BASE_URL}/notices`,
       lastModified: now,
       changeFrequency: "daily",
-      priority: 0.7,
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/companies`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.8,
     },
     {
       url: `${BASE_URL}/insights`,
