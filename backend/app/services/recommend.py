@@ -345,13 +345,25 @@ def _search_with_embedding(
     ).execute()
     raw = res.data or []
     # similarity 내림차순 정렬은 RPC가 보장 → 첫 등장 유지
+    # 1차: 공고번호 / 2차: 내용 지문 — 나라장터가 같은 공고를 다른 번호로
+    # 재발번하는 케이스(제목·기관·마감·추정가 동일)까지 걸러낸다
     seen: set[str] = set()
+    seen_content: set[tuple] = set()
     deduped: list[dict] = []
     for r in raw:
         n = r.get("bid_ntce_no")
         if not n or n in seen:
             continue
+        content_key = (
+            (r.get("bid_ntce_nm") or "").strip(),
+            (r.get("ntce_instt_nm") or r.get("dmnd_instt_nm") or "").strip(),
+            r.get("bid_clse_date"),
+            r.get("presmpt_prce"),
+        )
+        if content_key[0] and content_key in seen_content:
+            continue
         seen.add(n)
+        seen_content.add(content_key)
         r["stage"] = "notice"
         deduped.append(r)
         if len(deduped) >= candidate_pool:
