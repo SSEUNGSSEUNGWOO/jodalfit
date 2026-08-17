@@ -20,6 +20,8 @@ import type {
 
 const TOP_N = 5;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+/** 네트워크/서버 연결 실패 표식 — 식별 실패와 구분해 렌더 */
+const NETWORK_ERROR = "__network__";
 
 type Mode = "company" | "keywords";
 type Algorithm = "v1" | "v2";
@@ -46,94 +48,107 @@ export function BoardView({ query, mode, useMock, keywords, algorithm = "v2" }: 
       : new Set()
   );
 
-  // 쿼리가 바뀌면 page.tsx가 key로 리마운트 — 상태 리셋은 초기값이 담당
+  // 쿼리가 바뀌면 page.tsx가 키로 리마운트 — 상태 리셋은 초기값이 담당
   useEffect(() => {
     if (useMock) return;
 
     const controller = new AbortController();
     let cancelled = false;
 
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/recommendations/stream`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query,
-            mode,
-            keywords: keywords || null,
-            algorithm,
-            session_id: getSessionId(),
-            limit: 20,
-            candidate_pool: 200,
-            explain_top: TOP_N,
-            with_explanation: true,
-          }),
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          let detail = `HTTP ${res.status}`;
+    // 1회 시도 — 네트워크 실패·5xx는 throw해서 바깥 재시도 루프가 받는다
+    const attempt = async () => {
+      const res = await fetch(`${API_BASE}/recommendations/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          mode,
+          keywords: keywords || null,
+          algorithm,
+          session_id: getSessionId(),
+          limit: 20,
+          candidate_pool: 200,
+          explain_top: TOP_N,
+          with_explanation: true,
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        // 5xx는 서버 기동 중일 수 있음 — 재시도 대상
+        if (res.status >= 500) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text().catch(() => "");
+        let detail = `HTTP ${res.status}`;
+        try {
+          const j = JSON.parse(text);
+          detail = j.detail ?? j.error ?? detail;
+        } catch {
+          // 텍스트 응답이면 그대로
+        }
+        if (!cancelled) {
+          setData({ company: null, results: [], error: detail });
+          setStreamDone(true);
+        }
+        return;
+      }
+      if (!res.body) {
+        if (!cancelled) setStreamDone(true);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      while (!cancelled) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
           try {
-            const j = JSON.parse(text);
-            detail = j.detail ?? j.error ?? detail;
+            const evt = JSON.parse(line);
+            if (evt.type === "results") {
+              const d = evt.data as RecommendationResponse;
+              if (!cancelled) {
+                setData(d);
+                // 첫 행은 개봉된 채로 도착 — 판의 첫 인상이 곧 근거
+                if (d.results?.[0]) setOpenKeys(new Set([bidKey(d.results[0])]));
+              }
+            } else if (evt.type === "explanation" && evt.scope === "primary") {
+              const k = `${evt.bid_ntce_no}-${evt.bid_ntce_ord}`;
+              if (!cancelled)
+                setExplanations((prev) => ({ ...prev, [k]: evt.text as string }));
+            } else if (evt.type === "summary") {
+              if (!cancelled && evt.text) setSummary(evt.text as string);
+            } else if (evt.type === "done") {
+              if (!cancelled) setStreamDone(true);
+            }
           } catch {
-            // 텍스트 응답이면 그대로
+            // 끊긴 라인은 무시
+          }
+        }
+      }
+      if (!cancelled) setStreamDone(true);
+    };
+
+    // 백엔드 콜드 스타트 대비: 네트워크 실패는 3초 뒤 1회 자동 재시도.
+    // 그래도 실패하면 "식별 실패"로 위장하지 않고 연결 오류로 정직하게 표시.
+    (async () => {
+      const MAX_ATTEMPTS = 2;
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        try {
+          await attempt();
+          return;
+        } catch (e) {
+          if ((e as Error).name === "AbortError" || cancelled) return;
+          if (i < MAX_ATTEMPTS - 1) {
+            await new Promise((r) => setTimeout(r, 3000));
+            continue;
           }
           if (!cancelled) {
-            setData({ company: null, results: [], error: detail });
+            setData({ company: null, results: [], error: NETWORK_ERROR });
             setStreamDone(true);
           }
-          return;
-        }
-        if (!res.body) {
-          if (!cancelled) setStreamDone(true);
-          return;
-        }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-        while (!cancelled) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split("\n");
-          buf = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const evt = JSON.parse(line);
-              if (evt.type === "results") {
-                const d = evt.data as RecommendationResponse;
-                if (!cancelled) {
-                  setData(d);
-                  // 첫 행은 개봉된 채로 도착 — 판의 첫 인상이 곧 근거
-                  if (d.results?.[0]) setOpenKeys(new Set([bidKey(d.results[0])]));
-                }
-              } else if (evt.type === "explanation" && evt.scope === "primary") {
-                const k = `${evt.bid_ntce_no}-${evt.bid_ntce_ord}`;
-                if (!cancelled)
-                  setExplanations((prev) => ({ ...prev, [k]: evt.text as string }));
-              } else if (evt.type === "summary") {
-                if (!cancelled && evt.text) setSummary(evt.text as string);
-              } else if (evt.type === "done") {
-                if (!cancelled) setStreamDone(true);
-              }
-            } catch {
-              // 끊긴 라인은 무시
-            }
-          }
-        }
-        if (!cancelled) setStreamDone(true);
-      } catch (e) {
-        if ((e as Error).name === "AbortError") return;
-        if (!cancelled) {
-          setData({
-            company: null,
-            results: [],
-            error: (e as Error).message ?? "네트워크 오류",
-          });
-          setStreamDone(true);
         }
       }
     })();
@@ -145,6 +160,10 @@ export function BoardView({ query, mode, useMock, keywords, algorithm = "v2" }: 
   }, [query, mode, useMock, keywords, algorithm]);
 
   if (!data) return <BoardLoading label={query} mode={mode} />;
+
+  if (data.error === NETWORK_ERROR) {
+    return <ConnectionErrorBoard query={query} />;
+  }
 
   if (mode === "company" && (data.fallback === "keywords" || !data.company)) {
     return <FallbackBoard query={query} identified={!!data.company} message={data.error} />;
@@ -765,6 +784,37 @@ function FallbackBoard({
         />
       </div>
       <SubscribeBand />
+    </div>
+  );
+}
+
+/* ── 연결 오류 ──────────────────────────────────────────── */
+
+function ConnectionErrorBoard({ query }: { query: string }) {
+  return (
+    <div className="world-gc flex-1">
+      <div className="mx-auto max-w-[560px] px-5 py-24 sm:py-32 text-center">
+        <p className="font-gc-serif font-black text-[24px] sm:text-[28px] tracking-[-0.02em] text-gc-ink break-keep">
+          연결이 잠시 원활하지 않습니다
+        </p>
+        <p className="mt-3 text-[14.5px] leading-[1.7] text-gc-ink-2 break-keep">
+          서버가 준비되는 중일 수 있어요. 잠시 후 다시 시도하면 대부분
+          해결됩니다.
+          {query && (
+            <>
+              {" "}
+              (<b className="text-gc-ink">{query}</b> 조회)
+            </>
+          )}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-7 inline-flex items-center h-11 px-5 bg-gc-band text-gc-band-hi text-[14.5px] font-bold rounded-[3px] hover:bg-gc-ink transition-colors"
+        >
+          다시 시도
+        </button>
+      </div>
     </div>
   );
 }
