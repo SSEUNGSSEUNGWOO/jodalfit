@@ -23,7 +23,7 @@ import {
   summarizeContracts,
 } from "@/lib/company";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { getRecommendations } from "@/lib/api";
 import { fetchCompanyDomainAnalysis } from "@/lib/company-profile";
 import { companyOrganizationJsonLd, serializeJsonLd } from "@/lib/jsonld";
@@ -46,19 +46,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       robots: { index: false },
     };
   }
-  const title = `${company.corp_nm} 공공입찰 추천 | 조달핏`;
-
   // 데이터 가용성별 3단 후킹 (CTR 개선용)
   // 1) awards 있으면: 낙찰 건수 + 평균 투찰율
   // 2) contracts만 있으면: 누적 계약 건수
   // 3) 둘 다 없으면: 기본 톤
   const awards = await fetchCompanyAwards(normalized, 50);
   const awardSummary = summarizeAwards(awards);
+
+  // 이 페이지로 오는 검색어는 대부분 회사명 그 자체다("○○건설", "○○ 기본정보").
+  // 제목이 "추천"이면 찾던 것과 어긋나 광고로 읽히므로 여기서 볼 수 있는 것을 적되,
+  // 수주 이력이 없는 회사에까지 "수주 이력"을 내걸면 클릭 후 바로 이탈하므로
+  // 실제 데이터가 있을 때만 그렇게 쓴다.
+  const title =
+    awardSummary.count >= 1
+      ? `${company.corp_nm} 나라장터 수주 ${awardSummary.count}건 | 조달핏`
+      : `${company.corp_nm} 등록업종·공공조달 정보 | 조달핏`;
   let desc: string;
   if (awardSummary.count >= 3 && awardSummary.avg_rate !== null) {
-    desc = `${company.corp_nm} 공공입찰 분석 — 나라장터 낙찰 ${awardSummary.count}건, 평균 투찰율 ${awardSummary.avg_rate.toFixed(1)}%. 비슷한 신규 공고 TOP 5 매일 추천.`;
+    desc = `${company.corp_nm}의 나라장터 수주 이력 ${awardSummary.count}건, 평균 투찰율 ${awardSummary.avg_rate.toFixed(1)}%. 등록업종·공급물품으로 검토할 만한 신규 공고도 함께. 매일 갱신 · 나라장터 기반.`;
   } else if (company.contract_count >= 1) {
-    desc = `${company.corp_nm}의 공공조달 수주 이력 ${company.contract_count}건 분석. 검토할 만한 신규 나라장터 공고 TOP 5를 매일 추천합니다.`;
+    desc = `${company.corp_nm}의 공공조달 수주 이력 ${company.contract_count}건을 정리했습니다. 등록업종·공급물품으로 검토할 만한 신규 나라장터 공고도 함께. 매일 갱신.`;
   } else {
     desc = `${company.corp_nm}의 등록업종·공급물품 기반으로 적합한 신규 나라장터 공고 TOP 5를 추천합니다. 매일 갱신.`;
   }
@@ -184,9 +191,24 @@ function CompanyHero({
           )}
         </div>
         <p className="mt-6 max-w-[60ch] text-[15.5px] leading-[1.7] text-foreground/80">
-          <span className="font-semibold text-foreground">{company.corp_nm}</span>의 과거
-          나라장터 수주 이력을 분석해 가장 적합한 신규 공공입찰 공고를 추천해드려요. 매일 갱신되는 데이터로 분석합니다.
+          <span className="font-semibold text-foreground">{company.corp_nm}</span>의
+          등록업종·공급물품과 나라장터 수주 이력을 함께 분석해 검토할 만한 신규 공고를 골라드려요. 매일 갱신되는 나라장터 데이터로 분석해요.
         </p>
+        {/*
+          이 페이지 유입의 대부분은 회사명 검색으로 들어온 사람이고, 보고 있는 건
+          남의 회사다. 자기 회사로 넘어갈 경로가 없어 그대로 이탈한다.
+          "판매" 톤이면 경쟁사를 조사하러 온 사람이 먼저 떠나므로, 파는 문구가 아니라
+          화면의 대상을 바꿔주는 문구로 둔다.
+          ?from=company는 홈에서 검색이 실행될 때 search_logs.referer에 그대로 남아
+          이 링크를 타고 온 검색을 셀 수 있게 하는 표식이다. (별도 계측 없음)
+        */}
+        <Link
+          href="/?from=company"
+          className="mt-5 inline-flex items-center gap-1.5 text-[14.5px] font-semibold text-primary hover:underline"
+        >
+          이 회사 말고, 우리 회사 기준으로 보기
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
       </div>
     </section>
   );
@@ -434,6 +456,7 @@ async function RecommendationsSection({
                 key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
                 bid={bid}
                 rank={i + 1}
+                targetBizrno={company.bizrno_norm}
                 peerStat={bid.dmnd_instt_nm ? peerMap.get(bid.dmnd_instt_nm) : undefined}
               />
             ))}
@@ -588,7 +611,7 @@ function CTASection({
 }) {
   return (
     <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-12 sm:py-16">
-      <EmailCaptureForm />
+      <EmailCaptureForm bizrno={company.bizrno_norm} />
     </section>
   );
 }

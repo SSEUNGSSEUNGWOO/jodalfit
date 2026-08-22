@@ -239,19 +239,26 @@ export async function fetchRecentNoticesForSitemap(
   limit = 5000
 ): Promise<{ bid_ntce_no: string; updated_at: string }[]> {
   const c = getServerSupabase();
-  const { data } = await c
-    .from("bid_notices")
-    .select("bid_ntce_no,updated_at")
-    .order("bid_ntce_date", { ascending: false })
-    .limit(limit * 2);
-  const rows = (data as { bid_ntce_no: string; updated_at: string }[]) ?? [];
   const seen = new Set<string>();
   const deduped: { bid_ntce_no: string; updated_at: string }[] = [];
-  for (const r of rows) {
-    if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
-    seen.add(r.bid_ntce_no);
-    deduped.push(r);
-    if (deduped.length >= limit) break;
+  // PostgREST가 1000행에서 끊으므로(max_rows) range로 나눠 받는다.
+  // 같은 공고가 여러 행으로 들어오므로 dedupe 후 limit을 채울 때까지 돈다.
+  const PAGE = 1000;
+  for (let from = 0; deduped.length < limit && from < limit * 2; from += PAGE) {
+    const { data } = await c
+      .from("bid_notices")
+      .select("bid_ntce_no,updated_at")
+      .order("bid_ntce_date", { ascending: false })
+      .order("bid_ntce_no", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (!data?.length) break;
+    for (const r of data as { bid_ntce_no: string; updated_at: string }[]) {
+      if (!r.bid_ntce_no || seen.has(r.bid_ntce_no)) continue;
+      seen.add(r.bid_ntce_no);
+      deduped.push(r);
+      if (deduped.length >= limit) break;
+    }
+    if (data.length < PAGE) break;
   }
   return deduped;
 }

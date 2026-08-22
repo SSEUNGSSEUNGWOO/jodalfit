@@ -114,15 +114,37 @@ export async function generateMetadata({
 }: Props): Promise<Metadata> {
   const s = await searchParams;
   const pageNum = parseInt(s.page ?? "1", 10) || 1;
+  const f = parseFilters(s);
   const titleBase = s.bsns_div
     ? `진행 중인 ${s.bsns_div} 입찰 공고`
     : "진행 중인 공공입찰 공고";
   const title = pageNum > 1 ? `${titleBase} ${pageNum}페이지 | 조달핏` : `${titleBase} | 조달핏`;
-  const canonical = urlOf(parseFilters(s), pageNum);
+  const canonical = urlOf(f, pageNum);
+
+  // 필터는 urlOf에서 병합되므로 조합 URL이 수만 개까지 늘어난다.
+  // 단일 필터는 실제 검색어("서울 입찰공고")와 맞아떨어져 색인 가치가 있으니
+  // 남기고, 조합·정렬·깊은 페이지만 뺀다. follow는 유지해야 공고 상세로
+  // 가는 링크 흐름이 끊기지 않는다.
+  const activeCount = [f.bsnsDiv, f.dday, f.priceBucket, f.rgn, f.category].filter(
+    Boolean
+  ).length;
+  const isSorted = !!f.sort && f.sort !== "ntce_desc";
+  // 단 "서울 용역 입찰공고"처럼 지역+업무구분 조합은 실제로 검색되는 말이라
+  // 이 쌍만 예외로 색인을 남긴다. 아래 description도 이 두 값으로 만든다.
+  const isRgnBsnsPair = activeCount === 2 && !!f.rgn && !!f.bsnsDiv;
+  const noIndex = (activeCount >= 2 && !isRgnBsnsPair) || isSorted || pageNum > 3;
+
+  // 필터가 걸린 페이지가 전부 같은 description을 쓰면 중복으로 취급된다.
+  const scope = [f.rgn, f.bsnsDiv].filter(Boolean).join(" · ");
+  const description = scope
+    ? `${scope} 나라장터 입찰공고 중 마감 전인 공고를 모았습니다. 매일 갱신 · 나라장터 기반.`
+    : "현재 마감 전인 나라장터 입찰공고를 마감·추정가·지역으로 필터링하여 둘러볼 수 있습니다.";
+
   return {
     title,
-    description: "현재 마감 전인 나라장터 입찰공고를 마감·추정가·지역으로 필터링하여 둘러볼 수 있습니다.",
+    description,
     alternates: { canonical },
+    robots: noIndex ? { index: false, follow: true } : undefined,
   };
 }
 

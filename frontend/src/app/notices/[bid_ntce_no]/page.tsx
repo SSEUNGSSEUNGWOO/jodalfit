@@ -30,10 +30,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
   const { notice } = lifecycle;
-  const title = `${notice.bid_ntce_nm} | 조달핏`;
-  const desc = `${notice.dmnd_instt_nm ?? notice.ntce_instt_nm ?? ""} ${
-    notice.bsns_div_nm ? `· ${notice.bsns_div_nm}` : ""
-  } · 추정 ${formatKRW(notice.presmpt_prce)} · 마감 ${formatDateKR(notice.bid_clse_date)}. 발주계획부터 낙찰까지 전 과정 분석.`;
+  // formatDateKR은 값이 없으면 "—"를 돌려준다. 그대로 쓰면 검색 스니펫에
+  // "· 마감 —." 이 노출되므로 유효할 때만 절을 넣는다.
+  const closeRaw = notice.bid_clse_date ? formatDateKR(notice.bid_clse_date) : null;
+  const closeLabel = closeRaw && closeRaw !== "—" ? closeRaw : null;
+
+  // 공고명은 나라장터 원문 그대로라 경쟁 사이트와 제목이 글자까지 같아진다.
+  // 마감일을 붙여 같은 SERP에서 구별되게 한다.
+  const title = closeLabel
+    ? `${notice.bid_ntce_nm} · ${closeLabel} 마감 | 조달핏`
+    : `${notice.bid_ntce_nm} | 조달핏`;
+  // formatKRW도 값이 없거나 1만원 미만이면 "—"를 돌려준다(원천에 1원 placeholder가 있음).
+  const priceRaw = formatKRW(notice.presmpt_prce);
+  const priceLabel = priceRaw !== "—" ? `추정 ${priceRaw}` : null;
+  const desc = `${[
+    notice.dmnd_instt_nm ?? notice.ntce_instt_nm ?? null,
+    notice.bsns_div_nm,
+    priceLabel,
+    closeLabel ? `마감 ${closeLabel}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")}. 발주계획부터 낙찰까지 전 과정 분석.`;
   return {
     title,
     description: desc,
@@ -68,9 +85,20 @@ export default async function NoticePage({ params }: Props) {
   const jsonLd = noticeJsonLd({
     bidNtceNo: notice.bid_ntce_no,
     bidNtceNm: notice.bid_ntce_nm,
-    description: `${notice.dmnd_instt_nm ?? notice.ntce_instt_nm ?? ""}${
-      notice.bsns_div_nm ? ` · ${notice.bsns_div_nm}` : ""
-    } · 추정 ${formatKRW(notice.presmpt_prce)} · 마감 ${formatDateKR(notice.bid_clse_date)}`,
+    // formatKRW·formatDateKR은 값이 없으면 "—"를 돌려준다. 구조화 데이터에
+    // "추정 — · 마감 —"이 들어가지 않도록 유효한 절만 잇는다.
+    description: [
+      notice.dmnd_instt_nm ?? notice.ntce_instt_nm ?? null,
+      notice.bsns_div_nm,
+      formatKRW(notice.presmpt_prce) !== "—"
+        ? `추정 ${formatKRW(notice.presmpt_prce)}`
+        : null,
+      notice.bid_clse_date && formatDateKR(notice.bid_clse_date) !== "—"
+        ? `마감 ${formatDateKR(notice.bid_clse_date)}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     instituionName: notice.dmnd_instt_nm ?? notice.ntce_instt_nm,
     regionName: notice.prtcpt_psbl_rgn_nm,
     validFrom: notice.bid_ntce_date,

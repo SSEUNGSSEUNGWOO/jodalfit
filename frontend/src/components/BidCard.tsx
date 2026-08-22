@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, Bookmark, BarChart3, Sparkles } from "lucide-react";
+import { ArrowUpRight, BarChart3, Sparkles } from "lucide-react";
+import { SaveBidButton } from "@/components/SaveBidButton";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { DDayBadge } from "./DDayBadge";
 import { EvidenceTag } from "./EvidenceTag";
@@ -20,11 +21,14 @@ export function BidCard({
   semanticHintQuery,
   golden,
   peerStat,
+  targetBizrno = null,
 }: {
   bid: BidRecommendation;
   rank?: number;
   preview?: boolean;
   className?: string;
+  /** 어느 회사 페이지에서 본 카드인지 — 저장 이벤트 로깅에 함께 남긴다 */
+  targetBizrno?: string | null;
   /** 키워드 모드에서 의미 매칭을 강조하기 위한 검색어. 검색어가 공고명/업종에 직접 포함되지 않으면 "의미 매칭" 배지 표시 */
   semanticHintQuery?: string;
   /** 골든타임(사전규격공개) 정보. spec_open/spec_closing일 때만 뱃지 노출 */
@@ -182,12 +186,19 @@ export function BidCard({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" aria-label="저장">
-            <Bookmark className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="상세">
+          <SaveBidButton bid={bid} rank={rank} targetBizrno={targetBizrno} />
+          {/*
+            카드의 주 버튼("공고 보기")은 나라장터로 내보낸다. 우리 라이프사이클
+            페이지(발주계획→사전규격→개찰→계약)로 가는 길이 하나도 없어서 이 자리를
+            내부 상세로 연결한다. 회사 → 공고 내부 링크가 생기는 효과도 있다.
+          */}
+          <Link
+            href={`/notices/${bid.bid_ntce_no}`}
+            aria-label="공고 상세 보기"
+            className={buttonVariants({ variant: "ghost", size: "icon" })}
+          >
             <BarChart3 className="h-4 w-4" />
-          </Button>
+          </Link>
           {bid.bid_ntce_url && (
             <a
               href={bid.bid_ntce_url}

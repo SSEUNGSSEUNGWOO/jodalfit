@@ -309,17 +309,33 @@ export function summarizeContracts(
 
 /** 회사 마스터 페이지 SEO용 — 추천/이력 있는 회사만 포함 (깡통 페이지 sitemap 배제) */
 export async function fetchActiveCompaniesForSitemap(
-  limit = 5000
+  limit = 5000,
+  offset = 0
 ): Promise<{ bizrno_norm: string; updated_at: string }[]> {
   const c = getServerSupabase();
-  const { data } = await c
-    .from("companies")
-    .select("bizrno_norm,updated_at,embedded_at,contract_count")
-    .not("bizrno_norm", "is", null)
-    .or("embedded_at.not.is.null,contract_count.gt.0")
-    .order("embedded_at", { ascending: false, nullsFirst: false })
-    .limit(limit);
-  return (data as { bizrno_norm: string; updated_at: string }[]) ?? [];
+  const out: { bizrno_norm: string; updated_at: string }[] = [];
+  // PostgREST가 응답을 1000행에서 끊으므로(max_rows 기본값) limit을 그대로
+  // 넘기면 조용히 1000개만 돌아온다. range로 나눠 받는다.
+  const PAGE = 1000;
+  const end = offset + limit;
+  for (let from = offset; from < end; from += PAGE) {
+    const { data } = await c
+      .from("companies")
+      .select("bizrno_norm,updated_at")
+      .not("bizrno_norm", "is", null)
+      // 페이지의 isThin 판정은 embedding 컬럼(has_embedding)을 본다.
+      // embedded_at으로 고르면 사이트맵에 실은 URL이 noindex를 뱉는다.
+      // contract_count는 현재 전 행이 0이라 조건으로 걸어도 아무것도 잡지 못한다.
+      .not("embedding", "is", null)
+      // embedded_at은 매일 재계산 잡이 새로 찍어서 정렬 키로 쓰면 사이트맵
+      // 내용이 날마다 통째로 갈린다. 값이 바뀌지 않는 키로 순서를 고정한다.
+      .order("bizrno_norm", { ascending: true })
+      .range(from, Math.min(from + PAGE, end) - 1);
+    if (!data?.length) break;
+    out.push(...(data as typeof out));
+    if (data.length < PAGE) break;
+  }
+  return out;
 }
 
 /** 인덱스 페이지용 — 회사 벡터 있는 회사 우선 (추천 가능한 회사) */
