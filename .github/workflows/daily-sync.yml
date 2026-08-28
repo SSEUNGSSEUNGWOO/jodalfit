@@ -74,8 +74,17 @@ jobs:
         continue-on-error: true
 
       - name: sitemap warm-up (Google이 신선한 sitemap 보도록 강제 히트)
-        run: curl -sS -o /dev/null -w "sitemap status=%{http_code} time=%{time_total}s\n" https://jodalfit.co.kr/sitemap.xml
-        continue-on-error: true
+        # generateSitemaps로 쪼갠 뒤 /sitemap.xml은 404다. 세그먼트를 각각 쳐야 한다.
+        # 세그먼트 수는 frontend/src/lib/sitemap-segments.ts의 TOTAL_SEGMENTS와 맞출 것.
+        # 하나라도 200이 아니면 실패로 처리 — 조용히 no-op이 되면 2026-07 동결이 재발한다.
+        run: |
+          fail=0
+          for i in $(seq 0 7); do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" "https://jodalfit.co.kr/sitemap/$i.xml")
+            echo "sitemap/$i.xml -> $code"
+            [ "$code" = "200" ] || fail=1
+          done
+          exit $fail
 
   enrich-companies:
     # 매일 회사 마스터 풍부화 — 1,500개/일 (UsrInfoService02 엔드포인트별 일 10k 한도 내)
