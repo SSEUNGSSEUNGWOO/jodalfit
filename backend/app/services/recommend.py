@@ -49,19 +49,20 @@ def _within_horizon(row: dict, horizon: date) -> bool:
 
 
 def _rpc_with_retry(client, fn: str, params: dict):
-    """pgvector RPC 호출 — statement timeout이면 1회 재시도.
+    """인덱스 의존 RPC 호출 — statement timeout이면 1회 재시도.
 
-    HNSW 인덱스가 shared buffers에서 밀려나면 같은 질의가 0.6초 → 6~10초로
-    늘어져 Supabase statement timeout(57014)에 걸린다. 취소된 시도가 인덱스를
-    캐시에 올려놓기 때문에 재시도는 웜 상태로 돌아 통과한다. 재시도해도 실패하면
-    일시적 문제가 아니므로 그대로 올린다.
+    HNSW(match_*)든 trigram(find_companies)이든 인덱스가 shared buffers에서
+    밀려나면 같은 질의가 0.6초 → 6~10초로 늘어져 Supabase statement
+    timeout(57014)에 걸린다. 취소된 시도가 인덱스를 캐시에 올려놓기 때문에
+    재시도는 웜 상태로 돌아 통과한다. 재시도해도 실패하면 일시적 문제가
+    아니므로 그대로 올린다.
     """
     try:
         return client.rpc(fn, params).execute()
     except APIError as e:
         if e.code != STATEMENT_TIMEOUT:
             raise
-        logger.warning("pgvector RPC %s statement timeout — 1회 재시도", fn)
+        logger.warning("RPC %s statement timeout — 1회 재시도", fn)
         return client.rpc(fn, params).execute()
 
 
@@ -87,14 +88,16 @@ def find_company(query: str) -> dict | None:
         if res.data:
             return res.data[0]
 
-    res = client.rpc("find_companies", {"query_name": query, "max_count": 1}).execute()
+    res = _rpc_with_retry(
+        client, "find_companies", {"query_name": query, "max_count": 1}
+    )
     best = res.data[0] if res.data else None
 
     normalized = "".join(query.split())
     if normalized and normalized != query:
-        res2 = client.rpc(
-            "find_companies", {"query_name": normalized, "max_count": 1}
-        ).execute()
+        res2 = _rpc_with_retry(
+            client, "find_companies", {"query_name": normalized, "max_count": 1}
+        )
         cand = res2.data[0] if res2.data else None
         if cand and (
             not best
