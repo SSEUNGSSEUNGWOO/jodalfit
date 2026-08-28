@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.core.bot_guard import guard_external_traffic
 from app.core.rate_limit import limiter
+from app.services import recommendation_cache
 from app.services.explain import (
     explain_batch,
     explain_keyword_batch,
@@ -72,6 +73,32 @@ def post_recommendations(
     background: BackgroundTasks,
 ):
     t0 = time.time()
+
+    # 회사 페이지 SSR 전용 read-through 캐시. 히트하면 추천 파이프라인과 LLM 총평을
+    # 통째로 건너뛴다. 미스면 아래에서 계산하고 응답 직전에 저장한다.
+    ck = recommendation_cache.cache_key(req.query, req.mode, req.keywords, req.algorithm)
+    if ck:
+        hit = recommendation_cache.load(ck, req.algorithm, req.limit)
+        if hit:
+            cached_company = hit.get("company") or {}
+            background.add_task(
+                log_search,
+                query=req.query,
+                mode=req.mode,
+                matched_bizrno=cached_company.get("bizrno"),
+                matched_corp_nm=cached_company.get("corp_nm"),
+                result_count=len(hit.get("results") or []),
+                kw_result_count=0,
+                has_error=False,
+                error_msg=None,
+                with_explanation=req.with_explanation,
+                ip=_client_ip(request),
+                user_agent=request.headers.get("user-agent"),
+                referer=request.headers.get("referer"),
+                latency_ms=int((time.time() - t0) * 1000),
+            )
+            return hit
+
     result = recommend(
         req.query,
         limit=req.limit,
@@ -144,6 +171,12 @@ def post_recommendations(
 
     if error_404:
         raise HTTPException(status_code=404, detail=result["error"])
+
+    # 쓸 만한 결과일 때만 저장 — 빈 결과나 폴백 응답을 캐시에 박아두면 안 된다.
+    if ck and len(result.get("results") or []) >= recommendation_cache.MIN_SURVIVING:
+        background.add_task(
+            recommendation_cache.store, ck, req.algorithm, req.limit, result
+        )
 
     return result
 
