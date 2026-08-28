@@ -13,7 +13,7 @@ v0.3 (단계 풀 확장 + 키워드 하이브리드):
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Literal
 
 import numpy as np
@@ -31,6 +31,21 @@ VIZ_RESULT_LIMIT = 10  # viz에 띄울 입찰공고 결과 점 개수
 
 # Postgres statement timeout 취소 코드.
 STATEMENT_TIMEOUT = "57014"
+# PostgREST가 시그니처에 맞는 함수를 못 찾았을 때 (마이그레이션 미적용).
+FUNCTION_NOT_FOUND = "PGRST202"
+
+# 추천 후보로 볼 마감 지평선. 이보다 뒤에 마감하는 공고는 조달청 종합쇼핑몰
+# 단가계약 품목(마감 2027~2037년)이라 "마감 전 검토할 공고"가 아니다.
+# 활성 공고 분포가 D+60 이후 절벽(D+30~60 209건 → D+60~90 5건)이라 90은 여유값.
+MAX_CLSE_HORIZON_DAYS = 90
+
+
+def _within_horizon(row: dict, horizon: date) -> bool:
+    clse = row.get("bid_clse_date")
+    if not clse:
+        return True
+    clse_dt = date.fromisoformat(clse) if isinstance(clse, str) else clse
+    return clse_dt <= horizon
 
 
 def _rpc_with_retry(client, fn: str, params: dict):
@@ -360,17 +375,29 @@ def _search_with_embedding(
     company_bizrno_norm: str | None = None,
 ) -> list[dict]:
     client = get_admin_client()
+    today = date.today()
+    horizon = today + timedelta(days=MAX_CLSE_HORIZON_DAYS)
     # 같은 bid_ntce_no 다른 ord가 여러 건일 수 있어 풀을 넉넉히 가져온 뒤 dedupe
-    res = _rpc_with_retry(
-        client,
-        "match_bid_notices",
-        {
-            "query_embedding": embedding_str,
-            "match_count": candidate_pool * 2,
-            "min_clse_date": date.today().isoformat(),
-        },
-    )
-    raw = res.data or []
+    params = {
+        "query_embedding": embedding_str,
+        "match_count": candidate_pool * 2,
+        "min_clse_date": today.isoformat(),
+    }
+    try:
+        res = _rpc_with_retry(
+            client,
+            "match_bid_notices",
+            {**params, "max_clse_date": horizon.isoformat()},
+        )
+        raw = res.data or []
+    except APIError as e:
+        # 0018 미적용 환경 — 상한 없이 가져와서 파이썬에서 거른다. 후보 수가 줄지만
+        # 장기 단가계약 공고가 상위를 먹는 것보다 낫다.
+        if e.code != FUNCTION_NOT_FOUND:
+            raise
+        logger.warning("match_bid_notices max_clse_date 미지원 (0018 미적용) — 파이썬 필터로 degrade")
+        res = _rpc_with_retry(client, "match_bid_notices", params)
+        raw = [r for r in (res.data or []) if _within_horizon(r, horizon)]
     # similarity 내림차순 정렬은 RPC가 보장 → 첫 등장 유지
     # 1차: 공고번호 / 2차: 내용 지문 — 나라장터가 같은 공고를 다른 번호로
     # 재발번하는 케이스(제목·기관·마감·추정가 동일)까지 걸러낸다
