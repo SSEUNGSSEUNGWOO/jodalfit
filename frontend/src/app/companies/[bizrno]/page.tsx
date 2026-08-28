@@ -437,6 +437,14 @@ async function RecommendationsSection({
         </h2>
         <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
       </div>
+      {data.summary && (
+        <p className="mb-6 text-[14.5px] leading-[1.8] text-gc-ink-2 break-keep max-w-[72ch]">
+          <b className="font-gc-serif font-black text-gc-ink text-[15.5px] mr-2">
+            총평
+          </b>
+          {data.summary}
+        </p>
+      )}
       {data.results.length === 0 ? (
         <p className="text-[14.5px] text-muted-foreground break-keep">
           현재 매칭되는 신규 공고가 없어요.{" "}

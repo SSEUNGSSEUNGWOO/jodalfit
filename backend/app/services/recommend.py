@@ -12,18 +12,42 @@ v0.3 (단계 풀 확장 + 키워드 하이브리드):
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from typing import Any, Literal
 
 import numpy as np
+from postgrest.exceptions import APIError
 
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from app.services.viz import anchor_positions, project_many, project_point
 
+logger = logging.getLogger("jodalfit")
+
 COMPANY_WEIGHT = 0.6
 KEYWORDS_WEIGHT = 0.4
 VIZ_RESULT_LIMIT = 10  # viz에 띄울 입찰공고 결과 점 개수
+
+# Postgres statement timeout 취소 코드.
+STATEMENT_TIMEOUT = "57014"
+
+
+def _rpc_with_retry(client, fn: str, params: dict):
+    """pgvector RPC 호출 — statement timeout이면 1회 재시도.
+
+    HNSW 인덱스가 shared buffers에서 밀려나면 같은 질의가 0.6초 → 6~10초로
+    늘어져 Supabase statement timeout(57014)에 걸린다. 취소된 시도가 인덱스를
+    캐시에 올려놓기 때문에 재시도는 웜 상태로 돌아 통과한다. 재시도해도 실패하면
+    일시적 문제가 아니므로 그대로 올린다.
+    """
+    try:
+        return client.rpc(fn, params).execute()
+    except APIError as e:
+        if e.code != STATEMENT_TIMEOUT:
+            raise
+        logger.warning("pgvector RPC %s statement timeout — 1회 재시도", fn)
+        return client.rpc(fn, params).execute()
 
 
 def find_company(query: str) -> dict | None:
@@ -270,14 +294,15 @@ def _search_pre_specs(
     의견 마감일이 지난 사전규격은 RPC 단계에서 제외(골든타임 카피와 일관).
     """
     client = get_admin_client()
-    res = client.rpc(
+    res = _rpc_with_retry(
+        client,
         "match_pre_specs",
         {
             "query_embedding": embedding_str,
             "match_count": candidate_pool,
             "min_opnin_clse_date": date.today().isoformat(),
         },
-    ).execute()
+    )
     raw = res.data or []
     seen: set[str] = set()
     out: list[dict] = []
@@ -300,10 +325,11 @@ def _search_order_plans(
 ) -> list[dict]:
     """발주계획(선행지표) 매칭 — 단순 코사인 정렬."""
     client = get_admin_client()
-    res = client.rpc(
+    res = _rpc_with_retry(
+        client,
         "match_order_plans",
         {"query_embedding": embedding_str, "match_count": candidate_pool},
-    ).execute()
+    )
     raw = res.data or []
     seen: set[str] = set()
     out: list[dict] = []
@@ -335,14 +361,15 @@ def _search_with_embedding(
 ) -> list[dict]:
     client = get_admin_client()
     # 같은 bid_ntce_no 다른 ord가 여러 건일 수 있어 풀을 넉넉히 가져온 뒤 dedupe
-    res = client.rpc(
+    res = _rpc_with_retry(
+        client,
         "match_bid_notices",
         {
             "query_embedding": embedding_str,
             "match_count": candidate_pool * 2,
             "min_clse_date": date.today().isoformat(),
         },
-    ).execute()
+    )
     raw = res.data or []
     # similarity 내림차순 정렬은 RPC가 보장 → 첫 등장 유지
     # 1차: 공고번호 / 2차: 내용 지문 — 나라장터가 같은 공고를 다른 번호로

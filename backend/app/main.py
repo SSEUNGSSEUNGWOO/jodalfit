@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,6 +13,8 @@ from app.core.config import get_settings
 from app.core.rate_limit import limiter
 
 settings = get_settings()
+
+logger = logging.getLogger("jodalfit")
 
 app = FastAPI(
     title="jodalfit API",
@@ -32,6 +36,22 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse
             "error": "요청이 너무 많아요. 잠시 후 다시 시도해주세요.",
             "detail": str(exc.detail) if exc.detail else None,
         },
+    )
+
+
+@app.exception_handler(Exception)
+def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """미처리 예외를 스택트레이스와 함께 남긴다.
+
+    이게 없으면 Starlette 기본 핸들러가 본문 "Internal Server Error"만 돌려주고
+    원인이 어디에도 안 남아, 간헐적 500을 사후 추적할 수 없다.
+    """
+    logger.exception(
+        "unhandled error: %s %s", request.method, request.url.path
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"error": "일시적인 오류가 발생했어요. 잠시 후 다시 시도해주세요."},
     )
 
 

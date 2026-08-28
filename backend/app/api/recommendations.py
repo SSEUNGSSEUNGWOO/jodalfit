@@ -93,12 +93,22 @@ def post_recommendations(
         # 키워드/회사식별실패 → 키워드 기반 설명 (회사 호칭 안 씀)
         if result.get("results"):
             top_results = result["results"][: req.explain_top]
-            if result.get("company"):
+            # v2 회사 모드는 /stream과 같은 규칙 — 카드는 rule 배지가 설명 역할이라
+            # LLM은 상단 요약 1회만. SSR 회사 페이지가 이 경로를 타므로 렌더당
+            # LLM 호출이 5회 → 1회(24시간 캐시)로 줄어든다.
+            if req.algorithm == "v2" and result.get("company"):
+                try:
+                    result["summary"] = explain_summary(result["company"], top_results)
+                except Exception:
+                    result["summary"] = ""
+            elif result.get("company"):
                 explanations = explain_batch(result["company"], top_results)
+                for r, ex in zip(top_results, explanations):
+                    r["explanation"] = ex
             else:
                 explanations = explain_keyword_batch(req.query, top_results)
-            for r, ex in zip(top_results, explanations):
-                r["explanation"] = ex
+                for r, ex in zip(top_results, explanations):
+                    r["explanation"] = ex
         # auto 모드 키워드 결과(보조)도 키워드 기반 설명
         if result.get("keyword_results"):
             top_kw = result["keyword_results"][: req.explain_top]

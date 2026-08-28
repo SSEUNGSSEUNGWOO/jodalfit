@@ -119,6 +119,8 @@ export interface RecommendationResponse {
   keywords?: string | null;
   /** v0.4 임베딩 공간 시각화 — anchor 기반 좌표 */
   viz?: VizData | null;
+  /** v2 회사 모드 — 카드별 설명 대신 LLM 상단 요약 1회 */
+  summary?: string;
   error?: string | null;
   mode?: "company" | "keywords" | "auto";
   /** A/B — 이 응답을 만든 랭킹 알고리즘 */
