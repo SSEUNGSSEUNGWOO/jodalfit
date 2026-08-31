@@ -29,21 +29,57 @@ def ext_of(name: str | None) -> str:
     return name.rsplit(".", 1)[1].strip().lower()
 
 
+def sniff_format(data: bytes) -> str | None:
+    """매직바이트로 실제 포맷 판별 — 나라장터 첨부는 확장자와 실제 포맷이 어긋나는 경우가 잦다
+    (.hwpx인데 OLE hwp, .hwp인데 zip hwpx 등)."""
+    head = data[:8]
+    if head.startswith(b"%PDF"):
+        return "pdf"
+    if head.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"):
+        return "hwp"
+    if head.startswith(b"PK\x03\x04"):
+        return "hwpx"
+    if head.lstrip().startswith(b"<?xml") and b"HWPML" in data[:2048]:
+        return "hml"  # 한글 XML(HWPML) — .hwp/.hwpx 확장자로 올라오는 경우 있음
+    return None
+
+
 def extract_text(data: bytes, ext: str) -> str:
-    if ext == "hwp":
+    fmt = sniff_format(data) or ext
+    if fmt == "hwp":
         return extract_hwp(data)
-    if ext == "hwpx":
+    if fmt == "hwpx":
         return extract_hwpx(data)
-    if ext == "pdf":
+    if fmt == "hml":
+        return extract_hml(data)
+    if fmt == "pdf":
         return extract_pdf(data)
-    raise ValueError(f"unsupported ext: {ext}")
+    raise ValueError(f"unsupported format: ext={ext}")
+
+
+# ----- HWPML (.hml, 단일 XML) -----
+
+def extract_hml(data: bytes) -> str:
+    root = ET.fromstring(data)
+    out: list[str] = []
+    for p in root.iter("P"):
+        s = "".join(ch.text or "" for ch in p.iter("CHAR")).strip()
+        if s:
+            out.append(s)
+    return _clean("\n".join(out))
 
 
 # ----- PDF -----
 
 def extract_pdf(data: bytes) -> str:
     reader = PdfReader(io.BytesIO(data))
-    return _clean("\n".join((pg.extract_text() or "") for pg in reader.pages))
+    pages: list[str] = []
+    for pg in reader.pages:
+        try:
+            pages.append(pg.extract_text() or "")
+        except Exception:  # 일부 페이지의 폰트 구조 오류(KeyError '/DescendantFonts' 등)는 그 페이지만 포기
+            continue
+    return _clean("\n".join(pages))
 
 
 # ----- HWPX (OWPML, zip + xml) -----

@@ -34,6 +34,7 @@ logging.getLogger("pypdf").setLevel(logging.ERROR)  # "Ignoring wrong pointing o
 
 JOB_NAME = "extract_bid_documents"
 MAX_FILES_PER_NOTICE = 5
+RPC_BATCH = 500  # 한 번에 받아올 대상 공고 수 (PostgREST 1,000행 상한 아래)
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TEXT_CHARS = 200_000
 DOWNLOAD_DELAY_SEC = 0.3  # 나라장터 부하 완화
@@ -112,8 +113,7 @@ def process_notice(client: httpx.Client, no: str, ord_: str, attachments: list[d
 def run(limit: int = 200) -> None:
     run_id = log_ingest_start(JOB_NAME, {"limit": limit})
     sb = get_admin_client()
-    targets = sb.rpc("next_bid_notices_for_documents", {"p_limit": limit}).execute().data or []
-    print(f"[{JOB_NAME}] {len(targets)} notices to process")
+    print(f"[{JOB_NAME}] up to {limit} notices")
 
     stats: dict[str, int] = {}
     notices_done = 0
@@ -123,15 +123,21 @@ def run(limit: int = 200) -> None:
             timeout=httpx.Timeout(60.0, connect=15.0),
             headers={"User-Agent": "Mozilla/5.0 (jodalfit bid-document-fetcher)"},
         ) as client:
-            for i, t in enumerate(targets, 1):
-                rows = process_notice(client, t["bid_ntce_no"], t["bid_ntce_ord"], t["attachments"] or [])
-                if rows:
-                    upsert_rows("bid_notice_documents", rows, on_conflict="bid_ntce_no,bid_ntce_ord,seq")
-                for r in rows:
-                    stats[r["status"]] = stats.get(r["status"], 0) + 1
-                notices_done += 1
-                if i % 20 == 0:
-                    print(f"  {i}/{len(targets)} notices, files={stats}")
+            # PostgREST 응답은 1,000행 상한 → 처리한 공고는 RPC 대상에서 빠지므로 배치로 반복
+            while notices_done < limit:
+                batch = min(RPC_BATCH, limit - notices_done)
+                targets = sb.rpc("next_bid_notices_for_documents", {"p_limit": batch}).execute().data or []
+                if not targets:
+                    break
+                for t in targets:
+                    rows = process_notice(client, t["bid_ntce_no"], t["bid_ntce_ord"], t["attachments"] or [])
+                    if rows:
+                        upsert_rows("bid_notice_documents", rows, on_conflict="bid_ntce_no,bid_ntce_ord,seq")
+                    for r in rows:
+                        stats[r["status"]] = stats.get(r["status"], 0) + 1
+                    notices_done += 1
+                    if notices_done % 50 == 0:
+                        print(f"  {notices_done} notices, files={stats}")
         log_ingest_finish(run_id, "success", rows_inserted=sum(stats.values()), rows_failed=stats.get("error", 0))
         print(f"[{JOB_NAME}] done. notices={notices_done} files={stats}")
     except Exception as e:
