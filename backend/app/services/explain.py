@@ -23,6 +23,7 @@ SYSTEM_COMPANY = """당신은 한국 공공조달(나라장터) 입찰공고 추
 - 회사 이름·기관명·등록업종 같은 **고유명사를 한 번 이상 인용**
 - "귀사", "이 회사는" 같은 헤지 호칭 X — 사실 1줄로 바로 시작
 - 매번 다른 시그널을 강조해 5건 설명이 서로 다르게 보이도록
+- [과업요약]이 제공되면 공고명 대신 **실제 과업 내용**(무엇을 개발/납품/수행하는지)을 인용해 회사 업무와의 접점을 짚을 것. [필수 자격요건]에 회사가 못 갖췄을 법한 조건(지역·면허·실적)이 있으면 그 조건을 한 번 언급
 
 # amount_fit(금액 ratio) 시그널 처리
 - 시그널 텍스트엔 결론이 아니라 숫자만 제공됨. ratio 값을 보고 솔직하게 표현.
@@ -123,6 +124,30 @@ def _strongest_signal(detail: dict) -> str | None:
     return candidates[0][2]
 
 
+def _insight_lines(bid: dict) -> list[str]:
+    """첨부문서 인사이트(0022)가 있으면 과업요약·자격요건·평가를 프롬프트에 추가."""
+    ins = bid.get("insight") or {}
+    if not ins:
+        return []
+    lines: list[str] = []
+    if ins.get("summary"):
+        lines.append(f"\n[과업요약(제안요청서 기준)] {ins['summary']}")
+    reqs = [r.get("text") for r in (ins.get("requirements") or []) if r.get("mandatory") and r.get("text")]
+    if reqs:
+        lines.append("[필수 자격요건] " + " / ".join(reqs[:5]))
+    ev = ins.get("evaluation") or {}
+    ev_parts: list[str] = []
+    if ev.get("method"):
+        ev_parts.append(ev["method"])
+    if ev.get("technical_pct") is not None and ev.get("price_pct") is not None:
+        ev_parts.append(f"기술 {ev['technical_pct']:g} : 가격 {ev['price_pct']:g}")
+    if ev.get("presentation"):
+        ev_parts.append("제안발표 있음")
+    if ev_parts:
+        lines.append("[평가] " + " · ".join(ev_parts))
+    return lines
+
+
 def build_company_prompt(company: dict, bid: dict) -> str:
     lines = []
     lines.append(f"[회사] {company.get('corp_nm') or '—'}")
@@ -146,6 +171,7 @@ def build_company_prompt(company: dict, bid: dict) -> str:
         bid_meta.append(f"참가가능업종 {bid['bidprc_psbl_indstryty_nm']}")
     if bid_meta:
         lines.append("       " + " · ".join(bid_meta))
+    lines.extend(_insight_lines(bid))
 
     strongest = _strongest_signal(bid.get("bonus_detail") or {})
     if strongest:
@@ -177,6 +203,7 @@ def build_keyword_prompt(query: str, bid: dict) -> str:
         bid_meta.append(f"참가가능업종 {bid['bidprc_psbl_indstryty_nm']}")
     if bid_meta:
         lines.append("       " + " · ".join(bid_meta))
+    lines.extend(_insight_lines(bid))
     lines.append(
         f"\n[의미 유사도] {bid.get('base_similarity', 0):.3f} (1.0 = 완전 일치)"
     )

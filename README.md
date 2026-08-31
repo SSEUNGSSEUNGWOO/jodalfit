@@ -294,6 +294,15 @@ cd backend
 # 입찰공고 1주일치 (최대 한도)
 uv run python -m jobs.ingest_bid_notices --days-back 7 --batch-size 100
 
+# 입찰공고 첨부파일 목록 (제안요청서 등 링크) — bid_notices 적재 후 실행, 최대 30일
+uv run python -m jobs.ingest_bid_attachments --days-back 7
+
+# 첨부파일 본문 텍스트 추출 (hwp/hwpx/pdf → bid_notice_documents) — 진행 중 공고, 최신순
+uv run python -m jobs.extract_bid_documents --limit 200
+
+# 문서 텍스트 → LLM 구조화 인사이트 (과업요약·자격요건·평가 → bid_notice_insights). 추천 설명·상세 UI용, 임베딩엔 미사용
+uv run python -m jobs.summarize_bid_documents --limit 100
+
 # 계약 1주일치 (회사 수주 신호의 원천)
 uv run python -m jobs.ingest_contracts --days-back 7 --batch-size 100
 

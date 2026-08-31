@@ -1,9 +1,16 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
+import type { NoticeInsight } from "@/types/recommendations";
 
 const SUMMARY_COLS =
   "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn";
+
+export interface NoticeAttachment {
+  seq: number;
+  name: string | null;
+  url: string;
+}
 
 export interface BidNotice {
   bid_ntce_no: string;
@@ -24,6 +31,7 @@ export interface BidNotice {
   rgn_lmt_yn: string | null;
   prtcpt_psbl_rgn_nm: string | null;
   indstryty_lmt_yn: string | null;
+  attachments: NoticeAttachment[] | null;
   has_embedding: boolean;
 }
 
@@ -87,6 +95,7 @@ export interface Contract {
 
 export interface NoticeLifecycle {
   notice: BidNotice;
+  insight: NoticeInsight | null;
   preSpecs: PreSpec[];
   opinions: PreSpecOpinion[];
   orderPlans: OrderPlan[];
@@ -95,7 +104,7 @@ export interface NoticeLifecycle {
 }
 
 const BID_NOTICE_COLUMNS =
-  "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,embedding";
+  "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,embedding";
 
 export async function fetchBidNotice(
   bidNtceNo: string
@@ -123,9 +132,15 @@ export async function fetchLifecycle(
   if (!notice) return null;
   const c = getServerSupabase();
 
-  // 5개 라이프사이클 단계 병렬 조회
-  const [preSpecsRes, orderPlansRes, awardsRes, contractsRes] =
+  // 5개 라이프사이클 단계 + 첨부문서 인사이트 병렬 조회
+  const [insightRes, preSpecsRes, orderPlansRes, awardsRes, contractsRes] =
     await Promise.all([
+      c
+        .from("bid_notice_insights")
+        .select("summary,scope,requirements,evaluation,keywords")
+        .eq("bid_ntce_no", notice.bid_ntce_no)
+        .eq("bid_ntce_ord", notice.bid_ntce_ord)
+        .maybeSingle(),
       c
         .from("pre_specs")
         .select(
@@ -174,6 +189,7 @@ export async function fetchLifecycle(
 
   return {
     notice,
+    insight: (insightRes.data as NoticeInsight | null) ?? null,
     preSpecs,
     opinions,
     orderPlans: (orderPlansRes.data as OrderPlan[]) ?? [],

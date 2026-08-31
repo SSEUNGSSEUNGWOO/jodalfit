@@ -77,7 +77,19 @@ export default async function NoticePage({ params }: Props) {
   const lifecycle = await fetchLifecycle(bid_ntce_no);
   if (!lifecycle) notFound();
 
-  const { notice, preSpecs, opinions, orderPlans, awards, contracts } = lifecycle;
+  const { notice, insight, preSpecs, opinions, orderPlans, awards, contracts } = lifecycle;
+  const mandatoryReqs = (insight?.requirements ?? []).filter((r) => r.mandatory);
+  const optionalReqs = (insight?.requirements ?? []).filter((r) => !r.mandatory);
+  const evalParts: string[] = [];
+  if (insight?.evaluation?.method) evalParts.push(insight.evaluation.method);
+  if (
+    insight?.evaluation?.technical_pct != null &&
+    insight?.evaluation?.price_pct != null
+  )
+    evalParts.push(
+      `기술 ${insight.evaluation.technical_pct} : 가격 ${insight.evaluation.price_pct}`
+    );
+  if (insight?.evaluation?.presentation) evalParts.push("제안 발표 있음");
   const gt = analyzeGoldenTime(lifecycle);
   const goldenActive = isGoldenTime(gt.status);
   const specPdfUrl = preSpecs[0]?.spec_doc_file_url_1;
@@ -219,8 +231,96 @@ export default async function NoticePage({ params }: Props) {
                 나라장터에서 보기 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             )}
+
+            {notice.attachments && notice.attachments.length > 0 && (
+              <div className="mt-6">
+                <div className="text-[12px] font-bold text-muted-foreground mb-2">
+                  첨부파일 {notice.attachments.length}건
+                </div>
+                <ul className="flex flex-col gap-1.5">
+                  {notice.attachments.map((f) => (
+                    <li key={f.seq}>
+                      <a
+                        href={f.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[13.5px] font-bold text-primary hover:underline"
+                      >
+                        <FileText className="h-3.5 w-3.5 shrink-0" />
+                        {f.name ?? `첨부파일 ${f.seq}`}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </section>
+
+        {/* 첨부문서 인사이트 — 제안요청서·공고문 요약 */}
+        {insight?.summary && (
+          <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14 border-b border-border">
+            <div className="mb-6">
+              <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
+                문서 요약
+              </h2>
+              <p className="mt-1 text-[14px] text-muted-foreground">
+                첨부된 제안요청서·공고문을 읽어 정리한 내용이에요. 입찰 전 원문 확인은 필수.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardContent className="p-5">
+                  <div className="text-[12px] font-bold text-muted-foreground">과업 내용</div>
+                  <p className="mt-2 text-[14.5px] leading-relaxed text-foreground/90">
+                    {insight.summary}
+                  </p>
+                  {insight.scope && insight.scope.length > 0 && (
+                    <ul className="mt-3 flex flex-wrap gap-1.5">
+                      {insight.scope.map((s) => (
+                        <li key={s}>
+                          <Badge variant="secondary">{s}</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <div className="text-[12px] font-bold text-muted-foreground">참가 자격</div>
+                  {mandatoryReqs.length + optionalReqs.length === 0 ? (
+                    <p className="mt-2 text-[14px] text-muted-foreground">문서에 명시된 조건 없음</p>
+                  ) : (
+                    <ul className="mt-2 flex flex-col gap-1.5 text-[14px]">
+                      {mandatoryReqs.map((r) => (
+                        <li key={r.text} className="flex items-start gap-2">
+                          <span className="mt-[3px] shrink-0 rounded bg-primary/10 px-1.5 text-[11px] font-bold text-primary">필수</span>
+                          <span className="text-foreground/90">{r.text}</span>
+                        </li>
+                      ))}
+                      {optionalReqs.map((r) => (
+                        <li key={r.text} className="flex items-start gap-2">
+                          <span className="mt-[3px] shrink-0 rounded bg-muted px-1.5 text-[11px] font-bold text-muted-foreground">우대</span>
+                          <span className="text-foreground/80">{r.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {evalParts.length > 0 && (
+                    <div className="mt-4 border-t border-border pt-3 text-[13.5px]">
+                      <span className="font-bold text-muted-foreground">평가 </span>
+                      <span className="text-foreground/90">{evalParts.join(" · ")}</span>
+                      {insight.evaluation?.note && (
+                        <span className="text-muted-foreground"> — {insight.evaluation.note}</span>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
 
         {/* Lifecycle timeline */}
         <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">

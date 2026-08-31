@@ -430,7 +430,7 @@ def _search_with_embedding(
         # v2: 하드 필터 + 가중치 score + MMR (lazy import — 순환 방지)
         from app.recommender.pipeline import rank_v2
 
-        return rank_v2(
+        ranked_v2 = rank_v2(
             client,
             deduped,
             company_rgn=company_rgn,
@@ -442,6 +442,8 @@ def _search_with_embedding(
             company_embedding_str=embedding_str,
             company_bizrno_norm=company_bizrno_norm,
         )
+        _attach_insights(client, ranked_v2)
+        return ranked_v2
 
     # 자격 데이터 한 번에 fetch + 미통과 표시 (소프트 감점은 rerank 안에서)
     if company_industry_names is not None or company_rgn is not None:
@@ -458,13 +460,15 @@ def _search_with_embedding(
             )
             r["_rgn_pass"] = _check_rgn_pass(company_rgn, slot["regions"])
 
-    return rerank(
+    ranked_v1 = rerank(
         deduped,
         company_rgn,
         company_terms=company_terms,
         company_institutions=company_institutions,
         company_amt_median=company_amt_median,
     )[:limit]
+    _attach_insights(client, ranked_v1)
+    return ranked_v1
 
 
 def _fetch_company_terms(client, bizrno: str) -> set[str]:
@@ -558,6 +562,33 @@ def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
             slot = out.setdefault(key, {"licenses": [], "regions": []})
             slot["regions"].append(r)
     return out
+
+
+INSIGHT_COLS = "bid_ntce_no,bid_ntce_ord,summary,scope,requirements,evaluation,keywords"
+
+
+def _attach_insights(client, results: list[dict]) -> None:
+    """첨부문서 인사이트(0022)를 결과에 붙인다 — r["insight"]. 미적용 환경/실패 시 조용히 생략."""
+    if not results:
+        return
+    try:
+        bid_nos = list({r["bid_ntce_no"] for r in results if r.get("bid_ntce_no")})
+        rows = (
+            client.table("bid_notice_insights")
+            .select(INSIGHT_COLS)
+            .in_("bid_ntce_no", bid_nos)
+            .execute()
+            .data
+            or []
+        )
+    except Exception as e:
+        print(f"[recommend] insights skipped: {e}")
+        return
+    by_key = {(r["bid_ntce_no"], r["bid_ntce_ord"]): r for r in rows}
+    for r in results:
+        ins = by_key.get((r.get("bid_ntce_no"), r.get("bid_ntce_ord")))
+        if ins:
+            r["insight"] = {k: ins.get(k) for k in ("summary", "scope", "requirements", "evaluation", "keywords")}
 
 
 def _check_license_pass(

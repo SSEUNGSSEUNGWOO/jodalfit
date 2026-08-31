@@ -146,6 +146,27 @@ export function BidCard({
           </div>
         )}
 
+        {/* 첨부문서 인사이트 — 과업 요약 + 필수 자격요건 */}
+        {bid.insight?.summary && (
+          <div className="mt-4 rounded-lg bg-muted/40 px-3.5 py-3 text-[13px] leading-relaxed">
+            <span className="font-bold text-foreground">과업 </span>
+            <span className="text-foreground/85">{bid.insight.summary}</span>
+            {(bid.insight.requirements ?? []).some((r) => r.mandatory) && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-[12px] font-bold text-muted-foreground">
+                  필수
+                </span>
+                {(bid.insight.requirements ?? [])
+                  .filter((r) => r.mandatory)
+                  .slice(0, 4)
+                  .map((r) => (
+                    <EvidenceTag key={r.text}>{r.text}</EvidenceTag>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Evidence */}
         {bid.evidence && bid.evidence.length > 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-1.5">

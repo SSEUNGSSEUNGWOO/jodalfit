@@ -7,6 +7,27 @@ export interface CompanyDigest {
 
 export type RecommendationStage = "notice" | "pre_spec" | "order_plan";
 
+/** 첨부문서(제안요청서 등)에서 LLM으로 구조화한 공고 인사이트 (bid_notice_insights) */
+export interface NoticeInsight {
+  summary: string | null;
+  scope: string[] | null;
+  requirements:
+    | {
+        kind: "license" | "certification" | "performance" | "region" | "company_size" | "other";
+        text: string;
+        mandatory: boolean;
+      }[]
+    | null;
+  evaluation: {
+    method: string | null;
+    technical_pct: number | null;
+    price_pct: number | null;
+    presentation: boolean | null;
+    note: string | null;
+  } | null;
+  keywords: string[] | null;
+}
+
 export interface BidRecommendation {
   stage?: "notice";
   bid_ntce_no: string;
@@ -38,6 +59,8 @@ export interface BidRecommendation {
     reasons: string[];
     failures: string[];
   };
+  /** 첨부문서 인사이트 — 문서가 없거나 아직 요약 전이면 없음 */
+  insight?: NoticeInsight;
 }
 
 /** v2 랭킹 시그널 1건 — 가산/감산 근거 */
