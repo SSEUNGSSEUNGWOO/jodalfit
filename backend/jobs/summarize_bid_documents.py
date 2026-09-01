@@ -95,8 +95,9 @@ def run(limit: int = 100) -> None:
                     failed += 1
                     print(f"  ! {no} failed: {type(e).__name__}: {str(e)[:160]}")
                     if "no credits" in str(e).lower():
-                        # OpenAI 잔액 소진 — 나머지도 전부 실패하므로 즉시 중단 (충전 후 재실행하면 이어서 처리됨)
-                        raise SystemExit(f"[{JOB_NAME}] OpenAI credits exhausted — stopping (ok={done}, failed={failed})")
+                        # OpenAI 잔액 소진 — 나머지도 전부 실패하므로 즉시 중단 (충전 후 재실행하면 이어서 처리됨).
+                        # RuntimeError라야 바깥 except에서 ingest_runs가 failed로 기록됨 (SystemExit는 통과해 running으로 남음)
+                        raise RuntimeError(f"OpenAI credits exhausted — stopped (ok={done}, failed={failed})")
                     time.sleep(2)
                 if seen % 20 == 0:
                     print(f"  {seen} (ok={done}, failed={failed})")
