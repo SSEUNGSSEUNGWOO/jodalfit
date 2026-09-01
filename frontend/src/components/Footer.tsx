@@ -2,7 +2,7 @@ import { Brand } from "./Brand";
 import { cn } from "@/lib/utils";
 
 export function Footer({ className }: { className?: string }) {
-  const today = new Date();
+  const currentYear = new Date().getFullYear();
   return (
     <footer className={cn("mt-24 bg-bg-soft border-t border-line", className)}>
       <div className="mx-auto grid max-w-[1140px] gap-10 px-5 py-12 sm:px-8 sm:py-14 sm:grid-cols-[1.4fr_1fr_1fr]">
@@ -58,15 +58,8 @@ export function Footer({ className }: { className?: string }) {
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[12px] text-ink-5 sm:px-8">
-          <span>© {today.getFullYear()} 조달핏 jodalfit</span>
-          <span className="tabular">
-            업데이트 ·{" "}
-            {today.toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })}
-          </span>
+          <span>© {currentYear} 조달핏</span>
+          <span>나라장터 공개 데이터 기반</span>
         </div>
       </div>
     </footer>

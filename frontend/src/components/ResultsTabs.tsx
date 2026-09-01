@@ -34,14 +34,14 @@ export function ResultsTabs({
   const tabs: { id: "company" | "keywords"; label: string; sub: string; available: boolean; count: number }[] = [
     {
       id: "company",
-      label: "회사 매칭",
+      label: "회사 기준",
       sub: "등록업종·공급물품·수주 이력",
       available: companyAvailable,
       count: companyCount,
     },
     {
       id: "keywords",
-      label: "키워드 매칭",
+      label: "키워드 기준",
       sub: "공고 의미 유사도",
       available: keywordAvailable,
       count: keywordCount,
@@ -101,11 +101,11 @@ export function ResultsTabs({
         <h2 className="text-[20px] sm:text-[22px] font-extrabold tracking-tight text-foreground">
           {tab === "company" ? (
             <>
-              회사에 맞는 TOP {activeResults.length} 공고
+              회사에 맞는 공고 {activeResults.length}건
             </>
           ) : (
             <>
-              <span className="font-serif italic">“{query}”</span> 키워드 TOP {activeResults.length}
+              <span className="font-serif italic">“{query}”</span> 관련 공고 {activeResults.length}건
             </>
           )}
         </h2>
@@ -117,7 +117,7 @@ export function ResultsTabs({
       {activeResults.length === 0 ? (
         <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
           <h3 className="text-[18px] font-bold text-foreground">
-            이 탭에는 매칭 결과가 없어요.
+            이 기준으로 찾은 공고가 없어요.
           </h3>
           <p className="mt-2 text-[14px] text-muted-foreground">
             다른 탭을 확인하거나 검색어를 바꿔보세요.

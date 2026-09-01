@@ -303,14 +303,14 @@ function ResultsBoard({
                 data.company?.rgn_nm ?? null,
                 data.company?.corp_bsns_div_nm ?? null,
               ]
-            : ["키워드 의미 매칭"]
+            : ["키워드와 의미가 가까운 공고"]
         }
         criteria={
           mode === "company"
             ? keywords
               ? `등록업종·공급물품·수주 이력 + “${keywords}” 기준`
               : "등록업종·공급물품·수주 이력 기준"
-            : "AI 의미 유사도 기준 — 같은 단어가 없어도 가까운 공고를 찾습니다"
+            : "입력한 관심 분야와 의미가 가까운 순서"
         }
         count={results.length}
         date={today}
@@ -369,7 +369,7 @@ function ResultsBoard({
             text={
               data.error
                 ? `조회 실패: ${data.error}`
-                : "조건에 맞는 공고를 찾지 못했습니다. 키워드를 넓히거나 다른 모드로 시도해보세요."
+                : "조건에 맞는 공고를 찾지 못했어요. 검색어를 조금 넓히거나 다른 검색 방법을 이용해 보세요."
             }
           />
         ) : (
@@ -536,7 +536,7 @@ function PreSpecBoard({ results }: { results: PreSpecRecommendation[] }) {
     <section className="mt-14">
       <SectionHead
         title={`사전규격 — 지금 의견 낼 수 있는 ${sorted.length}건`}
-        note="본공고 전 단계. 사양이 굳기 전에 의견을 낼 수 있는 마지막 시점입니다."
+        note="본 공고가 나오기 전 단계예요. 사양이 확정되기 전에 의견을 낼 수 있는 마지막 시점입니다."
       />
       <ol>
         {sorted.map((spec, i) => {
@@ -596,7 +596,7 @@ function OrderPlanBoard({ results }: { results: OrderPlanRecommendation[] }) {
     <section className="mt-14">
       <SectionHead
         title={`발주계획 — 선행 신호 ${top.length}건`}
-        note="사양 미확정 단계. 본공고까지 1~3개월 여유가 있는 사전 신호입니다."
+        note="아직 사양이 확정되지 않은 단계예요. 본 공고가 나오기 1~3개월 전부터 준비할 수 있습니다."
       />
       <ol>
         {top.map((plan, i) => (
@@ -736,7 +736,7 @@ function KeywordPanel({
           disabled={!value.trim() || loading}
           className="mt-4 h-11 px-5 bg-gc-band text-gc-band-hi text-[14.5px] font-bold rounded-[3px] disabled:opacity-40 hover:bg-gc-ink transition-colors"
         >
-          {loading ? "대조 중…" : "이 키워드로 조회"}
+          {loading ? "찾는 중…" : "이 키워드로 찾기"}
         </button>
       </form>
     </section>
@@ -759,7 +759,7 @@ function FallbackBoard({
     <div className="world-gc flex-1">
       <BoardHead
         title={query}
-        meta={[identified ? "회사 식별 완료" : "회사 식별 실패"]}
+        meta={[identified ? "회사 정보를 확인했어요" : "회사 정보를 찾지 못했어요"]}
         criteria={
           identified
             ? "회사 데이터가 부족해 정확도가 낮을 수 있습니다"
@@ -779,7 +779,7 @@ function FallbackBoard({
         <KeywordPanel
           className="mt-10"
           title="관심 영역을 직접 알려주세요"
-          lead="회사 데이터 대신 키워드로 대조합니다. 관심 영역을 입력하면 의미가 가까운 공고를 바로 찾아드립니다."
+          lead="회사 정보가 부족해도 괜찮아요. 관심 영역을 입력하면 관련 공고를 바로 찾아드려요."
         />
       </div>
       <SubscribeBand />
@@ -828,18 +828,18 @@ function BoardLoading({ label, mode }: { label: string; mode: Mode }) {
           {label}
         </p>
         <p className="mt-3 text-[14.5px] text-gc-ink-2 break-keep">
-          나라장터 공고와 {mode === "company" ? "회사 정보" : "검색 키워드"}를
-          대조하고 있습니다.
+          나라장터 공고에서 {mode === "company" ? "회사에 맞는 결과" : "검색어와 가까운 결과"}를
+          찾고 있어요.
         </p>
         <div
           className="relative mt-7 h-px bg-gc-rule overflow-hidden"
           role="status"
-          aria-label="대조 진행 중"
+          aria-label="공고 검색 중"
         >
           <span className="gc-scan-bar absolute inset-y-0 left-0 w-1/4 bg-gc-ink" />
         </div>
         <p className="mt-3 text-[12.5px] tabular tabular-nums text-gc-ink-3">
-          보통 5~12초 소요됩니다.
+          보통 5~12초 정도 걸려요.
         </p>
       </div>
     </div>

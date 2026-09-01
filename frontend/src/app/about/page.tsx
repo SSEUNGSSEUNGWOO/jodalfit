@@ -3,9 +3,9 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "조달핏이란 — 나라장터 입찰 디스커버리",
+  title: "조달핏이란 — 나라장터 공고 탐색 서비스",
   description:
-    "jodalfit은 회사 등록업종·공급물품·수주 이력을 분석해 나라장터 공공입찰 중 검토할 만한 공고를 골라주는 디스커버리 도구입니다. 알고리즘 동작 방식과 데이터 출처를 안내합니다.",
+    "조달핏은 회사의 등록업종·공급물품·수주 이력을 분석해 검토할 만한 나라장터 공고를 찾아주는 서비스입니다. 추천 방식과 데이터 출처도 확인할 수 있습니다.",
   alternates: { canonical: "/about" },
 };
 
@@ -62,10 +62,10 @@ function Hero() {
     <section className="border-b border-border">
       <div className="mx-auto max-w-[820px] px-5 sm:px-8 py-16 sm:py-24">
         <h1 className="font-gc-serif font-black text-[34px] sm:text-[48px] leading-[1.25] tracking-[-0.02em] text-gc-ink break-keep">
-          나라장터 공고를 회사 기준으로 정리하는 디스커버리 도구
+          나라장터 공고를 회사 기준으로 정리하는 탐색 서비스
         </h1>
         <p className="mt-6 text-[17px] leading-[1.7] text-muted-foreground break-keep">
-          jodalfit은 회사 등록업종·공급물품·과거 수주 이력을 분석해 나라장터 공공입찰 중 검토할 만한 공고를 정리합니다.
+          조달핏은 회사의 등록업종·공급물품·과거 수주 이력을 분석해 검토할 만한 나라장터 공고를 정리해 드려요.
           키워드 알림만으로 찾기 어려운 공고와 자격이 맞지 않는 공고를 줄이고, 검토 시간을 줄이는 데 초점을 둡니다.
         </p>
       </div>
@@ -155,7 +155,7 @@ function DataSources() {
         </a>로 공개하는 공식 OpenAPI를 활용합니다. 입찰공고·계약·회사 정보·자격 제한 등 추천에 필요한 데이터를 매일 새벽 자동으로 갱신합니다.
       </p>
       <p className="text-[14px] text-muted-foreground">
-        데이터는 공공데이터포털 라이선스를 따르며, jodalfit은 공개 데이터를 추천 목적에 맞게 정리하고 재배열합니다.
+        데이터는 공공데이터포털 이용 조건을 따르며, 조달핏은 공개 데이터를 공고 탐색에 알맞게 정리해 보여드립니다.
       </p>
     </Section>
   );
@@ -195,7 +195,7 @@ function Contact() {
         </a>
       </p>
       <p className="text-[14px] text-muted-foreground">
-        © {new Date().getFullYear()} jodalfit. 데이터는 공공데이터포털 라이선스를 따릅니다.
+        © {new Date().getFullYear()} 조달핏. 데이터는 공공데이터포털 이용 조건을 따릅니다.
       </p>
     </Section>
   );

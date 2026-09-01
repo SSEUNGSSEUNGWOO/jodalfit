@@ -71,7 +71,7 @@ function EmptyState({ mode }: { mode: Mode }) {
       <div className="mx-auto max-w-[720px] px-5 py-16 sm:py-24">
         <h1 className="font-gc-serif font-black text-[26px] sm:text-[32px] tracking-[-0.02em] text-gc-ink break-keep">
           {mode === "company"
-            ? "어느 회사의 판을 열까요?"
+            ? "어느 회사의 공고를 찾아볼까요?"
             : "어떤 공고를 찾을까요?"}
         </h1>
         <p className="mt-3 text-[14.5px] leading-[1.7] text-gc-ink-2 break-keep">

@@ -149,8 +149,8 @@ export function isGoldenTime(status: GoldenTimeStatus): boolean {
 /** UI 표시용 라벨 */
 export const GOLDEN_TIME_LABEL: Record<GoldenTimeStatus, string> = {
   planning: "발주 계획 단계",
-  spec_open: "골든타임 · 사전규격 공개중",
+  spec_open: "골든타임 · 사전규격 공개 중",
   spec_closing: "골든타임 마감 임박",
-  notice_active: "입찰공고 진행중",
+  notice_active: "입찰공고 진행 중",
   closed: "종료",
 };

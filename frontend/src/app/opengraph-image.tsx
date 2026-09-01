@@ -70,7 +70,7 @@ export default async function Image() {
               marginBottom: 24,
             }}
           >
-            공공조달 입찰 디스커버리
+            우리 회사에 맞는 공공입찰 찾기
           </div>
           <div
             style={{

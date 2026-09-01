@@ -19,7 +19,7 @@ const SUGGESTED = [
 ];
 
 export function KeywordFallback({
-  title = "관심 영역을 직접 알려주세요",
+  title = "어떤 분야의 공고를 찾으시나요?",
   subtitle,
   defaultQuery = "",
   className,
@@ -62,7 +62,7 @@ export function KeywordFallback({
       <CardContent className="px-6 py-7 sm:px-8 sm:py-8">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-          <span className="text-[12.5px] font-bold text-primary">키워드로 추천 받기</span>
+          <span className="text-[12.5px] font-bold text-primary">관심 분야로 공고 찾기</span>
         </div>
 
         <h3 className="text-[22px] sm:text-[24px] font-extrabold tracking-tight text-foreground">
@@ -75,7 +75,7 @@ export function KeywordFallback({
         ) : (
           <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground max-w-[52ch]">
             과거 낙찰 이력이 부족해서 분석이 어려워요. 대신{" "}
-            <span className="text-foreground font-semibold">관심 영역을 직접 입력</span>해주시면
+            <span className="text-foreground font-semibold">관심 분야를 직접 입력</span>해 주시면
             그 키워드로 가장 잘 맞는 공고 5개를 찾아드려요.
           </p>
         )}
@@ -121,7 +121,7 @@ export function KeywordFallback({
             disabled={!value.trim() || loading}
             className="h-12 px-5 gap-1.5 text-[15px]"
           >
-            {loading ? "분석 중..." : "이 키워드로 추천 받기"}
+            {loading ? "찾는 중…" : "이 키워드로 찾기"}
             {!loading && <ArrowRight className="h-4 w-4" aria-hidden />}
           </Button>
         </form>

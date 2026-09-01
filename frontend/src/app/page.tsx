@@ -59,20 +59,20 @@ function Hero({ activeCount }: { activeCount: number }) {
             조달핏
           </span>
           <span className="text-[12px] tabular tabular-nums text-gc-band-ink">
-            {issue} · {dateLabel} · 매일 새벽 발행
+            {issue} · {dateLabel} · 매일 새벽 갱신
           </span>
         </div>
 
         <div className="mt-10 sm:mt-14 flex items-start justify-between gap-6">
           <div className="min-w-0 max-w-[720px]">
             <h1 className="font-gc-serif font-black text-[34px] sm:text-[54px] leading-[1.22] tracking-[-0.02em] text-gc-band-hi break-keep">
-              오늘의 나라장터를
+              오늘의 나라장터 공고를
               <br />
-              우리 회사의 판으로.
+              우리 회사에 맞는 순서로.
             </h1>
             <p className="mt-5 text-[15.5px] sm:text-[17px] leading-[1.7] text-gc-band-ink max-w-[560px] break-keep">
-              회사명 하나면 등록업종·공급물품·수주 이력을 대조해, 검토할 만한
-              공고를 우선순위 판으로 정리해드립니다. 회원가입 없이 바로.
+              회사명만 입력하면 등록업종·공급물품·수주 이력을 살펴보고, 검토할 만한
+              공고부터 보여드려요. 회원가입 없이 바로 확인할 수 있어요.
             </p>
           </div>
           <BoardSeal size={72} className="hidden sm:block shrink-0 mt-2" />
@@ -128,7 +128,7 @@ function TodayBoard({ rows }: { rows: NoticeSummary[] }) {
           오늘의 판 — 방금 올라온 공고
         </h2>
         <span className="text-[12px] text-gc-ink-3">
-          전체 공고 기준 최신 5건 · 실시간 데이터
+          전체 공고 기준 최신 5건 · 매일 새벽 갱신
         </span>
       </div>
 

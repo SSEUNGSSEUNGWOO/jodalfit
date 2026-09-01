@@ -29,7 +29,7 @@ export function Header() {
             조달핏
           </span>
           <span className="hidden sm:inline self-end pb-px text-[11px] font-semibold tracking-wide text-gc-ink-3">
-            공공입찰 검토 우선순위
+            우리 회사에 맞는 공공입찰
           </span>
         </Link>
 

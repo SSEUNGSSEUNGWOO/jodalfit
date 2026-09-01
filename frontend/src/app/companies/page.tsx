@@ -38,7 +38,7 @@ export default async function CompaniesIndexPage() {
               공공조달 활동 기업
             </h1>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-muted-foreground">
-              나라장터 수주 이력이 분석된 기업 {companies.length}곳. 회사를 클릭하면
+              나라장터 수주 이력이 분석된 기업 중 {companies.length}곳을 보여드려요. 회사를 선택하면
               해당 회사에 맞는 추천 공고와 과거 수주 분석을 볼 수 있어요.
             </p>
             <div className="mt-6 max-w-[560px]">
@@ -50,7 +50,7 @@ export default async function CompaniesIndexPage() {
         <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
           {companies.length === 0 ? (
             <p className="text-[14.5px] text-muted-foreground">
-              아직 분석된 회사가 없어요. 잠시 후 다시 방문해주세요.
+              아직 보여드릴 회사가 없어요. 잠시 후 다시 확인해 주세요.
             </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

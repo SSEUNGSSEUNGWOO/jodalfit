@@ -6,11 +6,11 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 const STAGES: { atMs: number; title: string; sub: string }[] = [
-  { atMs: 0, title: "회사 정보 매칭 중...", sub: "보통 5~12초 걸려요" },
-  { atMs: 1500, title: "공고 218,435건과 벡터 비교 중...", sub: "회사 정체성과 가장 가까운 공고를 찾는 중" },
-  { atMs: 3500, title: "매칭 시그널 분석 중...", sub: "거래 기관·등록업종·체급 일치 검사" },
-  { atMs: 6000, title: "AI가 추천 이유 작성 중...", sub: "공고마다 매칭 근거를 한 줄로 정리하는 중" },
-  { atMs: 10000, title: "거의 완료되었어요", sub: "응답을 정리하는 중" },
+  { atMs: 0, title: "회사 정보를 확인하고 있어요", sub: "보통 5~12초 정도 걸려요" },
+  { atMs: 1500, title: "관련 공고를 찾고 있어요", sub: "회사의 활동 영역과 가까운 공고를 살펴보고 있어요" },
+  { atMs: 3500, title: "공고별 적합성을 확인하고 있어요", sub: "거래 기관·등록업종·사업 규모를 함께 살펴봐요" },
+  { atMs: 6000, title: "추천 이유를 정리하고 있어요", sub: "각 공고를 추천한 이유를 알기 쉽게 작성하고 있어요" },
+  { atMs: 10000, title: "거의 다 됐어요", sub: "결과를 보기 좋게 정리하고 있어요" },
 ];
 
 const ETA_MS = 12000;

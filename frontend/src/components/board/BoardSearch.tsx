@@ -146,7 +146,7 @@ export function BoardSearch({
               : "bg-gc-band text-gc-band-hi hover:bg-gc-ink"
           )}
         >
-          {loading ? "대조 중…" : "조회"}
+          {loading ? "찾는 중…" : "찾기"}
         </button>
       </div>
       <p
@@ -156,7 +156,7 @@ export function BoardSearch({
         )}
       >
         {isCompany
-          ? "등록업종·공급물품·수주 이력을 대조해 검토 우선순위를 냅니다."
+          ? "등록업종·공급물품·수주 이력을 살펴보고 검토할 공고부터 보여드려요."
           : "같은 단어가 없어도 의미가 가까운 공고를 함께 찾습니다."}
       </p>
 

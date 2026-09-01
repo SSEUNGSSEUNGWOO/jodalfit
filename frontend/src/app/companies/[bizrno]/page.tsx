@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : `${company.corp_nm} 등록업종·공공조달 정보 | 조달핏`;
   let desc: string;
   if (awardSummary.count >= 3 && awardSummary.avg_rate !== null) {
-    desc = `${company.corp_nm}의 나라장터 수주 이력 ${awardSummary.count}건, 평균 투찰율 ${awardSummary.avg_rate.toFixed(1)}%. 등록업종·공급물품으로 검토할 만한 신규 공고도 함께. 매일 갱신 · 나라장터 기반.`;
+    desc = `${company.corp_nm}의 나라장터 수주 이력 ${awardSummary.count}건과 평균 투찰률 ${awardSummary.avg_rate.toFixed(1)}%를 확인하세요. 등록업종·공급물품에 맞는 신규 공고도 함께 보여드립니다.`;
   } else if (company.contract_count >= 1) {
     desc = `${company.corp_nm}의 공공조달 수주 이력 ${company.contract_count}건을 정리했습니다. 등록업종·공급물품으로 검토할 만한 신규 나라장터 공고도 함께. 매일 갱신.`;
   } else {
@@ -310,7 +310,7 @@ async function DomainAnalysisSection({
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-4 w-4 text-amber-600" strokeWidth={2.5} />
             <h2 className="text-[18px] sm:text-[20px] font-extrabold text-amber-950 tracking-tight">
-              jodalfit이 본 활동 영역
+              조달핏이 파악한 활동 영역
             </h2>
           </div>
           <p className="text-[14px] text-foreground/75 leading-relaxed">
@@ -686,7 +686,7 @@ async function AwardHistorySection({ bizrnoNorm }: { bizrnoNorm: string }) {
                 <th className="px-4 py-2.5 text-left">공고명</th>
                 <th className="px-4 py-2.5 text-left">발주 기관</th>
                 <th className="px-4 py-2.5 text-right">낙찰가</th>
-                <th className="px-4 py-2.5 text-right">투찰율</th>
+                <th className="px-4 py-2.5 text-right">투찰률</th>
               </tr>
             </thead>
             <tbody>
@@ -758,7 +758,7 @@ function BidRateHistogram({
   return (
     <div className="mt-6 rounded-xl border border-border bg-muted/20 p-5">
       <div className="mb-3 flex items-baseline justify-between">
-        <div className="text-[13px] font-semibold text-foreground">낙찰율 분포</div>
+        <div className="text-[13px] font-semibold text-foreground">낙찰률 분포</div>
         <div className="text-[11.5px] text-muted-foreground">
           낮을수록 경쟁 치열, 상한 근처면 경쟁 약함
         </div>

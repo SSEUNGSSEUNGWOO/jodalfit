@@ -8,7 +8,7 @@ import { listAllInsights } from "@/lib/insights";
 export const metadata: Metadata = {
   title: "주간 인사이트 — 조달핏",
   description:
-    "공공조달 주간 인사이트 모음. 이번 주 검토할 만한 공고 TOP 10 (픽)과 시장 동향 리포트를 매주 발행합니다.",
+    "이번 주에 검토할 만한 공고와 공공조달 시장 동향을 매주 정리해 드립니다.",
   alternates: { canonical: "/insights" },
 };
 
@@ -34,9 +34,8 @@ export default async function InsightsIndex() {
             주간 인사이트
           </h1>
           <p className="mt-3 text-[17px] text-muted-foreground max-w-[560px] leading-relaxed">
-            나라장터 8개 OpenAPI에서 매일 자동 수집한 데이터를 두 가지로 정리해
-            매주 발행합니다. 이번 주 검토할 만한 공고를 고른 <strong className="text-foreground">픽</strong>과
-            시장 전반을 분석한 <strong className="text-foreground">동향</strong>.
+            나라장터 공개 데이터를 바탕으로 이번 주에 검토할 만한 공고와
+            시장의 흐름을 매주 정리해 드려요.
           </p>
         </header>
 

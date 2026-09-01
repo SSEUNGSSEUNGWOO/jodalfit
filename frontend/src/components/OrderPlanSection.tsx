@@ -23,7 +23,7 @@ export function OrderPlanSection({ results, limit = 5 }: Props) {
         </span>
       </div>
       <p className="px-1 mb-3 text-[12px] text-muted-foreground break-keep">
-        아직 사양이 확정되지 않은 발주계획입니다. 본공고까지 1~3개월 여유 있는 사전 신호로 활용하세요.
+        아직 사양이 확정되지 않은 발주계획이에요. 본 공고가 나오기 1~3개월 전부터 준비할 수 있는 정보로 활용해 보세요.
       </p>
       <div className="rounded-lg border border-border bg-card overflow-hidden divide-y divide-border">
         {top.map((plan, i) => (

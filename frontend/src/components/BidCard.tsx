@@ -81,7 +81,7 @@ export function BidCard({
                 title={
                   isGoldenClosing
                     ? "사전규격 의견 마감 임박 — 사양 반영 마지막 기회"
-                    : "사전규격 공개중 — 의견 등록 가능"
+                    : "사전규격 공개 중 — 의견을 등록할 수 있어요"
                 }
               >
                 <Sparkles className="h-3 w-3" strokeWidth={2.5} />
@@ -180,7 +180,7 @@ export function BidCard({
         {peerStat && peerStat.n >= 3 && (
           <div
             className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
-            title="같은 발주기관의 과거 낙찰 평균 투찰율 — 참고용 시그널이지 예측치 아님"
+            title="같은 발주기관의 과거 평균 투찰률입니다. 참고용 수치이며 예측값은 아닙니다."
           >
             <BarChart3 className="h-3.5 w-3.5 text-primary/70" aria-hidden />
             <span>

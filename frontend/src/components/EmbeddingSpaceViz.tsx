@@ -115,7 +115,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                         cx: ax,
                         cy: ay,
                         title: a.label,
-                        subtitle: "도메인 anchor — 의미 좌표의 고정 기준점",
+                        subtitle: "분야 기준점 — 의미상 위치를 비교하는 기준",
                         tone: "muted",
                       })
                     }
@@ -190,7 +190,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
                     cx: cx[0],
                     cy: cx[1],
                     title: companyName,
-                    subtitle: "회사 위치 — 등록업종·공급물품·수주 임베딩 평균",
+                    subtitle: "회사 위치 — 등록업종·공급물품·수주 이력을 종합한 위치",
                     tone: "primary",
                   })
                 }
@@ -255,7 +255,7 @@ export function EmbeddingSpaceViz({ viz, companyName }: Props) {
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-full bg-[#9ca3af]" />
-            도메인 anchor
+            분야 기준점
           </span>
         </div>
       </div>

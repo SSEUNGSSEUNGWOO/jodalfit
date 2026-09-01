@@ -137,7 +137,7 @@ export default async function NoticePage({ params }: Props) {
                   ? gt.opinionDaysLeft === 0
                     ? "오늘이 의견 등록 마감일이에요"
                     : `의견 등록 마감 D-${gt.opinionDaysLeft}`
-                  : "사전규격 공개중 — 의견 등록 가능"}
+                  : "사전규격 공개 중 — 의견을 등록할 수 있어요"}
                 {gt.opinionDeadline && (
                   <span className="ml-1.5 text-white/70 font-medium">
                     ({formatDateKR(gt.opinionDeadline)})

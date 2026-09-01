@@ -41,7 +41,7 @@ export function SubscribeBand() {
         <div>
           {status === "done" ? (
             <p className="text-[14px] font-bold text-gc-band-hi break-keep">
-              신청 접수됨 — 첫 발송이 준비되면 이 주소로 알려드릴게요.
+              신청이 완료됐어요. 첫 발송이 준비되면 이 주소로 알려드릴게요.
             </p>
           ) : (
             <form onSubmit={submit} className="flex gap-2">
@@ -62,7 +62,7 @@ export function SubscribeBand() {
                 disabled={status === "submitting"}
                 className="shrink-0 h-11 px-4 bg-gc-band-hi text-gc-band text-[14px] font-bold rounded-[3px] hover:bg-white transition-colors disabled:opacity-60"
               >
-                {status === "submitting" ? "처리 중..." : "발송 시작하면 알려주세요"}
+                {status === "submitting" ? "처리 중…" : "메일 준비 소식 받기"}
               </button>
             </form>
           )}
