@@ -78,7 +78,7 @@ export default async function NoticePage({ params }: Props) {
   const lifecycle = await fetchLifecycle(bid_ntce_no);
   if (!lifecycle) notFound();
 
-  const { notice, insight, preSpecs, opinions, orderPlans, awards, contracts } = lifecycle;
+  const { notice, insight, amendments, preSpecs, opinions, orderPlans, awards, contracts } = lifecycle;
   const mandatoryReqs = (insight?.requirements ?? []).filter((r) => r.mandatory);
   const optionalReqs = (insight?.requirements ?? []).filter((r) => !r.mandatory);
   const evalParts: string[] = [];
@@ -264,6 +264,57 @@ export default async function NoticePage({ params }: Props) {
             )}
           </div>
         </section>
+
+        {/* 정정 이력 — 차수별 변경 항목 */}
+        {amendments.length > 0 && (
+          <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-8 sm:py-10 border-b border-border">
+            <div className="mb-4">
+              <h2 className="font-gc-serif font-black text-[20px] sm:text-[22px] tracking-[-0.02em] text-gc-ink">
+                정정 이력
+              </h2>
+              <p className="mt-1 text-[13.5px] text-muted-foreground">
+                제목·마감·개찰·금액·지역·업종·계약방식·첨부파일을 이전 차수와 비교한 결과예요. 본문 문구 변경은 잡지 못하니 원문도 확인하세요.
+              </p>
+            </div>
+            <ol className="flex flex-col gap-3">
+              {amendments.map((a) => (
+                <li key={a.no} className="rounded-lg border border-amber-200 bg-amber-50/40 px-4 py-3">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="text-[13.5px] font-extrabold text-amber-900">정정 {a.no}차</span>
+                    {a.date && (
+                      <span className="text-[12.5px] text-muted-foreground tabular tabular-nums">
+                        {formatDateKR(a.date)} 공고
+                      </span>
+                    )}
+                    {parseInt(a.prevOrd, 10) !== a.no - 1 && (
+                      <span className="text-[12px] text-muted-foreground">
+                        (직전 차수 미수집 — {parseInt(a.prevOrd, 10) === 0 ? "원공고" : `정정 ${parseInt(a.prevOrd, 10)}차`}와 비교)
+                      </span>
+                    )}
+                  </div>
+                  {a.changes.length === 0 ? (
+                    <p className="mt-1.5 text-[13.5px] text-muted-foreground">
+                      비교 항목엔 변화 없음 — 본문·서식 등 세부 변경은 나라장터 원문에서 확인
+                    </p>
+                  ) : (
+                    <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13.5px]">
+                      {a.changes.map((ch) => (
+                        <Fragment key={ch.label}>
+                          <dt className="font-bold text-muted-foreground">{ch.label}</dt>
+                          <dd className="min-w-0">
+                            <span className="text-muted-foreground line-through decoration-muted-foreground/60">{ch.before}</span>
+                            <span className="mx-1.5 text-muted-foreground">→</span>
+                            <span className="font-bold text-foreground">{ch.after}</span>
+                          </dd>
+                        </Fragment>
+                      ))}
+                    </dl>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
 
         {/* 첨부문서 인사이트 — 제안요청서·공고문 요약 */}
         {insight?.summary && (

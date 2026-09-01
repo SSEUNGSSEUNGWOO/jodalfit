@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
 import type { NoticeInsight } from "@/types/recommendations";
+import { diffNoticeVersions, type Amendment, type NoticeVersion } from "./notice-diff";
 
 const SUMMARY_COLS =
   "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn";
@@ -96,6 +97,8 @@ export interface Contract {
 export interface NoticeLifecycle {
   notice: BidNotice;
   insight: NoticeInsight | null;
+  /** 정정 이력 — 최신 정정이 앞. 원공고이거나 이전 차수가 DB에 없으면 빈 배열 */
+  amendments: Amendment[];
   preSpecs: PreSpec[];
   opinions: PreSpecOpinion[];
   orderPlans: OrderPlan[];
@@ -132,8 +135,8 @@ export async function fetchLifecycle(
   if (!notice) return null;
   const c = getServerSupabase();
 
-  // 5개 라이프사이클 단계 + 첨부문서 인사이트 병렬 조회
-  const [insightRes, preSpecsRes, orderPlansRes, awardsRes, contractsRes] =
+  // 5개 라이프사이클 단계 + 첨부문서 인사이트 + 정정 이력(정정 공고일 때만) 병렬 조회
+  const [insightRes, versionsRes, preSpecsRes, orderPlansRes, awardsRes, contractsRes] =
     await Promise.all([
       c
         .from("bid_notice_insights")
@@ -141,6 +144,15 @@ export async function fetchLifecycle(
         .eq("bid_ntce_no", notice.bid_ntce_no)
         .eq("bid_ntce_ord", notice.bid_ntce_ord)
         .maybeSingle(),
+      notice.bid_ntce_ord !== "000"
+        ? c
+            .from("bid_notices")
+            .select(
+              "bid_ntce_ord,bid_ntce_date,bid_ntce_nm,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,prtcpt_psbl_rgn_nm,bidprc_psbl_indstryty_nm,cntrct_cncls_mthd_nm,bidwinr_dcsn_mthd_nm,attachments"
+            )
+            .eq("bid_ntce_no", notice.bid_ntce_no)
+            .order("bid_ntce_ord")
+        : Promise.resolve({ data: null }),
       c
         .from("pre_specs")
         .select(
@@ -190,6 +202,7 @@ export async function fetchLifecycle(
   return {
     notice,
     insight: (insightRes.data as NoticeInsight | null) ?? null,
+    amendments: diffNoticeVersions((versionsRes.data as NoticeVersion[] | null) ?? []),
     preSpecs,
     opinions,
     orderPlans: (orderPlansRes.data as OrderPlan[]) ?? [],
