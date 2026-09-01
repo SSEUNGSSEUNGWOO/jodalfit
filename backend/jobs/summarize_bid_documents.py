@@ -61,6 +61,7 @@ def _process(sb, no: str, ord_: str) -> bool:
             "bid_ntce_no": no, "bid_ntce_ord": ord_,
             "summary": ins["summary"], "scope": ins["scope"],
             "requirements": ins["requirements"], "evaluation": ins["evaluation"],
+            "schedule": ins["schedule"],
             "keywords": ins["keywords"], "source_seqs": seqs,
             "input_chars": len(text), "model": MODEL,
         }],

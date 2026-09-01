@@ -7,7 +7,7 @@ import { Header } from "@/components/Header";
 import { Lifecycle } from "@/components/Lifecycle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { Sparkles } from "lucide-react";
 import { fetchLifecycle, fetchSimilarNotices } from "@/lib/notice";
 import { analyzeGoldenTime, isGoldenTime } from "@/lib/golden-time";
@@ -90,6 +90,12 @@ export default async function NoticePage({ params }: Props) {
       `기술 ${insight.evaluation.technical_pct} : 가격 ${insight.evaluation.price_pct}`
     );
   if (insight?.evaluation?.presentation) evalParts.push("제안 발표 있음");
+  const scheduleParts: [string, string][] = [];
+  if (insight?.schedule?.start) scheduleParts.push(["착수", insight.schedule.start]);
+  if (insight?.schedule?.end) scheduleParts.push(["종료", insight.schedule.end]);
+  if (insight?.schedule?.duration) scheduleParts.push(["기간", insight.schedule.duration]);
+  if (insight?.schedule?.delivery_deadline)
+    scheduleParts.push(["납품기한", insight.schedule.delivery_deadline]);
   const gt = analyzeGoldenTime(lifecycle);
   const goldenActive = isGoldenTime(gt.status);
   const specPdfUrl = preSpecs[0]?.spec_doc_file_url_1;
@@ -283,6 +289,16 @@ export default async function NoticePage({ params }: Props) {
                         </li>
                       ))}
                     </ul>
+                  )}
+                  {scheduleParts.length > 0 && (
+                    <dl className="mt-4 border-t border-border pt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13.5px]">
+                      {scheduleParts.map(([k, v]) => (
+                        <Fragment key={k}>
+                          <dt className="font-bold text-muted-foreground">{k}</dt>
+                          <dd className="text-foreground/90">{v}</dd>
+                        </Fragment>
+                      ))}
+                    </dl>
                   )}
                 </CardContent>
               </Card>

@@ -53,6 +53,9 @@ SYSTEM = """당신은 한국 공공조달(나라장터) 입찰 문서 분석가�
 - scope: 주요 과업 항목 3~6개, 각 30자 이내 명사구.
 - requirements: 참가자격·필수 조건. 법 조문 인용은 빼고 실무자가 확인해야 할 조건만 (예: "소프트웨어사업자 신고", "직접생산확인증명서(정보시스템개발서비스)", "최근 3년 유사실적 5억 이상", "중소기업 확인서", "본사 소재지 대구"). kind는 license(면허·업종등록), certification(인증·확인서), performance(실적), region(지역), company_size(기업규모), other 중 하나. mandatory는 필수 여부.
 - evaluation: 낙찰자 결정 방식(method), 기술/가격 배점 비율(technical_pct/price_pct, 숫자만), 제안 발표(PT) 유무(presentation), 기타 특이사항(note, 40자 이내).
+- schedule: **사업(과업·납품) 일정만**. 입찰공고·제안서 접수·개찰·설명회 같은 입찰 절차 일정은 절대 넣지 않는다.
+  start(과업 착수 시점: "계약체결일", "2026. 10. 1." 등), end(과업 종료 시점), duration(기간 표현: "착수일로부터 150일", "12개월" — 'N일/개월' 형태는 start/end가 아니라 여기), delivery_deadline(납품·완료 기한).
+  **문서에 적힌 표현 그대로** 짧게 옮긴다. 날짜 계산·환산 금지. 없으면 null.
 - keywords: 매칭에 쓸 기술·도메인 용어 4~8개 (예: "그룹웨어", "전자결재", "PostgreSQL", "GIS", "CCTV"). 일반어("사업", "용역", "시스템") 단독 금지.
 - 모두 한국어. 원문 표기(영문 약어 등)는 그대로."""
 
@@ -93,9 +96,20 @@ SCHEMA = {
                 },
                 "required": ["method", "technical_pct", "price_pct", "presentation", "note"],
             },
+            "schedule": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "start": {"type": ["string", "null"]},
+                    "end": {"type": ["string", "null"]},
+                    "duration": {"type": ["string", "null"]},
+                    "delivery_deadline": {"type": ["string", "null"]},
+                },
+                "required": ["start", "end", "duration", "delivery_deadline"],
+            },
             "keywords": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["summary", "scope", "requirements", "evaluation", "keywords"],
+        "required": ["summary", "scope", "requirements", "evaluation", "schedule", "keywords"],
     },
 }
 

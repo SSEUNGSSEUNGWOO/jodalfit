@@ -137,7 +137,7 @@ export async function fetchLifecycle(
     await Promise.all([
       c
         .from("bid_notice_insights")
-        .select("summary,scope,requirements,evaluation,keywords")
+        .select("summary,scope,requirements,evaluation,schedule,keywords")
         .eq("bid_ntce_no", notice.bid_ntce_no)
         .eq("bid_ntce_ord", notice.bid_ntce_ord)
         .maybeSingle(),

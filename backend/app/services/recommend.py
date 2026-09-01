@@ -564,7 +564,7 @@ def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
     return out
 
 
-INSIGHT_COLS = "bid_ntce_no,bid_ntce_ord,summary,scope,requirements,evaluation,keywords"
+INSIGHT_COLS = "bid_ntce_no,bid_ntce_ord,summary,scope,requirements,evaluation,schedule,keywords"
 
 
 def _attach_insights(client, results: list[dict]) -> None:
@@ -588,7 +588,7 @@ def _attach_insights(client, results: list[dict]) -> None:
     for r in results:
         ins = by_key.get((r.get("bid_ntce_no"), r.get("bid_ntce_ord")))
         if ins:
-            r["insight"] = {k: ins.get(k) for k in ("summary", "scope", "requirements", "evaluation", "keywords")}
+            r["insight"] = {k: ins.get(k) for k in ("summary", "scope", "requirements", "evaluation", "schedule", "keywords")}
 
 
 def _check_license_pass(

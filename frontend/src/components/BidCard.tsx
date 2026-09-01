@@ -151,6 +151,14 @@ export function BidCard({
           <div className="mt-4 rounded-lg bg-muted/40 px-3.5 py-3 text-[13px] leading-relaxed">
             <span className="font-bold text-foreground">과업 </span>
             <span className="text-foreground/85">{bid.insight.summary}</span>
+            {(bid.insight.schedule?.duration || bid.insight.schedule?.end || bid.insight.schedule?.delivery_deadline) && (
+              <div className="mt-1.5 text-[12.5px] text-muted-foreground">
+                <span className="font-bold">기간 </span>
+                {bid.insight.schedule.duration ??
+                  (bid.insight.schedule.end ? `~ ${bid.insight.schedule.end}` : null) ??
+                  `납품 ${bid.insight.schedule.delivery_deadline}`}
+              </div>
+            )}
             {(bid.insight.requirements ?? []).some((r) => r.mandatory) && (
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <span className="text-[12px] font-bold text-muted-foreground">

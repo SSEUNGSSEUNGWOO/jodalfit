@@ -25,6 +25,13 @@ export interface NoticeInsight {
     presentation: boolean | null;
     note: string | null;
   } | null;
+  /** 문서에 적힌 표현 그대로 (날짜 정규화 없음). 2026-09-01 이후 요약분부터 채워짐 */
+  schedule: {
+    start: string | null;
+    end: string | null;
+    duration: string | null;
+    delivery_deadline: string | null;
+  } | null;
   keywords: string[] | null;
 }
 
