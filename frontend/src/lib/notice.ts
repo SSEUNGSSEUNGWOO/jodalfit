@@ -421,6 +421,35 @@ function orderClause<T>(q: T, sort: NoticeFilters["sort"]): T {
   }
 }
 
+/** /about 데이터 규모 — 큰 테이블은 estimated(pg_class.reltuples)로, 1시간 캐시. */
+export interface AboutStats {
+  activeNotices: number;
+  totalNotices: number;
+  companies: number;
+  contracts: number;
+}
+export const fetchAboutStats = unstable_cache(
+  async (): Promise<AboutStats> => {
+    const c = getServerSupabase();
+    const est = (table: string) =>
+      c.from(table).select("*", { count: "estimated", head: true });
+    const [active, notices, companies, contracts] = await Promise.all([
+      fetchActiveNoticesRoughCount(),
+      est("bid_notices"),
+      est("companies"),
+      est("contracts"),
+    ]);
+    return {
+      activeNotices: active,
+      totalNotices: notices.count ?? 0,
+      companies: companies.count ?? 0,
+      contracts: contracts.count ?? 0,
+    };
+  },
+  ["about-stats"],
+  { revalidate: 3600 }
+);
+
 /** 빠른 active 공고 카운트 (dedupe 없는 raw row count, head only). 홈 화면 신뢰 신호용. */
 export async function fetchActiveNoticesRoughCount(): Promise<number> {
   const c = getServerSupabase();
