@@ -13,6 +13,9 @@ from app.services.openai_client import get_openai_client
 
 MODEL = "gpt-4o-mini"
 MAX_INPUT_CHARS = 12_000
+# 파일 종류별 1차 상한 — 제안요청서가 길어도 공고문(참가자격·평가)이 통째로 잘리지 않게.
+# 1차 배분 후 남는 예산은 우선순위 순으로 다시 나눠 총량(MAX_INPUT_CHARS)을 채운다.
+CLASS_CAPS = {0: 6_000, 1: 4_000, 2: 2_000}
 
 _PRIORITY = [
     (re.compile(r"제안\s*요청|과업\s*(지시|내용|설명)|규격서|사양서|RFP", re.I), 0),
@@ -28,19 +31,47 @@ def _priority(name: str | None) -> int:
 
 
 def build_input(docs: list[dict]) -> tuple[str, list[int]]:
-    """문서들을 우선순위 순으로 이어붙여 입력 텍스트 생성. (text, 사용한 seq 목록)"""
-    docs = sorted(docs, key=lambda d: (_priority(d.get("file_name")), d.get("seq", 0)))
+    """문서들을 우선순위 순으로 이어붙여 입력 텍스트 생성. (text, 사용한 seq 목록)
+
+    1차: 파일 종류별 상한(CLASS_CAPS) 안에서 앞부분을 담는다 — 제안요청서 6k, 공고문 4k, 나머지 2k.
+    2차: 총량이 남으면 우선순위 순으로 각 파일의 이어지는 부분을 더 담는다.
+    """
+    docs = [d for d in docs if (d.get("text") or "").strip()]
+    # 같은 문서가 hwp·pdf 등 두 형식으로 올라온 경우 — 확장자 뺀 이름이 같으면 긴 쪽 하나만
+    by_stem: dict[str, dict] = {}
+    for d in docs:
+        stem = re.sub(r"\.\w+$", "", (d.get("file_name") or str(d.get("seq")))).strip().lower()
+        if stem not in by_stem or len(d.get("text") or "") > len(by_stem[stem].get("text") or ""):
+            by_stem[stem] = d
+    docs = sorted(by_stem.values(), key=lambda d: (_priority(d.get("file_name")), d.get("seq", 0)))
+    texts = [(d.get("text") or "").strip() for d in docs]
+    taken = [0] * len(docs)
+
+    # 1차 — 종류별 예산
+    class_left = dict(CLASS_CAPS)
+    for i, d in enumerate(docs):
+        cls = _priority(d.get("file_name"))
+        n = min(len(texts[i]), class_left[cls])
+        taken[i] = n
+        class_left[cls] -= n
+
+    # 2차 — 남은 총량을 우선순위 순으로
+    remaining = MAX_INPUT_CHARS - sum(taken)
+    for i in range(len(docs)):
+        if remaining <= 0:
+            break
+        extra = min(len(texts[i]) - taken[i], remaining)
+        if extra > 0:
+            taken[i] += extra
+            remaining -= extra
+
     parts: list[str] = []
     seqs: list[int] = []
-    remaining = MAX_INPUT_CHARS
-    for d in docs:
-        text = (d.get("text") or "").strip()
-        if not text or remaining < 500:
+    for i, d in enumerate(docs):
+        if taken[i] < 200:  # 의미 없는 조각은 제외
             continue
-        chunk = text[:remaining]
-        parts.append(f"===== 파일: {d.get('file_name') or d.get('seq')} =====\n{chunk}")
+        parts.append(f"===== 파일: {d.get('file_name') or d.get('seq')} =====\n{texts[i][:taken[i]]}")
         seqs.append(d["seq"])
-        remaining -= len(chunk)
     return "\n\n".join(parts), seqs
 
 
