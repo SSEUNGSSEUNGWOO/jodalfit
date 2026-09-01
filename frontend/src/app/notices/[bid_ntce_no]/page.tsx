@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ExternalLink, FileText, MessageSquare, Award, FileSignature } from "lucide-react";
+import { AmendmentBadge } from "@/components/AmendmentBadge";
 import { DDayBadge } from "@/components/DDayBadge";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -178,6 +179,7 @@ export default async function NoticePage({ params }: Props) {
                   {notice.bsns_div_nm}
                 </Badge>
               )}
+              <AmendmentBadge ord={notice.bid_ntce_ord} />
               <span className="text-[12.5px] tabular tabular-nums text-muted-foreground font-medium">
                 {notice.bid_ntce_no}
               </span>

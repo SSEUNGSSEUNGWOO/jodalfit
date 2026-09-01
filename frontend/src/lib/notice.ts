@@ -4,7 +4,7 @@ import { getServerSupabase } from "./supabase-server";
 import type { NoticeInsight } from "@/types/recommendations";
 
 const SUMMARY_COLS =
-  "bid_ntce_no,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn";
+  "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,cntrct_cncls_mthd_nm,rgn_lmt_yn";
 
 export interface NoticeAttachment {
   seq: number;

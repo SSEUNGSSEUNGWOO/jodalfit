@@ -58,3 +58,9 @@ export function scoreLabel(score: number) {
   if (p >= 60) return { label: "관련 있음", tone: "muted" as const };
   return { label: "참고", tone: "muted" as const };
 }
+
+/** 정정공고 차수 — bid_ntce_ord "000"=원공고, "001"부터 정정. 정정이 아니면 null */
+export function amendmentNo(ord: string | null | undefined): number | null {
+  const n = parseInt(ord ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}

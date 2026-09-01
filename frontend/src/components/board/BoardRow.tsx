@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { ReviewStamp } from "@/components/board/BoardSeal";
-import { cn, daysUntil, formatDateKR, formatKRW, scoreLabel, scorePercent } from "@/lib/utils";
+import { amendmentNo, cn, daysUntil, formatDateKR, formatKRW, scoreLabel, scorePercent } from "@/lib/utils";
 import type { BidRecommendation } from "@/types/recommendations";
 
 export function bidKey(b: { bid_ntce_no: string; bid_ntce_ord: string }) {
@@ -127,6 +127,14 @@ export function BoardRow({
             {bid.bsns_div_nm && (
               <span className="border border-gc-rule rounded-[3px] px-1.5 py-px text-[11.5px] font-semibold text-gc-ink-2 bg-gc-sheet">
                 {bid.bsns_div_nm}
+              </span>
+            )}
+            {amendmentNo(bid.bid_ntce_ord) !== null && (
+              <span
+                className="border border-amber-400 rounded-[3px] px-1.5 py-px text-[11.5px] font-bold text-amber-900 bg-amber-50"
+                title="원공고가 정정됐어요. 변경 내용은 나라장터 원문 확인"
+              >
+                정정 {amendmentNo(bid.bid_ntce_ord)}차
               </span>
             )}
             {bid.prtcpt_psbl_rgn_nm && <span>{bid.prtcpt_psbl_rgn_nm}</span>}

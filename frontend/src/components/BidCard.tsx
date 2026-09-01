@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, BarChart3, Sparkles } from "lucide-react";
+import { AmendmentBadge } from "@/components/AmendmentBadge";
 import { SaveBidButton } from "@/components/SaveBidButton";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -70,6 +71,7 @@ export function BidCard({
             <Badge variant="secondary" className="bg-primary/10 text-primary font-semibold">
               {bid.bsns_div_nm || "공고"}
             </Badge>
+            <AmendmentBadge ord={bid.bid_ntce_ord} />
             {isGolden && (
               <Badge
                 className={cn(
