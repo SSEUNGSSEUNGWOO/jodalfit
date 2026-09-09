@@ -48,9 +48,10 @@ export default async function sitemap({
           changeFrequency: "weekly" as const,
           priority: 0.6,
         }));
-    } catch {
-      // 시드 데이터 부족 시 빈 세그먼트. 다른 세그먼트는 그대로 나간다.
-      return [];
+    } catch (e) {
+      // 빈 200을 내보내면 크롤러가 "URL 0개 사이트맵"으로 학습한다 —
+      // 일시 장애는 5xx로 실패시켜 크롤러가 기존 색인을 유지하고 재시도하게 한다.
+      throw e;
     }
   }
 
@@ -66,8 +67,9 @@ export default async function sitemap({
           changeFrequency: "weekly" as const,
           priority: 0.5,
         }));
-    } catch {
-      return [];
+    } catch (e) {
+      // 위와 동일 — 빈 200 대신 5xx로 실패시켜 크롤러가 기존 색인을 유지하게 한다.
+      throw e;
     }
   }
 

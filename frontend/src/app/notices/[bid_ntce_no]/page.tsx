@@ -21,6 +21,11 @@ interface Props {
 
 export const revalidate = 3600;
 
+// 빈 배열이라도 있어야 이 동적 라우트가 요청마다 SSR(ƒ)이 아니라 ISR(생성 후 캐시)로 빌드된다.
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bid_ntce_no } = await params;
   const lifecycle = await fetchLifecycle(bid_ntce_no);

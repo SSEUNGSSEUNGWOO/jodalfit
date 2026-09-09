@@ -12,7 +12,7 @@ export function Footer({ className }: { className?: string }) {
             조달핏은 나라장터(국가종합전자조달) 공공데이터를 기반으로
             입찰공고를 추천합니다. 낙찰 결과를 보장하지 않으며 의사결정의 보조 도구입니다.
           </p>
-          <p className="mt-3 text-[12.5px] text-ink-5">
+          <p className="mt-3 text-[12.5px] text-ink-4">
             데이터 출처 · 공공데이터포털 OpenAPI · 매일 갱신
           </p>
           <p className="mt-3 text-[12.5px] text-ink-4">
@@ -57,7 +57,7 @@ export function Footer({ className }: { className?: string }) {
         </div>
       </div>
       <div className="border-t border-line">
-        <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[12px] text-ink-5 sm:px-8">
+        <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[12px] text-ink-4 sm:px-8">
           <span>© {currentYear} 조달핏</span>
           <span>나라장터 공개 데이터 기반</span>
         </div>

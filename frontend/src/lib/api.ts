@@ -41,7 +41,8 @@ export async function getRecommendations(
         candidate_pool: input.candidate_pool ?? 100,
         with_explanation: input.with_explanation ?? true,
       }),
-      cache: "no-store",
+      // cache 옵션을 명시하지 않는다 — 명시적 no-store는 SSR에서 회사 페이지를
+      // 동적 렌더로 전환시켜 ISR을 깨뜨린다. 기본값도 캐시 안 함이라 동작 동일.
     });
     if (!res.ok) {
       const text = await res.text();

@@ -33,8 +33,14 @@ interface Props {
   params: Promise<{ bizrno: string }>;
 }
 
-// Cache for 1 hour, revalidate on demand
-export const revalidate = 3600;
+// 데이터가 매일 새벽 갱신이라 ISR 하루. generateStaticParams가 없으면 Next 16이
+// 라우트를 요청마다 SSR(ƒ)로 빌드해 no-store로 나가고, 6만 URL 크롤이 죽는다 —
+// 빈 배열이라도 있어야 "요청 시 생성 후 캐시"가 된다.
+export const revalidate = 86400;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bizrno } = await params;

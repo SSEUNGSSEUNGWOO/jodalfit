@@ -21,7 +21,7 @@ export function organizationJsonLd(): Json {
     logo: `${SITE_URL}/icon.svg`,
     description:
       "회사명만 입력하면 등록업종·공급물품·수주 이력 기반으로 검토할 만한 나라장터 공고를 추천합니다.",
-    sameAs: [],
+    // sameAs는 실제 공식 프로필(블로그·SNS)이 생기면 채운다 — 빈 배열은 검증 도구가 지적함
   };
 }
 
@@ -67,7 +67,8 @@ export function companyOrganizationJsonLd(args: {
   return data;
 }
 
-/** 입찰공고 — GovernmentService(발주기관이 제공하는 조달 서비스)로 표현. */
+/** 입찰공고 상세 — WebPage + BreadcrumbList.
+ *  (GovernmentService는 "기관이 제공하는 행정 서비스" 의미라 입찰공고에 맞지 않음) */
 export function noticeJsonLd(args: {
   bidNtceNo: string;
   bidNtceNm: string;
@@ -76,26 +77,30 @@ export function noticeJsonLd(args: {
   regionName?: string | null;
   validFrom?: string | null;
   validThrough?: string | null;
-}): Json {
-  const { bidNtceNo, bidNtceNm, description, instituionName, regionName, validFrom, validThrough } = args;
-  const data: Json = {
+}): Json[] {
+  const { bidNtceNo, bidNtceNm, description, instituionName, validFrom, validThrough } = args;
+  const url = `${SITE_URL}/notices/${bidNtceNo}`;
+  const page: Json = {
     "@context": "https://schema.org",
-    "@type": "GovernmentService",
+    "@type": "WebPage",
     name: bidNtceNm,
-    identifier: bidNtceNo,
     description,
-    url: `${SITE_URL}/notices/${bidNtceNo}`,
+    url,
+    isPartOf: { "@type": "WebSite", url: SITE_URL, name: "jodalfit" },
   };
   if (instituionName) {
-    data.provider = {
-      "@type": "GovernmentOrganization",
-      name: instituionName,
-    };
+    page.about = { "@type": "GovernmentOrganization", name: instituionName };
   }
-  if (regionName) {
-    data.areaServed = { "@type": "AdministrativeArea", name: regionName };
-  }
-  if (validFrom) data.validFrom = validFrom;
-  if (validThrough) data.validThrough = validThrough;
-  return data;
+  if (validFrom) page.datePublished = validFrom;
+  if (validThrough) page.dateModified = validThrough;
+  const breadcrumb: Json = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "홈", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "공고 둘러보기", item: `${SITE_URL}/notices` },
+      { "@type": "ListItem", position: 3, name: bidNtceNm, item: url },
+    ],
+  };
+  return [page, breadcrumb];
 }
