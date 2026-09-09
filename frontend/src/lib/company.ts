@@ -355,6 +355,44 @@ export interface CompanySummary {
   recent_sectors?: string[];
 }
 
+/** 기업 탐색(browse) — 사이트맵과 같은 기준(embedding 보유)의 전량 페이지네이션.
+ *  정렬은 값이 바뀌지 않는 bizrno_norm으로 고정해 페이지 내용이 날마다 갈리지 않게 한다. */
+export const BROWSE_PER_PAGE = 50;
+
+export const BROWSE_SIDO_LIST = [
+  "서울특별시", "경기도", "인천광역시", "부산광역시", "대구광역시", "광주광역시",
+  "대전광역시", "울산광역시", "세종특별자치시", "강원특별자치도", "충청북도",
+  "충청남도", "전북특별자치도", "전라남도", "경상북도", "경상남도", "제주특별자치도",
+] as const;
+
+export interface CompanyBrowseRow {
+  bizrno: string;
+  bizrno_norm: string;
+  corp_nm: string;
+  rgn_nm: string | null;
+  corp_bsns_div_nm: string | null;
+}
+
+export async function fetchCompaniesBrowsePage(
+  sido: string, // "all" 또는 BROWSE_SIDO_LIST 값
+  page: number
+): Promise<{ rows: CompanyBrowseRow[]; totalCount: number }> {
+  const c = getServerSupabase();
+  const from = (page - 1) * BROWSE_PER_PAGE;
+  let q = c
+    .from("companies")
+    .select("bizrno,bizrno_norm,corp_nm,rgn_nm,corp_bsns_div_nm", {
+      count: "exact",
+    })
+    .not("embedding", "is", null)
+    .not("bizrno_norm", "is", null);
+  if (sido !== "all") q = q.like("rgn_nm", `${sido}%`);
+  const { data, count } = await q
+    .order("bizrno_norm", { ascending: true })
+    .range(from, from + BROWSE_PER_PAGE - 1);
+  return { rows: (data as CompanyBrowseRow[]) ?? [], totalCount: count ?? 0 };
+}
+
 export async function fetchBrowseCompanies(
   limit = 30
 ): Promise<CompanySummary[]> {

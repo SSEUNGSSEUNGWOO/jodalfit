@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/notices", label: "공고 둘러보기" },
+  { href: "/companies", label: "기업" },
   { href: "/insights", label: "주간 인사이트" },
   { href: "/about", label: "조달핏이란" },
 ];

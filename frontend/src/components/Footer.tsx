@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Brand } from "./Brand";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,11 @@ export function Footer({ className }: { className?: string }) {
               <a href="/notices" className="hover:text-ink transition-colors">
                 공고 둘러보기
               </a>
+            </li>
+            <li>
+              <Link href="/companies/browse/all/1" className="hover:text-ink transition-colors">
+                기업 목록
+              </Link>
             </li>
             <li>
               <a href="/insights" className="hover:text-ink transition-colors">

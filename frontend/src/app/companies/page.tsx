@@ -13,7 +13,7 @@ import { Header } from "@/components/Header";
 import { BoardSearch } from "@/components/board/BoardSearch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { fetchBrowseCompanies } from "@/lib/company";
+import { BROWSE_SIDO_LIST, fetchBrowseCompanies } from "@/lib/company";
 import { formatDateKR, formatKRW, maskBizrno } from "@/lib/utils";
 
 export const revalidate = 3600;
@@ -149,6 +149,33 @@ export default async function CompaniesIndexPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* 전체 목록 진입 — 사이트맵의 6만 회사 페이지로 가는 내부 링크 경로 */}
+        <section className="mx-auto max-w-[1140px] px-5 sm:px-8 pb-14">
+          <div className="border-t-2 border-gc-ink pt-5 flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="font-gc-serif font-black text-[20px] sm:text-[22px] tracking-[-0.02em] text-gc-ink">
+              전체 기업 목록
+            </h2>
+            <Link
+              href="/companies/browse/all/1"
+              className="text-[13.5px] font-bold text-gc-band hover:underline underline-offset-4"
+            >
+              전체 보기 →
+            </Link>
+          </div>
+          <ul className="mt-4 flex flex-wrap gap-1.5">
+            {["all", ...BROWSE_SIDO_LIST].map((s) => (
+              <li key={s}>
+                <Link
+                  href={`/companies/browse/${encodeURIComponent(s)}/1`}
+                  className="inline-flex h-7 items-center rounded-full border border-gc-rule bg-gc-sheet px-3 text-[12px] font-semibold text-gc-ink-2 hover:bg-gc-tint transition-colors"
+                >
+                  {s === "all" ? "전체" : s}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       </main>
       <Footer />
