@@ -83,6 +83,7 @@ def fetch_page(
     extra_params: dict[str, str],
     page_no: int,
     rows_per_page: int,
+    retries: int = 3,
 ) -> dict[str, Any]:
     params = {
         "ServiceKey": API_KEY,
@@ -91,9 +92,22 @@ def fetch_page(
         "numOfRows": str(rows_per_page),
         **extra_params,
     }
-    resp = httpx.get(url, params=params, timeout=60.0)
-    resp.raise_for_status()
-    return resp.json()
+    # 나라장터 API가 SSL 핸드셰이크/read timeout을 간헐적으로 냄 (시간별 실행의 ~20%가
+    # 이걸로 실패하던 이력) — 일시 네트워크 오류는 backoff 재시도로 흡수한다.
+    for attempt in range(retries):
+        try:
+            resp = httpx.get(url, params=params, timeout=60.0)
+            resp.raise_for_status()
+            return resp.json()
+        except (httpx.TransportError, httpx.HTTPStatusError) as e:
+            if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500 and e.response.status_code != 429:
+                raise  # 4xx(429 제외)는 재시도해도 같음
+            if attempt == retries - 1:
+                raise
+            wait = 3 * (attempt + 1)
+            print(f"  fetch_page retry {attempt + 1}/{retries - 1} in {wait}s: {type(e).__name__}: {e}")
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
 
 
 def iter_all_items(

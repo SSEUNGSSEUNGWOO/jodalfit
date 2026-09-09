@@ -20,6 +20,7 @@ import re
 import time
 
 import httpx
+from postgrest.exceptions import APIError
 
 from app.services.doc_extract import (
     SUPPORTED_EXTS,
@@ -33,6 +34,20 @@ from jobs._common import log_ingest_finish, log_ingest_start
 logging.getLogger("pypdf").setLevel(logging.ERROR)  # "Ignoring wrong pointing object" 경고 소음 차단
 
 JOB_NAME = "extract_bid_documents"
+STATEMENT_TIMEOUT = "57014"
+
+
+def _db(step: str, fn, retries: int = 3):
+    """Supabase 호출 — statement timeout(57014)이면 backoff 재시도 (summarize 잡과 같은 패턴)."""
+    for attempt in range(retries):
+        try:
+            return fn()
+        except APIError as e:
+            if e.code != STATEMENT_TIMEOUT or attempt == retries - 1:
+                raise RuntimeError(f"[{step}] {e.code}: {e.message}") from e
+            wait = 3 * (attempt + 1)
+            print(f"  {step}: statement timeout, retry in {wait}s")
+            time.sleep(wait)
 MAX_FILES_PER_NOTICE = 5
 RPC_BATCH = 500  # 한 번에 받아올 대상 공고 수 (PostgREST 1,000행 상한 아래)
 MAX_FILE_BYTES = 20 * 1024 * 1024
@@ -126,13 +141,17 @@ def run(limit: int = 200) -> None:
             # PostgREST 응답은 1,000행 상한 → 처리한 공고는 RPC 대상에서 빠지므로 배치로 반복
             while notices_done < limit:
                 batch = min(RPC_BATCH, limit - notices_done)
-                targets = sb.rpc("next_bid_notices_for_documents", {"p_limit": batch}).execute().data or []
+                targets = _db("rpc_next", lambda b=batch: (
+                    sb.rpc("next_bid_notices_for_documents", {"p_limit": b}).execute().data or []
+                ))
                 if not targets:
                     break
                 for t in targets:
                     rows = process_notice(client, t["bid_ntce_no"], t["bid_ntce_ord"], t["attachments"] or [])
                     if rows:
-                        upsert_rows("bid_notice_documents", rows, on_conflict="bid_ntce_no,bid_ntce_ord,seq")
+                        _db("upsert_docs", lambda r=rows: upsert_rows(
+                            "bid_notice_documents", r, on_conflict="bid_ntce_no,bid_ntce_ord,seq"
+                        ))
                     for r in rows:
                         stats[r["status"]] = stats.get(r["status"], 0) + 1
                     notices_done += 1
