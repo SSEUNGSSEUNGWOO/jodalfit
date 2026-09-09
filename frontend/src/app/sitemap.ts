@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-import { fetchActiveCompaniesForSitemap } from "@/lib/company";
-import { fetchRecentNoticesForSitemap } from "@/lib/notice";
+import { fetchSitemapUrls } from "@/lib/sitemap-urls";
 import { listAllInsights } from "@/lib/insights";
 import {
   COMPANY_SEGMENTS,
@@ -33,44 +32,35 @@ export default async function sitemap({
 }): Promise<MetadataRoute.Sitemap> {
   const segment = Number(await id);
 
+  // 회사·공고 URL은 materialized view `sitemap_urls`(migration 0026)에서 읽는다.
+  // 원본 테이블을 매 요청 훑던 방식은 Disk IO 소진 시 40초를 넘겨 실패했고,
+  // 오류를 삼켜 빈 200을 내보낸 탓에 구글 색인이 끊겼다 (2026-07~09).
+  // fetchSitemapUrls 는 오류를 던진다 — 5xx 를 받은 크롤러는 기존 색인을 유지한다.
+
   // 0 ~ COMPANY_SEGMENTS-1: 회사. 색인 대상이 5만 URL 한도를 넘어 나눠 싣는다.
   if (segment < COMPANY_SEGMENTS) {
-    try {
-      const rows = await fetchActiveCompaniesForSitemap(
-        PER_SEGMENT,
-        segment * PER_SEGMENT
-      );
-      return rows
-        .filter((r) => /^\d{10}$/.test(r.bizrno_norm))
-        .map((r) => ({
-          url: `${BASE_URL}/companies/${r.bizrno_norm}`,
-          lastModified: r.updated_at ? new Date(r.updated_at) : STATIC_LASTMOD,
-          changeFrequency: "weekly" as const,
-          priority: 0.6,
-        }));
-    } catch (e) {
-      // 빈 200을 내보내면 크롤러가 "URL 0개 사이트맵"으로 학습한다 —
-      // 일시 장애는 5xx로 실패시켜 크롤러가 기존 색인을 유지하고 재시도하게 한다.
-      throw e;
-    }
+    const rows = await fetchSitemapUrls(
+      "company",
+      segment * PER_SEGMENT,
+      PER_SEGMENT
+    );
+    return rows.map((r) => ({
+      url: `${BASE_URL}${r.path}`,
+      lastModified: r.lastmod ? new Date(r.lastmod) : STATIC_LASTMOD,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
   }
 
-  // 공고 (라이프사이클 페이지)
+  // 공고 (라이프사이클 페이지) — 최신 PER_SEGMENT 건
   if (segment === NOTICE_SEGMENT_ID) {
-    try {
-      const rows = await fetchRecentNoticesForSitemap(PER_SEGMENT);
-      return rows
-        .filter((r) => r.bid_ntce_no)
-        .map((r) => ({
-          url: `${BASE_URL}/notices/${r.bid_ntce_no}`,
-          lastModified: r.updated_at ? new Date(r.updated_at) : STATIC_LASTMOD,
-          changeFrequency: "weekly" as const,
-          priority: 0.5,
-        }));
-    } catch (e) {
-      // 위와 동일 — 빈 200 대신 5xx로 실패시켜 크롤러가 기존 색인을 유지하게 한다.
-      throw e;
-    }
+    const rows = await fetchSitemapUrls("notice", 0, PER_SEGMENT);
+    return rows.map((r) => ({
+      url: `${BASE_URL}${r.path}`,
+      lastModified: r.lastmod ? new Date(r.lastmod) : STATIC_LASTMOD,
+      changeFrequency: "weekly" as const,
+      priority: 0.5,
+    }));
   }
 
   // 마지막 세그먼트: 정적 라우트 + 인사이트

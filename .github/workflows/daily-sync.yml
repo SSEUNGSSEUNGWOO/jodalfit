@@ -79,7 +79,7 @@ jobs:
         # 하나라도 200이 아니면 실패로 처리 — 조용히 no-op이 되면 2026-07 동결이 재발한다.
         run: |
           fail=0
-          for i in $(seq 0 7); do
+          for i in $(seq 0 8); do
             code=$(curl -sS -o /dev/null -w "%{http_code}" "https://jodalfit.co.kr/sitemap/$i.xml")
             echo "sitemap/$i.xml -> $code"
             [ "$code" = "200" ] || fail=1

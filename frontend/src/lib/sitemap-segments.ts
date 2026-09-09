@@ -1,17 +1,18 @@
 /**
  * 사이트맵 세그먼트 구성. `app/sitemap.ts`와 `app/robots.ts`가 공유한다.
  *
- * 한 파일에 담을 수 있는 URL은 5만 개인데 색인 대상 회사만 55,775개(2026-08-22)라
+ * 한 파일에 담을 수 있는 URL은 5만 개인데 색인 대상 회사만 60,051개(2026-09-09)라
  * generateSitemaps로 쪼갠다. 세그먼트가 나뉘면 GSC가 묶음별 색인률을 따로
  * 보고하므로 어느 구간이 색인되는지도 처음으로 측정할 수 있다.
  *
  * 회사 수가 COMPANY_SEGMENTS * PER_SEGMENT를 넘으면 COMPANY_SEGMENTS를 늘릴 것.
- * 확인: select count(*) from companies where embedding is not null;
+ * 확인: select count(*) from sitemap_urls where kind = 'company';
+ * 세그먼트 수를 바꾸면 .github/workflows/daily-sync.yml 의 warm-up 루프 범위도 맞출 것.
  */
 export const PER_SEGMENT = 10000;
 
 /** 회사: id 0 ~ COMPANY_SEGMENTS-1 */
-export const COMPANY_SEGMENTS = 6;
+export const COMPANY_SEGMENTS = 7;
 
 /** 공고: 진행 중 공고(약 9,800건)를 덮도록 한 세그먼트 */
 export const NOTICE_SEGMENT_ID = COMPANY_SEGMENTS;
