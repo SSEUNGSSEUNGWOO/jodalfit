@@ -239,18 +239,20 @@ async function ProfileSection({ bizrno }: { bizrno: string }) {
                   등록업종 · {profile.industries.length}개
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {profile.industries.slice(0, 12).map((nm, i) => (
-                    <Badge
-                      key={`${nm}-${i}`}
-                      variant={i === 0 ? "default" : "secondary"}
-                      className={
-                        i === 0
-                          ? "bg-primary/15 text-primary border-primary/20 text-[12px]"
-                          : "text-[12px]"
-                      }
-                    >
-                      {nm}
-                    </Badge>
+                  {/* 업종 페이지로 내부 링크 — 6만 회사 페이지가 업종 집계 페이지의 링크 원천 */}
+                  {profile.industryLinks.slice(0, 12).map(({ cd, nm }, i) => (
+                    <Link key={`${cd}-${i}`} href={`/companies/industry/${cd}/1`}>
+                      <Badge
+                        variant={i === 0 ? "default" : "secondary"}
+                        className={
+                          i === 0
+                            ? "bg-primary/15 text-primary border-primary/20 text-[12px] hover:bg-primary/25"
+                            : "text-[12px] hover:bg-secondary/80"
+                        }
+                      >
+                        {nm}
+                      </Badge>
+                    </Link>
                   ))}
                   {profile.industries.length > 12 && (
                     <span className="text-[12px] text-muted-foreground self-center">

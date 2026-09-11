@@ -14,9 +14,13 @@ import { BoardSearch } from "@/components/board/BoardSearch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { BROWSE_SIDO_LIST, fetchBrowseCompanies } from "@/lib/company";
+import { fetchIndustryDirectory, type IndustryRow } from "@/lib/industry";
 import { formatDateKR, formatKRW, maskBizrno } from "@/lib/utils";
 
 export const revalidate = 3600;
+
+// 업종 캡슐에 보여줄 개수. 나머지는 /companies/industry 에서.
+const TOP_INDUSTRIES = 24;
 
 export const metadata: Metadata = {
   title: "공공조달 활동 기업 둘러보기 | 조달핏",
@@ -27,6 +31,13 @@ export const metadata: Metadata = {
 
 export default async function CompaniesIndexPage() {
   const companies = await fetchBrowseCompanies(30);
+  // 업종 디렉토리 MV(0027) 미적용 환경에서도 페이지는 살아야 한다.
+  let industries: IndustryRow[] = [];
+  try {
+    industries = (await fetchIndustryDirectory()).slice(0, TOP_INDUSTRIES);
+  } catch {
+    industries = [];
+  }
 
   return (
     <>
@@ -177,6 +188,38 @@ export default async function CompaniesIndexPage() {
             ))}
           </ul>
         </section>
+
+        {/* 업종별 진입 — "○○공사업 업체" 류 롱테일 검색의 착지 페이지로 가는 내부 링크 */}
+        {industries.length > 0 && (
+          <section className="mx-auto max-w-[1140px] px-5 sm:px-8 pb-14">
+            <div className="border-t-2 border-gc-ink pt-5 flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="font-gc-serif font-black text-[20px] sm:text-[22px] tracking-[-0.02em] text-gc-ink">
+                업종별 기업
+              </h2>
+              <Link
+                href="/companies/industry"
+                className="text-[13.5px] font-bold text-gc-band hover:underline underline-offset-4"
+              >
+                전체 업종 보기 →
+              </Link>
+            </div>
+            <ul className="mt-4 flex flex-wrap gap-1.5">
+              {industries.map((ind) => (
+                <li key={ind.indstryty_cd}>
+                  <Link
+                    href={`/companies/industry/${ind.indstryty_cd}/1`}
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-gc-rule bg-gc-sheet px-3 text-[12px] font-semibold text-gc-ink-2 hover:bg-gc-tint transition-colors"
+                  >
+                    {ind.indstryty_nm}
+                    <span className="tabular tabular-nums text-gc-ink-3">
+                      {ind.company_count.toLocaleString("ko-KR")}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
       <Footer />
     </>

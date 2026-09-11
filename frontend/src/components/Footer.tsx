@@ -40,6 +40,11 @@ export function Footer({ className }: { className?: string }) {
               </Link>
             </li>
             <li>
+              <Link href="/companies/industry" className="hover:text-ink transition-colors">
+                업종별 기업
+              </Link>
+            </li>
+            <li>
               <a href="/insights" className="hover:text-ink transition-colors">
                 주간 인사이트
               </a>

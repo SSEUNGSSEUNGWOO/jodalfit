@@ -139,6 +139,7 @@ export interface CompanySectors {
 
 export interface CompanyProfile {
   industries: string[]; // 등록업종 (대표 먼저)
+  industryLinks: { cd: string; nm: string }[]; // industries와 같은 순서, 업종 페이지 링크용
   products: string[]; // 공급물품 (대표 먼저)
 }
 
@@ -147,26 +148,28 @@ export async function fetchCompanyProfile(bizrno: string): Promise<CompanyProfil
   const [indRes, prdRes] = await Promise.all([
     c
       .from("company_industries")
-      .select("indstryty_nm,rprsnt_indstryty_yn")
+      .select("indstryty_cd,indstryty_nm,rprsnt_indstryty_yn")
       .eq("bizrno", bizrno),
     c
       .from("company_supply_products")
       .select("dtl_prdct_clsfc_nm,rprsnt_prdct_yn")
       .eq("bizrno", bizrno),
   ]);
-  const industries: string[] = [];
-  for (const r of (indRes.data as { indstryty_nm: string | null; rprsnt_indstryty_yn: string | null }[]) ?? []) {
+  const industryLinks: { cd: string; nm: string }[] = [];
+  for (const r of (indRes.data as { indstryty_cd: string; indstryty_nm: string | null; rprsnt_indstryty_yn: string | null }[]) ?? []) {
     if (!r.indstryty_nm) continue;
-    if (r.rprsnt_indstryty_yn === "Y") industries.unshift(r.indstryty_nm);
-    else industries.push(r.indstryty_nm);
+    const link = { cd: r.indstryty_cd, nm: r.indstryty_nm };
+    if (r.rprsnt_indstryty_yn === "Y") industryLinks.unshift(link);
+    else industryLinks.push(link);
   }
+  const industries = industryLinks.map((l) => l.nm);
   const products: string[] = [];
   for (const r of (prdRes.data as { dtl_prdct_clsfc_nm: string | null; rprsnt_prdct_yn: string | null }[]) ?? []) {
     if (!r.dtl_prdct_clsfc_nm) continue;
     if (r.rprsnt_prdct_yn === "Y") products.unshift(r.dtl_prdct_clsfc_nm);
     else products.push(r.dtl_prdct_clsfc_nm);
   }
-  return { industries, products };
+  return { industries, industryLinks, products };
 }
 
 export async function fetchCompanyByBizrno(

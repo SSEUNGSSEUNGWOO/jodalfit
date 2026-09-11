@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { fetchSitemapUrls } from "@/lib/sitemap-urls";
+import { fetchIndustryDirectory } from "@/lib/industry";
 import { listAllInsights } from "@/lib/insights";
 import {
   COMPANY_SEGMENTS,
@@ -96,7 +97,28 @@ export default async function sitemap({
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    {
+      url: `${BASE_URL}/companies/industry`,
+      lastModified: STATIC_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
   ];
+
+  // 업종별 집계 페이지 1페이지 (migration 0027 MV). 2페이지 이후는 페이지네이션 링크로 닿는다.
+  // MV 미적용 환경에서도 나머지 세그먼트가 살도록 실패는 삼킨다 (수백 URL 규모라 빈 200 위험과 무관).
+  let industryRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const industries = await fetchIndustryDirectory();
+    industryRoutes = industries.map((i) => ({
+      url: `${BASE_URL}/companies/industry/${i.indstryty_cd}/1`,
+      lastModified: STATIC_LASTMOD,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+  } catch {
+    // industry_directory 없으면 skip
+  }
 
   let insightRoutes: MetadataRoute.Sitemap = [];
   try {
@@ -111,5 +133,5 @@ export default async function sitemap({
     // 인사이트 폴더 없으면 skip
   }
 
-  return [...staticRoutes, ...insightRoutes];
+  return [...staticRoutes, ...industryRoutes, ...insightRoutes];
 }

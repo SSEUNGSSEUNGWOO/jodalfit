@@ -118,6 +118,11 @@ jobs:
         run: uv run python -m jobs.ingest_companies_userinfo --days-back 2
         continue-on-error: true
 
+      - name: 회사 기본정보 백필 (사업자번호 단위 3,000개/일 — 낙찰·계약 stub 회사의 지역·주소 채우기)
+        # 변경일 기반 갱신은 stub 회사를 영영 못 채운다. 5.7만 건이라 약 19일에 걸쳐 분산.
+        run: uv run python -m jobs.backfill_companies_basic --limit 3000
+        continue-on-error: true
+
       - name: 회사 업종/공급물품 풍부화 (1500개, 검색·최근수주 회사 우선)
         # 회사당 2개 API 호출 × ~1초 → 1500개에 ~50분. 더 늘리면 timeout 위험.
         run: uv run python -m jobs.ingest_company_details --limit 1500
