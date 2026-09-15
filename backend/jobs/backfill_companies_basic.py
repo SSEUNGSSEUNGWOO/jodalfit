@@ -139,7 +139,9 @@ def run(limit: int) -> None:
                 except (ApiError, httpx.HTTPError) as e:
                     errors += 1
                     consecutive_errors += 1
-                    print(f"  ! {bizrno_norm}: {e}")
+                    # httpx 오류 메시지엔 URL(ServiceKey 포함)이 들어가므로 종류만 남긴다.
+                    detail = str(e) if isinstance(e, ApiError) else type(e).__name__
+                    print(f"  ! {bizrno_norm}: {detail}")
                     if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                         print(f"[{JOB_NAME}] 연속 오류 {consecutive_errors}회 — 한도 소진/장애로 보고 중단")
                         stopped_early = True

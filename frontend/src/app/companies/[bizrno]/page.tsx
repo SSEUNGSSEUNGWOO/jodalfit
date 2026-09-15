@@ -79,11 +79,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // 추천 벡터도 없고 수주 이력도 없는 깡통 페이지는 색인 제외
   // (구글 "발견됨-색인 생성되지 않음" 보류 해소)
   const isThin = !company.has_embedding && company.contract_count === 0;
+  // 국세청 기준 폐업 회사도 색인 제외 — 검색 유입 없는 얇은 페이지 (0028)
+  const isClosed = company.biz_status_cd === "03";
   return {
     title,
     description: desc,
     alternates: { canonical: `/companies/${normalized}` },
-    robots: isThin ? { index: false, follow: true } : undefined,
+    robots: isThin || isClosed ? { index: false, follow: true } : undefined,
     openGraph: {
       title,
       description: desc,
@@ -168,6 +170,14 @@ function CompanyHero({
           </Badge>
           {company.is_restricted && (
             <Badge variant="destructive">부정당 제재</Badge>
+          )}
+          {company.biz_status_cd === "03" && (
+            <Badge variant="destructive">
+              폐업{company.biz_closed_dt ? ` · ${company.biz_closed_dt}` : ""}
+            </Badge>
+          )}
+          {company.biz_status_cd === "02" && (
+            <Badge variant="secondary">휴업</Badge>
           )}
         </div>
         <h1 className="font-gc-serif font-black text-[32px] sm:text-[44px] tracking-[-0.02em] text-gc-ink leading-[1.2]">

@@ -123,6 +123,10 @@ jobs:
         run: uv run python -m jobs.backfill_companies_basic --limit 3000
         continue-on-error: true
 
+      - name: 사업자등록 상태 재확인 (국세청, 3,000개/일 → 30일 주기 전량. 폐업은 noindex·사이트맵 제외)
+        run: uv run python -m jobs.check_business_status --limit 3000
+        continue-on-error: true
+
       - name: 회사 업종/공급물품 풍부화 (1500개, 검색·최근수주 회사 우선)
         # 회사당 2개 API 호출 × ~1초 → 1500개에 ~50분. 더 늘리면 timeout 위험.
         run: uv run python -m jobs.ingest_company_details --limit 1500

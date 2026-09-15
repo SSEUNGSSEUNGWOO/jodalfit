@@ -13,6 +13,8 @@ export interface CompanyDetail {
   has_embedding: boolean;
   is_restricted: boolean;
   contract_count: number;
+  biz_status_cd: string | null; // 국세청: 01 계속 / 02 휴업 / 03 폐업 (migration 0028)
+  biz_closed_dt: string | null;
 }
 
 export interface ContractRow {
@@ -180,7 +182,7 @@ export async function fetchCompanyByBizrno(
   const { data } = await c
     .from("companies")
     .select(
-      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count"
+      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt"
     )
     .eq("bizrno_norm", bizrnoNorm)
     .limit(1)
@@ -199,6 +201,8 @@ export async function fetchCompanyByBizrno(
     has_embedding: !!data.embedding,
     is_restricted: !!data.is_restricted,
     contract_count: data.contract_count ?? 0,
+    biz_status_cd: data.biz_status_cd ?? null,
+    biz_closed_dt: data.biz_closed_dt ?? null,
   };
 }
 
