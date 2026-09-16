@@ -1,11 +1,12 @@
-# jodalfit
+# jodalfit (조달핏)
 
-> **"우리 회사가 검토할 만한 공공입찰, 30초 만에."**
-> 회사명을 입력하면 **등록업종 · 공급물품 · 수주 이력**을 함께 분석해 적합 입찰공고 TOP 5를 추천합니다.
+회사명을 입력하면 등록업종·공급물품·수주 이력을 함께 분석해, 검토할 만한 나라장터(G2B) 입찰공고 TOP 5를 추천한다.
 
-[![GitHub](https://img.shields.io/badge/repo-SSEUNGSSEUNGWOO%2Fjodalfit-black?logo=github)](https://github.com/SSEUNGSSEUNGWOO/jodalfit)
-![Status](https://img.shields.io/badge/status-WIP%20MVP-orange)
-![Stack](https://img.shields.io/badge/stack-FastAPI%20%2B%20Next.js%20%2B%20Supabase-166534)
+![status](https://img.shields.io/badge/status-beta-f59e0b)
+![stack](https://img.shields.io/badge/FastAPI-Next.js%2016%20·%20Supabase%20pgvector-000000)
+[![live](https://img.shields.io/badge/live-jodalfit.co.kr-047857)](https://jodalfit.co.kr)
+
+![jodalfit.co.kr](docs/screenshot.png)
 
 ## 한눈에
 
@@ -124,35 +125,26 @@ TOP 5 + 매칭 이유 반환
 
 ## 4. 아키텍처
 
+```mermaid
+flowchart LR
+  U[회사명 입력] --> FE[Next.js 16<br/>SEO 회사·공고 페이지]
+  FE -->|POST /recommendations| BE[FastAPI]
+  BE --> DB[(Supabase Postgres<br/>pgvector HNSW · pg_trgm)]
+  BE -->|추천 이유| LLM[gpt-4o-mini]
+  subgraph J[GitHub Actions · 매일 KST 5시]
+    I[ingest 잡들<br/>나라장터 OpenAPI 8종] --> E[embed 잡들<br/>text-embedding-3-small] --> CV[compute_company_vectors]
+  end
+  CV --> DB
 ```
-┌───────────────┐    POST /recommendations    ┌────────────────────┐
-│  Next.js 16   │ ───────────────────────────► │  FastAPI 백엔드    │
-│  (Pretendard) │ ◄─────────────────────────── │  + Supabase client │
-└───────────────┘    TOP 5 + LLM explanation   └──────────┬─────────┘
-                                                          │
-        ┌─────────────────────────────────────────────────┤
-        │                                                 │
-        ▼                                                 ▼
-┌──────────────────┐                              ┌──────────────────────┐
-│  Supabase        │                              │  공공데이터포털       │
-│  (Postgres +     │                              │  나라장터 8개 API    │
-│   pgvector HNSW) │                              │  data.go.kr          │
-└──────────────────┘                              └──────────────────────┘
-        ▲
-        │   임베딩 적재 / 회사 벡터 생성
-        │
-┌────────────────┐
-│  ingest 잡들   │   ─── 매일 cron (예정)
-│  embed 잡들    │
-│  compute 잡    │
-└────────────────┘
-                    OpenAI text-embedding-3-small (1536d)
-                    OpenAI gpt-4o-mini (추천 이유 설명)
-```
+
+추천 요청 경로: 회사 식별(pg_trgm) → 자격 하드 필터 → pgvector 코사인 TOP 100 → 가중치 score + 협업 시그널 + MMR 다양성 → LLM 설명(병렬).
 
 ---
 
 ## 5. 폴더 구조
+
+<details>
+<summary>펼치기</summary>
 
 ```
 jodalfit/
@@ -220,6 +212,10 @@ jodalfit/
 
 ---
 
+</details>
+
+---
+
 ## 6. 스택
 
 | 영역 | 선택 | 이유 |
@@ -234,6 +230,9 @@ jodalfit/
 ---
 
 ## 7. 셋업
+
+<details>
+<summary>펼치기</summary>
 
 ### 사전 준비
 
@@ -296,7 +295,14 @@ npm run dev  # → http://localhost:3000
 
 ---
 
-## 8. 데이터 파이프라인 (잡 실행 순서)
+</details>
+
+---
+
+## 8. 데이터 파이프라인
+
+<details>
+<summary>펼치기</summary> (잡 실행 순서)
 
 처음 시드 적재 시 권장 순서:
 
@@ -363,7 +369,14 @@ uv run python -m jobs.verify_setup
 
 ---
 
+</details>
+
+---
+
 ## 9. 환경변수
+
+<details>
+<summary>펼치기</summary>
 
 `backend/.env`:
 
@@ -388,6 +401,10 @@ uv run python -m jobs.verify_setup
 > - `SUPABASE_SERVICE_ROLE_KEY`는 **RLS를 우회하는 admin 권한**. 절대 frontend나 git에 노출 금지.
 > - `OPENAI_API_KEY` 노출 시 누군가 비용을 발생시킬 수 있음.
 > - 모든 키는 `.env`에 직접 입력. 채팅/메신저로 공유 금지.
+
+---
+
+</details>
 
 ---
 
@@ -468,12 +485,12 @@ curl -X POST http://localhost:8000/recommendations \
 
 ## 13. 디자인 토큰
 
-토스 톤(깨끗한 흰색 + 큰 한국어 카피 + 부드러운 카드) + 딥 포레스트 그린 primary.
+토스 톤(깨끗한 흰색 + 큰 한국어 카피 + 부드러운 카드) + 에메랄드 primary.
 로고 컨셉: **Halves** — 채워진 삼각형(회사 이력) + 윤곽 삼각형(공고)이 대각선으로 맞물려 사각형(=fit).
 
 ```css
 /* jodalfit — Toss tone + Deep Forest accent */
---color-primary: #166534;  /* CTA, 강조, 매칭 점수 */
+--color-primary: #047857;  /* CTA, 강조, 매칭 점수 (2026-08 에메랄드로 리브랜딩) */
 --color-bg:      #FFFFFF;  /* 배경 (clean white) */
 --color-surface: #F7F9FC;  /* 카드/섹션 */
 --color-ink:     #111827;  /* 본문 */
