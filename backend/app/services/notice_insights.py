@@ -2,14 +2,12 @@
 
 입력은 bid_notice_documents의 추출 텍스트. 제안요청서·과업지시서 계열을 앞에 두고
 MAX_INPUT_CHARS까지만 잘라 보낸다 (비용 통제: 공고당 ≈ 8k 토큰).
+호출은 jobs/summarize_bid_documents가 OpenAI Batch API로 묶어서 한다 — 여기선 요청 본문만 만든다.
 """
 
 from __future__ import annotations
 
-import json
 import re
-
-from app.services.openai_client import get_openai_client
 
 MODEL = "gpt-4o-mini"
 MAX_INPUT_CHARS = 12_000
@@ -145,16 +143,15 @@ SCHEMA = {
 }
 
 
-def summarize(notice_name: str, input_text: str) -> dict:
-    client = get_openai_client()
-    resp = client.chat.completions.create(
-        model=MODEL,
-        messages=[
+def chat_request(notice_name: str, input_text: str) -> dict:
+    """chat.completions 요청 본문 — Batch JSONL의 `body` 그대로."""
+    return {
+        "model": MODEL,
+        "messages": [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": f"[공고명] {notice_name}\n\n{input_text}"},
         ],
-        temperature=0.1,
-        max_tokens=900,
-        response_format={"type": "json_schema", "json_schema": SCHEMA},
-    )
-    return json.loads(resp.choices[0].message.content)
+        "temperature": 0.1,
+        "max_tokens": 900,
+        "response_format": {"type": "json_schema", "json_schema": SCHEMA},
+    }

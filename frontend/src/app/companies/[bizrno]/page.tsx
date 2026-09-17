@@ -407,11 +407,13 @@ async function RecommendationsSection({
   }
 
   // 추천 호출 — TOP 5 큰 카드 + 6~20 슬림 리스트
+  // with_explanation: false — 이 페이지는 검색봇 방문마다 SSR 되므로 LLM 요약(gpt-4o-mini)을
+  // 돌리지 않는다. 실시간 /recommendations 페이지는 그대로 설명을 붙인다.
   const data = await getRecommendations({
     query: company.bizrno,
     mode: "company",
     limit: 20,
-    with_explanation: true,
+    with_explanation: false,
   });
 
   // 백엔드 오류를 "0건"으로 위장하지 않는다 — 오류는 오류로 알리고

@@ -320,6 +320,7 @@ uv run python -m jobs.ingest_bid_attachments --days-back 7
 uv run python -m jobs.extract_bid_documents --limit 200
 
 # 문서 텍스트 → LLM 구조화 인사이트 (과업요약·자격요건·평가 → bid_notice_insights). 추천 설명·상세 UI용, 임베딩엔 미사용
+# OpenAI Batch API(정가 50%): 한 번 실행 = 이전 배치 결과 수거 + 최대 --limit건(≤500) 새 배치 제출. 수의계약 제외(0029)
 uv run python -m jobs.summarize_bid_documents --limit 100
 
 # 계약 1주일치 (회사 수주 신호의 원천)
