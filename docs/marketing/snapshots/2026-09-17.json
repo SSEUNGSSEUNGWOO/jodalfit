@@ -1,0 +1,168 @@
+{
+ "date": "2026-09-17",
+ "domain": "jodalfit.co.kr",
+ "sources": {
+  "gsc_search": "ok",
+  "gsc_sitemaps": "ok",
+  "gsc_inspect": "ok",
+  "naver": "skipped",
+  "supabase": "ok"
+ },
+ "gsc": {
+  "search": {
+   "data_date": "2026-09-17",
+   "clicks": 0,
+   "impressions": 1,
+   "ctr": 0,
+   "position": 10,
+   "by_type": {
+    "company": {
+     "clicks": 0,
+     "impressions": 1
+    }
+   },
+   "top_queries": [],
+   "tracked": {
+    "조달핏": null,
+    "나라장터 입찰공고 추천": null,
+    "입찰공고 추천": null,
+    "나라장터 입찰정보 무료 검색": null,
+    "나라장터 입찰공고 검색": null,
+    "진행중인 용역 입찰공고": null,
+    "사전규격 의견제출 기한": null,
+    "사전규격 공개 조회": null,
+    "나라장터 낙찰 이력 조회": null,
+    "나라장터 개찰결과 조회": null,
+    "업체별 투찰률": null,
+    "조달청 등록업체 조회": null,
+    "공공조달 참여 기업 목록": null,
+    "구례 산우건설": null,
+    "구례 산우건설 계약": null,
+    "정원도시안전진단": null,
+    "신진건설산업": null,
+    "우영기술단건축사사무소 기본정보": null,
+    "삼우건설 입찰": null,
+    "정보통신공사업 등록업체": null,
+    "전기공사업 등록 업체": null,
+    "소프트웨어사업자 등록업체 목록": null,
+    "달 착륙선 구조 해석 용역": null,
+    "2026 와구리 페스타 행사 기획 및 운영 대행 용역": null,
+    "의료폐기물 위탁처리 용역 단가계약": null,
+    "잠실 mice 감리 개찰 결과": null,
+    "공공조달 입찰 절차": null,
+    "나라장터 입찰 처음 절차": null,
+    "발주계획 사전규격 입찰공고 순서": null,
+    "공공조달 주간 동향": null,
+    "나라장터 신규 공고 건수": null,
+    "이번주 공공입찰 공고": null,
+    "IT 공공입찰 공고": null
+   }
+  },
+  "sitemaps": [
+   {
+    "path": "https://jodalfit.co.kr/sitemap/8.xml",
+    "last_downloaded": "",
+    "submitted": 0,
+    "indexed": 0,
+    "errors": 1,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/7.xml",
+    "last_downloaded": "2026-08-22",
+    "submitted": 20,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/6.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 223,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/5.xml",
+    "last_downloaded": "2026-09-17",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 1
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/4.xml",
+    "last_downloaded": "2026-08-22",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 1
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/3.xml",
+    "last_downloaded": "2026-08-22",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/2.xml",
+    "last_downloaded": "2026-08-22",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/1.xml",
+    "last_downloaded": "2026-08-22",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 2
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/0.xml",
+    "last_downloaded": "2026-08-22",
+    "submitted": 9997,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 1
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap.xml",
+    "last_downloaded": "2026-08-20",
+    "submitted": 1987,
+    "indexed": 0,
+    "errors": 1,
+    "warnings": 2
+   }
+  ],
+  "index_sample": {
+   "sampled": 100,
+   "indexed": 0,
+   "by_state": {
+    "URL is unknown to Google": 99,
+    "Crawled - currently not indexed": 1
+   }
+  }
+ },
+ "supabase": {
+  "date": "2026-09-17",
+  "errors": 3,
+  "events": {},
+  "ssr_searches": 2559,
+  "zero_results": 0,
+  "human_searches": 20,
+  "p50_latency_ms": 8614.5,
+  "subscribers_new": 0,
+  "unique_companies": 4,
+  "company_identified": 4,
+  "returning_companies": 0,
+  "subscribers_verified": 0,
+  "company_mode_searches": 4,
+  "email_subscribers_new": 0
+ }
+}

@@ -1,7 +1,8 @@
 """구글 서치콘솔 수집 — Search Analytics(노출·클릭·쿼리·페이지), 사이트맵 상태, URL 검사 표본.
 
-인증: 서비스 계정 JSON (`GSC_SERVICE_ACCOUNT_JSON`, 기본 backend/secrets/gsc-service-account.json).
-서치콘솔 속성에 그 계정 이메일을 사용자(전체)로 추가해야 한다. 설정 방법은 docs/marketing/README.md.
+인증: 서비스 계정 JSON. 환경변수 `GSC_KEY_PATH` → 공용 키 `~/.claude/marketing/gsc-key.json`
+(agent-pipeline/pipelines/seo 와 같은 키) → backend/secrets/gsc-service-account.json 순으로 찾는다.
+서치콘솔 속성에 그 계정 이메일을 사용자로 추가해야 한다. 설정 방법은 docs/marketing/README.md.
 서치콘솔 데이터는 1~2일 늦게 확정되므로 어제 데이터가 비어 있으면 최대 3일 전까지 물러난다 (data_date 에 기록).
 """
 
@@ -15,7 +16,10 @@ from pathlib import Path
 import httpx
 
 SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
-SA_DEFAULT = Path(__file__).resolve().parents[2] / "secrets" / "gsc-service-account.json"
+KEY_CANDIDATES = (
+    Path.home() / ".claude" / "marketing" / "gsc-key.json",
+    Path(__file__).resolve().parents[2] / "secrets" / "gsc-service-account.json",
+)
 SA_BASE = "https://www.googleapis.com/webmasters/v3"
 INSPECT_URL = "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect"
 
@@ -24,7 +28,8 @@ def _token() -> str:
     from google.auth.transport.requests import Request
     from google.oauth2 import service_account
 
-    path = Path(os.environ.get("GSC_SERVICE_ACCOUNT_JSON") or SA_DEFAULT)
+    env = os.environ.get("GSC_KEY_PATH")
+    path = Path(env) if env else next((p for p in KEY_CANDIDATES if p.exists()), KEY_CANDIDATES[0])
     if not path.exists():
         raise FileNotFoundError(f"서비스 계정 JSON 없음: {path}")
     creds = service_account.Credentials.from_service_account_file(str(path), scopes=SCOPES)

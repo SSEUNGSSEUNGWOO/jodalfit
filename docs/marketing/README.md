@@ -31,14 +31,13 @@ uv run python -m jobs.marketing_report.cli --no-interpret  # LLM 해석 생략
 
 ## 최초 설정
 
-### 서치콘솔 (한 번)
-1. Google Cloud 콘솔 → 프로젝트 하나 → "Google Search Console API" 사용 설정.
-2. IAM → 서비스 계정 만들기 → 키(JSON) 발급 → `backend/secrets/gsc-service-account.json` 에 저장 (gitignored).
-   다른 경로면 `backend/.env`에 `GSC_SERVICE_ACCOUNT_JSON=경로`.
-3. 서치콘솔 → 속성 `jodalfit.co.kr`(도메인) → 설정 → 사용자 및 권한 → 서비스 계정 이메일을 **전체** 권한으로 추가. URL 검사 API는 소유자·전체 권한이 필요하다.
-4. 확인: `uv run python -m jobs.marketing_report.cli --skip naver` 에서 gsc_* 가 ok.
+### 서치콘솔 (설정 완료)
+`agent-pipeline/pipelines/seo`와 같은 서비스 계정 키 `~/.claude/marketing/gsc-key.json`(seo-pipeline@…)을 그대로 쓴다.
+찾는 순서는 환경변수 `GSC_KEY_PATH` → `~/.claude/marketing/gsc-key.json` → `backend/secrets/gsc-service-account.json`.
+이 계정은 서치콘솔 `jodalfit.co.kr` 속성에 이미 사용자로 등록돼 있어 검색 데이터·사이트맵·URL 검사가 모두 된다 (2026-09-18 확인).
+새 키를 만들 일이 생기면: Google Cloud → Search Console API 사용 설정 → 서비스 계정 키(JSON) → 서치콘솔 속성 사용자에 계정 이메일 추가.
 
-URL 검사 API 한도는 하루 2,000건·분당 600건. 표본 100개라 여유 있다.
+URL 검사 API 한도는 하루 2,000건·분당 600건. 표본 100개라 한도는 여유 있지만 순차 호출이라 수 분 걸린다.
 
 ### 네이버 (한 번 + 만료 시)
 1. `uv run python -m jobs.marketing_report.cli --naver-login` → 창이 뜨면 네이버 로그인 → 창 닫기. 프로필은 `backend/data/naver-profile`(gitignored).
