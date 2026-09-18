@@ -21,6 +21,7 @@ import yaml
 from . import gsc, naver, supabase_metrics
 from .compare import REPO_ROOT, latest_snapshot_before, load_snapshot, save_snapshot
 from .interpret import interpret
+from .keywords import auto_keywords, tracked_from_top
 from .render import render
 
 CONFIG = Path(__file__).with_name("config.yaml")
@@ -57,8 +58,25 @@ def run(day: date, skip: set[str], do_interpret: bool) -> Path:
                 sources[sk] = f"{existing.get('sources', {}).get(sk, 'ok')} (이전 실행 유지)"
     print(f"[marketing_report] {day}")
 
+    # 네이버를 먼저 — 오늘의 실제 유입 검색어로 자동 키워드를 정한 뒤 구글 순위도 그 목록으로 뽑는다
+    if "naver" not in skip:
+        snap["naver"] = _try(sources, "naver", lambda: naver.collect(f"https://{domain}", day, cfg["page_types"], keywords))
+    else:
+        sources.setdefault("naver", "skipped")
+
+    auto = auto_keywords(day, snap.get("naver"), keywords)
+    prev_auto = set(((latest_snapshot_before(day) or {}).get("keywords") or {}).get("auto", []))
+    snap["keywords"] = {
+        "manual": keywords, "auto": auto,
+        "added": [k for k in auto if k not in prev_auto],
+        "dropped": sorted(prev_auto - set(auto)),
+    }
+    all_keywords = keywords + auto
+    if snap.get("naver"):
+        snap["naver"]["tracked"] = tracked_from_top(snap["naver"].get("top_queries", []), all_keywords)
+
     if "gsc" not in skip:
-        search = _try(sources, "gsc_search", lambda: gsc.collect_search(site, day, cfg["page_types"], keywords))
+        search = _try(sources, "gsc_search", lambda: gsc.collect_search(site, day, cfg["page_types"], all_keywords))
         sitemaps = _try(sources, "gsc_sitemaps", lambda: gsc.collect_sitemaps(site))
         urls = _try(sources, "gsc_inspect", lambda: supabase_metrics.sample_urls(domain, cfg["index_sample"]))
         sample = _try(sources, "gsc_inspect", lambda: gsc.inspect_urls(site, urls)) if urls else None
@@ -66,11 +84,6 @@ def run(day: date, skip: set[str], do_interpret: bool) -> Path:
     else:
         for k in ("gsc_search", "gsc_sitemaps", "gsc_inspect"):
             sources.setdefault(k, "skipped")
-
-    if "naver" not in skip:
-        snap["naver"] = _try(sources, "naver", lambda: naver.collect(f"https://{domain}", day, cfg["page_types"], keywords))
-    else:
-        sources.setdefault("naver", "skipped")
 
     if "supabase" not in skip:
         snap["supabase"] = _try(sources, "supabase", lambda: supabase_metrics.daily_stats(day))

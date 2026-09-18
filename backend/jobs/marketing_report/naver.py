@@ -80,6 +80,7 @@ def collect(site_url: str, day: date, page_types: list[dict], keywords: list[str
         urls = {
             "expose_daily": f"{R}/expose/{e}?site={site_q}&period=7&device=d&topN=0",
             "expose_top": f"{R}/expose/{e}?site={site_q}&period=1&device=d&topN={TOP_N}",
+            "expose_top_7d": f"{R}/expose/{e}?site={site_q}&period=7&device=d&topN={TOP_N}",
             "crawl": f"{R}/crawl/{e}?site={site_q}&start_date={_ymd(day - timedelta(days=7))}&end_date={_ymd(day)}&isAlly=false&count=0",
             "diagnosis": f"{R}/diagnosis/meta/{e}?site={site_q}&startDate={_ymd(day - timedelta(days=10))}&endDate={_ymd(day + timedelta(days=1))}",
         }
@@ -114,6 +115,11 @@ def collect(site_url: str, day: date, page_types: list[dict], keywords: list[str
     res["top_queries"] = [
         {"query": q["key"], "clicks": q["clickCount"], "impressions": q["exposeCount"], "position": q["exposedRank"]}
         for q in queries
+    ]
+    # 최근 7일 누적 상위 검색어 — 자동 키워드 승격의 근거 (keywords.py)
+    res["top_queries_7d"] = [
+        {"query": q["key"], "clicks": q["clickCount"], "impressions": q["exposeCount"], "position": q["exposedRank"]}
+        for q in items("expose_top_7d").get("querys", [])
     ]
     by_type: dict[str, dict] = {}
     for u in top.get("urls", []):

@@ -149,6 +149,16 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
 
     # 6. 키워드 추적
     out.append("## 6. 키워드 추적 (평균 순위, 직전 스냅샷 대비)")
+    kw = snap.get("keywords") or {}
+    auto = set(kw.get("auto", []))
+    if kw:
+        out.append(f"수동 {len(kw.get('manual', []))}개 + 자동 {len(auto)}개. 자동은 `*` 표시 "
+                   "(네이버 7일 누적 클릭 2회 이상 또는 14일 중 2일 이상 상위 검색어).")
+        out.append(f"- 오늘 자동 추가: {', '.join(kw.get('added') or []) or '없음'}")
+        out.append(f"- 오늘 자동 제외: {', '.join(kw.get('dropped') or []) or '없음'}")
+        out.append("")
+    def name(q):
+        return f"{q}*" if q in auto else q
     def fmt(items, f):
         return ", ".join(f(*i) for i in items) if items else "없음"
     for label, path, note in (("네이버", "naver.tracked", "최신일 상위 검색어 50개 안에 든 것만 잡힘"),
@@ -159,12 +169,15 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
             out.append("_미수집_")
             continue
         mv = keyword_moves(tracked, dig(prev_day, path))
-        out.append(f"- 상승: {fmt(mv['up'], lambda q, a, b: f'{q} ({a}→{b})')}")
-        out.append(f"- 하락: {fmt(mv['down'], lambda q, a, b: f'{q} ({a}→{b})')}")
-        out.append(f"- 신규: {fmt(mv['new'], lambda q, b: f'{q} ({b})')}")
-        out.append(f"- 이탈: {fmt(mv['lost'], lambda q, a: f'{q} (전 {a})')}")
-        out.append(f"- 유지: {fmt(mv['flat'], lambda q, b: f'{q} ({b})')}")
-        out.append(f"- 노출 없음: {len(mv['absent'])}/{len(tracked)}개")
+        out.append(f"- 상승: {fmt(mv['up'], lambda q, a, b: f'{name(q)} ({a}→{b})')}")
+        out.append(f"- 하락: {fmt(mv['down'], lambda q, a, b: f'{name(q)} ({a}→{b})')}")
+        out.append(f"- 신규: {fmt(mv['new'], lambda q, b: f'{name(q)} ({b})')}")
+        out.append(f"- 이탈: {fmt(mv['lost'], lambda q, a: f'{name(q)} (전 {a})')}")
+        out.append(f"- 유지: {fmt(mv['flat'], lambda q, b: f'{name(q)} ({b})')}")
+        absent_manual = sum(1 for q in mv["absent"] if q not in auto)
+        absent_auto = len(mv["absent"]) - absent_manual
+        out.append(f"- 노출 없음: 수동 {absent_manual}/{len(tracked) - len(auto & set(tracked))}개, "
+                   f"자동 {absent_auto}/{len(auto & set(tracked))}개")
     out.append("")
 
     out.append("## 수집 상태")
