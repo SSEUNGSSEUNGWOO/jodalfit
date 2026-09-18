@@ -131,6 +131,7 @@ def fetch_priority_ranks(client) -> dict[str, tuple[int, int]]:
         r = (
             client.table("search_logs")
             .select("matched_bizrno")
+            .eq("source", "user")  # 내부 SSR 호출을 빼야 "유저가 검색한 회사"가 된다 (0029)
             .not_.is_("matched_bizrno", "null")
             .order("created_at", desc=True)
             .range(offset, offset + 999)
