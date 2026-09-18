@@ -42,6 +42,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `app/api/` — 라우터 (recommendations, events=행동 로깅)
 - `app/core/` — pydantic-settings config, rate_limit, bot_guard
 - `app/services/` — supabase/openai 클라이언트, recommend(후보 검색+v1), explain, viz(임베딩 시각화), search_log, notice_events
+- `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative)
+- `jobs/` — 접두사 규칙: `ingest_*`(나라장터 API 수집) / `embed_*`(임베딩 생성) / `compute_company_vectors`(회사 벡터 통합) / `probe_*`(API 응답 탐색, 개발용) / `verify_*`·`check_*`·`diag_*`(검증/진단). 공통 fetch/페이징/타입 변환은 `jobs/_common.py`.
+- `jobs/weekly_insight/` — 주간 콘텐츠 발행 파이프라인 (writer → evaluator → proofreader), `.claude/commands/weekly-market.md`·`weekly-picks.md` 스킬이 이걸 구동. 산출물은 frontend `/insights`에 노출.
+- `jobs/marketing_report/` — 일일 마케팅 성적표 (`/marketing-report`, 설명서 `docs/marketing/README.md`).
 
 ### 로그 지표 — 내부 SSR과 실사용자 구분 (필수)
 
@@ -51,9 +55,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `search_logs.source`는 라벨만 붙인다(내부 호출도 캐시 히트율 분석에 쓰인다). **숫자를 인용할 때는 `v_search_logs_daily_user`·`v_search_logs_top_queries_user` 뷰를 쓴다.** 전체 기준 옛 뷰(`v_search_logs_daily` 등)를 실사용 지표로 착각하지 말 것.
 - `notice_events`는 내부 SSR impression을 **적재하지 않는다** (`log_impressions`가 `source != "user"`면 즉시 return). 렌더링마다 20건씩 쌓여 테이블만 커졌다.
 - 새 로그 경로를 추가하면 `source`를 같이 넘긴다. `v_search_logs_sources`에서 internal 비중이 갑자기 오르면 계측이 깨진 신호다.
-- `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative)
-- `jobs/` — 접두사 규칙: `ingest_*`(나라장터 API 수집) / `embed_*`(임베딩 생성) / `compute_company_vectors`(회사 벡터 통합) / `probe_*`(API 응답 탐색, 개발용) / `verify_*`·`check_*`·`diag_*`(검증/진단). 공통 fetch/페이징/타입 변환은 `jobs/_common.py`.
-- `jobs/weekly_insight/` — 주간 콘텐츠 발행 파이프라인 (writer → evaluator → proofreader), `.claude/commands/weekly-market.md`·`weekly-picks.md` 스킬이 이걸 구동. 산출물은 frontend `/insights`에 노출.
 
 ### 데이터 파이프라인 (자동화)
 `.github/workflows/daily-sync.yml` — 매일 KST 5시: ingest(공고/계약/낙찰/참가업체/사전규격/면허/지역...) → embed → compute_company_vectors. 각 스텝 `continue-on-error: true`.
