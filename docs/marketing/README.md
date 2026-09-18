@@ -40,7 +40,7 @@ uv run python -m jobs.marketing_report.cli --no-interpret  # LLM 해석 생략
 URL 검사 API 한도는 하루 2,000건·분당 600건. 표본 100개라 한도는 여유 있지만 순차 호출이라 수 분 걸린다.
 
 ### 네이버 (한 번 + 만료 시)
-1. 이 세션 프롬프트에 `! cd C:\dev\personal\jodalfitbackend; uv run python -m jobs.marketing_report.cli --naver-login`
+1. 이 세션 프롬프트에 `! cd C:\dev\personal\jodalfit\backend; uv run python -m jobs.marketing_report.cli --naver-login`
    → 뜬 창에서 네이버 로그인(**로그인 상태 유지** 체크) → 서치어드바이저 화면이 보이면 창 닫기.
    프로필은 `backend/data/naver-profile`(gitignored). 2026-09-18 설정 완료.
 2. 매일 headless 로 사이트 요약 화면을 열어 세션을 살리고, 화면이 쓰는 콘솔 내부 API 를 같은 세션으로 직접 부른다.
