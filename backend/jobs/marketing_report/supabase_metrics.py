@@ -11,15 +11,16 @@ from app.services.supabase_client import get_admin_client
 
 
 def daily_stats(day: date) -> dict:
-    """평소 3초. DB 가 인덱스 빌드 등으로 바쁘면 8초 timeout(57014)에 걸리므로 한 번 더 시도."""
+    """평소 3초. DB 가 인덱스 빌드 등으로 바쁘면 8초 timeout(57014)에 걸리므로 간격을 늘려 3회까지 시도.
+    두 번째부터는 캐시에 올라온 블록 덕에 대개 통과한다."""
     sb = get_admin_client()
-    for attempt in range(2):
+    for attempt in range(3):
         try:
             return sb.rpc("marketing_daily_stats", {"p_date": day.isoformat()}).execute().data
         except APIError as e:
-            if e.code != "57014" or attempt == 1:
+            if e.code != "57014" or attempt == 2:
                 raise
-            time.sleep(5)
+            time.sleep(10 * (attempt + 1))
 
 
 def sample_urls(domain: str, cfg: dict) -> list[str]:

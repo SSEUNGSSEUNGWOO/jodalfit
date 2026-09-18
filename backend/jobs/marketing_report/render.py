@@ -74,17 +74,39 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
     # 3. 네이버 서치어드바이저
     out.append("## 3. 네이버 서치어드바이저")
     if nv:
-        p = nv.get("parsed") or {}
-        pn = dig(prev_week, "naver.parsed") or {}
-        if p:
+        if nv.get("data_date"):
             out.append(_table(H, [
-                (k, v, pn.get(k, "—"), f"{v - pn[k]:+,}" if isinstance(pn.get(k), (int, float)) else "—")
-                for k, v in p.items()
+                row("클릭", snap, prev_week, "naver.clicks"),
+                row("노출", snap, prev_week, "naver.impressions"),
+                row("CTR %", snap, prev_week, "naver.ctr", "{:.1f}"),
             ]))
-            out.append("")
-            out.append("_키 이름 추정값 — 파서 확정 전 (README '네이버 파서 확정')_")
         else:
-            out.append(f"_덤프 {nv['dumps']}개 저장({nv['dump_dir']}), 파서 미확정이라 숫자 없음_")
+            out.append("_이 날짜의 노출·클릭 데이터 없음 (네이버 집계 지연)_")
+        out.append("")
+        idx_rows = []
+        if nv.get("index"):
+            idx_rows += [
+                row(f"색인 페이지 (진단 {nv['index']['date']})", snap, prev_week, "naver.index.indexed"),
+                row("수집제한", snap, prev_week, "naver.index.crawl_limited"),
+                row("색인제외", snap, prev_week, "naver.index.index_excluded"),
+            ]
+        if nv.get("crawl"):
+            idx_rows += [
+                row("수집 페이지", snap, prev_week, "naver.crawl.pages"),
+                row("수집 오류", snap, prev_week, "naver.crawl.errors"),
+            ]
+        if idx_rows:
+            out.append(_table(H, idx_rows))
+            out.append("")
+        if nv.get("by_type_top"):
+            out.append(f"페이지 유형별 (최신일 {nv.get('top_date')}, 클릭 상위 URL 50개 기준)")
+            out.append(_table(("페이지 유형", "클릭", "노출"),
+                              [(k, v["clicks"], v["impressions"]) for k, v in sorted(nv["by_type_top"].items(), key=lambda x: -x[1]["clicks"])]))
+            out.append("")
+        if nv.get("top_queries"):
+            out.append(f"상위 검색어 (최신일 {nv.get('top_date')})")
+            out.append(_table(("검색어", "클릭", "노출", "순위"),
+                              [(q["query"], q["clicks"], q["impressions"], q["position"]) for q in nv["top_queries"][:10]]))
     else:
         out.append(f"_미수집 — {src.get('naver', '')}_")
     out.append("")
@@ -126,20 +148,23 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
     out.append("")
 
     # 6. 키워드 추적
-    out.append("## 6. 키워드 추적 (구글 평균 순위, 직전 스냅샷 대비)")
-    tracked = dig(snap, "gsc.search.tracked")
-    if tracked:
-        mv = keyword_moves(tracked, dig(prev_day, "gsc.search.tracked"))
-        def fmt(items, f):
-            return ", ".join(f(*i) for i in items) if items else "없음"
+    out.append("## 6. 키워드 추적 (평균 순위, 직전 스냅샷 대비)")
+    def fmt(items, f):
+        return ", ".join(f(*i) for i in items) if items else "없음"
+    for label, path, note in (("네이버", "naver.tracked", "최신일 상위 검색어 50개 안에 든 것만 잡힘"),
+                              ("구글", "gsc.search.tracked", "")):
+        tracked = dig(snap, path)
+        out.append(f"### {label}" + (f" _({note})_" if note else ""))
+        if not tracked:
+            out.append("_미수집_")
+            continue
+        mv = keyword_moves(tracked, dig(prev_day, path))
         out.append(f"- 상승: {fmt(mv['up'], lambda q, a, b: f'{q} ({a}→{b})')}")
         out.append(f"- 하락: {fmt(mv['down'], lambda q, a, b: f'{q} ({a}→{b})')}")
         out.append(f"- 신규: {fmt(mv['new'], lambda q, b: f'{q} ({b})')}")
         out.append(f"- 이탈: {fmt(mv['lost'], lambda q, a: f'{q} (전 {a})')}")
         out.append(f"- 유지: {fmt(mv['flat'], lambda q, b: f'{q} ({b})')}")
         out.append(f"- 노출 없음: {len(mv['absent'])}/{len(tracked)}개")
-    else:
-        out.append("_미수집 (서치콘솔 데이터 없음)_")
     out.append("")
 
     out.append("## 수집 상태")

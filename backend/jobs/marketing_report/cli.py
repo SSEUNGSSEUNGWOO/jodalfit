@@ -45,6 +45,16 @@ def run(day: date, skip: set[str], do_interpret: bool) -> Path:
     keywords = [k["q"] for k in cfg["keywords"]]
     sources: dict[str, str] = {}
     snap: dict = {"date": day.isoformat(), "domain": domain, "sources": sources}
+    # 같은 날짜를 다시 돌릴 때 --skip 한 소스는 기존 스냅샷 값을 유지한다 (덮어써서 지우지 않게)
+    existing = load_snapshot(day) or {}
+    carry = {"gsc": ("gsc", ("gsc_search", "gsc_sitemaps", "gsc_inspect")),
+             "naver": ("naver", ("naver",)), "supabase": ("supabase", ("supabase",))}
+    for src_name in skip:
+        key, status_keys = carry.get(src_name, (None, ()))
+        if key and existing.get(key) is not None:
+            snap[key] = existing[key]
+            for sk in status_keys:
+                sources[sk] = f"{existing.get('sources', {}).get(sk, 'ok')} (이전 실행 유지)"
     print(f"[marketing_report] {day}")
 
     if "gsc" not in skip:
@@ -54,17 +64,18 @@ def run(day: date, skip: set[str], do_interpret: bool) -> Path:
         sample = _try(sources, "gsc_inspect", lambda: gsc.inspect_urls(site, urls)) if urls else None
         snap["gsc"] = {"search": search, "sitemaps": sitemaps, "index_sample": sample}
     else:
-        sources["gsc_search"] = sources["gsc_inspect"] = "skipped"
+        for k in ("gsc_search", "gsc_sitemaps", "gsc_inspect"):
+            sources.setdefault(k, "skipped")
 
     if "naver" not in skip:
-        snap["naver"] = _try(sources, "naver", lambda: naver.collect(cfg["site"]["naver_console"], domain, day))
+        snap["naver"] = _try(sources, "naver", lambda: naver.collect(f"https://{domain}", day, cfg["page_types"], keywords))
     else:
-        sources["naver"] = "skipped"
+        sources.setdefault("naver", "skipped")
 
     if "supabase" not in skip:
         snap["supabase"] = _try(sources, "supabase", lambda: supabase_metrics.daily_stats(day))
     else:
-        sources["supabase"] = "skipped"
+        sources.setdefault("supabase", "skipped")
 
     prev_week = load_snapshot(day - timedelta(days=7))
     prev_day = latest_snapshot_before(day)
