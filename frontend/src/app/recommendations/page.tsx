@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { BoardSearch } from "@/components/board/BoardSearch";
 import { BoardView } from "@/components/board/BoardView";
 import { Footer } from "@/components/Footer";
@@ -18,6 +19,7 @@ interface PageProps {
     keywords?: string;
     mode?: string;
     algorithm?: string;
+    from?: string;
   }>;
 }
 
@@ -30,6 +32,10 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   const query = companyQuery || keywordsQuery;
   const useMock = p.mode === "mock";
   const algorithm = p.algorithm === "v1" ? "v1" : "v2";
+
+  // 나라장터 공고번호(예: R26BK01719700-000)를 검색창에 넣으면 공고 페이지로 보낸다
+  const noticeNo = query.match(/^s*(Rd{2}[A-Z]{2}d{6,})(?:-d{3})?s*$/i);
+  if (noticeNo) redirect(`/notices/${noticeNo[1].toUpperCase()}`);
   return (
     <>
       <Header />
@@ -42,6 +48,7 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
             useMock={useMock}
             keywords={mode === "company" ? hybridKeywords || undefined : undefined}
             algorithm={algorithm}
+            fromCompany={mode === "keywords" && p.from === "company"}
           />
         ) : (
           <EmptyState mode={mode} />

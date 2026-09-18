@@ -66,62 +66,108 @@ def _rpc_with_retry(client, fn: str, params: dict):
         return client.rpc(fn, params).execute()
 
 
+_LEGAL_FORMS = ("주식회사", "유한회사", "유한책임회사", "합자회사", "합명회사", "사단법인", "재단법인",
+                "협동조합", "(주)", "㈜", "(유)", "(사)", "(재)")
+COMPANY_COLS = "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
+
+
+def _name_core(name: str | None) -> str:
+    """회사명 비교용 핵심부 — 법인 표기·공백·구두점을 뗀다. '주식회사 광덕기업' → '광덕기업'."""
+    s = name or ""
+    for f in _LEGAL_FORMS:
+        s = s.replace(f, "")
+    return "".join(ch for ch in s if ch.isalnum()).lower()
+
+
+def _match_score(query: str, corp_nm: str | None) -> int:
+    """법인 표기를 뗀 핵심부끼리 비교한 매칭 등급. 0 이면 회사로 받아들이지 않는다.
+    3 = 같음 / 2 = 한쪽이 다른 쪽의 절반 이상을 차지 ('케이브레인' ⊂ '케이브레인컴퍼니', '대현기술개발 김삼곤' ⊃ '대현기술개발')
+    1 = 오타 수준 차이 (difflib 0.8+).
+    trigram similarity 는 '주식회사' 같은 공통 접두어에 부풀려져('주식회사 옹진물산' → '주식회사 옹진해운')
+    판정에 쓰지 않고, 짧은 일반어('교복' → '중앙교복사', '방수' → '만복샷다&방수')도 여기서 걸러진다 (2026-09-18)."""
+    import difflib
+
+    q, c = _name_core(query), _name_core(corp_nm)
+    if not q or not c:
+        return 0
+    if q == c:
+        return 3
+    short, long_ = (q, c) if len(q) <= len(c) else (c, q)
+    if len(short) >= 3 and short in long_ and len(short) / len(long_) >= 0.5:
+        return 2
+    if min(len(q), len(c)) >= 4 and difflib.SequenceMatcher(None, q, c).ratio() >= 0.8:
+        return 1
+    return 0
+
+
+def _pick_best(client, bizrnos: list[str]) -> dict | None:
+    """이름이 같은 회사가 여럿이면 벡터가 있고 계약이 많은 회사 (결정적으로 같은 결과가 나오게)."""
+    norms = list({"".join(ch for ch in b if ch.isdigit()) for b in bizrnos})
+    rows = (
+        client.table("companies").select("bizrno_norm,contract_count,embedded_at")
+        .in_("bizrno_norm", norms).execute().data or []
+    )
+    if not rows:
+        return None
+    rows.sort(key=lambda r: (r.get("embedded_at") is None, -(r.get("contract_count") or 0), r["bizrno_norm"]))
+    return _row_by_norm(client, rows[0]["bizrno_norm"])
+
+
+def _row_by_norm(client, bizrno: str) -> dict | None:
+    """같은 사업자번호가 하이픈 유무로 두 행인 회사가 있다 — 벡터가 있는 행을 먼저 읽는다."""
+    norm = "".join(ch for ch in bizrno if ch.isdigit())
+    res = (
+        client.table("companies").select(COMPANY_COLS)
+        .eq("bizrno_norm", norm)
+        .order("embedded_at", desc=True, nullsfirst=False)
+        .limit(1).execute()
+    )
+    return res.data[0] if res.data else None
+
+
 def find_company(query: str) -> dict | None:
     """회사명 또는 사업자번호로 식별. 가장 매칭 좋은 1개 반환.
 
-    한국어 회사명 fuzzy 매칭에서 공백 위치 변형이 trigram 점수에 영향(예:
-    "케이브레인 컴퍼니"가 "케이 컴퍼니"와 trigram 더 많이 겹쳐 잘못 매칭).
-    원본과 공백 제거 query를 둘 다 시도해서 similarity 더 높은 쪽 채택.
+    1) 10자리 숫자 → 사업자번호
+    2) 법인 표기를 뗀 이름이 정확히 같은 회사 ('광덕기업' = '주식회사광덕기업')
+    3) pg_trgm 후보(원본·공백 제거 각 10개) 중 _match_score 등급이 가장 높은 회사.
+       한국어 회사명은 공백 위치 변형이 trigram 점수에 영향을 줘서 두 형태를 다 조회한다.
+    같은 이름이 여럿이면 _pick_best. 아무 후보도 통과 못 하면 None → 화면이 키워드 검색으로 넘긴다.
     """
     client = get_admin_client()
     digits = "".join(ch for ch in query if ch.isdigit())
     if len(digits) == 10:
-        res = (
-            client.table("companies")
-            .select(
-                "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
-            )
-            .eq("bizrno_norm", digits)
-            # 같은 사업자번호가 하이픈 유무로 두 행인 회사가 있다 — 벡터가 있는 행을 먼저 읽는다
-            .order("embedded_at", desc=True, nullsfirst=False)
-            .limit(1)
-            .execute()
+        row = _row_by_norm(client, digits)
+        if row:
+            return row
+
+    core = _name_core(query)
+    if len(core) >= 3:  # 2글자 이하는 trigram 인덱스를 못 타 전수 스캔이 된다
+        cands = (
+            client.table("companies").select("bizrno,corp_nm")
+            .ilike("corp_nm", f"%{core}%").limit(50).execute().data or []
         )
-        if res.data:
-            return res.data[0]
+        exact = [c["bizrno"] for c in cands if _name_core(c["corp_nm"]) == core]
+        if exact:
+            return _pick_best(client, exact)
 
-    res = _rpc_with_retry(
-        client, "find_companies", {"query_name": query, "max_count": 1}
-    )
-    best = res.data[0] if res.data else None
-
-    normalized = "".join(query.split())
-    if normalized and normalized != query:
-        res2 = _rpc_with_retry(
-            client, "find_companies", {"query_name": normalized, "max_count": 1}
-        )
-        cand = res2.data[0] if res2.data else None
-        if cand and (
-            not best
-            or (cand.get("similarity") or 0) > (best.get("similarity") or 0)
-        ):
-            best = cand
-
-    if not best:
+    fuzzy: dict[str, dict] = {}
+    for q in dict.fromkeys([query, "".join(query.split())]):
+        if not q:
+            continue
+        res = _rpc_with_retry(client, "find_companies", {"query_name": q, "max_count": 10})
+        for cand in res.data or []:
+            prev = fuzzy.get(cand["bizrno"])
+            if not prev or (cand.get("similarity") or 0) > (prev.get("similarity") or 0):
+                fuzzy[cand["bizrno"]] = cand
+    scored = [(_match_score(query, c["corp_nm"]), c.get("similarity") or 0, c) for c in fuzzy.values()]
+    scored = [x for x in scored if x[0] > 0]
+    if not scored:
         return None
-    # 이름으로 찾은 행과 같은 사업자번호의 다른 행(하이픈 유무)에 벡터가 있을 수 있어 사업자번호로 다시 읽는다
-    best_norm = "".join(ch for ch in best["bizrno"] if ch.isdigit())
-    full = (
-        client.table("companies")
-        .select(
-            "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
-        )
-        .eq("bizrno_norm", best_norm)
-        .order("embedded_at", desc=True, nullsfirst=False)
-        .limit(1)
-        .execute()
-    )
-    return full.data[0] if full.data else None
+    top = max(x[0] for x in scored)
+    best_sim = max(x[1] for x in scored if x[0] == top)
+    tied = [x[2]["bizrno"] for x in scored if x[0] == top and x[1] == best_sim]
+    return _pick_best(client, tied)
 
 
 import re as _re

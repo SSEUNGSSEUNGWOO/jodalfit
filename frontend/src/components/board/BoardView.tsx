@@ -32,10 +32,18 @@ interface Props {
   useMock: boolean;
   keywords?: string;
   algorithm?: Algorithm;
+  /** 회사 모드에서 회사를 못 찾아 키워드 모드로 넘어온 경우 (?from=company) */
+  fromCompany?: boolean;
+}
+
+/** 10자리 사업자번호 입력인지 — 이 경우엔 키워드 검색이 의미 없어 자동 전환하지 않는다 */
+function isBizrnoInput(q: string): boolean {
+  return q.replace(/D/g, "").length === 10 && /^[d-s]+$/.test(q.trim());
 }
 
 /** 개찰판 — 추천 결과 표면의 루트. 스트리밍 수신 + 조건 적용 + 판 렌더. */
-export function BoardView({ query, mode, useMock, keywords, algorithm = "v2" }: Props) {
+export function BoardView({ query, mode, useMock, keywords, algorithm = "v2", fromCompany = false }: Props) {
+  const router = useRouter();
   const [data, setData] = useState<RecommendationResponse | null>(
     useMock ? MOCK_RESPONSE : null
   );
@@ -159,14 +167,23 @@ export function BoardView({ query, mode, useMock, keywords, algorithm = "v2" }: 
     };
   }, [query, mode, useMock, keywords, algorithm]);
 
-  if (!data) return <BoardLoading label={query} mode={mode} />;
+  // 회사를 못 찾았고 사업자번호가 아니면 같은 입력으로 키워드 검색 — 회사 칸에 공고명·키워드를 넣는 경우가 많다
+  const switchToKeywords =
+    mode === "company" && !!data && data.error !== NETWORK_ERROR && !data.company && !isBizrnoInput(query);
+  useEffect(() => {
+    if (switchToKeywords) {
+      router.replace(`/recommendations?q=${encodeURIComponent(query)}&from=company`);
+    }
+  }, [switchToKeywords, router, query]);
+
+  if (!data || switchToKeywords) return <BoardLoading label={query} mode={mode} />;
 
   if (data.error === NETWORK_ERROR) {
     return <ConnectionErrorBoard query={query} />;
   }
 
   if (mode === "company" && (data.fallback === "keywords" || !data.company)) {
-    return <FallbackBoard query={query} identified={!!data.company} message={data.error} />;
+    return <FallbackBoard query={query} identified={!!data.company} message={data.error} bizrno={isBizrnoInput(query)} />;
   }
 
   return (
@@ -181,6 +198,7 @@ export function BoardView({ query, mode, useMock, keywords, algorithm = "v2" }: 
       streamDone={streamDone}
       openKeys={openKeys}
       setOpenKeys={setOpenKeys}
+      fromCompany={fromCompany}
     />
   );
 }
@@ -198,7 +216,9 @@ function ResultsBoard({
   streamDone,
   openKeys,
   setOpenKeys,
+  fromCompany = false,
 }: {
+  fromCompany?: boolean;
   query: string;
   mode: Mode;
   keywords?: string;
@@ -303,7 +323,7 @@ function ResultsBoard({
                 data.company?.rgn_nm ?? null,
                 data.company?.corp_bsns_div_nm ?? null,
               ]
-            : ["키워드와 의미가 가까운 공고"]
+            : [fromCompany ? "회사명으로 찾지 못해 키워드로 찾았어요" : "키워드와 의미가 가까운 공고"]
         }
         criteria={
           mode === "company"
@@ -749,32 +769,46 @@ function FallbackBoard({
   query,
   identified,
   message,
+  bizrno = false,
 }: {
   query: string;
   identified: boolean;
   message?: string | null;
+  bizrno?: boolean;
 }) {
+  // 사업자번호로 못 찾은 회사는 이 PC의 매시 수집(register_searched_companies)이 조달청에서 조회·등록한다
+  const pending = !identified && bizrno;
   const today = new Date().toLocaleDateString("ko-KR");
   return (
     <div className="world-gc flex-1">
       <BoardHead
         title={query}
-        meta={[identified ? "회사 정보를 확인했어요" : "회사 정보를 찾지 못했어요"]}
+        meta={[identified ? "회사 정보를 확인했어요" : pending ? "나라장터 등록 정보를 확인하고 있어요" : "회사 정보를 찾지 못했어요"]}
         criteria={
           identified
             ? "회사 데이터가 부족해 정확도가 낮을 수 있습니다"
-            : "나라장터 회사 명부에서 찾지 못했습니다"
+            : pending
+              ? "조달업체로 등록된 사업자번호라면 1시간 안에 분석을 준비해 둘게요"
+              : "나라장터 회사 명부에서 찾지 못했습니다"
         }
         date={today}
         searchMode="company"
         searchDefault={query}
       />
       <div className="mx-auto max-w-[1080px] px-5 sm:px-8 pb-16">
-        {message && (
+        {pending ? (
           <p className="pt-6 text-[13px] text-gc-ink-3 break-keep">
             <span aria-hidden>※ </span>
-            {message}
+            아직 조달핏에 없는 회사예요. 나라장터 등록 정보와 등록업종을 받아 오는 대로 추천을 만들어 둡니다.
+            한 시간쯤 뒤에 다시 조회해 주세요. 그 사이엔 관심 분야로 먼저 찾아볼 수 있어요.
           </p>
+        ) : (
+          message && (
+            <p className="pt-6 text-[13px] text-gc-ink-3 break-keep">
+              <span aria-hidden>※ </span>
+              {message}
+            </p>
+          )
         )}
         <KeywordPanel
           className="mt-10"
