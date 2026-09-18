@@ -90,6 +90,23 @@ def run(day: date, skip: set[str], do_interpret: bool) -> Path:
     else:
         sources.setdefault("supabase", "skipped")
 
+    # 이번 실행에서 실패한 소스는 같은 날짜의 이전 실행 값을 유지한다 (실패가 멀쩡한 데이터를 지우지 않게)
+    for key, parts in (("naver", None), ("supabase", None), ("gsc", ("search", "sitemaps", "index_sample"))):
+        old = existing.get(key)
+        if not old:
+            continue
+        if parts is None:
+            if snap.get(key) is None:
+                snap[key] = old
+                sources[key] = f"{sources.get(key, '')} → 이전 실행 값 유지"
+        else:
+            cur = snap.get(key) or {}
+            for part, sk in zip(parts, ("gsc_search", "gsc_sitemaps", "gsc_inspect")):
+                if cur.get(part) is None and old.get(part) is not None:
+                    cur[part] = old[part]
+                    sources[sk] = f"{sources.get(sk, '')} → 이전 실행 값 유지"
+            snap[key] = cur
+
     prev_week = load_snapshot(day - timedelta(days=7))
     prev_day = latest_snapshot_before(day)
     save_snapshot(day, snap)

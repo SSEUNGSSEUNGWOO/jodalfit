@@ -118,7 +118,8 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
         ret = _pct(sb["returning_companies"], sb["unique_companies"])
         pret = _pct(dig(prev_week, "supabase.returning_companies") or 0, dig(prev_week, "supabase.unique_companies") or 0) if prev_week else "—"
         out.append(_table(H, [
-            row("사람 검색 (SSR 제외)", snap, prev_week, "supabase.human_searches"),
+            row("사람 검색 (내부 SSR·봇 제외)", snap, prev_week, "supabase.human_searches"),
+            row("순방문자 (IP 해시 기준)", snap, prev_week, "supabase.unique_users"),
             row("회사 검색 중 식별 성공", snap, prev_week, "supabase.company_identified"),
             ("재검색율 (7일 내 재검색 회사 / 오늘 검색 회사)", ret, pret, ""),
             row("검색된 회사 수", snap, prev_week, "supabase.unique_companies"),
@@ -127,7 +128,8 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
             row("구독 신청", snap, prev_week, "supabase.subscribers_new"),
             row("구독 인증 완료", snap, prev_week, "supabase.subscribers_verified"),
             row("이메일 캡처", snap, prev_week, "supabase.email_subscribers_new"),
-            row("SSR 호출 (참고: 크롤러 유발)", snap, prev_week, "supabase.ssr_searches"),
+            row("참고: 내부 SSR 호출", snap, prev_week, "supabase.ssr_searches"),
+            row("참고: 봇 호출", snap, prev_week, "supabase.bot_searches"),
         ]))
     else:
         out.append(f"_미수집 — {src.get('supabase', '')}_")
@@ -143,6 +145,9 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
             ("결과 0건 비율", _pct(sb["zero_results"], n), _pct(dig(prev_week, "supabase.zero_results") or 0, pn) if prev_week else "—", ""),
             row("p50 응답 ms", snap, prev_week, "supabase.p50_latency_ms", "{:,.0f}"),
         ]))
+        if sb.get("error_top"):
+            out.append("")
+            out.append("오류 내역: " + ", ".join(f"{e['msg']} {e['n']}건" for e in sb["error_top"]))
     else:
         out.append("_미수집_")
     out.append("")
