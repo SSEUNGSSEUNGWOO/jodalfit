@@ -1,15 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BidCard } from "@/components/BidCard";
-import { SlimBidRow } from "@/components/SlimBidRow";
+import { CompanyRecommendations } from "@/components/CompanyRecommendations";
 import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { EmbeddingSpaceViz } from "@/components/EmbeddingSpaceViz";
 import { KeywordFallback } from "@/components/KeywordFallback";
-import { OrderPlanSection } from "@/components/OrderPlanSection";
-import { PreSpecSection } from "@/components/PreSpecSection";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -17,14 +13,12 @@ import {
   fetchCompanyByBizrno,
   fetchCompanyContracts,
   fetchCompanyProfile,
-  fetchPeerRateByInstitution,
   fetchSimilarNoticeAwardees,
   summarizeAwards,
   summarizeContracts,
 } from "@/lib/company";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { getRecommendations } from "@/lib/api";
 import { fetchCompanyDomainAnalysis } from "@/lib/company-profile";
 import { companyOrganizationJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { formatKRW, maskBizrno } from "@/lib/utils";
@@ -384,7 +378,7 @@ async function DomainAnalysisSection({
 }
 
 // ───────────────────────────────────────────────────────────────
-async function RecommendationsSection({
+function RecommendationsSection({
   company,
 }: {
   company: Awaited<ReturnType<typeof fetchCompanyByBizrno>> & object;
@@ -406,120 +400,11 @@ async function RecommendationsSection({
     );
   }
 
-  // 추천 호출 — TOP 5 큰 카드 + 6~20 슬림 리스트
-  // with_explanation: false — 이 페이지는 검색봇 방문마다 SSR 되므로 LLM 요약(gpt-4o-mini)을
-  // 돌리지 않는다. 실시간 /recommendations 페이지는 그대로 설명을 붙인다.
-  const data = await getRecommendations({
-    query: company.bizrno,
-    mode: "company",
-    limit: 20,
-    with_explanation: false,
-  });
-
-  // 백엔드 오류를 "0건"으로 위장하지 않는다 — 오류는 오류로 알리고
-  // 실시간 조회 경로를 제공 (ISR 캐시에 오류가 1시간 박제되는 문제 방어)
-  if (data.error) {
-    return (
-      <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
-          추천 공고
-        </h2>
-        <p className="mt-2 text-[14.5px] text-muted-foreground break-keep">
-          추천을 불러오지 못했습니다. 실시간 조회로 바로 확인할 수 있어요.
-        </p>
-        <Link
-          href={`/recommendations?company=${encodeURIComponent(company.corp_nm)}`}
-          className="mt-4 inline-flex items-center h-11 px-4 rounded-lg bg-primary text-primary-foreground text-[14px] font-bold hover:bg-primary/90 transition-colors"
-        >
-          {company.corp_nm} 실시간 추천 열기 →
-        </Link>
-      </section>
-    );
-  }
-
-  const TOP = 5;
-  const top = data.results.slice(0, TOP);
-  const slim = data.results.slice(TOP);
-
-  // 추천 TOP 5의 발주기관별 과거 평균 투찰율 batch 조회
-  const peerMap = await fetchPeerRateByInstitution(
-    top.map((b) => b.dmnd_instt_nm).filter((x): x is string => !!x)
-  );
-
+  // 추천은 브라우저에서 불러온다 (CompanyRecommendations → /api/companies/[bizrno]/recommendations).
+  // 백엔드 추천이 10초 이상 걸려 SSR에 두면 검색봇이 크롤을 포기한다 — 크롤러가 받는
+  // HTML은 회사 정보·수주·낙찰만 담고, 추천은 사람이 열었을 때만 계산한다.
   return (
-    <>
-    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-      <PreSpecSection results={data.pre_spec_results ?? []} />
-
-      <div className="flex items-baseline justify-between mt-10 mb-5">
-        <h2 className="font-gc-serif font-black text-[22px] sm:text-[26px] tracking-[-0.02em] text-gc-ink">
-          {company.corp_nm}에 맞는 공고 {data.results.length}건
-        </h2>
-        <span className="text-[12.5px] text-muted-foreground font-medium">점수 순</span>
-      </div>
-      {data.summary && (
-        <p className="mb-6 text-[14.5px] leading-[1.8] text-gc-ink-2 break-keep max-w-[72ch]">
-          <b className="font-gc-serif font-black text-gc-ink text-[15.5px] mr-2">
-            총평
-          </b>
-          {data.summary}
-        </p>
-      )}
-      {data.results.length === 0 ? (
-        <p className="text-[14.5px] text-muted-foreground break-keep">
-          현재 매칭되는 신규 공고가 없어요.{" "}
-          <Link
-            href={`/recommendations?company=${encodeURIComponent(company.corp_nm)}`}
-            className="font-bold text-primary hover:underline"
-          >
-            실시간 조회로 다시 확인
-          </Link>
-          하거나 나중에 들러보세요.
-        </p>
-      ) : (
-        <>
-          <div className="flex flex-col gap-4">
-            {top.map((bid, i) => (
-              <BidCard
-                key={`${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-                bid={bid}
-                rank={i + 1}
-                targetBizrno={company.bizrno_norm}
-                peerStat={bid.dmnd_instt_nm ? peerMap.get(bid.dmnd_instt_nm) : undefined}
-              />
-            ))}
-          </div>
-          {slim.length > 0 && (
-            <section className="mt-10">
-              <div className="flex items-baseline justify-between mb-3 px-3">
-                <h3 className="text-[15px] font-bold text-foreground">
-                  관련 공고 {slim.length}개 더
-                </h3>
-                <span className="text-[11.5px] text-muted-foreground font-medium">
-                  점수 / 마감 / 예산
-                </span>
-              </div>
-              <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
-                {slim.map((bid, i) => (
-                  <SlimBidRow
-                    key={`slim-${bid.bid_ntce_no}-${bid.bid_ntce_ord}`}
-                    bid={bid}
-                    rank={TOP + i + 1}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
-      <OrderPlanSection results={data.order_plan_results ?? []} />
-    </section>
-
-    {data.viz && (
-      <EmbeddingSpaceViz viz={data.viz} companyName={company.corp_nm} />
-    )}
-    </>
+    <CompanyRecommendations bizrnoNorm={company.bizrno_norm} corpNm={company.corp_nm} />
   );
 }
 
