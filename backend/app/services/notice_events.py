@@ -23,6 +23,7 @@ def log_notice_events(rows: list[dict]) -> None:
             "algorithm_version": (r.get("algorithm_version") or "")[:20] or None,
             "score": r.get("score"),
             "metadata": r.get("metadata"),
+            "source": (r.get("source") or "user")[:16],
         }
         for r in rows
         if r.get("bid_ntce_no") and r.get("event_type") in ALLOWED_EVENT_TYPES
@@ -42,7 +43,12 @@ def log_impressions(
     target_bizrno: str | None,
     algorithm_version: str,
     top_n: int = 20,
+    source: str = "user",
 ) -> None:
+    # 내부 SSR 렌더링마다 20건씩 쌓으면 실사용 지표와 무관하게 테이블만 커진다
+    # (2026-09-18 확인: 누적 110만 건 중 사용자 행동은 save 3건). 사용자 요청만 남긴다.
+    if source != "user":
+        return
     log_notice_events(
         [
             {

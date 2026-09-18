@@ -1,6 +1,10 @@
 """사용자 검색 로그 — fire-and-forget 저장.
 
 추천 응답 흐름과 분리되어야 하므로 실패 시 silent (raise X).
+
+`source`는 `app.core.traffic_source`가 판정한 요청 출처(user/internal/bot)다.
+내부 SSR 호출도 기록은 남기되(캐시 히트율 분석에 쓰인다) 지표에서 걸러낼 수 있게
+라벨을 붙인다. 실사용 지표는 `v_search_logs_daily_user` 뷰를 본다.
 """
 
 from __future__ import annotations
@@ -34,6 +38,7 @@ def log_search(
     user_agent: str | None,
     referer: str | None,
     latency_ms: int | None,
+    source: str = "user",
 ) -> None:
     try:
         get_admin_client().table("search_logs").insert(
@@ -51,6 +56,7 @@ def log_search(
                 "user_agent": (user_agent or "")[:500] or None,
                 "referer": (referer or "")[:500] or None,
                 "latency_ms": latency_ms,
+                "source": source,
             }
         ).execute()
     except Exception:

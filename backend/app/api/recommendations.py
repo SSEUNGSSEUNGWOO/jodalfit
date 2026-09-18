@@ -21,6 +21,7 @@ from app.services.explain import (
     explain_recommendation,
     explain_summary,
 )
+from app.core.traffic_source import classify_source
 from app.services.notice_events import log_impressions
 from app.services.recommend import recommend
 from app.services.search_log import log_search
@@ -73,6 +74,7 @@ def post_recommendations(
     background: BackgroundTasks,
 ):
     t0 = time.time()
+    source = classify_source(request)
 
     # 회사 페이지 SSR 전용 read-through 캐시. 히트하면 추천 파이프라인과 LLM 총평을
     # 통째로 건너뛴다. 미스면 아래에서 계산하고 응답 직전에 저장한다.
@@ -96,6 +98,7 @@ def post_recommendations(
                 user_agent=request.headers.get("user-agent"),
                 referer=request.headers.get("referer"),
                 latency_ms=int((time.time() - t0) * 1000),
+                source=source,
             )
             return hit
 
@@ -159,6 +162,7 @@ def post_recommendations(
         user_agent=request.headers.get("user-agent"),
         referer=request.headers.get("referer"),
         latency_ms=int((time.time() - t0) * 1000),
+        source=source,
     )
     if result.get("results"):
         background.add_task(
@@ -166,6 +170,7 @@ def post_recommendations(
             result["results"],
             session_id=req.session_id,
             target_bizrno=company.get("bizrno"),
+            source=source,
             algorithm_version=req.algorithm,
         )
 
@@ -197,6 +202,7 @@ def post_recommendations_stream(
       {"type":"done"}
     """
     t0 = time.time()
+    source = classify_source(request)
     result = recommend(
         req.query,
         limit=req.limit,
@@ -232,6 +238,7 @@ def post_recommendations_stream(
         user_agent=request.headers.get("user-agent"),
         referer=request.headers.get("referer"),
         latency_ms=int((time.time() - t0) * 1000),
+        source=source,
     )
     if result.get("results"):
         background.add_task(
@@ -239,6 +246,7 @@ def post_recommendations_stream(
             result["results"],
             session_id=req.session_id,
             target_bizrno=company.get("bizrno"),
+            source=source,
             algorithm_version=req.algorithm,
         )
 
