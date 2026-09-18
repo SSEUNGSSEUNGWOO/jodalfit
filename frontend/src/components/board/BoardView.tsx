@@ -38,7 +38,7 @@ interface Props {
 
 /** 10자리 사업자번호 입력인지 — 이 경우엔 키워드 검색이 의미 없어 자동 전환하지 않는다 */
 function isBizrnoInput(q: string): boolean {
-  return q.replace(/D/g, "").length === 10 && /^[d-s]+$/.test(q.trim());
+  return q.replace(/\D/g, "").length === 10 && /^[\d\-\s]+$/.test(q.trim());
 }
 
 /** 개찰판 — 추천 결과 표면의 루트. 스트리밍 수신 + 조건 적용 + 판 렌더. */

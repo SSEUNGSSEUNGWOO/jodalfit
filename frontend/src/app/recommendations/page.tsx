@@ -34,7 +34,7 @@ export default async function RecommendationsPage({ searchParams }: PageProps) {
   const algorithm = p.algorithm === "v1" ? "v1" : "v2";
 
   // 나라장터 공고번호(예: R26BK01719700-000)를 검색창에 넣으면 공고 페이지로 보낸다
-  const noticeNo = query.match(/^s*(Rd{2}[A-Z]{2}d{6,})(?:-d{3})?s*$/i);
+  const noticeNo = query.match(/^\s*(R\d{2}[A-Z]{2}\d{6,})(?:-\d{3})?\s*$/i);
   if (noticeNo) redirect(`/notices/${noticeNo[1].toUpperCase()}`);
   return (
     <>
