@@ -29,18 +29,45 @@ STATE_LABELS = {"1": "indexed", "2": "crawl_limited", "3": "index_excluded", "4"
 TOP_N = 50
 
 
+CHROME_PATHS = (
+    Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+    Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+)
+# Playwright 기본 Chromium 은 "자동화 제어 중" 표시가 붙어 네이버 로그인이 보호조치(보안 확인)에서 막힌다 (2026-09-18).
+# 설치된 크롬을 쓰고 자동화 표시를 끈다.
+STEALTH_ARGS = ["--disable-blink-features=AutomationControlled"]
+
+
+def _chrome() -> Path | None:
+    return next((p for p in CHROME_PATHS if p.exists()), None)
+
+
+def _launch(p, headless: bool):
+    kw = dict(headless=headless, args=STEALTH_ARGS, ignore_default_args=["--enable-automation"])
+    if _chrome():
+        kw["channel"] = "chrome"
+    return p.chromium.launch_persistent_context(str(PROFILE_DIR), **kw)
+
+
 def login(console_url: str) -> None:
-    from playwright.sync_api import sync_playwright
+    """설치된 크롬을 자동화 없이 그냥 띄운다 — 사람이 쓰는 브라우저와 똑같이 보여야 보호조치를 통과한다."""
+    import subprocess
 
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
-    with sync_playwright() as p:
-        ctx = p.chromium.launch_persistent_context(str(PROFILE_DIR), headless=False)
-        page = ctx.pages[0] if ctx.pages else ctx.new_page()
-        page.goto(f"https://nid.naver.com/nidlogin.login?url={console_url}")
-        print("브라우저에서 네이버 로그인('로그인 상태 유지' 체크)을 마친 뒤 창을 닫으세요...")
-        while ctx.pages:
-            time.sleep(1)
-        ctx.close()
+    url = f"https://nid.naver.com/nidlogin.login?url={console_url}"
+    chrome = _chrome()
+    print("크롬 창에서 네이버 로그인 → '로그인 상태 유지' 체크 → 서치어드바이저 화면이 보이면 창을 닫으세요...")
+    if chrome:
+        subprocess.run([str(chrome), f"--user-data-dir={PROFILE_DIR}", "--no-first-run",
+                        "--no-default-browser-check", "--new-window", url])
+    else:  # 크롬이 없으면 Playwright Chromium 으로 (보호조치에 걸릴 수 있음)
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            ctx = _launch(p, headless=False)
+            (ctx.pages[0] if ctx.pages else ctx.new_page()).goto(url)
+            while ctx.pages:
+                time.sleep(1)
+            ctx.close()
     print(f"프로필 저장: {PROFILE_DIR}")
 
 
@@ -68,7 +95,7 @@ def collect(site_url: str, day: date, page_types: list[dict], keywords: list[str
 
     raw: dict[str, dict] = {}
     with sync_playwright() as p:
-        ctx = p.chromium.launch_persistent_context(str(PROFILE_DIR), headless=True)
+        ctx = _launch(p, headless=True)
         page = ctx.new_page()
         page.on("response", on_resp)
         page.goto(f"{BASE}/console/site/summary?site={quote(site_url, safe='')}", wait_until="networkidle")

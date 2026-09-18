@@ -41,9 +41,10 @@ uv run python -m jobs.marketing_report.cli --no-interpret  # LLM 해석 생략
 URL 검사 API 한도는 하루 2,000건·분당 600건. 표본 100개라 한도는 여유 있지만 순차 호출이라 수 분 걸린다.
 
 ### 네이버 (한 번 + 만료 시)
-1. 이 세션 프롬프트에 `! cd C:\dev\personal\jodalfit\backend; uv run python -m jobs.marketing_report.cli --naver-login`
-   → 뜬 창에서 네이버 로그인(**로그인 상태 유지** 체크) → 서치어드바이저 화면이 보이면 창 닫기.
-   프로필은 `backend/data/naver-profile`(gitignored). 2026-09-18 설정 완료.
+1. 이 세션 프롬프트에 `! cd /c/dev/personal/jodalfit/backend && uv run python -m jobs.marketing_report.cli --naver-login`
+   (이 세션의 `!`는 bash라 경로에 슬래시를 쓴다) → PC에 설치된 크롬이 자동화 표시 없이 뜬다 → 네이버 로그인(**로그인 상태 유지** 체크)
+   → 서치어드바이저 화면이 보이면 창 닫기. 프로필은 `backend/data/naver-profile`(gitignored).
+   Playwright 기본 Chromium 으로 로그인하면 네이버 보호조치(보안 확인)에서 막힌다. 매일 수집도 같은 크롬을 headless 로 쓴다.
 2. 매일 headless 로 사이트 요약 화면을 열어 세션을 살리고, 화면이 쓰는 콘솔 내부 API 를 같은 세션으로 직접 부른다.
    원본 응답은 `backend/data/naver/YYYY-MM-DD/*.json`. 세션이 만료되면 수집 상태에 "로그인 세션 만료"가 찍히니 1번을 다시.
 
