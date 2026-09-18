@@ -82,25 +82,29 @@ def fetch_active_bizrnos(client) -> list[str]:
     bizrnos: set[str] = set()
     PAGE = 1000
 
-    offset = 0
+    # offset 페이징은 47만 행 뒤쪽에서 8초 timeout(57014)에 걸린다 (2026-09-18) →
+    # 사업자번호 인덱스를 타는 keyset. gt(last) 가 같은 번호의 나머지 행을 건너뛰지만 필요한 건 번호 집합뿐이다.
+    last = ""
     while True:
-        r = (
+        q = (
             client.table("contracts")
             .select("rprsnt_corp_bizrno_norm")
             .not_.is_("rprsnt_corp_bizrno_norm", "null")
-            .range(offset, offset + PAGE - 1)
-            .execute()
-            .data
+            .order("rprsnt_corp_bizrno_norm")
+            .limit(PAGE)
         )
+        if last:
+            q = q.gt("rprsnt_corp_bizrno_norm", last)
+        r = q.execute().data
         if not r:
             break
         for row in r:
             v = row.get("rprsnt_corp_bizrno_norm")
             if v:
                 bizrnos.add(v)
+        last = r[-1]["rprsnt_corp_bizrno_norm"]
         if len(r) < PAGE:
             break
-        offset += PAGE
 
     # is_winner=False에는 인덱스가 없어 offset 페이징이 timeout(57014) →
     # bizrno 인덱스를 타는 keyset 페이지네이션 사용
@@ -131,7 +135,8 @@ def fetch_active_bizrnos(client) -> list[str]:
 
 
 def fetch_embedded_at_map(client) -> dict[str, str | None]:
-    """companies 페이지 스캔 → bizrno_norm별 embedded_at (없으면 None)."""
+    """companies 페이지 스캔 → bizrno_norm별 embedded_at (없으면 None).
+    같은 사업자번호가 여러 행이면 가장 최근 embedded_at (한 행이라도 벡터가 있으면 '있음')."""
     out: dict[str, str | None] = {}
     PAGE = 1000
     offset = 0
@@ -148,11 +153,85 @@ def fetch_embedded_at_map(client) -> dict[str, str | None]:
         if not r:
             break
         for row in r:
-            out[row["bizrno_norm"]] = row.get("embedded_at")
+            n, at = row["bizrno_norm"], row.get("embedded_at")
+            if n not in out or (at and (out[n] is None or at > out[n])):
+                out[n] = at
         if len(r) < PAGE:
             break
         offset += PAGE
     return out
+
+
+def _digits(s: str | None) -> str:
+    return "".join(ch for ch in (s or "") if ch.isdigit())
+
+
+def fetch_user_searched(client) -> set[str]:
+    """실사용자가 검색한 회사 (search_logs.source='user', 0034). 내부 SSR·봇은 제외."""
+    out: set[str] = set()
+    last = 0
+    while True:
+        r = (
+            client.table("search_logs").select("id,matched_bizrno")
+            .eq("source", "user").not_.is_("matched_bizrno", "null")
+            .gt("id", last).order("id").limit(1000).execute().data
+        )
+        if not r:
+            break
+        out.update(_digits(x["matched_bizrno"]) for x in r)
+        last = r[-1]["id"]
+        if len(r) < 1000:
+            break
+    return out
+
+
+def fetch_enriched(client) -> set[str]:
+    """등록업종 또는 공급물품이 수집된 회사 — 업종 벡터 재료가 있어 거의 확실히 벡터가 만들어진다."""
+    out: set[str] = set()
+    for table in ("company_industries", "company_supply_products"):
+        last = ""
+        while True:
+            q = client.table(table).select("bizrno").order("bizrno").limit(1000)
+            if last:
+                q = q.gt("bizrno", last)
+            r = q.execute().data
+            if not r:
+                break
+            out.update(_digits(x["bizrno"]) for x in r)
+            last = r[-1]["bizrno"]
+            if len(r) < 1000:
+                break
+    return out
+
+
+def order_targets(active: list[str], emb_at: dict[str, str | None],
+                  searched: set[str], enriched: set[str], today: str) -> tuple[list[str], dict[str, int]]:
+    """처리 순서.
+    0) 실사용자가 검색했는데 벡터 없는 회사  1) 업종·물품 재료가 있는데 벡터 없는 회사
+    2) 나머지 벡터 없는 회사 — 날짜별 해시로 순환 (예전엔 사업자번호 순이라 매일 같은 앞쪽 2.5만 개만 돌고
+       재료 없어 건너뛴 회사가 계속 자리를 차지해, 뒤쪽 4만 개는 영영 차례가 오지 않았다)
+    3) 벡터 있는 회사 — 오래된 순 갱신
+    대상 = (낙찰사 ∪ 참가사 ∪ 검색된 회사 ∪ 재료 있는 회사) ∩ companies.
+    """
+    import hashlib
+
+    universe = (set(active) | searched | enriched) & emb_at.keys()
+    tiers: dict[str, list[str]] = {"searched": [], "enriched": [], "rotating": [], "refresh": []}
+    for b in universe:
+        if emb_at[b] is not None:
+            tiers["refresh"].append(b)
+        elif b in searched:
+            tiers["searched"].append(b)
+        elif b in enriched:
+            tiers["enriched"].append(b)
+        else:
+            tiers["rotating"].append(b)
+    tiers["searched"].sort()
+    tiers["enriched"].sort()
+    tiers["rotating"].sort(key=lambda b: hashlib.md5(f"{today}:{b}".encode()).hexdigest())
+    tiers["refresh"].sort(key=lambda b: emb_at[b] or "")
+    ordered = tiers["searched"] + tiers["enriched"] + tiers["rotating"] + tiers["refresh"]
+    return ordered, {k: len(v) for k, v in tiers.items()}
 
 
 def chunks(seq: list[str], size: int) -> Iterator[list[str]]:
@@ -204,8 +283,15 @@ def process_chunk(
     if not corps:
         return [], len(chunk_bizrnos)
 
-    norm_to_corp = {c["bizrno_norm"]: c for c in corps if c.get("bizrno_norm")}
-    biz_pks = [c["bizrno"] for c in corps if c.get("bizrno")]
+    # companies 에는 같은 사업자번호가 하이픈 유무로 두 행인 회사가 있다 (2026-09 기준 7.5천 개).
+    # 업종은 하이픈 행에만 붙어 있기도 해서, 사업자번호(norm) 단위로 묶어 재료를 합치고 벡터는 모든 행에 쓴다.
+    norm_to_rows: dict[str, list[dict]] = defaultdict(list)
+    for c in corps:
+        if c.get("bizrno_norm") and c.get("bizrno"):
+            norm_to_rows[c["bizrno_norm"]].append(c)
+    norm_to_corp = {n: rows[0] for n, rows in norm_to_rows.items()}
+    biz_to_norm = {c["bizrno"]: n for n, rows in norm_to_rows.items() for c in rows}
+    biz_pks = list(biz_to_norm)
 
     # 2. 등록업종 한 번에 (in_)
     industries_rows = (
@@ -223,7 +309,9 @@ def process_chunk(
         nm = r.get("indstryty_nm")
         if not nm:
             continue
-        rep, rest = industries_by_biz[r["bizrno"]]
+        rep, rest = industries_by_biz[biz_to_norm[r["bizrno"]]]
+        if nm in rep or nm in rest:
+            continue
         if r.get("rprsnt_indstryty_yn") == "Y":
             rep.append(nm)
         else:
@@ -244,7 +332,9 @@ def process_chunk(
         nm = r.get("dtl_prdct_clsfc_nm")
         if not nm:
             continue
-        rep, rest = supply_by_biz[r["bizrno"]]
+        rep, rest = supply_by_biz[biz_to_norm[r["bizrno"]]]
+        if nm in rep or nm in rest:
+            continue
         if r.get("rprsnt_prdct_yn") == "Y":
             rep.append(nm)
         else:
@@ -342,8 +432,8 @@ def process_chunk(
             continue
         text = build_industry_text(
             corp,
-            industries_by_biz.get(corp["bizrno"], ([], [])),
-            supply_by_biz.get(corp["bizrno"], ([], [])),
+            industries_by_biz.get(bizrno_norm, ([], [])),
+            supply_by_biz.get(bizrno_norm, ([], [])),
         )
         if text:
             industry_texts.append(text)
@@ -395,13 +485,9 @@ def process_chunk(
             out += (w / total_w) * v
         vec = normalize(out)
 
-        updates.append(
-            {
-                "bizrno": corp["bizrno"],
-                "embedding": vector_to_pgvector_str(vec.tolist()),
-                "embedded_at": now_iso,
-            }
-        )
+        vec_str = vector_to_pgvector_str(vec.tolist())
+        for row in norm_to_rows[bizrno_norm]:  # 중복 행 모두에 — 추천이 어느 행을 읽어도 같은 벡터
+            updates.append({"bizrno": row["bizrno"], "embedding": vec_str, "embedded_at": now_iso})
     return updates, skipped
 
 
@@ -414,17 +500,17 @@ def run(limit: int = 25000, chunk_size: int = 100) -> None:
     print(f"[{JOB_NAME}] fetching active bizrnos from contracts...")
     active = fetch_active_bizrnos(client)
 
-    # active(~93k) > limit(25k)라 절단 필요 — 임베딩 없는 회사 먼저,
-    # 그다음 embedded_at 오래된 순으로 로테이션. companies에 없는 회사는
-    # process_chunk에서 어차피 스킵되므로 슬롯 낭비 방지 차원에서 제외.
+    # 대상(~13만) > limit(25k)라 절단 필요 — 순서는 order_targets 참고.
+    # companies 에 없는 회사는 process_chunk 에서 어차피 스킵되므로 제외.
     emb_at = fetch_embedded_at_map(client)
-    known = [b for b in active if b in emb_at]
-    known.sort(key=lambda b: (emb_at[b] is not None, emb_at[b] or ""))
-    never_embedded = sum(1 for b in known if emb_at[b] is None)
-    target = known[:limit]
+    searched = fetch_user_searched(client)
+    enriched = fetch_enriched(client)
+    ordered, tier_sizes = order_targets(active, emb_at, searched, enriched, date.today().isoformat())
+    target = ordered[:limit]
     print(
-        f"[{JOB_NAME}] active={len(active):,} in_companies={len(known):,} "
-        f"never_embedded={never_embedded:,} will_process={len(target):,}"
+        f"[{JOB_NAME}] active={len(active):,} targets={len(ordered):,} "
+        f"(검색됨·벡터없음 {tier_sizes['searched']:,} / 재료있음·벡터없음 {tier_sizes['enriched']:,} / "
+        f"나머지 벡터없음 {tier_sizes['rotating']:,} 순환 / 갱신 {tier_sizes['refresh']:,}) will_process={len(target):,}"
     )
 
     total = 0

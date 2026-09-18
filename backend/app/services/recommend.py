@@ -82,6 +82,8 @@ def find_company(query: str) -> dict | None:
                 "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
             )
             .eq("bizrno_norm", digits)
+            # 같은 사업자번호가 하이픈 유무로 두 행인 회사가 있다 — 벡터가 있는 행을 먼저 읽는다
+            .order("embedded_at", desc=True, nullsfirst=False)
             .limit(1)
             .execute()
         )
@@ -107,12 +109,15 @@ def find_company(query: str) -> dict | None:
 
     if not best:
         return None
+    # 이름으로 찾은 행과 같은 사업자번호의 다른 행(하이픈 유무)에 벡터가 있을 수 있어 사업자번호로 다시 읽는다
+    best_norm = "".join(ch for ch in best["bizrno"] if ch.isdigit())
     full = (
         client.table("companies")
         .select(
             "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
         )
-        .eq("bizrno", best["bizrno"])
+        .eq("bizrno_norm", best_norm)
+        .order("embedded_at", desc=True, nullsfirst=False)
         .limit(1)
         .execute()
     )
