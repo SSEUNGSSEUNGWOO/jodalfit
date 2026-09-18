@@ -59,3 +59,7 @@ supabase/.temp/
 .cache/
 *.tmp
 .playwright-mcp/
+
+# 마케팅 성적표: 서치콘솔 서비스 계정 키, 네이버 로그인 브라우저 프로필
+backend/secrets/
+backend/data/

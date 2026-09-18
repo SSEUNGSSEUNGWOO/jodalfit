@@ -1,0 +1,57 @@
+# 조달핏 일일 마케팅 성적표
+
+매일 아침 `/marketing-report` 한 번이면 어제(KST) 성적표가 `docs/marketing/reports/YYYY-MM-DD.md`로 나온다.
+숫자는 전부 코드가 만들고, LLM은 마지막에 표만 읽고 300자 해석을 쓴다.
+
+```
+cd backend
+uv run python -m jobs.marketing_report.cli                 # 어제
+uv run python -m jobs.marketing_report.cli --date 2026-09-17
+uv run python -m jobs.marketing_report.cli --skip naver     # 소스 건너뛰기 (gsc, naver, supabase)
+uv run python -m jobs.marketing_report.cli --no-interpret  # LLM 해석 생략
+```
+
+소스 하나가 실패해도 나머지로 성적표를 내고, 사유는 맨 아래 "수집 상태" 표에 남는다.
+스냅샷(`docs/marketing/snapshots/YYYY-MM-DD.json`)은 전주·전일 비교의 원천이라 리포트와 함께 커밋한다.
+
+## 여섯 칸
+
+| 칸 | 무엇을 | 어디서 | 비교 기준 |
+|---|---|---|---|
+| 1. 색인·크롤 (구글) | 사이트맵 표본 100개(회사 50·공고 50, 매일 같은 URL)의 색인 비율, 사이트맵 제출·색인 수 | 서치콘솔 URL 검사 API, Sitemaps API | 전주 같은 요일 |
+| 2. 구글 검색 유입 | 클릭·노출·CTR·순위, 페이지 유형별(회사/공고/업종/인사이트), 상위 검색어 10 | 서치콘솔 Search Analytics | 전주 같은 요일 |
+| 3. 네이버 서치어드바이저 | 노출·클릭·검색어·수집·색인 | 콘솔 XHR 가로채기 (API 없음) | 전주 같은 요일 |
+| 4. 사람 행동 | SSR 제외 실제 검색, 회사 식별 성공, **재검색율**, 공고 클릭·저장, 구독·이메일 | Supabase RPC `marketing_daily_stats` (0033) | 전주 같은 요일 |
+| 5. 제품 건강 | 오류율, 결과 0건 비율, p50 응답 | 같은 RPC | 전주 같은 요일 |
+| 6. 키워드 추적 | 33개 키워드의 구글 평균 순위 상승·하락·신규·이탈 | 서치콘솔 query 데이터 (정확 일치) | 직전 스냅샷 |
+
+- 성공 기준은 신규 유입이 아니라 **재검색율** — 그날 사람이 검색한 회사 중 직전 7일 안에도 검색됐던 회사의 비율.
+- 구글 색인이 풀리기 전(발견됨-미색인 6만 건)엔 1번 칸의 표본 색인 비율이 첫 지표다. 서치콘솔 데이터는 1~2일 늦게 확정돼서 어제가 비면 최대 3일 물러나고, 표에 기준일을 적는다.
+- 키워드 목록과 랜딩·근거는 `backend/jobs/marketing_report/config.yaml`. 공고명 3개는 마감되면 이탈하니 주 1회 `/notices`에서 교체.
+
+## 최초 설정
+
+### 서치콘솔 (한 번)
+1. Google Cloud 콘솔 → 프로젝트 하나 → "Google Search Console API" 사용 설정.
+2. IAM → 서비스 계정 만들기 → 키(JSON) 발급 → `backend/secrets/gsc-service-account.json` 에 저장 (gitignored).
+   다른 경로면 `backend/.env`에 `GSC_SERVICE_ACCOUNT_JSON=경로`.
+3. 서치콘솔 → 속성 `jodalfit.co.kr`(도메인) → 설정 → 사용자 및 권한 → 서비스 계정 이메일을 **전체** 권한으로 추가. URL 검사 API는 소유자·전체 권한이 필요하다.
+4. 확인: `uv run python -m jobs.marketing_report.cli --skip naver` 에서 gsc_* 가 ok.
+
+URL 검사 API 한도는 하루 2,000건·분당 600건. 표본 100개라 여유 있다.
+
+### 네이버 (한 번 + 만료 시)
+1. `uv run python -m jobs.marketing_report.cli --naver-login` → 창이 뜨면 네이버 로그인 → 창 닫기. 프로필은 `backend/data/naver-profile`(gitignored).
+2. 이후 headless 로 콘솔을 열어 JSON 응답을 `backend/data/naver/YYYY-MM-DD/`에 전부 저장한다. 세션이 만료되면 수집 상태에 "로그인 세션 만료"가 찍히니 1번을 다시.
+
+### 네이버 파서 확정 (첫 수집 후 1회)
+콘솔 응답 형태를 실물로 못 봐서 `naver.py::parse()`는 키 이름(노출·클릭·색인·수집)으로 첫 숫자를 추정하는 임시 구현이다.
+첫 수집이 끝나면 `backend/data/naver/<날짜>/*.json`을 보고 어떤 응답이 노출·클릭·검색어·수집·색인인지 골라 `parse()`를 고정한다.
+그 전까지 3번 칸은 "추정값" 표시가 붙는다.
+
+### 해석기
+`claude -p`(구독 CLI)를 쓴다. ANTHROPIC_API_KEY는 쓰지 않는다. 300자 안팎, 표에 없는 숫자는 못 쓰게 프롬프트에 박혀 있다.
+
+## 다음 단계 (아직 안 함)
+- GA4: 채널 귀속(구글·네이버·뉴스레터 중 어디서 왔나)이 필요해지면 gtag 삽입 후 7번 칸 추가.
+- 어드민 그래프·자동 발행은 `snapshots/*.json`을 그대로 데이터 소스로 쓰면 된다.

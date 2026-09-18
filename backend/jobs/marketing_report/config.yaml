@@ -1,0 +1,64 @@
+# 일일 마케팅 성적표 설정. 키워드는 mk-growth 가 코드·실제 검색어 기준으로 고른 것 (2026-09-18).
+site:
+  domain: jodalfit.co.kr
+  gsc_site_url: "sc-domain:jodalfit.co.kr"   # 서치콘솔 도메인 속성 (DNS 인증)
+  naver_console: "https://searchadvisor.naver.com/console/board"
+
+# 구글 색인 표본 — sitemap_urls MV 에서 seq 가 배수인 URL 을 매일 같은 것으로 검사 (추세용). 회사 50 + 공고 50 = 100/일.
+index_sample:
+  company_every: 1200
+  notice_every: 200
+  max_per_kind: 50
+
+# 서치콘솔 페이지 URL → 페이지 유형. 위에서부터 첫 매치.
+page_types:
+  - { name: company,  pattern: "^/companies/\\d{10}$" }
+  - { name: industry, pattern: "^/companies/industry" }
+  - { name: browse,   pattern: "^/companies/browse" }
+  - { name: companies_index, pattern: "^/companies/?$" }
+  - { name: notice,   pattern: "^/notices/[A-Z0-9]+" }
+  - { name: notices_index, pattern: "^/notices/?$" }
+  - { name: insight,  pattern: "^/insights" }
+  - { name: recommendations, pattern: "^/recommendations" }
+  - { name: home,     pattern: "^/$" }
+
+# 추적 키워드. 순위는 서치콘솔 query 데이터(정확히 일치)와 네이버 검색어 데이터에서 뽑는다.
+# group: domain(서비스 도메인어) / longtail(페이지 유형 롱테일) / insight(인사이트 콘텐츠).
+# 검색량은 전부 미확인 — 네이버 검색광고 키워드도구로 채울 것. 공고명 3건은 마감되면 이탈하므로 주 1회 교체.
+keywords:
+  # (a) 서비스 도메인어
+  - { q: "조달핏", group: domain, landing: "/", why: "브랜드 지명검색. 재검색 정착의 직접 신호" }
+  - { q: "나라장터 입찰공고 추천", group: domain, landing: "/", why: "일타비드·지투비플러스가 'AI 추천'으로 경쟁 중인 실존 검색어" }
+  - { q: "입찰공고 추천", group: domain, landing: "/", why: "위 검색어 축약형" }
+  - { q: "나라장터 입찰정보 무료 검색", group: domain, landing: "/notices", why: "지투비플러스 title 그대로인 실존 검색어" }
+  - { q: "나라장터 입찰공고 검색", group: domain, landing: "/notices", why: "공고 목록 페이지 벤치마크" }
+  - { q: "진행중인 용역 입찰공고", group: domain, landing: "/notices?bsns_div=용역", why: "notices 페이지 title과 글자 단위 일치" }
+  - { q: "사전규격 의견제출 기한", group: domain, landing: "/insights/guide/g2b-bidding-basics", why: "가이드에 법정 기간 명시. 골든타임 유입구" }
+  - { q: "사전규격 공개 조회", group: domain, landing: "/insights/guide/g2b-bidding-basics", why: "실존 검색어. 공고 라이프사이클 보조 랜딩" }
+  - { q: "나라장터 낙찰 이력 조회", group: domain, landing: "/companies/[bizrno]", why: "회사 페이지 title '나라장터 수주 N건'이 직접 응답" }
+  - { q: "나라장터 개찰결과 조회", group: domain, landing: "/notices/[bid_ntce_no]", why: "실측 네이버 8위 '개찰 결과' 유입과 같은 의도" }
+  - { q: "업체별 투찰률", group: domain, landing: "/companies/[bizrno]", why: "회사 페이지 description에 평균 투찰률. 정확 형태 미확인" }
+  - { q: "조달청 등록업체 조회", group: domain, landing: "/companies/industry", why: "업종 디렉토리가 등록업체 목록" }
+  - { q: "공공조달 참여 기업 목록", group: domain, landing: "/companies", why: "companies 페이지 title. 순위 안 잡히면 제거" }
+  # (b) 페이지 유형 롱테일 — 회사명 3개는 2026-08-22 실측 TOP 10에서
+  - { q: "구례 산우건설", group: longtail, landing: "/companies/4168135377", why: "실측 네이버 클릭 1위(CTR 50%). {지역} {회사명} 패턴 대표" }
+  - { q: "구례 산우건설 계약", group: longtail, landing: "/companies/4168135377", why: "실측 5위. 수식어 변형 추적" }
+  - { q: "정원도시안전진단", group: longtail, landing: "/companies/[bizrno]", why: "실측 노출 85·CTR 3.5%로 최저. title 후킹 대조군" }
+  - { q: "신진건설산업", group: longtail, landing: "/companies/[bizrno]", why: "순수 회사명 패턴" }
+  - { q: "우영기술단건축사사무소 기본정보", group: longtail, landing: "/companies/[bizrno]", why: "'{회사명} 기본정보' = 조달업체 기본정보 화면 찾는 검색" }
+  - { q: "삼우건설 입찰", group: longtail, landing: "/companies/[bizrno]", why: "구글 실측 노출 14·클릭 0. '{회사명} 입찰' keywords 효과 지표" }
+  - { q: "정보통신공사업 등록업체", group: longtail, landing: "/companies/industry/[code]/1", why: "업종 페이지 title과 일치. 실존 검색어" }
+  - { q: "전기공사업 등록 업체", group: longtail, landing: "/companies/industry/[code]/1", why: "업종 디렉토리 최다(4,590곳)" }
+  - { q: "소프트웨어사업자 등록업체 목록", group: longtail, landing: "/companies/industry/[code]/1", why: "4,545곳. 목록 의도 미확인 — 순위로 검증" }
+  - { q: "달 착륙선 구조 해석 용역", group: longtail, landing: "/notices/R26BK01735174", why: "진행 중 공고 원문. 회전 슬롯, 마감 후 교체" }
+  - { q: "2026 와구리 페스타 행사 기획 및 운영 대행 용역", group: longtail, landing: "/notices/R26BK01734008", why: "행사대행 공고명 패턴. 회전 슬롯" }
+  - { q: "의료폐기물 위탁처리 용역 단가계약", group: longtail, landing: "/notices/R26BK01731656", why: "단가계약 공고명 패턴. 회전 슬롯" }
+  - { q: "잠실 mice 감리 개찰 결과", group: longtail, landing: "/notices/[bid_ntce_no]", why: "실측 네이버 8위. 마감 후 공고 페이지가 낙찰 단계로 살아 있는지" }
+  # (c) 인사이트 콘텐츠
+  - { q: "공공조달 입찰 절차", group: insight, landing: "/insights/guide/g2b-bidding-basics", why: "가이드 title과 일치. easylaw·조달청 상단이라 벤치마크" }
+  - { q: "나라장터 입찰 처음 절차", group: insight, landing: "/insights/guide/g2b-bidding-basics", why: "왕초보 가이드 의도. 신규 회사 관점 가이드와 정합" }
+  - { q: "발주계획 사전규격 입찰공고 순서", group: insight, landing: "/insights/guide/g2b-bidding-basics", why: "6단계 블록이 직접 답" }
+  - { q: "공공조달 주간 동향", group: insight, landing: "/insights/market/", why: "주간 입찰 동향 기사가 매주 나오는 실존 의도" }
+  - { q: "나라장터 신규 공고 건수", group: insight, landing: "/insights/market/", why: "조달핏만 내는 수치. 정확 형태 미확인" }
+  - { q: "이번주 공공입찰 공고", group: insight, landing: "/insights/picks/", why: "picks title 계열. 정확 형태 미확인" }
+  - { q: "IT 공공입찰 공고", group: insight, landing: "/insights/picks/", why: "분야별 picks 대표 1개. 미확인" }
