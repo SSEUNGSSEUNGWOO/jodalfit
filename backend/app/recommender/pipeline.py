@@ -12,10 +12,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from app.recommender.collaborative import (
-    fetch_institution_stats,
-    fetch_peer_institutions,
-)
+from app.recommender.collaborative import fetch_institution_stats
 from app.recommender.mmr import mmr_diversify
 from app.recommender.qualifications import check_qualifications
 from app.recommender.score import score_notice
@@ -56,13 +53,15 @@ def rank_v2(
         r["qualification"] = q
         passed.append(r)
 
+    # peer 탐색(match_companies RPC)은 껐다. 그 RPC 가 타는 companies_embedding_idx
+    # (HNSW 489MB)가 shared_buffers 256MB 의 두 배여서 캐시에 못 올라가고, DB 전체를
+    # 디스크 I/O 기아로 만들고 있었다 — 55행 인덱스 스캔 1.2초, 회사 페이지 19초
+    # (2026-09-21 측정). 인덱스를 걷어내면서 호출도 같이 끈다. 인덱스 없이 호출만 두면
+    # 14만 행 seq scan 이라 매 요청이 statement timeout 까지 기다린 뒤 degrade 한다.
+    # 되살리려면 인덱스 재생성(비싸다)부터. 기관 반복 발주 통계는 별개 RPC 라 그대로 쓴다.
     peer_instt_counts: dict[str, int] = {}
     instt_stats: dict[str, dict] = {}
     try:
-        if company_embedding_str:
-            peer_instt_counts = fetch_peer_institutions(
-                client, company_embedding_str, company_bizrno_norm
-            )
         cand_instts = {
             (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
             for r in passed
