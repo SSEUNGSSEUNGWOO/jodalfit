@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 from collections import defaultdict
 from datetime import date, datetime
 from typing import Iterator
@@ -38,6 +39,16 @@ from jobs._common import (
 )
 
 JOB_NAME = "compute_company_vectors"
+
+# fetch_active_bizrnos 가 47만 행을 페이징하는 데 쓸 수 있는 시간. 넘기면 거기까지만
+# 쓰고 넘어간다 — 이 집합은 최하위 티어(rotating)용이라 완주보다 잡의 완료가 중요하다.
+#
+# 짧게 잡는 이유: 이 스캔이 길어지면 디스크 캐시를 밀어내 바로 다음 단계
+# (fetch_embedded_at_map, companies 14만 행)가 statement timeout 으로 죽는다.
+# 2026-09-21 실측 — 예산 120s(=두 테이블 240s)면 후속 단계가 매번 타임아웃, 5s 면 통과.
+# 그러면서도 타겟은 44,565개가 잡혔다(갱신 41,423은 대부분 enriched 에서 온다).
+# active 를 악착같이 모아봐야 최하위 티어만 커지고 잡 전체를 잃는다.
+ACTIVE_SCAN_BUDGET_S = 20.0
 
 
 def parse_pgvector(s: str | list | None) -> np.ndarray | None:
@@ -78,43 +89,77 @@ def fetch_active_bizrnos(client) -> list[str]:
 
     참가만 하고 수주 못 한 회사도 벡터를 만들어야 키워드 폴백 없이 추천 가능.
     (양쪽 모두 숫자만 남긴 정규화 사업자번호)
+
+    두 테이블 다 47만 행이고 고유 사업자번호는 5만 대라 페이지를 500번 넘게 돈다.
+    여기서 두 가지로 잡이 멈춰 왔다 — 도중에 statement timeout(57014) 이 나서 예외로
+    죽거나 (2026-09-18~20 매일), 죽지는 않아도 왕복이 쌓여 하염없이 느리거나.
+    그래서 예외는 삼키고 시간 예산도 둔다. 이 집합은 order_targets 의 최하위 티어
+    rotating 을 만드는 데만 쓰이므로 중간에 끊겨도 거기까지 모은 것만 쓰고 계속 간다 —
+    정작 중요한 상위 티어 searched·enriched 는 이 함수와 무관하다.
     """
     bizrnos: set[str] = set()
     PAGE = 1000
+    started = time.monotonic()
 
-    # offset 페이징은 47만 행 뒤쪽에서 8초 timeout(57014)에 걸린다 (2026-09-18) →
-    # 사업자번호 인덱스를 타는 keyset. gt(last) 가 같은 번호의 나머지 행을 건너뛰지만 필요한 건 번호 집합뿐이다.
+    def collect(table: str, col: str, extra=None) -> None:
+        # offset 페이징은 47만 행 뒤쪽에서 8초 timeout(57014)에 걸린다 (2026-09-18) →
+        # 사업자번호 인덱스를 타는 keyset. gt(last) 가 같은 번호의 나머지 행을 건너뛰지만
+        # 필요한 건 번호 집합뿐이다.
+        last = ""
+        while True:
+            if time.monotonic() - started > ACTIVE_SCAN_BUDGET_S:
+                print(
+                    f"[{JOB_NAME}] {table} 활성 사업자번호 수집 시간 예산 "
+                    f"{ACTIVE_SCAN_BUDGET_S}s 초과 — {len(bizrnos):,}개까지만 사용"
+                )
+                return
+            q = client.table(table).select(col)
+            if extra:
+                q = extra(q)
+            q = q.not_.is_(col, "null").order(col).limit(PAGE)
+            if last:
+                q = q.gt(col, last)
+            r = q.execute().data
+            if not r:
+                break
+            for row in r:
+                v = row.get(col)
+                if v:
+                    bizrnos.add(v)
+            last = r[-1][col]
+            if len(r) < PAGE:
+                break
+
+    for table, col, extra in (
+        ("contracts", "rprsnt_corp_bizrno_norm", None),
+        # is_winner=False 에는 전용 부분 인덱스(award_results_participant_bizrno_idx)가 있다
+        ("award_results", "bizrno", lambda q: q.eq("is_winner", False)),
+    ):
+        try:
+            collect(table, col, extra)
+        except Exception as e:  # noqa: BLE001 — timeout 이든 뭐든 부분 결과로 계속 간다
+            print(f"[{JOB_NAME}] {table} 활성 사업자번호 수집 중단 ({e}) — {len(bizrnos):,}개까지만 사용")
+
+    return sorted(bizrnos)
+
+
+def fetch_embedded_at_map(client) -> dict[str, str | None]:
+    """companies 페이지 스캔 → bizrno_norm별 embedded_at (없으면 None).
+    같은 사업자번호가 여러 행이면 가장 최근 embedded_at (한 행이라도 벡터가 있으면 '있음').
+
+    offset 페이징이던 것을 keyset 으로 바꿨다 — 뒤로 갈수록 건너뛸 행이 쌓여 불리하고,
+    bizrno 가 PK 라 keyset 이 행을 빠뜨릴 일도 없다. 다만 이 함수가 timeout(57014) 으로
+    죽던 진짜 원인은 여기가 아니라 앞단 fetch_active_bizrnos 의 I/O 독점이었다
+    (ACTIVE_SCAN_BUDGET_S 주석 참고). 쿼리 자체는 첫 페이지 216ms 로 정상이다.
+    """
+    out: dict[str, str | None] = {}
+    PAGE = 1000
     last = ""
     while True:
         q = (
-            client.table("contracts")
-            .select("rprsnt_corp_bizrno_norm")
-            .not_.is_("rprsnt_corp_bizrno_norm", "null")
-            .order("rprsnt_corp_bizrno_norm")
-            .limit(PAGE)
-        )
-        if last:
-            q = q.gt("rprsnt_corp_bizrno_norm", last)
-        r = q.execute().data
-        if not r:
-            break
-        for row in r:
-            v = row.get("rprsnt_corp_bizrno_norm")
-            if v:
-                bizrnos.add(v)
-        last = r[-1]["rprsnt_corp_bizrno_norm"]
-        if len(r) < PAGE:
-            break
-
-    # is_winner=False에는 인덱스가 없어 offset 페이징이 timeout(57014) →
-    # bizrno 인덱스를 타는 keyset 페이지네이션 사용
-    last = ""
-    while True:
-        q = (
-            client.table("award_results")
-            .select("bizrno")
-            .eq("is_winner", False)
-            .not_.is_("bizrno", "null")
+            client.table("companies")
+            .select("bizrno,bizrno_norm,embedded_at")
+            .not_.is_("bizrno_norm", "null")
             .order("bizrno")
             .limit(PAGE)
         )
@@ -124,41 +169,12 @@ def fetch_active_bizrnos(client) -> list[str]:
         if not r:
             break
         for row in r:
-            v = row.get("bizrno")
-            if v:
-                bizrnos.add(v)
-        last = r[-1]["bizrno"]
-        if len(r) < PAGE:
-            break
-
-    return sorted(bizrnos)
-
-
-def fetch_embedded_at_map(client) -> dict[str, str | None]:
-    """companies 페이지 스캔 → bizrno_norm별 embedded_at (없으면 None).
-    같은 사업자번호가 여러 행이면 가장 최근 embedded_at (한 행이라도 벡터가 있으면 '있음')."""
-    out: dict[str, str | None] = {}
-    PAGE = 1000
-    offset = 0
-    while True:
-        r = (
-            client.table("companies")
-            .select("bizrno_norm,embedded_at")
-            .not_.is_("bizrno_norm", "null")
-            .order("bizrno")
-            .range(offset, offset + PAGE - 1)
-            .execute()
-            .data
-        )
-        if not r:
-            break
-        for row in r:
             n, at = row["bizrno_norm"], row.get("embedded_at")
             if n not in out or (at and (out[n] is None or at > out[n])):
                 out[n] = at
+        last = r[-1]["bizrno"]
         if len(r) < PAGE:
             break
-        offset += PAGE
     return out
 
 
