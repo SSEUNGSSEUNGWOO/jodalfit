@@ -44,14 +44,14 @@ export function websiteJsonLd(): Json {
 }
 
 /** 회사 페이지에 노출할 분석 대상 회사. */
+// 대표자명은 개인사업자의 경우 개인정보에 해당해 구조화 데이터에 넣지 않는다.
 export function companyOrganizationJsonLd(args: {
   bizrnoNorm: string;
   corpNm: string;
-  ceoNm?: string | null;
   rgnNm?: string | null;
   industriesSummary?: string | null;
 }): Json {
-  const { bizrnoNorm, corpNm, ceoNm, rgnNm, industriesSummary } = args;
+  const { bizrnoNorm, corpNm, rgnNm, industriesSummary } = args;
   const data: Json = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -61,9 +61,6 @@ export function companyOrganizationJsonLd(args: {
   };
   if (industriesSummary) data.description = industriesSummary;
   if (rgnNm) data.address = { "@type": "PostalAddress", addressRegion: rgnNm, addressCountry: "KR" };
-  if (ceoNm) {
-    data.employee = { "@type": "Person", name: ceoNm, jobTitle: "대표" };
-  }
   return data;
 }
 

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { notFound } from "next/navigation";
 import { loadPretendard, ogFonts } from "../../_og/fonts";
 import { fetchCompanyByBizrno } from "@/lib/company";
 import { maskBizrno } from "@/lib/utils";
@@ -30,6 +31,10 @@ export default async function Image({
   const company = bizrnoNorm.length === 10
     ? await fetchCompanyByBizrno(bizrnoNorm).catch(() => null)
     : null;
+
+  // 비공개 요청 회사 (0037). 상세페이지가 404 여도 이 PNG 는 별도 라우트라
+  // 여기서 따로 막지 않으면 상호가 그려진 이미지가 계속 서빙된다.
+  if (company?.optout_at) notFound();
 
   const corpName = company?.corp_nm ?? "회사 분석";
   const region = company?.rgn_nm ?? null;

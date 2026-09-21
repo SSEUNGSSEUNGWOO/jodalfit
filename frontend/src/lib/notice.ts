@@ -79,7 +79,6 @@ export interface Award {
   openg_rank: number;
   bizrno: string | null;
   corp_nm: string | null;
-  corp_ceo_nm: string | null;
   bid_amt: number | null;
   bid_rate: number | null;
   is_winner: boolean;
@@ -170,7 +169,7 @@ export async function fetchLifecycle(
       c
         .from("award_results")
         .select(
-          "bid_ntce_no,bid_ntce_ord,openg_rank,bizrno,corp_nm,corp_ceo_nm,bid_amt,bid_rate,is_winner"
+          "bid_ntce_no,bid_ntce_ord,openg_rank,bizrno,corp_nm,bid_amt,bid_rate,is_winner"
         )
         .eq("bid_ntce_no", bidNtceNo)
         .order("openg_rank"),
@@ -199,6 +198,10 @@ export async function fetchLifecycle(
     opinions = (opData as PreSpecOpinion[]) ?? [];
   }
 
+  const awards = (awardsRes.data as Award[]) ?? [];
+  const contracts = (contractsRes.data as Contract[]) ?? [];
+  await redactOptoutCompanies(awards, contracts);
+
   return {
     notice,
     insight: (insightRes.data as NoticeInsight | null) ?? null,
@@ -206,9 +209,57 @@ export async function fetchLifecycle(
     preSpecs,
     opinions,
     orderPlans: (orderPlansRes.data as OrderPlan[]) ?? [],
-    awards: (awardsRes.data as Award[]) ?? [],
-    contracts: (contractsRes.data as Contract[]) ?? [],
+    awards,
+    contracts,
   };
+}
+
+const OPTOUT_LABEL = "비공개 요청 업체";
+
+/** 비공개 요청 회사(0037)의 상호를 공고 페이지에서 가린다.
+ *  회사 페이지를 내려도 award_results·contracts 는 companies 와 FK 가 없어
+ *  여기서 따로 걸러주지 않으면 낙찰자·계약상대로 상호가 계속 노출된다. */
+async function redactOptoutCompanies(
+  awards: Award[],
+  contracts: Contract[]
+): Promise<void> {
+  const norm = (v: string | null) => {
+    const d = (v ?? "").replace(/\D/g, "");
+    return d.length === 10 ? d : null;
+  };
+  const wanted = new Set<string>();
+  for (const a of awards) {
+    const n = norm(a.bizrno);
+    if (n) wanted.add(n);
+  }
+  for (const t of contracts) {
+    const n = norm(t.rprsnt_corp_bizrno);
+    if (n) wanted.add(n);
+  }
+  if (wanted.size === 0) return;
+
+  const { data } = await getServerSupabase()
+    .from("companies")
+    .select("bizrno_norm")
+    .in("bizrno_norm", [...wanted])
+    .not("optout_at", "is", null);
+  const hidden = new Set(((data as { bizrno_norm: string }[]) ?? []).map((r) => r.bizrno_norm));
+  if (hidden.size === 0) return;
+
+  for (const a of awards) {
+    const n = norm(a.bizrno);
+    if (n && hidden.has(n)) {
+      a.corp_nm = OPTOUT_LABEL;
+      a.bizrno = null;
+    }
+  }
+  for (const t of contracts) {
+    const n = norm(t.rprsnt_corp_bizrno);
+    if (n && hidden.has(n)) {
+      t.rprsnt_corp_nm = OPTOUT_LABEL;
+      t.rprsnt_corp_bizrno = null;
+    }
+  }
 }
 
 /** 비슷한 공고 — 해당 공고의 embedding을 기준으로 코사인 검색.

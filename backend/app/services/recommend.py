@@ -68,7 +68,7 @@ def _rpc_with_retry(client, fn: str, params: dict):
 
 _LEGAL_FORMS = ("주식회사", "유한회사", "유한책임회사", "합자회사", "합명회사", "사단법인", "재단법인",
                 "협동조합", "(주)", "㈜", "(유)", "(사)", "(재)")
-COMPANY_COLS = "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted"
+COMPANY_COLS = "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted,optout_at"
 
 
 def _name_core(name: str | None) -> str:
@@ -114,7 +114,11 @@ def _pick_best(client, bizrnos: list[str]) -> dict | None:
 
 
 def _row_by_norm(client, bizrno: str) -> dict | None:
-    """같은 사업자번호가 하이픈 유무로 두 행인 회사가 있다 — 벡터가 있는 행을 먼저 읽는다."""
+    """같은 사업자번호가 하이픈 유무로 두 행인 회사가 있다 — 벡터가 있는 행을 먼저 읽는다.
+
+    find_company 의 모든 경로(사업자번호·이름 정확매칭·trgm)가 마지막에 여기를 지나므로,
+    비공개 요청 회사(0037) 차단도 여기 한 곳에서 한다.
+    """
     norm = "".join(ch for ch in bizrno if ch.isdigit())
     res = (
         client.table("companies").select(COMPANY_COLS)
@@ -122,7 +126,10 @@ def _row_by_norm(client, bizrno: str) -> dict | None:
         .order("embedded_at", desc=True, nullsfirst=False)
         .limit(1).execute()
     )
-    return res.data[0] if res.data else None
+    row = res.data[0] if res.data else None
+    if row and row.get("optout_at"):
+        return None  # 식별 실패로 다뤄 화면이 키워드 모드로 넘어가게 둔다
+    return row
 
 
 def find_company(query: str) -> dict | None:

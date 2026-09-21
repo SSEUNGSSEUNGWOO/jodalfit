@@ -4,7 +4,6 @@ import {
   MapPin,
   Briefcase,
   ArrowUpRight,
-  User,
   Globe,
   Calendar,
 } from "lucide-react";
@@ -103,11 +102,7 @@ export default async function CompaniesIndexPage() {
 
                       {/* Meta */}
                       <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] text-muted-foreground">
-                        {c.ceo_nm && (
-                          <Meta icon={<User className="h-3 w-3" />}>
-                            대표 {c.ceo_nm}
-                          </Meta>
-                        )}
+                        {/* 대표자명은 개인사업자의 경우 개인정보에 해당해 표시하지 않는다. */}
                         {c.rgn_nm && (
                           <Meta icon={<MapPin className="h-3 w-3" />}>
                             {c.rgn_nm}

@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase-server";
+import { fetchOptoutBizrnos } from "@/lib/optout";
 
 /**
  * 업종별 기업 디렉토리 — materialized view `industry_companies` / `industry_directory` (migration 0027).
@@ -66,5 +67,10 @@ export async function fetchIndustryCompanies(
     .lt("seq", from + INDUSTRY_PER_PAGE)
     .order("seq", { ascending: true });
   if (error) throw new Error(`industry_companies ${code}: ${error.message}`);
-  return (data as IndustryCompanyRow[]) ?? [];
+  const rows = (data as IndustryCompanyRow[]) ?? [];
+  // 비공개 요청 회사 제외 (0037). MV 정의에는 넣지 못해 여기서 거른다 — lib/optout.ts 참고.
+  const optout = await fetchOptoutBizrnos();
+  return optout.size === 0
+    ? rows
+    : rows.filter((r) => !optout.has(r.bizrno_norm));
 }

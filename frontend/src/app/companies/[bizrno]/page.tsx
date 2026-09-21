@@ -40,7 +40,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bizrno } = await params;
   const normalized = bizrno.replace(/\D/g, "");
   const company = await fetchCompanyByBizrno(normalized);
-  if (!company) {
+  // 비공개 요청 회사는 존재하지 않는 것처럼 다룬다 (0037). 본문은 notFound() 로 막지만
+  // 메타까지 막아야 상호가 title·keywords 로 새어나가지 않는다.
+  if (!company || company.optout_at) {
     return {
       title: "회사 정보 없음 | 조달핏",
       robots: { index: false },
@@ -104,11 +106,12 @@ export default async function CompanyPage({ params }: Props) {
 
   const company = await fetchCompanyByBizrno(normalized);
   if (!company) notFound();
+  // 정보주체 비공개 요청 (0037). 본문 스트리밍 전에 던져야 실제 404 가 나간다.
+  if (company.optout_at) notFound();
 
   const jsonLd = companyOrganizationJsonLd({
     bizrnoNorm: normalized,
     corpNm: company.corp_nm,
-    ceoNm: company.ceo_nm,
     rgnNm: company.rgn_nm,
   });
 
@@ -193,12 +196,7 @@ function CompanyHero({
               <span>{company.corp_bsns_div_nm}</span>
             </>
           )}
-          {company.ceo_nm && (
-            <>
-              <Dot />
-              <span>대표 {company.ceo_nm}</span>
-            </>
-          )}
+          {/* 대표자명은 개인사업자의 경우 개인정보에 해당해 표시하지 않는다. */}
         </div>
         <p className="mt-6 max-w-[60ch] text-[15.5px] leading-[1.7] text-foreground/80">
           <span className="font-semibold text-foreground">{company.corp_nm}</span>의

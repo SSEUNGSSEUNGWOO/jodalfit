@@ -15,6 +15,8 @@ export interface CompanyDetail {
   contract_count: number;
   biz_status_cd: string | null; // 국세청: 01 계속 / 02 휴업 / 03 폐업 (migration 0028)
   biz_closed_dt: string | null;
+  /** 정보주체 비공개 요청 (migration 0037). null 이 아니면 페이지를 내보내지 않는다. */
+  optout_at: string | null;
 }
 
 export interface ContractRow {
@@ -182,7 +184,7 @@ export async function fetchCompanyByBizrno(
   const { data } = await c
     .from("companies")
     .select(
-      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt"
+      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,optout_at"
     )
     .eq("bizrno_norm", bizrnoNorm)
     .limit(1)
@@ -203,6 +205,7 @@ export async function fetchCompanyByBizrno(
     contract_count: data.contract_count ?? 0,
     biz_status_cd: data.biz_status_cd ?? null,
     biz_closed_dt: data.biz_closed_dt ?? null,
+    optout_at: data.optout_at ?? null,
   };
 }
 
@@ -361,7 +364,8 @@ export async function fetchCompaniesBrowsePage(
       count: "exact",
     })
     .not("embedding", "is", null)
-    .not("bizrno_norm", "is", null);
+    .not("bizrno_norm", "is", null)
+    .is("optout_at", null); // 비공개 요청 회사 제외 (0037)
   if (sido !== "all") q = q.like("rgn_nm", `${sido}%`);
   const { data, count } = await q
     .order("bizrno_norm", { ascending: true })
@@ -379,6 +383,7 @@ export async function fetchBrowseCompanies(
       "bizrno,bizrno_norm,corp_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,hmpg_addr,opng_dt,contract_count"
     )
     .not("embedded_at", "is", null)
+    .is("optout_at", null) // 비공개 요청 회사 제외 (0037)
     .order("embedded_at", { ascending: false })
     .limit(limit);
   const companies = (data as CompanySummary[]) ?? [];

@@ -569,7 +569,6 @@ export default async function NoticePage({ params }: Props) {
                   <tr>
                     <th className="px-4 py-2.5 text-left">순위</th>
                     <th className="px-4 py-2.5 text-left">업체명</th>
-                    <th className="px-4 py-2.5 text-left">대표</th>
                     <th className="px-4 py-2.5 text-right">투찰금액</th>
                     <th className="px-4 py-2.5 text-right">낙찰률</th>
                   </tr>
@@ -593,9 +592,6 @@ export default async function NoticePage({ params }: Props) {
                       </td>
                       <td className="px-4 py-2.5 font-medium text-foreground">
                         {a.corp_nm || "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-muted-foreground">
-                        {a.corp_ceo_nm || "—"}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular tabular-nums font-bold">
                         {formatKRW(a.bid_amt)}

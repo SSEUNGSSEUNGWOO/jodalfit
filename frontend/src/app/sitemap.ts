@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { fetchSitemapUrls } from "@/lib/sitemap-urls";
+import { fetchOptoutBizrnos } from "@/lib/optout";
 import { fetchIndustryDirectory } from "@/lib/industry";
 import { listAllInsights } from "@/lib/insights";
 import {
@@ -40,17 +41,19 @@ export default async function sitemap({
 
   // 0 ~ COMPANY_SEGMENTS-1: 회사. 색인 대상이 5만 URL 한도를 넘어 나눠 싣는다.
   if (segment < COMPANY_SEGMENTS) {
-    const rows = await fetchSitemapUrls(
-      "company",
-      segment * PER_SEGMENT,
-      PER_SEGMENT
-    );
-    return rows.map((r) => ({
-      url: `${BASE_URL}${r.path}`,
-      lastModified: r.lastmod ? new Date(r.lastmod) : STATIC_LASTMOD,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
+    const [rows, optout] = await Promise.all([
+      fetchSitemapUrls("company", segment * PER_SEGMENT, PER_SEGMENT),
+      fetchOptoutBizrnos(),
+    ]);
+    // 비공개 요청 회사 제외 (0037). MV 정의에는 넣지 못해 여기서 거른다 — lib/optout.ts 참고.
+    return rows
+      .filter((r) => !optout.has(r.path.replace("/companies/", "")))
+      .map((r) => ({
+        url: `${BASE_URL}${r.path}`,
+        lastModified: r.lastmod ? new Date(r.lastmod) : STATIC_LASTMOD,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      }));
   }
 
   // 공고 (라이프사이클 페이지) — 최신 PER_SEGMENT 건
