@@ -555,6 +555,59 @@ def _fetch_company_terms(client, bizrno: str) -> set[str]:
     return terms
 
 
+def _build_industry_text(client, bizrno: str) -> str | None:
+    """등록업종·공급물품으로 회사 벡터 입력 텍스트를 만든다.
+
+    jobs/compute_company_vectors.py::build_industry_text 와 같은 포맷 — 같은 임베딩
+    공간에 놓이도록 맞춘다. 벡터가 아직 생성되지 않은 회사를 요청 시점에 구제하는 용도라
+    수주 이력은 안 본다 (그 잡의 콜드스타트 가중치도 γ(업종)=1.0 이라 성격이 같다).
+    """
+    rep_ind: list[str] = []
+    rest_ind: list[str] = []
+    rows = (
+        client.table("company_industries")
+        .select("indstryty_nm,rprsnt_indstryty_yn")
+        .eq("bizrno", bizrno)
+        .execute()
+        .data
+        or []
+    )
+    for r in rows:
+        nm = r.get("indstryty_nm")
+        if not nm or nm in rep_ind or nm in rest_ind:
+            continue
+        (rep_ind if r.get("rprsnt_indstryty_yn") == "Y" else rest_ind).append(nm)
+
+    rep_prd: list[str] = []
+    rest_prd: list[str] = []
+    rows = (
+        client.table("company_supply_products")
+        .select("dtl_prdct_clsfc_nm,rprsnt_prdct_yn")
+        .eq("bizrno", bizrno)
+        .execute()
+        .data
+        or []
+    )
+    for r in rows:
+        nm = r.get("dtl_prdct_clsfc_nm")
+        if not nm or nm in rep_prd or nm in rest_prd:
+            continue
+        (rep_prd if r.get("rprsnt_prdct_yn") == "Y" else rest_prd).append(nm)
+
+    parts: list[str] = []
+    if rep_ind:
+        parts.append(f"대표 업종: {', '.join(rep_ind[:3])}")
+    if rep_prd:
+        parts.append(f"대표 공급물품: {', '.join(rep_prd[:3])}")
+    all_ind = rep_ind + rest_ind
+    if all_ind:
+        parts.append(f"등록업종: {', '.join(all_ind[:10])}")
+    all_prd = rep_prd + rest_prd
+    if all_prd:
+        parts.append(f"공급물품: {', '.join(all_prd[:10])}")
+    return "\n".join(parts) if parts else None
+
+
 def _fetch_company_industry_names(client, bizrno: str) -> set[str]:
     """회사 등록업종 이름 set — 면허 자격 매칭용."""
     out: set[str] = set()
@@ -859,24 +912,32 @@ def _recommend_by_company(
             "pre_spec_results": [],
             "order_plan_results": [],
         }
-    if not company.get("embedding"):
-        return {
-            "company": {
-                "bizrno": company["bizrno"],
-                "corp_nm": company["corp_nm"],
-                "rgn_nm": company.get("rgn_nm"),
-                "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
-            },
-            "mode": "company",
-            "error": "회사 벡터가 아직 생성되지 않았습니다 (수주 이력 부족)",
-            "fallback": "keywords",
-            "results": [],
-            "pre_spec_results": [],
-            "order_plan_results": [],
-        }
+    client = get_admin_client()
 
     # 회사 벡터 준비 — keywords 있으면 키워드 임베딩과 가중합
-    raw_company_vec = company["embedding"]
+    raw_company_vec = company.get("embedding")
+    if not raw_company_vec:
+        # 벡터가 아직 없는 회사 — 등록업종·공급물품이 있으면 그 자리에서 임베딩해 추천한다.
+        # compute_company_vectors 가 매일 다 돌지 못해 재료가 있는데도 벡터가 없는 회사가
+        # 남는다. 예전엔 여기서 바로 오류를 냈고, 사용자는 빈 화면을 받았다.
+        industry_text = _build_industry_text(client, company["bizrno"])
+        if not industry_text:
+            return {
+                "company": {
+                    "bizrno": company["bizrno"],
+                    "corp_nm": company["corp_nm"],
+                    "rgn_nm": company.get("rgn_nm"),
+                    "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
+                },
+                "mode": "company",
+                "error": "등록업종·공급물품 정보가 없어 추천할 수 없습니다",
+                "fallback": "keywords",
+                "results": [],
+                "pre_spec_results": [],
+                "order_plan_results": [],
+            }
+        raw_company_vec = embed_texts([industry_text])[0]
+
     if isinstance(raw_company_vec, str):
         # pgvector "[a,b,...]" 문자열 → list[float]
         inner = raw_company_vec.strip()[1:-1]
@@ -890,7 +951,6 @@ def _recommend_by_company(
     else:
         embedding_str = vector_to_pgvector_str(raw_company_vec)
 
-    client = get_admin_client()
     company_terms = _fetch_company_terms(client, company["bizrno"])
     company_industry_names = _fetch_company_industry_names(client, company["bizrno"])
     bizrno_norm = "".join(ch for ch in company["bizrno"] if ch.isdigit())
