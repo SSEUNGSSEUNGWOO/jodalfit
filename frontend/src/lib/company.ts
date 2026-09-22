@@ -131,12 +131,20 @@ export interface CompetitorProfile {
   sample_notice_names: string[];
 }
 
+// similar_notice_awardees 는 bid_notices 벡터 검색을 하는데 그 테이블엔 벡터 인덱스가 없다 —
+// 2026-09-18 IVFFlat 빌드가 두 번 다 실패했다(maintenance_work_mem 부족, 재시도는 3시간 37분 뒤 취소).
+// 인덱스 없이 전수 비교하면 낙찰 이력 있는 회사마다 60초 넘게 걸려, PostgREST 가 8초에 끊고 아래
+// error 분기로 빈 배열을 돌려준다. 즉 이 섹션은 데이터를 보여준 적이 없으면서 cold 렌더마다
+// 페이지를 8.7초로 묶고 8초씩 디스크를 전수 스캔했다(2026-09-22 측정). 인덱스를 만들면 true 로.
+const SIMILAR_AWARDEES_ENABLED = false;
+
 export async function fetchSimilarNoticeAwardees(
   bizrnoNorm: string,
   topN = 10,
   similarPool = 60,
   historyLimit = 30
 ): Promise<CompetitorProfile[]> {
+  if (!SIMILAR_AWARDEES_ENABLED) return [];
   const c = getServerSupabase();
   const { data, error } = await c.rpc("similar_notice_awardees", {
     p_bizrno_norm: bizrnoNorm,
