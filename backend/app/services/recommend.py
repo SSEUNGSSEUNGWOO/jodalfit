@@ -19,6 +19,7 @@ from typing import Any, Literal
 import numpy as np
 from postgrest.exceptions import APIError
 
+from app.core.timing import timed
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from app.services.viz import anchor_positions, project_many, project_point
@@ -445,11 +446,12 @@ def _search_with_embedding(
         "min_clse_date": today.isoformat(),
     }
     try:
-        res = _rpc_with_retry(
-            client,
-            "match_bid_notices",
-            {**params, "max_clse_date": horizon.isoformat()},
-        )
+        with timed("match_bid_notices"):
+            res = _rpc_with_retry(
+                client,
+                "match_bid_notices",
+                {**params, "max_clse_date": horizon.isoformat()},
+            )
         raw = res.data or []
     except APIError as e:
         # 0018 미적용 환경 — 상한 없이 가져와서 파이썬에서 거른다. 후보 수가 줄지만
@@ -500,7 +502,8 @@ def _search_with_embedding(
             company_embedding_str=embedding_str,
             company_bizrno_norm=company_bizrno_norm,
         )
-        _attach_insights(client, ranked_v2)
+        with timed("insights"):
+            _attach_insights(client, ranked_v2)
         return ranked_v2
 
     # 자격 데이터 한 번에 fetch + 미통과 표시 (소프트 감점은 rerank 안에서)
@@ -892,7 +895,8 @@ def _recommend_by_company(
     keywords: str | None = None,
     algorithm: str = "v1",
 ) -> dict[str, Any]:
-    company = find_company(query)
+    with timed("find"):
+        company = find_company(query)
     if not company:
         return {
             "company": None,
@@ -920,7 +924,8 @@ def _recommend_by_company(
         # 벡터가 아직 없는 회사 — 등록업종·공급물품이 있으면 그 자리에서 임베딩해 추천한다.
         # compute_company_vectors 가 매일 다 돌지 못해 재료가 있는데도 벡터가 없는 회사가
         # 남는다. 예전엔 여기서 바로 오류를 냈고, 사용자는 빈 화면을 받았다.
-        industry_text = _build_industry_text(client, company["bizrno"])
+        with timed("vec_fallback"):
+            industry_text = _build_industry_text(client, company["bizrno"])
         if not industry_text:
             return {
                 "company": {
@@ -936,7 +941,8 @@ def _recommend_by_company(
                 "pre_spec_results": [],
                 "order_plan_results": [],
             }
-        raw_company_vec = embed_texts([industry_text])[0]
+        with timed("vec_fallback_embed"):
+            raw_company_vec = embed_texts([industry_text])[0]
 
     if isinstance(raw_company_vec, str):
         # pgvector "[a,b,...]" 문자열 → list[float]
@@ -951,10 +957,13 @@ def _recommend_by_company(
     else:
         embedding_str = vector_to_pgvector_str(raw_company_vec)
 
-    company_terms = _fetch_company_terms(client, company["bizrno"])
-    company_industry_names = _fetch_company_industry_names(client, company["bizrno"])
+    with timed("terms"):
+        company_terms = _fetch_company_terms(client, company["bizrno"])
+    with timed("industries"):
+        company_industry_names = _fetch_company_industry_names(client, company["bizrno"])
     bizrno_norm = "".join(ch for ch in company["bizrno"] if ch.isdigit())
-    company_institutions, company_amt_median = _fetch_company_history(client, bizrno_norm)
+    with timed("history"):
+        company_institutions, company_amt_median = _fetch_company_history(client, bizrno_norm)
 
     ranked = _search_with_embedding(
         embedding_str,
@@ -968,13 +977,16 @@ def _recommend_by_company(
         algorithm=algorithm,
         company_bizrno_norm=bizrno_norm,
     )
-    pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
-    order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
+    with timed("pre_specs"):
+        pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
+    with timed("order_plans"):
+        order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
 
     # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영
     try:
-        result_embs = _fetch_result_embeddings(client, ranked[:VIZ_RESULT_LIMIT])
-        viz = _build_viz(raw_company_vec, ranked, result_embs)
+        with timed("viz"):
+            result_embs = _fetch_result_embeddings(client, ranked[:VIZ_RESULT_LIMIT])
+            viz = _build_viz(raw_company_vec, ranked, result_embs)
     except Exception:  # 시각화 실패해도 본 응답은 영향 없음
         viz = None
 

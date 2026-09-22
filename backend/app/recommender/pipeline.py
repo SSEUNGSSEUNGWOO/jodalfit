@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from app.core.timing import timed
 from app.recommender.collaborative import fetch_institution_stats
 from app.recommender.mmr import mmr_diversify
 from app.recommender.qualifications import check_qualifications
@@ -37,7 +38,8 @@ def rank_v2(
     from app.services.recommend import _fetch_eligibility, _fetch_result_embeddings
 
     bid_keys = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in candidates]
-    elig = _fetch_eligibility(client, bid_keys)
+    with timed("eligibility"):
+        elig = _fetch_eligibility(client, bid_keys)
 
     passed: list[dict] = []
     for r in candidates:
@@ -66,7 +68,8 @@ def rank_v2(
             (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
             for r in passed
         }
-        instt_stats = fetch_institution_stats(client, cand_instts)
+        with timed("instt_stats"):
+            instt_stats = fetch_institution_stats(client, cand_instts)
     except Exception as e:
         # 0015 RPC 미적용 등 — 협업 시그널 없이 v2 나머지는 그대로 동작
         print(f"[rank_v2] collaborative signals skipped: {e}")
@@ -95,6 +98,7 @@ def rank_v2(
 
     passed.sort(key=lambda r: r["score_raw"], reverse=True)
     pool = passed[:MMR_POOL]
-    embeddings = _fetch_result_embeddings(client, pool)
+    with timed("mmr_embeddings"):
+        embeddings = _fetch_result_embeddings(client, pool)
     diversified = mmr_diversify(pool, embeddings, k=5) + passed[MMR_POOL:]
     return diversified[:limit]

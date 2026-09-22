@@ -7,10 +7,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.core import timing
 from app.core.bot_guard import guard_external_traffic
 from app.core.rate_limit import limiter
 from app.services import recommendation_cache
@@ -72,16 +73,25 @@ def post_recommendations(
     request: Request,
     req: RecommendRequest,
     background: BackgroundTasks,
+    response: Response,
 ):
     t0 = time.time()
     source = classify_source(request)
+    # 구간별 소요 시간을 Server-Timing 헤더로 내보낸다 (app/core/timing.py). 본문이 아니라
+    # 헤더라 추천 캐시에 섞여 저장될 일이 없다.
+    timings = timing.start()
 
     # 회사 페이지 SSR 전용 read-through 캐시. 히트하면 추천 파이프라인과 LLM 총평을
     # 통째로 건너뛴다. 미스면 아래에서 계산하고 응답 직전에 저장한다.
     ck = recommendation_cache.cache_key(req.query, req.mode, req.keywords, req.algorithm)
     if ck:
-        hit = recommendation_cache.load(ck, req.algorithm, req.limit)
+        with timing.timed("cache_load"):
+            hit = recommendation_cache.load(ck, req.algorithm, req.limit)
         if hit:
+            timings["total"] = (time.time() - t0) * 1000
+            response.headers["Server-Timing"] = timing.server_timing_header(
+                {"cache_hit": 0.0, **timings}
+            )
             cached_company = hit.get("company") or {}
             background.add_task(
                 log_search,
@@ -118,6 +128,7 @@ def post_recommendations(
         and not result.get("fallback")
     )
 
+    explain_t0 = time.perf_counter()
     if not error_404 and req.with_explanation and req.explain_top > 0:
         # 회사 모드 결과 → 회사 컨텍스트 기반 설명
         # 키워드/회사식별실패 → 키워드 기반 설명 (회사 호칭 안 씀)
@@ -145,6 +156,7 @@ def post_recommendations(
             kw_explanations = explain_keyword_batch(req.query, top_kw)
             for r, ex in zip(top_kw, kw_explanations):
                 r["explanation"] = ex
+        timings["explain"] = (time.perf_counter() - explain_t0) * 1000
 
     company = result.get("company") or {}
     background.add_task(
@@ -183,6 +195,10 @@ def post_recommendations(
             recommendation_cache.store, ck, req.algorithm, req.limit, result
         )
 
+    timings["total"] = (time.time() - t0) * 1000
+    header = timing.server_timing_header(timings)
+    response.headers["Server-Timing"] = header
+    print(f"[recommend timings] mode={req.mode} source={source} {header}")
     return result
 
 
