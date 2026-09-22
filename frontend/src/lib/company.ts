@@ -63,6 +63,21 @@ export async function fetchPeerRateByInstitution(
   const names = Array.from(new Set(institutionNames.filter(Boolean)));
   if (names.length === 0) return out;
   const c = getServerSupabase();
+
+  // 하루 한 번 미리 계산해 둔 MV (0039). 요청마다 공고 5천 건 → 낙찰결과 500개씩 순차로
+  // 집계하던 아래 경로가 1.3~1.9초였다(2026-09-22). MV 미적용·채우기 전이면 에러가 나서
+  // 아래 원래 경로로 넘어간다. 빈 결과는 "그 기관들은 낙찰 기록이 없다"는 정상 답이다.
+  const { data: mvRows, error: mvError } = await c
+    .from("institution_bid_rate_mv")
+    .select("dmnd_instt_nm,avg_rate,n")
+    .in("dmnd_instt_nm", names);
+  if (!mvError) {
+    for (const r of (mvRows as { dmnd_instt_nm: string; avg_rate: number; n: number }[]) ?? []) {
+      if (r.n > 0) out.set(r.dmnd_instt_nm, { avg: r.avg_rate, n: r.n });
+    }
+    return out;
+  }
+
   // award_results에서 직접 dmnd_instt_nm로 join — bid_notices와 매번 join 비용 회피
   // award_results에는 dmnd_instt_nm 없으니 bid_notices에서 (bid_ntce_no) 모은 후 rate fetch.
   // → 두 단계: 기관별 bid_ntce_no 모음 → rate 모음.
