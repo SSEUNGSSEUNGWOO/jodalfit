@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { subscribeToWaitlist } from "@/lib/subscribe";
+import { hasConsent, NO_CONSENT, SubscribeConsent, type Consent } from "@/components/SubscribeConsent";
 
 /**
  * 주간 브리핑 구독대 — 네이비 밴드.
@@ -11,16 +12,17 @@ import { subscribeToWaitlist } from "@/lib/subscribe";
  */
 export function SubscribeBand() {
   const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState<Consent>(NO_CONSENT);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "done" | "error"
   >("idle");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes("@")) return;
+    if (!email.includes("@") || !hasConsent(consent)) return;
     setStatus("submitting");
     // 홈·목록에서 뜨는 밴드라 특정 회사 페이지가 없다.
-    const { ok } = await subscribeToWaitlist(email, null);
+    const { ok } = await subscribeToWaitlist(email, null, consent);
     setStatus(ok ? "done" : "error");
   };
 
@@ -59,12 +61,17 @@ export function SubscribeBand() {
               />
               <button
                 type="submit"
-                disabled={status === "submitting"}
+                disabled={status === "submitting" || !hasConsent(consent)}
                 className="shrink-0 h-11 px-4 bg-gc-band-hi text-gc-band text-[14px] font-bold rounded-[3px] hover:bg-white transition-colors disabled:opacity-60"
               >
                 {status === "submitting" ? "처리 중…" : "메일 준비 소식 받기"}
               </button>
             </form>
+          )}
+          {status !== "done" && (
+            <div className="mt-2.5">
+              <SubscribeConsent value={consent} onChange={setConsent} idPrefix="gc-subscribe" tone="band" />
+            </div>
           )}
           {status !== "done" && (
             <p className="mt-2 text-[11.5px] text-gc-band-ink">

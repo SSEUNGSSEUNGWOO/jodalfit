@@ -70,7 +70,15 @@ export function Footer({ className }: { className?: string }) {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-2 px-5 py-4 text-[12px] text-ink-4 sm:px-8">
           <span>© {currentYear} 조달핏</span>
-          <span>나라장터 공개 데이터 기반</span>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Link href="/privacy" className="font-semibold hover:text-ink transition-colors">
+              개인정보처리방침
+            </Link>
+            <Link href="/privacy#company-optout" className="hover:text-ink transition-colors">
+              기업 정보 비공개 요청
+            </Link>
+            <span>나라장터 공개 데이터 기반</span>
+          </span>
         </div>
       </div>
     </footer>

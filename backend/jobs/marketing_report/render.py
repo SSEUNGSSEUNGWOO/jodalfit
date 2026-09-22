@@ -125,9 +125,11 @@ def render(snap: dict, prev_week: dict | None, prev_day: dict | None, interpreta
             row("검색된 회사 수", snap, prev_week, "supabase.unique_companies"),
             ("공고 클릭", ev.get("click", 0), pev.get("click", "—") if prev_week else "—", ""),
             ("공고 저장", ev.get("save", 0), pev.get("save", "—") if prev_week else "—", ""),
-            row("구독 신청", snap, prev_week, "supabase.subscribers_new"),
-            row("구독 인증 완료", snap, prev_week, "supabase.subscribers_verified"),
-            row("이메일 캡처", snap, prev_week, "supabase.email_subscribers_new"),
+            # subscribers 테이블에 쓰는 코드가 아직 없다 — 신청 폼은 email_subscribers(대기 명단)
+            # 에만 쓴다. 인증·발송 기능을 출시하기 전까지 아래 두 줄은 구조적으로 0이다.
+            row("구독 신청 (발송 기능 출시 전 · 항상 0)", snap, prev_week, "supabase.subscribers_new"),
+            row("구독 인증 완료 (발송 기능 출시 전 · 항상 0)", snap, prev_week, "supabase.subscribers_verified"),
+            row("이메일 캡처 (대기 명단 신청)", snap, prev_week, "supabase.email_subscribers_new"),
             row("참고: 내부 SSR 호출", snap, prev_week, "supabase.ssr_searches"),
             row("참고: 봇 호출", snap, prev_week, "supabase.bot_searches"),
         ]))

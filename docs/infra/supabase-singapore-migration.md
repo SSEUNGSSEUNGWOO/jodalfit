@@ -234,3 +234,4 @@ curl.exe -s -o NUL -w "%{http_code} %{time_total}s`n" https://jodalfit.co.kr/sit
 - [ ] 1주일 문제없으면 옛 프로젝트 정리
 - [ ] nolai 컴퓨트 내리기 (유료 컴퓨트라 MCP로는 pause 불가 — 대시보드에서)
 - [ ] CLAUDE.md의 "Seoul region"을 실제 리전으로 고치기
+- [ ] **개인정보처리방침의 국외 이전 표를 고치기** — `frontend/src/app/privacy/page.tsx`의 Supabase 처리 위치 "인도 (AWS 뭄바이)" → 싱가포르. 방침이 바뀌므로 `frontend/src/lib/privacy.ts`의 `PRIVACY_VERSION`(시행일)도 올린다. 공개된 방침과 실제가 다르면 안 된다

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { subscribeToWaitlist } from "@/lib/subscribe";
+import { hasConsent, NO_CONSENT, SubscribeConsent, type Consent } from "@/components/SubscribeConsent";
 
 export function EmailCaptureForm({
   className,
@@ -20,34 +21,38 @@ export function EmailCaptureForm({
   bizrno?: string | null;
 }) {
   const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState<Consent>(NO_CONSENT);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "done" | "error"
   >("idle");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes("@")) return;
+    if (!email.includes("@") || !hasConsent(consent)) return;
     setStatus("submitting");
-    const { ok } = await subscribeToWaitlist(email, bizrno);
+    const { ok } = await subscribeToWaitlist(email, bizrno, consent);
     setStatus(ok ? "done" : "error");
   };
 
   if (variant === "inline") {
     return (
-      <form onSubmit={submit} className={cn("flex gap-2", className)}>
-        <Input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="회사 이메일"
-        />
-        <Button
-          type="submit"
-          disabled={status === "submitting" || status === "done"}
-        >
-          {status === "done" ? "신청 완료" : status === "submitting" ? "처리 중…" : "신청하기"}
-        </Button>
+      <form onSubmit={submit} className={cn("space-y-2", className)}>
+        <div className="flex gap-2">
+          <Input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="회사 이메일"
+          />
+          <Button
+            type="submit"
+            disabled={status === "submitting" || status === "done" || !hasConsent(consent)}
+          >
+            {status === "done" ? "신청 완료" : status === "submitting" ? "처리 중…" : "신청하기"}
+          </Button>
+        </div>
+        <SubscribeConsent value={consent} onChange={setConsent} idPrefix="email-inline" />
       </form>
     );
   }
@@ -102,9 +107,10 @@ export function EmailCaptureForm({
               placeholder="name@company.co.kr"
               className="h-12 text-[15px]"
             />
+            <SubscribeConsent value={consent} onChange={setConsent} idPrefix="email-capture" />
             <Button
               type="submit"
-              disabled={status === "submitting"}
+              disabled={status === "submitting" || !hasConsent(consent)}
               size="lg"
               className="h-12 text-[15px]"
             >
