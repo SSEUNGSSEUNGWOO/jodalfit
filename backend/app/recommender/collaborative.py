@@ -59,10 +59,28 @@ def fetch_peer_institutions(
 def fetch_institution_stats(
     client, institutions: set[str], years: int = STATS_YEARS
 ) -> dict[str, dict]:
-    """기관별 {total, distinct_winners} — 반복거래율 계산 재료."""
+    """기관별 {total, distinct_winners} — 반복거래율 계산 재료.
+
+    0038 의 미리 계산된 MV 를 먼저 본다. 매 요청 contracts 를 다시 집계하던 원래 RPC 는
+    추천 전체의 57~71%(4~6초)를 먹었다(2026-09-22 Server-Timing 실측). MV 창은 2년 고정이라
+    years 가 기본값일 때만 쓰고, 0038 미적용·빈 MV 면 원래 RPC 로 degrade 한다.
+    """
     instts = sorted(i for i in institutions if i)
     if not instts:
         return {}
+    if years == STATS_YEARS:
+        try:
+            rows = (
+                client.rpc("institution_repeat_stats_cached", {"p_instts": instts})
+                .execute()
+                .data
+                or []
+            )
+            # 빈 결과는 "그 기관들은 2년 내 계약이 없다"는 정상 답이다 — 느린 RPC 로 되묻지 않는다.
+            # 채우기 전 MV 는 비어서 오는 게 아니라 "not been populated" 에러라 아래로 간다.
+            return {r["dmnd_instt_nm"]: r for r in rows}
+        except Exception:
+            pass
     since = (date.today() - timedelta(days=years * 365)).isoformat()
     rows = (
         client.rpc(
