@@ -32,6 +32,12 @@ grant select on institution_bid_rate_mv to service_role;
 
 -- 첫 채우기는 pg_cron 1회성 잡 (0038 과 같은 이유 — MCP 는 무거운 작업을 맡기면 끊긴 뒤에도
 -- 서버에서 계속 돌며 락을 잡는다).
+--
+-- 주의(2026-09-22 실제로 겪음): 최초 채우기는 concurrently 가 안 돼 일반 refresh 라 MV 에
+-- 배타 락을 잡는다. 그동안 이 MV 를 읽는 요청은 "not populated" 에러로 바로 튕기지 않고
+-- 락을 기다리다 타임아웃한다 — 이 조인은 수 분 걸려 회사 추천 카드가 16초씩 멈췄다.
+-- 다음에 무거운 MV 를 새로 붙일 땐 다른 이름으로 `create ... with data` 해 두고 다 채워지면
+-- rename 으로 교체해, 읽는 쪽이 락을 볼 일 없게 할 것.
 select cron.schedule(
   'populate-institution-bid-rate-once',
   '* * * * *',
