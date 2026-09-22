@@ -48,29 +48,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       robots: { index: false },
     };
   }
-  // 데이터 가용성별 3단 후킹 (CTR 개선용)
-  // 1) awards 있으면: 낙찰 건수 + 평균 투찰율
-  // 2) contracts만 있으면: 누적 계약 건수
-  // 3) 둘 다 없으면: 기본 톤
   const awards = await fetchCompanyAwards(normalized, 50);
   const awardSummary = summarizeAwards(awards);
+  const hasHistory = awardSummary.count >= 1 || company.contract_count >= 1;
 
-  // 이 페이지로 오는 검색어는 대부분 회사명 그 자체다("○○건설", "○○ 기본정보").
-  // 제목이 "추천"이면 찾던 것과 어긋나 광고로 읽히므로 여기서 볼 수 있는 것을 적되,
-  // 수주 이력이 없는 회사에까지 "수주 이력"을 내걸면 클릭 후 바로 이탈하므로
-  // 실제 데이터가 있을 때만 그렇게 쓴다.
-  const title =
-    awardSummary.count >= 1
-      ? `${company.corp_nm} 나라장터 수주 ${awardSummary.count}건 | 조달핏`
-      : `${company.corp_nm} 등록업종·공공조달 정보 | 조달핏`;
-  let desc: string;
-  if (awardSummary.count >= 3 && awardSummary.avg_rate !== null) {
-    desc = `${company.corp_nm}의 나라장터 수주 이력 ${awardSummary.count}건과 평균 투찰률 ${awardSummary.avg_rate.toFixed(1)}%를 확인하세요. 등록업종·공급물품에 맞는 신규 공고도 함께 보여드립니다.`;
-  } else if (company.contract_count >= 1) {
-    desc = `${company.corp_nm}의 공공조달 수주 이력 ${company.contract_count}건을 정리했습니다. 등록업종·공급물품으로 검토할 만한 신규 나라장터 공고도 함께. 매일 갱신.`;
-  } else {
-    desc = `${company.corp_nm}의 등록업종·공급물품 기반으로 적합한 신규 나라장터 공고 TOP 5를 추천합니다. 매일 갱신.`;
-  }
+  // 이 페이지로 오는 검색어는 대부분 회사명 그 자체거나 "○○건설 낙찰", "○○ 수주" 같은
+  // 이력 조회다. 제목이 "추천"이면 찾던 것과 어긋나 광고로 읽히므로 여기서 볼 수 있는 것을
+  // 적되, 수주 이력이 없는 회사에까지 "수주 이력"을 내걸면 클릭 후 바로 이탈하므로 실제
+  // 데이터가 있을 때만 그렇게 쓴다.
+  //
+  // 제목·설명에 수주 건수와 평균 투찰률은 넣지 않는다 (2026-09-22). 검색 결과 목록에
+  // 숫자가 뜨면 상호 검색만으로 그 회사의 수주 현황이 보이고 — 비공개 요청이 온 이유가
+  // 이것이다 — 평균 투찰률은 경쟁사에게 가격 전략을 알려준다. 검색 의도와 맞추는 건
+  // "수주" 라는 단어라 단어는 남기고 숫자만 뺐다. 숫자는 페이지 안에서 보인다.
+  // 효과는 마케팅 리포트의 네이버 CTR 로 2주 본다 (변경 전 2.0~2.3%).
+  const title = hasHistory
+    ? `${company.corp_nm} 나라장터 수주 이력 | 조달핏`
+    : `${company.corp_nm} 등록업종·공공조달 정보 | 조달핏`;
+  const desc = hasHistory
+    ? `${company.corp_nm}의 나라장터 수주 이력과 등록업종·공급물품을 정리했습니다. 이 회사에 맞는 신규 공고도 함께 보여드립니다. 매일 갱신.`
+    : `${company.corp_nm}의 등록업종·공급물품 기반으로 적합한 신규 나라장터 공고 TOP 5를 추천합니다. 매일 갱신.`;
 
   // 추천 벡터도 없고 수주 이력도 없는 깡통 페이지는 색인 제외
   // (구글 "발견됨-색인 생성되지 않음" 보류 해소)
