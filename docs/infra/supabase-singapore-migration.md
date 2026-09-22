@@ -46,15 +46,18 @@ Disable-ScheduledTask -TaskName jodalfit-hourly-sync
 ## 3. 새 프로젝트 만들기
 
 - [ ] 리전 **Southeast Asia (Singapore)**, 컴퓨트 **Medium**
-- [ ] 확장 켜기 (SQL Editor):
+- [ ] 확장 켜기 (SQL Editor). **스키마를 옛 프로젝트와 똑같이 맞춘다.** `vector`와 `pg_trgm`은
+  옛 쪽에서 `public`에 있다. 새 프로젝트는 확장을 기본으로 `extensions`에 만드는데, 덤프는 타입을
+  `public.vector(1536)`처럼 스키마를 붙여 적으므로 스키마가 다르면 테이블 생성이 전부 실패한다.
+  `pg_dump -n public`은 확장 자체를 덤프하지 않으니 여기서 먼저 만든다.
 
 ```sql
-create extension if not exists vector;
-create extension if not exists pg_trgm;
-create extension if not exists pg_cron;
-create extension if not exists pg_stat_statements;
-create extension if not exists pgcrypto;
-create extension if not exists "uuid-ossp";
+create extension if not exists vector   schema public;      -- 옛 쪽: public
+create extension if not exists pg_trgm  schema public;      -- 옛 쪽: public
+create extension if not exists pg_cron;                     -- pg_catalog
+create extension if not exists pg_stat_statements schema extensions;
+create extension if not exists pgcrypto           schema extensions;
+create extension if not exists "uuid-ossp"        schema extensions;
 ```
 
 ---
@@ -161,6 +164,16 @@ refresh materialized view institution_repeat_stats_mv;
 refresh materialized view institution_bid_rate_mv;
 ```
 
+**그리고 MV 공개 권한 회수** — 스키마를 `--no-privileges`로 떠 왔으므로 새 프로젝트의 기본 권한이 붙어
+MV 5개를 공개 키(anon)로 읽을 수 있게 된다. MV엔 RLS가 없다. `supabase/migrations/0041_revoke_public_mv_access.sql`을
+그대로 실행하고 확인한다.
+
+```sql
+select c.relname, has_table_privilege('anon', c.oid, 'select') as anon
+from pg_class c join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relkind = 'm';   -- 전부 false 여야 한다
+```
+
 pg_cron 잡은 스키마 덤프에 안 들어간다. 옛 프로젝트와 같은 4개를 다시 만든다. **시간대는 이참에 옮길 것** — 기존 KST 08:00·08:10 갱신은 사용자 트래픽이 시작되는 시간과 겹쳐 그동안 사이트맵이 20초대가 됐다. 아래는 daily-sync(KST 05:00) 이후·트래픽 이전으로 당긴 값이다. daily-sync가 실제로 몇 시에 끝나는지 로그로 보고 조정할 것.
 
 ```sql
@@ -184,7 +197,7 @@ select cron.schedule('refresh-industry-directory', '10 22 * * *',         -- KST
 
 | 위치 | 바꿀 값 |
 |---|---|
-| `backend/.env` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — 로컬 스케줄 태스크·잡·마케팅 리포트가 이걸 쓴다 |
+| `backend/.env` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — 로컬 스케줄 태스크·잡·마케팅 리포트가 이걸 쓴다. **`DATABASE_URL`도** (직접 Postgres 연결 — `jobs/backfill_companies_basic.py`, `jobs/check_business_status.py`가 쓴다. 지금은 뭄바이 세션 풀러 `aws-1-ap-south-1.pooler.supabase.com:5432`) |
 | Railway 백엔드 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 | Vercel 프론트 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
 | GitHub Actions secrets | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (daily-sync·lunch-sync) |
