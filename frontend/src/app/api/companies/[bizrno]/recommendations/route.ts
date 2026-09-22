@@ -13,12 +13,14 @@ export async function GET(
     return Response.json({ error: "invalid bizrno" }, { status: 400 });
   }
 
+  const t0 = performance.now();
   const data = await getRecommendations({
     query: bizrno,
     mode: "company",
     limit: 20,
     with_explanation: false,
   });
+  const t1 = performance.now();
 
   // 추천 TOP 5의 발주기관별 과거 평균 투찰율
   const top = data.results.slice(0, 5);
@@ -27,6 +29,15 @@ export async function GET(
     : await fetchPeerRateByInstitution(
         top.map((b) => b.dmnd_instt_nm).filter((x): x is string => !!x)
       );
+  const t2 = performance.now();
 
-  return Response.json({ data, peer: Object.fromEntries(peerMap) });
+  // 구간 시간 — 백엔드 추천 호출과 이 라우트의 DB 직접 조회를 나눠 본다 (backend/app/core/timing.py 와 같은 목적)
+  return Response.json(
+    { data, peer: Object.fromEntries(peerMap) },
+    {
+      headers: {
+        "Server-Timing": `backend;dur=${Math.round(t1 - t0)}, peer_rate;dur=${Math.round(t2 - t1)}`,
+      },
+    }
+  );
 }
