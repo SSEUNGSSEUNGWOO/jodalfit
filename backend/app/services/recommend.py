@@ -13,13 +13,14 @@ v0.3 (단계 풀 확장 + 키워드 하이브리드):
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from typing import Any, Literal
 
 import numpy as np
 from postgrest.exceptions import APIError
 
-from app.core.timing import timed
+from app.core.timing import submit_timed, timed
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from app.services.viz import anchor_positions, project_many, project_point
@@ -435,6 +436,7 @@ def _search_with_embedding(
     company_industry_names: set[str] | None = None,
     algorithm: str = "v1",
     company_bizrno_norm: str | None = None,
+    embeddings_out: dict | None = None,
 ) -> list[dict]:
     client = get_admin_client()
     today = date.today()
@@ -501,6 +503,7 @@ def _search_with_embedding(
             limit=limit,
             company_embedding_str=embedding_str,
             company_bizrno_norm=company_bizrno_norm,
+            embeddings_out=embeddings_out,
         )
         with timed("insights"):
             _attach_insights(client, ranked_v2)
@@ -532,9 +535,14 @@ def _search_with_embedding(
     return ranked_v1
 
 
-def _fetch_company_terms(client, bizrno: str) -> set[str]:
-    """회사 등록업종 + 공급물품 토큰 set — 재랭킹 보너스 계산용."""
+def _fetch_company_terms(client, bizrno: str) -> tuple[set[str], set[str]]:
+    """(등록업종 + 공급물품 토큰 set, 등록업종 이름 set).
+
+    토큰은 재랭킹 보너스, 이름은 면허 자격 매칭용. 예전엔 이름을 별도 함수가
+    company_industries 를 한 번 더 읽어 만들었다 — 같은 행이라 한 번에 만든다.
+    """
     terms: set[str] = set()
+    industry_names: set[str] = set()
     ind = (
         client.table("company_industries")
         .select("indstryty_nm")
@@ -544,7 +552,14 @@ def _fetch_company_terms(client, bizrno: str) -> set[str]:
         or []
     )
     for r in ind:
-        terms |= _tokenize(r.get("indstryty_nm"))
+        nm = r.get("indstryty_nm")
+        terms |= _tokenize(nm)
+        if nm:
+            # 정규화: 괄호 앞 부분으로도 매칭 가능하도록 두 형태 모두
+            industry_names.add(nm)
+            base = nm.split("(")[0].strip()
+            if base and base != nm:
+                industry_names.add(base)
     prd = (
         client.table("company_supply_products")
         .select("dtl_prdct_clsfc_nm")
@@ -555,7 +570,7 @@ def _fetch_company_terms(client, bizrno: str) -> set[str]:
     )
     for r in prd:
         terms |= _tokenize(r.get("dtl_prdct_clsfc_nm"))
-    return terms
+    return terms, industry_names
 
 
 def _build_industry_text(client, bizrno: str) -> str | None:
@@ -609,28 +624,6 @@ def _build_industry_text(client, bizrno: str) -> str | None:
     if all_prd:
         parts.append(f"공급물품: {', '.join(all_prd[:10])}")
     return "\n".join(parts) if parts else None
-
-
-def _fetch_company_industry_names(client, bizrno: str) -> set[str]:
-    """회사 등록업종 이름 set — 면허 자격 매칭용."""
-    out: set[str] = set()
-    rows = (
-        client.table("company_industries")
-        .select("indstryty_nm")
-        .eq("bizrno", bizrno)
-        .execute()
-        .data
-        or []
-    )
-    for r in rows:
-        nm = r.get("indstryty_nm")
-        if nm:
-            # 정규화: 괄호 앞 부분으로도 매칭 가능하도록 두 형태 모두
-            out.add(nm)
-            base = nm.split("(")[0].strip()
-            if base and base != nm:
-                out.add(base)
-    return out
 
 
 def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
@@ -957,35 +950,40 @@ def _recommend_by_company(
     else:
         embedding_str = vector_to_pgvector_str(raw_company_vec)
 
-    with timed("terms"):
-        company_terms = _fetch_company_terms(client, company["bizrno"])
-    with timed("industries"):
-        company_industry_names = _fetch_company_industry_names(client, company["bizrno"])
     bizrno_norm = "".join(ch for ch in company["bizrno"] if ch.isdigit())
-    with timed("history"):
-        company_institutions, company_amt_median = _fetch_company_history(client, bizrno_norm)
+    # 서로 독립인 조회는 동시에 보낸다. 백엔드↔DB 왕복(싱가포르↔뭄바이, 1회 ~100ms)이
+    # 순차로 쌓이던 구간이다 (2026-09-22 Server-Timing: 12개 구간이 각 100~500ms).
+    # 사전규격·발주계획은 메인 검색 결과와 무관하므로 메인 검색과 겹쳐 돌린다.
+    pool_embs: dict[tuple[str, str], list[float]] = {}
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        f_terms = submit_timed(ex, "terms", _fetch_company_terms, client, company["bizrno"])
+        f_hist = submit_timed(ex, "history", _fetch_company_history, client, bizrno_norm)
+        f_pre = submit_timed(ex, "pre_specs", _search_pre_specs, embedding_str, limit, candidate_pool)
+        f_ord = submit_timed(ex, "order_plans", _search_order_plans, embedding_str, limit, candidate_pool)
+        company_terms, company_industry_names = f_terms.result()
+        company_institutions, company_amt_median = f_hist.result()
 
-    ranked = _search_with_embedding(
-        embedding_str,
-        company.get("rgn_nm"),
-        limit,
-        candidate_pool,
-        company_terms=company_terms,
-        company_institutions=company_institutions,
-        company_amt_median=company_amt_median,
-        company_industry_names=company_industry_names,
-        algorithm=algorithm,
-        company_bizrno_norm=bizrno_norm,
-    )
-    with timed("pre_specs"):
-        pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
-    with timed("order_plans"):
-        order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
+        ranked = _search_with_embedding(
+            embedding_str,
+            company.get("rgn_nm"),
+            limit,
+            candidate_pool,
+            company_terms=company_terms,
+            company_institutions=company_institutions,
+            company_amt_median=company_amt_median,
+            company_industry_names=company_industry_names,
+            algorithm=algorithm,
+            company_bizrno_norm=bizrno_norm,
+            embeddings_out=pool_embs,
+        )
+        pre_specs = f_pre.result()
+        order_plans = f_ord.result()
 
-    # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영
+    # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영.
+    # v2 는 MMR 이 상위 40개 벡터를 이미 가져왔고 viz 상위 10개는 그 안에 있다 — 재사용한다.
     try:
         with timed("viz"):
-            result_embs = _fetch_result_embeddings(client, ranked[:VIZ_RESULT_LIMIT])
+            result_embs = pool_embs or _fetch_result_embeddings(client, ranked[:VIZ_RESULT_LIMIT])
             viz = _build_viz(raw_company_vec, ranked, result_embs)
     except Exception:  # 시각화 실패해도 본 응답은 영향 없음
         viz = None

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
-from contextvars import ContextVar
+from contextvars import ContextVar, copy_context
 
 _timings: ContextVar[dict[str, float] | None] = ContextVar("timings", default=None)
 
@@ -33,6 +33,21 @@ def timed(name: str):
         if d is not None:
             # 같은 이름이 여러 번 불리면 합산한다 (예: 재시도)
             d[name] = d.get(name, 0.0) + (time.perf_counter() - t) * 1000
+
+
+def submit_timed(executor, name: str, fn, *args, **kwargs):
+    """스레드풀에 넘긴 작업의 구간 시간도 같은 요청에 모이게 한다.
+
+    ContextVar 는 스레드풀 워커로 전파되지 않으므로 컨텍스트를 복사해 그 안에서 돌린다.
+    같은 Context 는 두 스레드가 동시에 들어갈 수 없어 submit 마다 새로 복사한다.
+    """
+    ctx = copy_context()
+
+    def run():
+        with timed(name):
+            return fn(*args, **kwargs)
+
+    return executor.submit(ctx.run, run)
 
 
 def server_timing_header(d: dict[str, float]) -> str:

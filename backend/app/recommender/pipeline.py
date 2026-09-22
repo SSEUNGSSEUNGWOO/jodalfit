@@ -34,6 +34,7 @@ def rank_v2(
     limit: int,
     company_embedding_str: str | None = None,
     company_bizrno_norm: str | None = None,
+    embeddings_out: dict | None = None,
 ) -> list[dict]:
     from app.services.recommend import _fetch_eligibility, _fetch_result_embeddings
 
@@ -100,5 +101,8 @@ def rank_v2(
     pool = passed[:MMR_POOL]
     with timed("mmr_embeddings"):
         embeddings = _fetch_result_embeddings(client, pool)
+    if embeddings_out is not None:
+        # 호출부(viz)가 같은 공고 벡터를 다시 읽지 않도록 넘겨준다
+        embeddings_out.update(embeddings)
     diversified = mmr_diversify(pool, embeddings, k=5) + passed[MMR_POOL:]
     return diversified[:limit]
