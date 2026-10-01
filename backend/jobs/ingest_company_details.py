@@ -43,6 +43,36 @@ API_KEY = os.getenv("NARAJANGTEO_API_KEY")
 BASE = "https://apis.data.go.kr/1230000/ao/UsrInfoService02"
 JOB_NAME = "ingest_company_details"
 
+PAGE = 1000
+
+
+def collect_keyset(client, table: str, col: str) -> set[str]:
+    """table 전체를 col 기준 keyset 으로 훑어 값 집합을 만든다.
+
+    offset 페이징이던 것을 바꿨다 — contracts 49.8만 행에서 뒤쪽 페이지가 점점 느려져
+    offset 20만 구간 실측 17.9초까지 늘고 statement timeout(57014) 으로 이 잡이
+    2026-09-20 부터 매일 죽었다. gt(last) 가 같은 값의 나머지 행을 건너뛰지만 필요한 건
+    값 집합뿐이라 상관없다 (compute_company_vectors 의 fetch_active_bizrnos 와 같은 패턴).
+    부수 효과로 contracts 는 읽는 행이 49.8만 → 고유 12.9만으로 줄어든다.
+    """
+    out: set[str] = set()
+    last = ""
+    while True:
+        q = client.table(table).select(col).not_.is_(col, "null").order(col).limit(PAGE)
+        if last:
+            q = q.gt(col, last)
+        r = q.execute().data
+        if not r:
+            break
+        for row in r:
+            v = row.get(col)
+            if v:
+                out.add(v)
+        last = r[-1][col]
+        if len(r) < PAGE:
+            break
+    return out
+
 
 def fetch_industries(bizrno_norm: str) -> list[dict[str, Any]]:
     params = {
@@ -158,49 +188,12 @@ def fetch_candidate_companies(client, limit: int) -> list[dict]:
     """active 회사 중 아직 업종 풍부화 안 된 회사를 우선순위 순으로 가져옴."""
     # 1. active bizrno_norm set (contracts에서)
     print("  ↳ active bizrnos 수집 중...")
-    active = set()
-    offset = 0
-    while True:
-        r = (
-            client.table("contracts")
-            .select("rprsnt_corp_bizrno_norm")
-            .not_.is_("rprsnt_corp_bizrno_norm", "null")
-            .range(offset, offset + 999)
-            .execute()
-            .data
-        )
-        if not r:
-            break
-        for row in r:
-            v = row.get("rprsnt_corp_bizrno_norm")
-            if v:
-                active.add(v)
-        if len(r) < 1000:
-            break
-        offset += 1000
+    active = collect_keyset(client, "contracts", "rprsnt_corp_bizrno_norm")
     print(f"  ↳ active = {len(active):,}")
 
     # 2. 이미 풍부화된 bizrno set (company_industries에 row 있는 회사)
     print("  ↳ 이미 풍부화된 회사 수집 중...")
-    enriched = set()
-    offset = 0
-    while True:
-        r = (
-            client.table("company_industries")
-            .select("bizrno")
-            .range(offset, offset + 999)
-            .execute()
-            .data
-        )
-        if not r:
-            break
-        for row in r:
-            v = row.get("bizrno")
-            if v:
-                enriched.add(v)
-        if len(r) < 1000:
-            break
-        offset += 1000
+    enriched = collect_keyset(client, "company_industries", "bizrno")
     print(f"  ↳ enriched = {len(enriched):,}")
 
     # 3. 우선순위 맵 (검색된 회사 / 최근 수주 회사)
@@ -208,18 +201,22 @@ def fetch_candidate_companies(client, limit: int) -> list[dict]:
 
     # 4. companies 전체 순회 — bizrno_norm in active AND bizrno not in enriched
     #    (우선순위 정렬을 위해 limit에서 멈추지 않고 전부 모은 뒤 sort)
+    #    bizrno 가 PK 라 keyset 이 행을 빠뜨리지 않는다. offset 이면 매 페이지가 Seq Scan
+    #    (17.6만 행, 블록 18,203개 읽기)이라 176 페이지가 버퍼 256MB 를 통째로 쓸어냈다.
     print("  ↳ candidates 추출 중...")
     candidates: list[dict] = []
-    offset = 0
+    last = ""
     while True:
-        r = (
+        q = (
             client.table("companies")
             .select("bizrno,bizrno_norm,corp_nm")
             .not_.is_("bizrno_norm", "null")
-            .range(offset, offset + 999)
-            .execute()
-            .data
+            .order("bizrno")
+            .limit(PAGE)
         )
+        if last:
+            q = q.gt("bizrno", last)
+        r = q.execute().data
         if not r:
             break
         for row in r:
@@ -228,9 +225,9 @@ def fetch_candidate_companies(client, limit: int) -> list[dict]:
                 and row["bizrno"] not in enriched
             ):
                 candidates.append(row)
-        if len(r) < 1000:
+        last = r[-1]["bizrno"]
+        if len(r) < PAGE:
             break
-        offset += 1000
 
     fallback = (2, 0)
     candidates.sort(key=lambda row: ranks.get(row["bizrno_norm"], fallback))
