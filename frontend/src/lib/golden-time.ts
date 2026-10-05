@@ -1,5 +1,8 @@
 import type { NoticeLifecycle, PreSpec, BidNotice } from "./notice";
 
+/** 골든타임 판정에 필요한 사전규격 필드만. 클라이언트 컴포넌트에 전체 PreSpec을 직렬화하지 않기 위해. */
+export type GoldenTimeSpec = Pick<PreSpec, "opnin_rgst_clse_dt" | "spec_doc_file_url_1" | "sw_biz_obj_yn">;
+
 /** 공공조달 골든타임 — 사전규격공개 단계에서 사양에 의견을 낼 수 있는 마지막 시점.
  *
  *  법정 기간 (조달청 안내):
@@ -35,21 +38,25 @@ export interface GoldenTimeInfo {
   isSwBiz: boolean;
 }
 
-/** YYYY-MM-DD 형식 날짜 문자열을 받아 오늘 기준 남은 일수를 반환. 잘못된 형식이면 null. */
-function daysFromToday(dateStr: string | null | undefined): number | null {
+/** YYYY-MM-DD 형식 날짜 문자열을 받아 today 기준 남은 일수를 반환. 잘못된 형식이면 null. */
+function daysFromToday(dateStr: string | null | undefined, today: Date): number | null {
   if (!dateStr) return null;
   // "2026-06-01" 또는 "2026-06-01 12:34:56" 양쪽 지원
   const datePart = dateStr.split(" ")[0];
   const d = new Date(`${datePart}T00:00:00`);
   if (isNaN(d.getTime())) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffMs = d.getTime() - today.getTime();
+  const diffMs = d.getTime() - startOfDay(today).getTime();
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
+function startOfDay(d: Date): Date {
+  const t = new Date(d);
+  t.setHours(0, 0, 0, 0);
+  return t;
+}
+
 /** 사전규격 중 가장 의견 마감이 늦은 것 (= 아직 열려 있을 가능성 큰 것)을 골라 분석. */
-function pickActiveSpec(preSpecs: PreSpec[]): PreSpec | null {
+function pickActiveSpec(preSpecs: GoldenTimeSpec[]): GoldenTimeSpec | null {
   if (preSpecs.length === 0) return null;
   // opnin_rgst_clse_dt가 있는 것 중 가장 늦은 것
   const withDeadline = preSpecs.filter((s) => s.opnin_rgst_clse_dt);
@@ -80,19 +87,24 @@ function isNoticeClosed(data: NoticeLifecycle): boolean {
   return false;
 }
 
-/** lifecycle에서 분리된 부분 정보로 골든타임 분석 (batch 케이스용). */
-export function analyzeGoldenTimeFromParts(args: {
-  notice: Pick<BidNotice, "bid_ntce_date" | "bid_clse_date">;
-  preSpecs: PreSpec[];
-  opinionCount: number;
-  hasAwardsOrContracts: boolean;
-  hasOrderPlans: boolean;
-}): GoldenTimeInfo {
+/** lifecycle에서 분리된 부분 정보로 골든타임 분석.
+ *  `today`는 호출자가 넘긴다 — 서버 컴포넌트(ISR 캐시)에서 `new Date()`로 판정하면 날짜가 바뀔 때마다
+ *  HTML이 바뀌어 ISR Write가 매일 발생하므로, 브라우저에서 useToday()로 받은 값만 넣는다. */
+export function analyzeGoldenTimeFromParts(
+  args: {
+    notice: Pick<BidNotice, "bid_ntce_date" | "bid_clse_date">;
+    preSpecs: GoldenTimeSpec[];
+    opinionCount: number;
+    hasAwardsOrContracts: boolean;
+    hasOrderPlans: boolean;
+  },
+  today: Date
+): GoldenTimeInfo {
   const { notice, preSpecs, opinionCount, hasAwardsOrContracts, hasOrderPlans } = args;
   const activeSpec = pickActiveSpec(preSpecs);
   const opinionDeadlineRaw = activeSpec?.opnin_rgst_clse_dt ?? null;
   const opinionDeadline = opinionDeadlineRaw?.split(" ")[0] ?? null;
-  const opinionDaysLeft = daysFromToday(opinionDeadlineRaw);
+  const opinionDaysLeft = daysFromToday(opinionDeadlineRaw, today);
   const hasSpecPdf = !!activeSpec?.spec_doc_file_url_1;
   const isSwBiz = activeSpec?.sw_biz_obj_yn === "Y";
 
@@ -107,10 +119,8 @@ export function analyzeGoldenTimeFromParts(args: {
   // closed: 낙찰/계약 있거나 마감일 지남
   if (hasAwardsOrContracts) return { ...base, status: "closed" };
   if (notice.bid_clse_date) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const clse = new Date(`${notice.bid_clse_date}T00:00:00`);
-    if (today > clse) return { ...base, status: "closed" };
+    if (startOfDay(today) > clse) return { ...base, status: "closed" };
   }
 
   // notice_active: 본공고가 떴고 마감 안 지남
@@ -130,16 +140,6 @@ export function analyzeGoldenTimeFromParts(args: {
   if (hasOrderPlans) return { ...base, status: "planning" };
 
   return { ...base, status: "closed" };
-}
-
-export function analyzeGoldenTime(data: NoticeLifecycle): GoldenTimeInfo {
-  return analyzeGoldenTimeFromParts({
-    notice: data.notice,
-    preSpecs: data.preSpecs,
-    opinionCount: data.opinions.length,
-    hasAwardsOrContracts: data.awards.length > 0 || data.contracts.length > 0,
-    hasOrderPlans: data.orderPlans.length > 0,
-  });
 }
 
 export function isGoldenTime(status: GoldenTimeStatus): boolean {

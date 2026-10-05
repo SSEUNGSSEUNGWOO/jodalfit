@@ -25,10 +25,12 @@ export function formatKRWFull(value: number | null | undefined) {
   return value.toLocaleString("ko-KR") + "원";
 }
 
-export function daysUntil(dateStr: string | null | undefined) {
+/** ISR로 캐시되는 화면에서는 today를 useToday()로 받아 넘길 것 — 서버에서 new Date()로 계산한 값이
+ *  HTML에 박히면 날짜가 바뀔 때마다 ISR Write가 난다. */
+export function daysUntil(dateStr: string | null | undefined, today: Date = new Date()) {
   if (!dateStr) return null;
   const target = new Date(dateStr);
-  const today = new Date();
+  today = new Date(today);
   today.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);
   const ms = target.getTime() - today.getTime();

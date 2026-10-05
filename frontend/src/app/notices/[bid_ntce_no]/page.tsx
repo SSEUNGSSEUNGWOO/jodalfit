@@ -4,14 +4,15 @@ import { ExternalLink, FileText, MessageSquare, Award, FileSignature } from "luc
 import { AmendmentBadge } from "@/components/AmendmentBadge";
 import { DDayBadge } from "@/components/DDayBadge";
 import { Footer } from "@/components/Footer";
+import { GoldenTimeBanner } from "@/components/GoldenTimeBanner";
 import { Header } from "@/components/Header";
 import { Lifecycle } from "@/components/Lifecycle";
+import { SimilarNotices } from "@/components/SimilarNotices";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Fragment, Suspense } from "react";
-import { Sparkles } from "lucide-react";
-import { fetchLifecycle, fetchSimilarNotices } from "@/lib/notice";
-import { analyzeGoldenTime, isGoldenTime } from "@/lib/golden-time";
+import { Fragment } from "react";
+import { fetchLifecycle } from "@/lib/notice";
+import { toLifecycleData } from "@/lib/lifecycle-data";
 import { noticeJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { cn, formatDateKR, formatKRW, maskBizrno } from "@/lib/utils";
 
@@ -19,6 +20,8 @@ interface Props {
   params: Promise<{ bid_ntce_no: string }>;
 }
 
+// 이 페이지의 서버 출력에는 '오늘'이 들어가면 안 된다 (D-day·골든타임·유사공고는 클라이언트 컴포넌트).
+// 출력이 전과 같으면 Vercel은 ISR Write를 안 하므로, 결정적 출력 = 데이터가 바뀐 날만 과금된다.
 export const revalidate = 3600;
 
 // 빈 배열이라도 있어야 이 동적 라우트가 요청마다 SSR(ƒ)이 아니라 ISR(생성 후 캐시)로 빌드된다.
@@ -102,9 +105,7 @@ export default async function NoticePage({ params }: Props) {
   if (insight?.schedule?.duration) scheduleParts.push(["기간", insight.schedule.duration]);
   if (insight?.schedule?.delivery_deadline)
     scheduleParts.push(["납품기한", insight.schedule.delivery_deadline]);
-  const gt = analyzeGoldenTime(lifecycle);
-  const goldenActive = isGoldenTime(gt.status);
-  const specPdfUrl = preSpecs[0]?.spec_doc_file_url_1;
+  const lifecycleData = toLifecycleData(lifecycle);
 
   const jsonLd = noticeJsonLd({
     bidNtceNo: notice.bid_ntce_no,
@@ -137,43 +138,7 @@ export default async function NoticePage({ params }: Props) {
       />
       <Header />
       <main className="world-gc flex-1">
-        {goldenActive && (
-          <div className="bg-amber-500 text-white">
-            <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] font-semibold">
-              <span className="inline-flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4" strokeWidth={2.5} />
-                <span className="font-extrabold tracking-tight">골든타임</span>
-              </span>
-              <span className="text-white/90">
-                {gt.opinionDaysLeft !== null
-                  ? gt.opinionDaysLeft === 0
-                    ? "오늘이 의견 등록 마감일이에요"
-                    : `의견 등록 마감 D-${gt.opinionDaysLeft}`
-                  : "사전규격 공개 중 — 의견을 등록할 수 있어요"}
-                {gt.opinionDeadline && (
-                  <span className="ml-1.5 text-white/70 font-medium">
-                    ({formatDateKR(gt.opinionDeadline)})
-                  </span>
-                )}
-              </span>
-              {gt.opinionCount > 0 && (
-                <span className="text-white/80">
-                  · 의견 {gt.opinionCount}건 등록됨
-                </span>
-              )}
-              {specPdfUrl && (
-                <a
-                  href={specPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-auto inline-flex items-center gap-1 rounded-md bg-white/15 hover:bg-white/25 px-2.5 py-1 text-[12.5px] font-bold transition-colors"
-                >
-                  사양서 PDF 보기
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+        <GoldenTimeBanner data={lifecycleData} />
 
         {/* Hero */}
         <section className="border-b border-border bg-muted/30">
@@ -406,7 +371,7 @@ export default async function NoticePage({ params }: Props) {
               발주계획부터 계약체결까지 한 공고의 전 과정. 다른 입찰 사이트엔 없는 통합 정보예요.
             </p>
           </div>
-          <Lifecycle data={lifecycle} />
+          <Lifecycle data={lifecycleData} />
         </section>
 
         {/* 발주 계획 */}
@@ -669,74 +634,10 @@ export default async function NoticePage({ params }: Props) {
           </DetailSection>
         )}
 
-        <Suspense fallback={null}>
-          <SimilarSection bidNtceNo={lifecycle.notice.bid_ntce_no} />
-        </Suspense>
+        <SimilarNotices bidNtceNo={lifecycle.notice.bid_ntce_no} />
       </main>
       <Footer />
     </>
-  );
-}
-
-async function SimilarSection({ bidNtceNo }: { bidNtceNo: string }) {
-  const similar = await fetchSimilarNotices(bidNtceNo, 10);
-  if (similar.length === 0) return null;
-
-  return (
-    <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14 border-t border-border">
-      <div className="mb-6">
-        <h2 className="text-[20px] sm:text-[24px] font-extrabold tracking-tight text-foreground">
-          비슷한 공고
-        </h2>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          이 공고와 의미가 가까운 진행 중 공고 {similar.length}건이에요. 마감일이 지난 공고는 자동 제외.
-        </p>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {similar.map((s) => {
-          const sim = Math.round(s.similarity * 100);
-          return (
-            <a
-              key={s.bid_ntce_no}
-              href={`/notices/${s.bid_ntce_no}`}
-              className="block rounded-lg border border-border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition-all"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="text-[15px] font-bold text-foreground leading-snug line-clamp-2">
-                  {s.bid_ntce_nm}
-                </div>
-                <span className="shrink-0 text-[11px] font-bold text-primary tabular-nums">
-                  유사도 {sim}
-                </span>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
-                {s.bsns_div_nm && (
-                  <Badge variant="secondary" className="text-[11px]">
-                    {s.bsns_div_nm}
-                  </Badge>
-                )}
-                <span className="truncate">
-                  {s.dmnd_instt_nm || s.ntce_instt_nm || "—"}
-                </span>
-                {s.bid_clse_date && (
-                  <>
-                    <Dot />
-                    <span>마감 {formatDateKR(s.bid_clse_date)}</span>
-                  </>
-                )}
-                {s.presmpt_prce != null && (
-                  <>
-                    <Dot />
-                    <span>추정 {formatKRW(s.presmpt_prce)}</span>
-                  </>
-                )}
-              </div>
-            </a>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 

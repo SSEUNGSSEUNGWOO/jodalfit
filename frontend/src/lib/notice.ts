@@ -135,6 +135,8 @@ export async function fetchLifecycle(
   const c = getServerSupabase();
 
   // 5개 라이프사이클 단계 + 첨부문서 인사이트 + 정정 이력(정정 공고일 때만) 병렬 조회
+  // 정렬은 전부 동률 없이 결정적으로 — 같은 데이터가 다른 순서로 렌더되면 ISR이 "바뀐 출력"으로 보고
+  // 매번 다시 쓴다 (company.ts fetchCompanyProfile 주석 참조).
   const [insightRes, versionsRes, preSpecsRes, orderPlansRes, awardsRes, contractsRes] =
     await Promise.all([
       c
@@ -158,6 +160,8 @@ export async function fetchLifecycle(
           "bf_spec_rgst_no,prdct_clsfc_no_nm,bsns_div_nm,sw_biz_obj_yn,asign_bdgt_amt,rcpt_dt,rgst_dt,opnin_rgst_clse_dt,order_instt_nm,rl_dminstt_nm,spec_doc_file_url_1"
         )
         .ilike("bid_ntce_no_list", `%${bidNtceNo}%`)
+        .order("rgst_dt", { ascending: false, nullsFirst: false })
+        .order("bf_spec_rgst_no")
         .limit(5),
       c
         .from("order_plans")
@@ -165,6 +169,8 @@ export async function fetchLifecycle(
           "order_plan_unty_no,biz_nm,bsns_div_nm,bsns_ty_nm,order_year,order_mnth,cntrct_mthd_nm,order_instt_nm,sum_order_amt,ntice_dt"
         )
         .ilike("bid_ntce_no_list", `%${bidNtceNo}%`)
+        .order("ntice_dt", { ascending: false, nullsFirst: false })
+        .order("order_plan_unty_no")
         .limit(5),
       c
         .from("award_results")
@@ -172,14 +178,16 @@ export async function fetchLifecycle(
           "bid_ntce_no,bid_ntce_ord,openg_rank,bizrno,corp_nm,bid_amt,bid_rate,is_winner"
         )
         .eq("bid_ntce_no", bidNtceNo)
-        .order("openg_rank"),
+        .order("openg_rank")
+        .order("bizrno"),
       c
         .from("contracts")
         .select(
           "cntrct_no,cntrct_nm,cntrct_cncls_date,cntrct_amt,rprsnt_corp_nm,rprsnt_corp_bizrno"
         )
         .eq("bid_ntce_no", bidNtceNo)
-        .order("cntrct_cncls_date", { ascending: false }),
+        .order("cntrct_cncls_date", { ascending: false })
+        .order("cntrct_no"),
     ]);
 
   const preSpecs = (preSpecsRes.data as PreSpec[]) ?? [];
@@ -194,7 +202,8 @@ export async function fetchLifecycle(
         "bf_spec_rgst_no,opnin_no,opnin_titl,opnin_cntnts,mkng_corp_nm,mkr_nm,inpt_dt"
       )
       .in("bf_spec_rgst_no", specIds)
-      .order("inpt_dt", { ascending: false });
+      .order("inpt_dt", { ascending: false })
+      .order("opnin_no");
     opinions = (opData as PreSpecOpinion[]) ?? [];
   }
 

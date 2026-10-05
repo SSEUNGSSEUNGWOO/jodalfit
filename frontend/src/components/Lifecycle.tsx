@@ -1,7 +1,10 @@
+"use client";
+
 import { Check, Calendar, FileText, MessageSquare, Megaphone, Award, FileSignature, Sparkles, ExternalLink } from "lucide-react";
 import { cn, formatDateKR, formatKRW } from "@/lib/utils";
-import type { NoticeLifecycle } from "@/lib/notice";
-import { analyzeGoldenTime, isGoldenTime } from "@/lib/golden-time";
+import type { LifecycleData } from "@/lib/lifecycle-data";
+import { analyzeGoldenTimeFromParts, isGoldenTime } from "@/lib/golden-time";
+import { useToday } from "@/lib/use-today";
 
 interface Stage {
   key: "plan" | "spec" | "opinion" | "notice" | "award" | "contract";
@@ -16,8 +19,10 @@ interface Stage {
   dDay?: { label: string; tone: "urgent" | "normal" };
 }
 
-export function Lifecycle({ data }: { data: NoticeLifecycle }) {
-  const today = new Date();
+/** 오늘에 따라 달라지는 표시(진행 중·마감·골든타임·D-day)는 브라우저에서 오늘을 안 뒤에만 켜진다.
+ *  서버가 구운 HTML(ISR 캐시)에는 데이터만으로 정해지는 상태(건수·완료 여부)만 들어간다 — use-today.ts 참조. */
+export function Lifecycle({ data }: { data: LifecycleData }) {
+  const today = useToday();
   const ntceDt = data.notice.bid_ntce_date
     ? new Date(data.notice.bid_ntce_date)
     : null;
@@ -25,14 +30,25 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
     ? new Date(data.notice.bid_clse_date)
     : null;
 
-  const noticeActive = ntceDt !== null && (!clseDt || today <= clseDt);
-  const noticeDone = clseDt !== null && today > clseDt;
+  const noticeActive = today !== null && ntceDt !== null && (!clseDt || today <= clseDt);
+  const noticeDone = today !== null && clseDt !== null && today > clseDt;
 
-  const gt = analyzeGoldenTime(data);
-  const goldenActive = isGoldenTime(gt.status);
+  const gt = today
+    ? analyzeGoldenTimeFromParts(
+        {
+          notice: data.notice,
+          preSpecs: data.preSpecs,
+          opinionCount: data.opinionCount,
+          hasAwardsOrContracts: data.awards.length > 0 || data.contracts.length > 0,
+          hasOrderPlans: data.orderPlans.length > 0,
+        },
+        today
+      )
+    : null;
+  const goldenActive = gt !== null && isGoldenTime(gt.status);
 
   const opinionDDay =
-    gt.opinionDaysLeft !== null && goldenActive
+    gt !== null && gt.opinionDaysLeft !== null && goldenActive
       ? {
           label:
             gt.opinionDaysLeft === 0
@@ -79,9 +95,9 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
       sub: "참여 업체 의견",
       icon: <MessageSquare className="h-3.5 w-3.5" />,
       active: goldenActive,
-      done: data.opinions.length > 0,
+      done: data.opinionCount > 0,
       golden: goldenActive,
-      count: data.opinions.length,
+      count: data.opinionCount,
       dDay: opinionDDay,
     },
     {
@@ -228,7 +244,7 @@ export function Lifecycle({ data }: { data: NoticeLifecycle }) {
                   {s.detail}
                 </div>
               )}
-              {s.key === "spec" && s.golden && gt.hasSpecPdf && data.preSpecs[0]?.spec_doc_file_url_1 && (
+              {s.key === "spec" && s.golden && gt?.hasSpecPdf && data.preSpecs[0]?.spec_doc_file_url_1 && (
                 <a
                   href={data.preSpecs[0].spec_doc_file_url_1}
                   target="_blank"

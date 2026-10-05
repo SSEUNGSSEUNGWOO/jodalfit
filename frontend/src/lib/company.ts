@@ -173,14 +173,18 @@ export interface CompanyProfile {
 export async function fetchCompanyProfile(bizrno: string): Promise<CompanyProfile> {
   const c = getServerSupabase();
   const [indRes, prdRes] = await Promise.all([
+    // ORDER BY 없는 결과는 일일 sync가 행을 다시 쓸 때마다 순서가 바뀔 수 있고, 그러면 내용이 같은
+    // 회사 페이지도 "다른 출력"이 되어 ISR Write가 난다. 아래 두 함수의 tie-breaker도 같은 이유.
     c
       .from("company_industries")
       .select("indstryty_cd,indstryty_nm,rprsnt_indstryty_yn")
-      .eq("bizrno", bizrno),
+      .eq("bizrno", bizrno)
+      .order("indstryty_cd"),
     c
       .from("company_supply_products")
       .select("dtl_prdct_clsfc_nm,rprsnt_prdct_yn")
-      .eq("bizrno", bizrno),
+      .eq("bizrno", bizrno)
+      .order("dtl_prdct_clsfc_nm"),
   ]);
   const industryLinks: { cd: string; nm: string }[] = [];
   for (const r of (indRes.data as { indstryty_cd: string; indstryty_nm: string | null; rprsnt_indstryty_yn: string | null }[]) ?? []) {
@@ -242,6 +246,7 @@ export async function fetchCompanyContracts(
     .select("cntrct_no,cntrct_nm,bsns_div_nm,cntrct_amt,cntrct_cncls_date,dmnd_instt_nm")
     .eq("rprsnt_corp_bizrno_norm", bizrnoNorm)
     .order("cntrct_cncls_date", { ascending: false })
+    .order("cntrct_no")
     .limit(limit);
   return (data as ContractRow[]) ?? [];
 }
@@ -259,6 +264,7 @@ export async function fetchCompanyAwards(
     .eq("bizrno", bizrnoNorm)
     .eq("is_winner", true)
     .order("bid_ntce_no", { ascending: false })
+    .order("bid_ntce_ord", { ascending: false })
     .limit(limit);
   type AwardOnly = {
     bid_ntce_no: string;
