@@ -30,5 +30,9 @@ def interpret(table_md: str) -> str:
         capture_output=True, text=True, encoding="utf-8", timeout=TIMEOUT,
     )
     if res.returncode != 0:
-        raise RuntimeError(f"claude CLI 실패: {res.stderr[:300]}")
+        # 사용량 한도 안내("You've reached your ... limit")는 stderr 가 아니라 stdout 으로
+        # 나온다 — stderr 만 싣던 탓에 2026-10-01 실패가 "claude CLI 실패: " 빈칸으로만
+        # 남아 원인을 알 수 없었다. rc 와 함께 둘 중 있는 쪽을 싣는다.
+        detail = (res.stderr or res.stdout or "").strip()[:300] or "(출력 없음)"
+        raise RuntimeError(f"claude CLI 실패(rc={res.returncode}): {detail}")
     return res.stdout.strip()

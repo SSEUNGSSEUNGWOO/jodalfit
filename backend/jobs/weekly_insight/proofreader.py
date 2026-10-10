@@ -57,7 +57,9 @@ def proofread(draft: str) -> str:
         return draft
 
     if result.returncode != 0:
-        print(f"[proofreader] CLI 실패, 원본 유지: {result.stderr[:200]}")
+        # 사용량 한도 안내는 stdout 으로 나온다 — stderr 만 싣면 사유가 빈칸이 된다.
+        detail = (result.stderr or result.stdout or "").strip()[:200] or "(출력 없음)"
+        print(f"[proofreader] CLI 실패(rc={result.returncode}), 원본 유지: {detail}")
         return draft
 
     out = result.stdout.strip().strip("`")

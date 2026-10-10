@@ -37,7 +37,9 @@ def _codex_call(prompt: str) -> str:
         shell=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"codex CLI 실패: {result.stderr[:300]}")
+        # 사용량 한도 안내는 stdout 으로 나온다 — stderr 만 싣면 사유가 빈칸이 된다.
+        detail = (result.stderr or result.stdout or "").strip()[:300] or "(출력 없음)"
+        raise RuntimeError(f"codex CLI 실패(rc={result.returncode}): {detail}")
     return result.stdout
 
 
