@@ -231,7 +231,7 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
     for r in passed:
         raw, bd = score_notice(r, company_rgn=prof["rgn"], company_terms=prof["terms"], company_institutions=instts,
                                company_amt_median=median, today=t, peer_instt_counts={}, instt_stats=instt_stats)
-        r["score_raw"] = raw
+        r["score_raw"] = round(raw, 1)
     passed.sort(key=lambda r: r["score_raw"], reverse=True)
     scored = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in passed]
     top = passed[:MMR_POOL]
