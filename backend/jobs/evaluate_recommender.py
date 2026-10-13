@@ -33,7 +33,10 @@ PARTICIPATION_WEIGHT = 0.4
 def connect() -> psycopg.Connection:
     if not DATABASE_URL:
         sys.exit("DATABASE_URL 이 .env 에 없습니다")
-    conn = psycopg.connect(DATABASE_URL, connect_timeout=20, options="-c statement_timeout=600000")
+    conn = psycopg.connect(
+        DATABASE_URL, connect_timeout=20, autocommit=True,
+        options="-c statement_timeout=600000 -c default_transaction_read_only=on",
+    )
     conn.execute("set client_encoding to 'UTF8'")
     return conn
 
@@ -43,7 +46,7 @@ def fetch_positives(conn, t: date, horizon: date) -> dict[str, set[tuple[str, st
     rows = conn.execute(
         """select a.bizrno_norm, a.bid_ntce_no, a.bid_ntce_ord
            from award_results a join bid_notices b using (bid_ntce_no, bid_ntce_ord)
-           where a.is_winner and a.bizrno_norm is not null and b.embedding is not null
+           where a.is_winner and a.bizrno_norm <> '' and b.embedding is not null
              and b.bid_ntce_date < %s and b.bid_clse_date >= %s and b.bid_clse_date <= %s""",
         (t, t, horizon),
     ).fetchall()
@@ -72,7 +75,7 @@ def fetch_history_count(conn, bizs: list[str], t: date) -> dict[str, float]:
 
 def sample_companies(conn, positives: dict, t: date, n: int, seed: int) -> list[dict]:
     """업종 재료가 있는 회사 중 tier 별로 고르게 표본. 반환: [{biz, tier, n_hist}]"""
-    bizs = list(positives)
+    bizs = sorted(positives)
     have_ind = {r[0] for r in conn.execute(
         """select co.bizrno_norm from companies co where co.bizrno_norm = any(%s)
            and exists (select 1 from company_industries i where i.bizrno = co.bizrno)""", (bizs,))}
@@ -87,7 +90,7 @@ def sample_companies(conn, positives: dict, t: date, n: int, seed: int) -> list[
     for tier in ("cold", "small", "rich"):
         pool = by_tier[tier]
         rng.shuffle(pool)
-        out += [{"biz": b, "tier": tier, "n_hist": hist.get(b, 0)} for b in pool[:per]]
+        out += [{"biz": b, "tier": tier, "n_hist": hist.get(b, 0.0)} for b in pool[:per]]
     return out
 
 
