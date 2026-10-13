@@ -24,6 +24,10 @@ from app.recommender.evaluation import (
 )
 from app.services.openai_client import embed_texts
 from jobs.compute_company_vectors import build_industry_text, dynamic_weights
+from app.recommender.mmr import mmr_diversify
+from app.recommender.pipeline import MMR_POOL
+from app.recommender.qualifications import check_qualifications
+from app.recommender.score import score_notice
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -186,6 +190,56 @@ def fetch_instt_stats_before(conn, t: date) -> dict[str, dict]:
         """select dmnd_instt_nm, count(*)::int, count(distinct rprsnt_corp_bizrno_norm)::int from contracts
            where dmnd_instt_nm is not null and cntrct_cncls_date < %s and cntrct_cncls_date >= %s - interval '2 years'
            group by 1 having count(*) >= 10""", (t, t))}
+
+
+def fetch_limits(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], dict]:
+    """운영 _fetch_eligibility 와 같은 두 테이블."""
+    out: dict[tuple[str, str], dict] = {}
+    nos = list({k[0] for k in keys})
+    for no, od, nm, grp in conn.execute("select bid_ntce_no, bid_ntce_ord, lcns_lmt_nm, lmt_grp_no from bid_license_limits where bid_ntce_no = any(%s)", (nos,)):
+        out.setdefault((no, od), {"licenses": [], "regions": []})["licenses"].append({"lcns_lmt_nm": nm, "lmt_grp_no": grp})
+    for no, od, rg in conn.execute("select bid_ntce_no, bid_ntce_ord, prtcpt_psbl_rgn_nm from bid_rgn_limits where bid_ntce_no = any(%s)", (nos,)):
+        out.setdefault((no, od), {"licenses": [], "regions": []})["regions"].append({"prtcpt_psbl_rgn_nm": rg})
+    return out
+
+
+def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict, instts: set[str],
+           median: float | None, instt_stats: dict, t: date, pool: int, limit: int) -> dict[str, list[tuple[str, str]]]:
+    """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환."""
+    sims = X @ vec
+    order = np.argsort(-sims)[: pool * 2]
+    dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
+    # dedup: 공고번호 첫 등장 + 내용 지문 (운영과 동일)
+    seen: set[str] = set(); seen_c: set[tuple] = set(); cand: list[dict] = []
+    for i in order:
+        r = dict(notices[i]); r["similarity"] = float(sims[i])
+        n = r["bid_ntce_no"]
+        if n in seen: continue
+        ck = ((r.get("bid_ntce_nm") or "").strip(), (r.get("ntce_instt_nm") or r.get("dmnd_instt_nm") or "").strip(), r.get("bid_clse_date"), r.get("presmpt_prce"))
+        if ck[0] and ck in seen_c: continue
+        seen.add(n); seen_c.add(ck); cand.append(r)
+        if len(cand) >= pool: break
+    dedup = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in cand]
+    lim = fetch_limits(conn, dedup)
+    passed: list[dict] = []
+    for r in cand:
+        slot = lim.get((r["bid_ntce_no"], r["bid_ntce_ord"])) or {"licenses": [], "regions": []}
+        q = check_qualifications(prof["names"], prof["rgn"], slot["licenses"], slot["regions"])
+        if q["passed"]:
+            r["qualification"] = q; passed.append(r)
+    qualified = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in passed]
+    for r in passed:
+        raw, bd = score_notice(r, company_rgn=prof["rgn"], company_terms=prof["terms"], company_institutions=instts,
+                               company_amt_median=median, today=t, peer_instt_counts={}, instt_stats=instt_stats)
+        r["score_raw"] = raw
+    passed.sort(key=lambda r: r["score_raw"], reverse=True)
+    scored = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in passed]
+    top = passed[:MMR_POOL]
+    idx = {(n["bid_ntce_no"], n["bid_ntce_ord"]): i for i, n in enumerate(notices)}
+    embs = {(r["bid_ntce_no"], r["bid_ntce_ord"]): X[idx[(r["bid_ntce_no"], r["bid_ntce_ord"])]].tolist() for r in top}
+    final_rows = mmr_diversify(top, embs, k=5) + passed[MMR_POOL:]
+    final = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in final_rows[:limit]]
+    return {"dense": dense, "dedup": dedup, "qualified": qualified, "scored": scored, "final": final}
 
 
 def main() -> None:
