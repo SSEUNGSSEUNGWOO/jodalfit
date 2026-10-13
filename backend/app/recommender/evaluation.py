@@ -40,8 +40,9 @@ def strip_leaked_history(history: list[dict], positives: set[Key]) -> list[dict]
 
 
 def stage_lost(stage_ranks: dict[str, list[Key]], positive: Key, pool: int, limit: int) -> str:
-    """정답 1건이 어느 단계에서 사라졌는지. STAGES 순서로 처음 탈락한 단계 이름, 끝까지 살았으면 'kept'."""
-    cut = {"dense": pool * 2, "dedup": pool, "qualified": pool, "scored": pool, "final": limit}
+    """정답 1건이 어느 단계에서 사라졌는지. STAGES 순서로 처음 탈락한 단계 이름, 끝까지 살았으면 'kept'.
+    scored = 점수 순위가 limit 밖, final = scored top-limit 안이었지만 MMR 에 밀려남."""
+    cut = {"dense": pool * 2, "dedup": pool, "qualified": pool, "scored": limit, "final": limit}
     for st in STAGES:
         if positive not in stage_ranks[st][: cut[st]]:
             return st
@@ -85,6 +86,10 @@ def _self_check() -> None:
     assert recall_at_k([a], set(), 1) == 0.0
     assert stage_lost({**ranks, "final": [a, b]}, b, pool=10, limit=1) == "final"
     assert stage_lost({"dense": [b] * 25 + [a], "dedup": [a], "qualified": [a], "scored": [a], "final": [a]}, a, pool=10, limit=5) == "dense"
+    d = ("D", "000")
+    ranks2 = {"dense": [a, b, c, d], "dedup": [a, b, c, d], "qualified": [a, b, c, d], "scored": [a, b, c, d], "final": [a, b, c]}
+    assert stage_lost(ranks2, d, pool=10, limit=3) == "scored"  # scored 순위(4위) > limit(3)
+    assert stage_lost(ranks2, d, pool=10, limit=4) == "final"   # scored top-4 안이지만 final 에 없음(MMR 에 밀림)
     assert company_tier(0.4) == "small"
     agg = aggregate([
         {"tier": "cold", "bsns_div": "용역", "r_dense": 1.0, "r_qual": 1.0, "r_scored30": 0.5, "r_final30": 0.5, "mrr": 0.5, "n_pos": 2},

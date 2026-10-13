@@ -2,6 +2,7 @@
 
 사용: cd backend && uv run python -m jobs.evaluate_recommender --as-of 2026-08-01 --companies 300 [--pool 200 --limit 30 --seed 7]
 읽기 전용. 결과: data/recommender_eval/<run_id>/
+baseline 보존: 산출물은 gitignore 대상 — 기준점은 docs/recommender/ 에 report.md 를 복사해 둔다.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ import psycopg
 from dotenv import load_dotenv
 
 from app.recommender.evaluation import (
-    STAGES, aggregate, company_tier, mrr, recall_at_k, stage_lost, strip_leaked_history,
+    aggregate, company_tier, mrr, recall_at_k, stage_lost, strip_leaked_history,
 )
 from app.services.openai_client import embed_texts
 from jobs.compute_company_vectors import build_industry_text, dynamic_weights
@@ -28,6 +29,8 @@ from app.recommender.mmr import mmr_diversify
 from app.recommender.pipeline import MMR_POOL
 from app.recommender.qualifications import check_qualifications
 from app.recommender.score import score_notice
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -250,7 +253,7 @@ def main() -> None:
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
-    out_dir = Path("data/recommender_eval") / run_id; out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(__file__).resolve().parents[1] / "data" / "recommender_eval" / run_id; out_dir.mkdir(parents=True, exist_ok=True)
     conn = connect()
     positives = fetch_positives(conn, t, horizon)
     sample = sample_companies(conn, positives, t, args.companies, args.seed)
@@ -258,9 +261,10 @@ def main() -> None:
     instt_stats = fetch_instt_stats_before(conn, t)
     nidx = {(n["bid_ntce_no"], n["bid_ntce_ord"]): n for n in notices}
     print(f"t={t} active={len(notices):,} sample={len(sample)} positives(total)={sum(len(positives[s['biz']]) for s in sample):,}")
-    cache: dict = {}; per: list[dict] = []; failures: list[dict] = []; skipped = 0
+    cache: dict = {}; per: list[dict] = []; failures: list[dict] = []; skipped = 0; positives_dropped = 0
     for i, s in enumerate(sample, 1):
         biz = s["biz"]; pos = {k for k in positives[biz] if k in nidx}
+        positives_dropped += len(positives[biz]) - len(pos)
         if not pos:
             skipped += 1; continue
         prof = fetch_company_profile(conn, biz)
@@ -274,13 +278,13 @@ def main() -> None:
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
         st_nos = {k: [no for no, _ in v] for k, v in st.items()}
-        div = nidx[next(iter(pos))]["bsns_div_nm"] or "?"
+        div = nidx[min(pos)]["bsns_div_nm"] or "?"
         per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos),
                     "r_dense": recall_at_k(st_nos["dedup"], pos_nos, args.pool), "r_qual": recall_at_k(st_nos["qualified"], pos_nos, args.pool),
                     "r_scored30": recall_at_k(st_nos["scored"], pos_nos, args.limit), "r_final30": recall_at_k(st_nos["final"], pos_nos, args.limit),
                     "mrr": mrr(st_nos["final"], pos_nos)})
-        title_by_no = {no: nidx[(no, od)]["bid_ntce_nm"] for no, od in pos}
-        for p in pos_nos:
+        title_by_no = {no: nidx[(no, od)]["bid_ntce_nm"] for no, od in sorted(pos)}
+        for p in sorted(pos_nos):
             lost = stage_lost(st_nos, p, args.pool, args.limit)
             if lost != "kept":
                 rank_dense = next((r for r, k in enumerate(st_nos["dense"], 1) if k == p), None)
@@ -292,6 +296,7 @@ def main() -> None:
     lost_counts = defaultdict(int)
     for f in failures: lost_counts[f["lost_at"]] += 1
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
+    agg["positives_dropped"] = positives_dropped
     manifest = {"as_of": t.isoformat(), "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
                 "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
@@ -314,7 +319,9 @@ def main() -> None:
     for grp in ("by_tier", "by_div"):
         for k, v in agg[grp].items():
             lines.append(f"| {k} | {v['n']} | {v['r_dense']:.3f} | {v['r_qual']:.3f} | {v['r_scored30']:.3f} | {v['r_final30']:.3f} | {v['mrr']:.3f} |")
-    lines += ["", "## 정답이 사라진 단계", "", "| 단계 | 건수 |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(lost_counts.items(), key=lambda x: -x[1])]
+    lines += ["", "## 정답이 사라진 단계", "",
+              "- dense: dense 상위 pool×2 밖 · dedup: 후보 풀 pool 컷(지문 중복 제거 포함) · qualified: 자격 하드 제외 · scored: 점수 순위 limit 밖 · final: MMR 에 밀림",
+              "", "| 단계 | 건수 |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(lost_counts.items(), key=lambda x: -x[1])]
     (out_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines)); print(f"\nsaved: {out_dir}")
 
