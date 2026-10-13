@@ -33,11 +33,10 @@ PARTICIPATION_WEIGHT = 0.4
 def connect() -> psycopg.Connection:
     if not DATABASE_URL:
         sys.exit("DATABASE_URL 이 .env 에 없습니다")
-    conn = psycopg.connect(
-        DATABASE_URL, connect_timeout=20, autocommit=True,
-        options="-c statement_timeout=600000 -c default_transaction_read_only=on",
-    )
+    conn = psycopg.connect(DATABASE_URL, connect_timeout=20, autocommit=True)
     conn.execute("set client_encoding to 'UTF8'")
+    conn.execute("set statement_timeout = 600000")
+    conn.execute("set default_transaction_read_only = on")
     return conn
 
 
