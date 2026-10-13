@@ -244,20 +244,79 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--as-of", required=True, help="평가 시점 t (YYYY-MM-DD)")
-    ap.add_argument("--companies", type=int, default=300)
-    ap.add_argument("--pool", type=int, default=200, help="운영 candidate_pool")
-    ap.add_argument("--limit", type=int, default=30, help="최종 결과 수")
-    ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--as-of", required=True); ap.add_argument("--companies", type=int, default=300)
+    ap.add_argument("--pool", type=int, default=200); ap.add_argument("--limit", type=int, default=30)
+    ap.add_argument("--seed", type=int, default=7); ap.add_argument("--run-id", default=None)
     args = ap.parse_args()
-    t = date.fromisoformat(args.as_of)
-    horizon = t + timedelta(days=HORIZON_DAYS)
+    t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
+    run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
+    out_dir = Path("data/recommender_eval") / run_id; out_dir.mkdir(parents=True, exist_ok=True)
     conn = connect()
     positives = fetch_positives(conn, t, horizon)
     sample = sample_companies(conn, positives, t, args.companies, args.seed)
     notices, X = fetch_active_notices(conn, t, horizon)
-    print(f"t={t} positives: {sum(len(v) for v in positives.values()):,} notices / {len(positives):,} companies; "
-          f"sample={len(sample)} ({', '.join(f'{k}={sum(1 for s in sample if s['tier']==k)}' for k in ('cold','small','rich'))}); active={len(notices):,}")
+    instt_stats = fetch_instt_stats_before(conn, t)
+    nidx = {(n["bid_ntce_no"], n["bid_ntce_ord"]): n for n in notices}
+    print(f"t={t} active={len(notices):,} sample={len(sample)} positives(total)={sum(len(positives[s['biz']]) for s in sample):,}")
+    cache: dict = {}; per: list[dict] = []; failures: list[dict] = []; skipped = 0
+    for i, s in enumerate(sample, 1):
+        biz = s["biz"]; pos = {k for k in positives[biz] if k in nidx}
+        if not pos:
+            skipped += 1; continue
+        prof = fetch_company_profile(conn, biz)
+        hist, instts, med = fetch_history_before(conn, biz, t)
+        clean = strip_leaked_history(hist, pos)
+        vec = company_vector_at(conn, prof, clean, t, cache, s["n_hist"])  # tier 라벨과 같은 유효건수
+        if vec is None:
+            skipped += 1; continue
+        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit)
+        # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
+        # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
+        pos_nos = {no for no, _ in pos}
+        st_nos = {k: [no for no, _ in v] for k, v in st.items()}
+        div = nidx[next(iter(pos))]["bsns_div_nm"] or "?"
+        per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos),
+                    "r_dense": recall_at_k(st_nos["dedup"], pos_nos, args.pool), "r_qual": recall_at_k(st_nos["qualified"], pos_nos, args.pool),
+                    "r_scored30": recall_at_k(st_nos["scored"], pos_nos, args.limit), "r_final30": recall_at_k(st_nos["final"], pos_nos, args.limit),
+                    "mrr": mrr(st_nos["final"], pos_nos)})
+        title_by_no = {no: nidx[(no, od)]["bid_ntce_nm"] for no, od in pos}
+        for p in pos_nos:
+            lost = stage_lost(st_nos, p, args.pool, args.limit)
+            if lost != "kept":
+                rank_dense = next((r for r, k in enumerate(st_nos["dense"], 1) if k == p), None)
+                failures.append({"biz": biz, "tier": s["tier"], "bid_ntce_no": p, "title": title_by_no[p], "lost_at": lost, "dense_rank": rank_dense})
+        if i % 25 == 0: print(f"  {i}/{len(sample)}")
+    if not per:
+        sys.exit("평가된 회사가 0곳 — 날짜/표본 조건을 확인하세요 (보고서 미생성)")
+    agg = aggregate(per)
+    lost_counts = defaultdict(int)
+    for f in failures: lost_counts[f["lost_at"]] += 1
+    agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
+    manifest = {"as_of": t.isoformat(), "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
+                "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
+                "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
+                          "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
+                          "peer_instt_counts 비활성(운영과 동일), 기관통계는 t 이전 2년 계약으로 재계산",
+                          "정답=낙찰(award_results.is_winner). 미낙찰은 음성 아님",
+                          "참가 이력의 시점은 openg_date(개찰일) 기준 — 운영 잡은 raw bidprcDt 를 쓰지만 t 시점 '알 수 있었던' 기준으로는 개찰일이 맞다",
+                          "정답·순위 비교는 공고번호 단위(차수 무시) — 운영 dedup 과 같은 단위",
+                          "게시일 = t 인 공고는 제외(bid_ntce_date < t) — 보수적, 시점당 수십 건"]}
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out_dir / "metrics.json").write_text(json.dumps(agg, ensure_ascii=False, indent=2), encoding="utf-8")
+    with (out_dir / "failures.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["biz", "tier", "bid_ntce_no", "title", "lost_at", "dense_rank"]); w.writeheader(); w.writerows(failures)
+    m, lines = agg["macro"], []
+    lines += [f"# 추천 평가 baseline — t={t} (run {run_id})", "",
+              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit}", "",
+              "| 지표 | macro | micro |", "|---|---|---|"]
+    lines += [f"| {k} | {m[k]:.3f} | {agg['micro'][k]:.3f} |" for k in ("r_dense", "r_qual", "r_scored30", "r_final30", "mrr")]
+    lines += ["", "## 군별 (macro)", "", "| 군 | n | dense@pool | qual@pool | scored@30 | final@30 | mrr |", "|---|---|---|---|---|---|---|"]
+    for grp in ("by_tier", "by_div"):
+        for k, v in agg[grp].items():
+            lines.append(f"| {k} | {v['n']} | {v['r_dense']:.3f} | {v['r_qual']:.3f} | {v['r_scored30']:.3f} | {v['r_final30']:.3f} | {v['mrr']:.3f} |")
+    lines += ["", "## 정답이 사라진 단계", "", "| 단계 | 건수 |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(lost_counts.items(), key=lambda x: -x[1])]
+    (out_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("\n".join(lines)); print(f"\nsaved: {out_dir}")
 
 
 if __name__ == "__main__":
