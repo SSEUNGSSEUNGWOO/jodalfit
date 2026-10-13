@@ -64,3 +64,6 @@ supabase/.temp/
 backend/secrets/
 backend/data/
 .superpowers/
+
+# 이전 작업 env 백업 (비밀키 포함)
+**/.env.bak-*
