@@ -114,7 +114,7 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
 def fetch_company_profile(conn, biz: str) -> dict:
     """같은 norm 의 모든 회사 행을 합친 업종·물품(대표/나머지), 지역, 업종 이름 set, 토큰 set."""
     from app.recommender.score import _tokenize  # 운영과 같은 토큰화
-    rows = conn.execute("select bizrno, rgn_nm from companies where bizrno_norm = %s", (biz,)).fetchall()
+    rows = conn.execute("select bizrno, rgn_nm from companies where bizrno_norm = %s order by bizrno", (biz,)).fetchall()
     pks = [r[0] for r in rows]
     rgn = next((r[1] for r in rows if r[1]), None)
     rep_i, rest_i, rep_p, rest_p = [], [], [], []
@@ -184,7 +184,8 @@ def fetch_instt_stats_before(conn, t: date) -> dict[str, dict]:
     """0038 MV 와 같은 식(total, distinct_winners)을 t 이전 계약으로 계산. 전체 기관 한 번."""
     return {instt: {"total": tot, "distinct_winners": dw} for instt, tot, dw in conn.execute(
         """select dmnd_instt_nm, count(*)::int, count(distinct rprsnt_corp_bizrno_norm)::int from contracts
-           where dmnd_instt_nm is not null and cntrct_cncls_date < %s group by 1 having count(*) >= 10""", (t,))}
+           where dmnd_instt_nm is not null and cntrct_cncls_date < %s and cntrct_cncls_date >= %s - interval '2 years'
+           group by 1 having count(*) >= 10""", (t, t))}
 
 
 def main() -> None:
