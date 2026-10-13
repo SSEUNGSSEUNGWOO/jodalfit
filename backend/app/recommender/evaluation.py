@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-Key = tuple[str, str]  # (bid_ntce_no, bid_ntce_ord)
+Key = str | tuple[str, str]  # (bid_ntce_no, bid_ntce_ord) — 잡은 bare bid_ntce_no 문자열도 넘긴다
 
 STAGES = ("dense", "dedup", "qualified", "scored", "final")
 
@@ -12,7 +12,7 @@ def recall_at_k(ranked: list[Key], positives: set[Key], k: int) -> float:
     """정답 중 상위 k 안에 든 비율. 정답 0개면 0.0 (호출부에서 제외)."""
     if not positives:
         return 0.0
-    hit = sum(1 for key in ranked[:k] if key in positives)
+    hit = len(set(ranked[:k]) & positives)
     return hit / len(positives)
 
 
@@ -42,6 +42,8 @@ def strip_leaked_history(history: list[dict], positives: set[Key]) -> list[dict]
 def stage_lost(stage_ranks: dict[str, list[Key]], positive: Key, pool: int, limit: int) -> str:
     """정답 1건이 어느 단계에서 사라졌는지. STAGES 순서로 처음 탈락한 단계 이름, 끝까지 살았으면 'kept'.
     scored = 점수 순위가 limit 밖, final = scored top-limit 안이었지만 MMR 에 밀려남."""
+    if positive in stage_ranks["final"][:limit]:
+        return "kept"
     cut = {"dense": pool * 2, "dedup": pool, "qualified": pool, "scored": limit, "final": limit}
     for st in STAGES:
         if positive not in stage_ranks[st][: cut[st]]:
@@ -85,7 +87,7 @@ def _self_check() -> None:
     assert stage_lost(ranks, b, pool=10, limit=5) == "kept"
     assert recall_at_k([a], set(), 1) == 0.0
     assert stage_lost({**ranks, "final": [a, b]}, b, pool=10, limit=1) == "final"
-    assert stage_lost({"dense": [b] * 25 + [a], "dedup": [a], "qualified": [a], "scored": [a], "final": [a]}, a, pool=10, limit=5) == "dense"
+    assert stage_lost({"dense": [b] * 25 + [a], "dedup": [a], "qualified": [a], "scored": [a], "final": []}, a, pool=10, limit=5) == "dense"
     d = ("D", "000")
     ranks2 = {"dense": [a, b, c, d], "dedup": [a, b, c, d], "qualified": [a, b, c, d], "scored": [a, b, c, d], "final": [a, b, c]}
     assert stage_lost(ranks2, d, pool=10, limit=3) == "scored"  # scored 순위(4위) > limit(3)

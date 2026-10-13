@@ -46,6 +46,8 @@ def connect() -> psycopg.Connection:
     conn.execute("set client_encoding to 'UTF8'")
     conn.execute("set statement_timeout = 600000")
     conn.execute("set default_transaction_read_only = on")
+    if conn.execute("show transaction_read_only").fetchone()[0] != "on":
+        sys.exit("읽기 전용 세션이 적용되지 않았습니다 — DATABASE_URL 이 트랜잭션 풀러(:6543)인지 확인")
     return conn
 
 
@@ -107,9 +109,12 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     rows = conn.execute(
         """select bid_ntce_no, bid_ntce_ord, bid_ntce_nm, bsns_div_nm, bid_clse_date, presmpt_prce,
                   ntce_instt_nm, dmnd_instt_nm, bidprc_psbl_indstryty_nm, prtcpt_psbl_rgn_nm, embedding::text
-           from bid_notices where embedding is not null and bid_ntce_date < %s and bid_clse_date >= %s and bid_clse_date <= %s""",
+           from bid_notices where embedding is not null and bid_ntce_date < %s and bid_clse_date >= %s and bid_clse_date <= %s
+           order by bid_ntce_no, bid_ntce_ord""",
         (t, t, horizon),
     ).fetchall()
+    if not rows:
+        sys.exit(f"t={t} 활성 공고 0건 — --as-of 날짜를 확인하세요")
     notices = [dict(bid_ntce_no=r[0], bid_ntce_ord=r[1], bid_ntce_nm=r[2], bsns_div_nm=r[3],
                     bid_clse_date=r[4], presmpt_prce=r[5], ntce_instt_nm=r[6], dmnd_instt_nm=r[7],
                     bidprc_psbl_indstryty_nm=r[8], prtcpt_psbl_rgn_nm=r[9]) for r in rows]
@@ -210,7 +215,7 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
            median: float | None, instt_stats: dict, t: date, pool: int, limit: int) -> dict[str, list[tuple[str, str]]]:
     """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환."""
     sims = X @ vec
-    order = np.argsort(-sims)[: pool * 2]
+    order = np.argsort(-sims, kind="stable")[: pool * 2]
     dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
     # dedup: 공고번호 첫 등장 + 내용 지문 (운영과 동일)
     seen: set[str] = set(); seen_c: set[tuple] = set(); cand: list[dict] = []
@@ -269,7 +274,7 @@ def main() -> None:
             skipped += 1; continue
         prof = fetch_company_profile(conn, biz)
         hist, instts, med = fetch_history_before(conn, biz, t)
-        clean = strip_leaked_history(hist, pos)
+        clean = strip_leaked_history(hist, positives[biz])
         vec = company_vector_at(conn, prof, clean, t, cache, s["n_hist"])  # tier 라벨과 같은 유효건수
         if vec is None:
             skipped += 1; continue
