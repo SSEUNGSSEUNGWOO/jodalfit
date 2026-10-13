@@ -11,11 +11,12 @@
 - DB: 뭄바이 Micro, 9.98GB, 벡터 인덱스 없음, 벡터 미생성 회사 ~953곳
 - 회사 SEO 페이지 76,671건 sitemap 노출, GSC "발견됨·색인 안 됨" 1,912건(2026-06 기준, 재확인 필요)
 
-## Phase 1. 측정·모니터링 — 진행 중
-- [ ] PostHog (cookieless, billing limit $0): 페이지뷰 + 이벤트 `search_submit` / `notice_open` / `g2b_outbound` / `notice_save`
-- [ ] Sentry frontend + backend (DSN 없으면 비활성, 카드 미등록)
-- [ ] UptimeRobot: `https://jodalfit.co.kr`, 백엔드 `/health` 5분 간격
-- 완료 기준: PostHog에 실제 `search_submit` 1건, Sentry에 테스트 에러 각 1건, UptimeRobot 2개 green
+## Phase 1. 측정·모니터링 — 완료 (2026-10-13)
+- [x] PostHog US (cookieless): 페이지뷰 + 이벤트 `search_submit` / `notice_click` / `notice_save` / `g2b_outbound`. 코드 `frontend/src/instrumentation-client.ts`, `lib/analytics.ts`
+- [x] Sentry frontend + backend (DSN 없으면 비활성). Vercel·Railway 환경변수 등록
+- [x] UptimeRobot: `jodalfit web`(jodalfit.co.kr) / `jodalfit api`(/health), 5분 간격, 알림 jansseung@gmail.com
+- 완료 확인: 운영 사이트에서 PostHog `/e/` 200, Sentry envelope 200, 로컬 `search_submit` 전송, Sentry 테스트 이벤트 양쪽 도착, UptimeRobot 2개 Up
+- 남은 수동 설정: PostHog Billing spend limit $0 (승우님)
 
 ## Phase 2. DB 이전 (뭄바이 → 싱가포르)
 - 절차서: `docs/infra/supabase-singapore-migration.md`
