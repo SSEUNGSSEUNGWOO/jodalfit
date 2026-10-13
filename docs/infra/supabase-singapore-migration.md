@@ -248,3 +248,14 @@ curl.exe -s -o NUL -w "%{http_code} %{time_total}s`n" https://jodalfit.co.kr/sit
 - [ ] nolai 컴퓨트 내리기 (유료 컴퓨트라 MCP로는 pause 불가 — 대시보드에서)
 - [ ] CLAUDE.md의 "Seoul region"을 실제 리전으로 고치기
 - [ ] **개인정보처리방침의 국외 이전 표를 고치기** — `frontend/src/app/privacy/page.tsx`의 Supabase 처리 위치 "인도 (AWS 뭄바이)" → 싱가포르. 방침이 바뀌므로 `frontend/src/lib/privacy.ts`의 `PRIVACY_VERSION`(시행일)도 올린다. 공개된 방침과 실제가 다르면 안 된다
+
+---
+
+## 11. 2026-10-13 실제 이전에서 배운 것 (다음번엔 먼저 할 것)
+
+1. **디스크를 먼저 올린다.** 새 프로젝트 기본 8GB에 10GB를 넣으면 90%에서 자동확장이 걸리고 DB가 재시작돼 복원 트랜잭션이 통째로 롤백된다. 변경 뒤 4시간 쿨다운. 데이터 + `max_wal_size`(4GB, 상주) + 인덱스 빌드 여유 = **20GB**로 시작할 것.
+2. **`--disable-triggers`는 못 쓴다.** Supabase postgres는 슈퍼유저가 아니라 시스템 트리거를 끌 수 없다. 대신 부모 테이블(companies, bid_notices)을 `-L` TOC로 먼저 넣고 나머지를 넣는다 (`migrate/run_restore2.sh`).
+3. **TOC를 TABLE DATA만 고르면 `SEQUENCE SET`이 빠진다.** 시퀀스가 1에서 시작해 id 있는 테이블(search_logs, notice_events, email_subscribers, ingest_runs) INSERT가 전부 중복 키로 실패한다 — 백엔드는 조용히 삼켜서 로그·구독이 사라진다. 복원 뒤 반드시 모든 시퀀스를 `max(id)+1`로 setval (이번엔 전환 30분 뒤 발견).
+4. **스키마를 psql로 넣었으면 `notify pgrst, 'reload schema'`.** PostgREST 캐시 갱신.
+5. 덤프 중에도 다른 머신의 로컬 스케줄 태스크가 옛 DB에 계속 쓴다 → 전환 직전 차분 복사(`08_delta.sh`, 작은 테이블 + bid_notices/documents, `on conflict do nothing`).
+6. `pg_dump -Fd -j4` 10GB: 46분. 복원 2패스: 20분. IVFFlat 인덱스는 디스크 여유 2~3GB 필요.
