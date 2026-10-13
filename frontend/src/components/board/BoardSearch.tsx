@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 type Mode = "company" | "keywords";
@@ -34,6 +35,7 @@ export function BoardSearch({
     if (!q || loading) return;
     setLoading(true);
     const param = mode === "company" ? "company" : "q";
+    track("search_submit", { mode, length: q.length });
     router.push(`/recommendations?${param}=${encodeURIComponent(q)}`);
   };
 

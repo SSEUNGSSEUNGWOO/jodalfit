@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # FastAPI /docs, /redoc 활성 여부 — 운영에서는 false 권장.
     enable_docs: bool = True
 
+    # Sentry — 비우면 비활성.
+    sentry_dsn: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/analytics";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const SID_KEY = "jf_sid";
 
@@ -29,6 +31,13 @@ export interface NoticeEventPayload {
 
 /** fire-and-forget — 페이지 이탈 중에도 전송되도록 keepalive */
 export function emitNoticeEvent(payload: NoticeEventPayload): void {
+  if (payload.event_type === "click" || payload.event_type === "save") {
+    track(`notice_${payload.event_type}`, {
+      bid_ntce_no: payload.bid_ntce_no,
+      rank_position: payload.rank_position,
+      score: payload.score,
+    });
+  }
   try {
     void fetch(`${API_BASE}/events`, {
       method: "POST",

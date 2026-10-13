@@ -14,6 +14,12 @@ from app.core.rate_limit import limiter
 
 settings = get_settings()
 
+if settings.sentry_dsn:
+    import sentry_sdk
+
+    # FastAPI 통합은 자동 감지. 미처리 예외 + 로거의 error 이상을 보낸다. 트레이싱은 끔(무료 한도).
+    sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0, send_default_pii=False)
+
 logger = logging.getLogger("jodalfit")
 
 app = FastAPI(

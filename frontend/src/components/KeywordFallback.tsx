@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const SUGGESTED = [
@@ -45,6 +46,7 @@ export function KeywordFallback({
     // 회사 컨텍스트 살리고 싶으면 company 파라미터도 유지
     const company = params.get("company");
     if (company) newParams.set("company", company);
+    track("search_submit", { mode: "keywords_fallback", length: q.length });
     router.push(`/recommendations?${newParams.toString()}`);
   };
 
