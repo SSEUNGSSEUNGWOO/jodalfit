@@ -64,7 +64,7 @@ export default function PrivacyPage() {
             <Table
               head={["업체", "맡기는 일", "처리 위치", "이전 항목"]}
               rows={[
-                ["Supabase Inc.", "데이터 저장", "인도 (AWS 뭄바이)", "1번의 모든 항목"],
+                ["Supabase Inc.", "데이터 저장", "싱가포르 (AWS)", "1번의 모든 항목"],
                 ["Vercel Inc.", "웹페이지 제공, 메일 신청 접수", "싱가포르", "이메일 주소, 접속 정보"],
                 ["Railway Corporation", "추천 계산 서버", "싱가포르", "검색어, 접속 정보"],
                 ["OpenAI, L.L.C.", "검색어 의미 분석", "미국", "검색어"],
