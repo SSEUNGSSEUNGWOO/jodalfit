@@ -22,6 +22,8 @@ from dotenv import load_dotenv
 from app.recommender.evaluation import (
     STAGES, aggregate, company_tier, mrr, recall_at_k, stage_lost, strip_leaked_history,
 )
+from app.services.openai_client import embed_texts
+from jobs.compute_company_vectors import build_industry_text, dynamic_weights
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -107,6 +109,82 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     X = np.array([json.loads(r[10]) for r in rows], dtype=np.float32)
     X /= np.linalg.norm(X, axis=1, keepdims=True) + 1e-9
     return notices, X
+
+
+def fetch_company_profile(conn, biz: str) -> dict:
+    """같은 norm 의 모든 회사 행을 합친 업종·물품(대표/나머지), 지역, 업종 이름 set, 토큰 set."""
+    from app.recommender.score import _tokenize  # 운영과 같은 토큰화
+    rows = conn.execute("select bizrno, rgn_nm from companies where bizrno_norm = %s", (biz,)).fetchall()
+    pks = [r[0] for r in rows]
+    rgn = next((r[1] for r in rows if r[1]), None)
+    rep_i, rest_i, rep_p, rest_p = [], [], [], []
+    names: set[str] = set(); terms: set[str] = set()
+    for nm, rep in conn.execute("select indstryty_nm, rprsnt_indstryty_yn from company_industries where bizrno = any(%s) order by indstryty_nm", (pks,)):
+        if not nm or nm in rep_i or nm in rest_i: continue
+        (rep_i if rep == "Y" else rest_i).append(nm)
+        names.add(nm); base = nm.split("(")[0].strip()
+        if base and base != nm: names.add(base)
+        terms |= _tokenize(nm)
+    for nm, rep in conn.execute("select dtl_prdct_clsfc_nm, rprsnt_prdct_yn from company_supply_products where bizrno = any(%s) order by dtl_prdct_clsfc_nm", (pks,)):
+        if not nm or nm in rep_p or nm in rest_p: continue
+        (rep_p if rep == "Y" else rest_p).append(nm)
+        terms |= _tokenize(nm)
+    return {"rgn": rgn, "industries": (rep_i, rest_i), "products": (rep_p, rest_p), "names": names, "terms": terms}
+
+
+def fetch_history_before(conn, biz: str, t: date) -> tuple[list[dict], set[str], float | None]:
+    """t 이전 이력: [{bid_ntce_no, bid_ntce_ord, w, when}] (계약 1.0 / 참가 0.4),
+    거래기관 set, 계약금액 중간값(운영 _fetch_company_history 와 같은 '위쪽 중앙값')."""
+    hist: list[dict] = []; instts: set[str] = set(); amts: list[float] = []
+    for no, od, d, instt, amt in conn.execute(
+        "select bid_ntce_no, bid_ntce_ord, cntrct_cncls_date, dmnd_instt_nm, cntrct_amt from contracts where rprsnt_corp_bizrno_norm = %s and cntrct_cncls_date < %s",
+        (biz, t)):
+        if no: hist.append({"bid_ntce_no": no, "bid_ntce_ord": od, "w": 1.0, "when": d})
+        if instt and instt.strip(): instts.add(instt.strip())
+        if amt and amt > 0: amts.append(float(amt))
+    for no, od, d in conn.execute(
+        """select a.bid_ntce_no, a.bid_ntce_ord, b.openg_date from award_results a join bid_notices b using (bid_ntce_no, bid_ntce_ord)
+           where a.bizrno_norm = %s and not a.is_winner and b.openg_date < %s""", (biz, t)):
+        hist.append({"bid_ntce_no": no, "bid_ntce_ord": od, "w": PARTICIPATION_WEIGHT, "when": d})
+    median = sorted(amts)[len(amts) // 2] if amts else None
+    return hist, instts, median
+
+
+def company_vector_at(conn, prof: dict, hist: list[dict], t: date, cache: dict, eff_count: float) -> np.ndarray | None:
+    """운영 compute_company_vectors 와 같은 합성: 업종 텍스트 임베딩 + 시간가중 수주 평균, dynamic_weights.
+    eff_count 는 표본의 n_hist(계약 1.0 + 참가 0.4, t 이전)와 같은 값 — tier 라벨과 가중치의 단일 출처."""
+    text = build_industry_text({}, prof["industries"], prof["products"])
+    if not text:
+        return None
+    if text not in cache:
+        cache[text] = np.array(embed_texts([text])[0], dtype=np.float32)
+    ind = cache[text]; ind = ind / (np.linalg.norm(ind) + 1e-9)
+    keys = [(h["bid_ntce_no"], h["bid_ntce_ord"]) for h in hist]
+    emb: dict[tuple[str, str], np.ndarray] = {}
+    if keys:
+        for no, od, e in conn.execute(
+            "select bid_ntce_no, bid_ntce_ord, embedding::text from bid_notices where (bid_ntce_no, bid_ntce_ord) in (select unnest(%s::text[]), unnest(%s::text[])) and embedding is not null",
+            ([k[0] for k in keys], [k[1] for k in keys])):
+            emb[(no, od)] = np.array(json.loads(e), dtype=np.float32)
+    acc = np.zeros_like(ind); tw = 0.0
+    for h in hist:
+        v = emb.get((h["bid_ntce_no"], h["bid_ntce_ord"]))
+        if v is None: continue
+        days = max((t - h["when"]).days, 0) if h["when"] else 0
+        w = h["w"] * (0.5 ** (days / HALF_LIFE))
+        acc += w * v; tw += w
+    wts = dynamic_weights(eff_count, has_interest=False)
+    vec = wts["industry"] * ind
+    if tw > 0:
+        vec = vec + wts["suju"] * (acc / tw)   # 운영과 동일: 수주 평균은 정규화하지 않음 (Codex P2 지적, 그대로 재현)
+    return vec / (np.linalg.norm(vec) + 1e-9)
+
+
+def fetch_instt_stats_before(conn, t: date) -> dict[str, dict]:
+    """0038 MV 와 같은 식(total, distinct_winners)을 t 이전 계약으로 계산. 전체 기관 한 번."""
+    return {instt: {"total": tot, "distinct_winners": dw} for instt, tot, dw in conn.execute(
+        """select dmnd_instt_nm, count(*)::int, count(distinct rprsnt_corp_bizrno_norm)::int from contracts
+           where dmnd_instt_nm is not null and cntrct_cncls_date < %s group by 1 having count(*) >= 10""", (t,))}
 
 
 def main() -> None:
