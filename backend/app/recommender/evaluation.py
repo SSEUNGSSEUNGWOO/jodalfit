@@ -17,14 +17,15 @@ def recall_at_k(ranked: list[Key], positives: set[Key], k: int) -> float:
 
 
 def mrr(ranked: list[Key], positives: set[Key]) -> float:
+    """첫 정답의 역순위. 정답이 없으면 0.0."""
     for i, key in enumerate(ranked, 1):
         if key in positives:
             return 1.0 / i
     return 0.0
 
 
-def company_tier(n_history: int) -> str:
-    """t 이전 수주(계약+참가 유효건수) 수로 군 분류. 운영 dynamic_weights 경계와 동일."""
+def company_tier(n_history: float) -> str:
+    """t 이전 수주(계약+참가 유효건수) 수로 군 분류. 운영 dynamic_weights 경계와 동일. 참가는 0.4 가중이라 float."""
     if n_history == 0:
         return "cold"
     if n_history <= 5:
@@ -42,7 +43,7 @@ def stage_lost(stage_ranks: dict[str, list[Key]], positive: Key, pool: int, limi
     """정답 1건이 어느 단계에서 사라졌는지. STAGES 순서로 처음 탈락한 단계 이름, 끝까지 살았으면 'kept'."""
     cut = {"dense": pool * 2, "dedup": pool, "qualified": pool, "scored": pool, "final": limit}
     for st in STAGES:
-        if positive not in stage_ranks.get(st, [])[: cut[st]]:
+        if positive not in stage_ranks[st][: cut[st]]:
             return st
     return "kept"
 
@@ -81,6 +82,10 @@ def _self_check() -> None:
     ranks = {"dense": [a, b], "dedup": [a, b], "qualified": [b], "scored": [b], "final": [b]}
     assert stage_lost(ranks, a, pool=10, limit=5) == "qualified"
     assert stage_lost(ranks, b, pool=10, limit=5) == "kept"
+    assert recall_at_k([a], set(), 1) == 0.0
+    assert stage_lost({**ranks, "final": [a, b]}, b, pool=10, limit=1) == "final"
+    assert stage_lost({"dense": [b] * 25 + [a], "dedup": [a], "qualified": [a], "scored": [a], "final": [a]}, a, pool=10, limit=5) == "dense"
+    assert company_tier(0.4) == "small"
     agg = aggregate([
         {"tier": "cold", "bsns_div": "용역", "r_dense": 1.0, "r_qual": 1.0, "r_scored30": 0.5, "r_final30": 0.5, "mrr": 0.5, "n_pos": 2},
         {"tier": "rich", "bsns_div": "용역", "r_dense": 0.0, "r_qual": 0.0, "r_scored30": 0.0, "r_final30": 0.0, "mrr": 0.0, "n_pos": 1},
