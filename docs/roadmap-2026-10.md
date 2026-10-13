@@ -18,8 +18,10 @@
 - 완료 확인: 운영 사이트에서 PostHog `/e/` 200, Sentry envelope 200, 로컬 `search_submit` 전송, Sentry 테스트 이벤트 양쪽 도착, UptimeRobot 2개 Up
 - 남은 수동 설정: PostHog Billing spend limit $0 (승우님)
 
-## Phase 2. DB 이전 (뭄바이 → 싱가포르)
+## Phase 2. DB 이전 (뭄바이 → 싱가포르) — 진행 중
 - 절차서: `docs/infra/supabase-singapore-migration.md`
+- 2026-10-13 낮: 새 프로젝트 생성(싱가포르 Small), 확장 6개·스키마 복원 완료, 옛 DB와 객체 수·RLS 일치 확인. 대시보드 "Restore to new project"는 리전 고정이라 사용 불가. 작업 스크립트는 `C:\dev\ops\jodalfit\migrate\`(리포 밖)
+- 남은 것: 새벽 데이터 덤프·복원 → 행 수 대조 → 벡터 인덱스 → MV·권한 → cron → 환경변수 교체 → 검증
 - 컴퓨트는 **Small로 시작**, 이전 후 Server-Timing·I/O 측정해서 필요할 때만 Medium (리전은 못 바꾸지만 컴퓨트는 즉시 변경 가능)
 - 포함: 개인정보처리방침 리전 표기 + `PRIVACY_VERSION` 갱신, 벡터 미생성 회사 재계산, 옛 DB 덤프 D: 보관, pg_cron 5개 재생성(`purge-logs-older-than-1y` 포함), MV anon 권한 회수
 - 완료 기준: 행 수 대조 일치, opt-out 1건 존재, 추천 Server-Timing total < 1s, daily-sync 첫 성공
