@@ -212,10 +212,26 @@ def fetch_limits(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], dic
 
 
 def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict, instts: set[str],
-           median: float | None, instt_stats: dict, t: date, pool: int, limit: int) -> dict[str, list[tuple[str, str]]]:
-    """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환."""
+           median: float | None, instt_stats: dict, t: date, pool: int, limit: int,
+           retrieval: str = "dense") -> dict[str, list[tuple[str, str]]]:
+    """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환.
+    retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지) / hybrid(dense 와 prefilter 교대 합침)."""
     sims = X @ vec
-    order = np.argsort(-sims, kind="stable")[: pool * 2]
+    order = np.argsort(-sims, kind="stable")
+    if retrieval != "dense" and prof["names"]:
+        mask = np.array([any(n in (r["bidprc_psbl_indstryty_nm"] or "") for n in prof["names"]) for r in notices])
+        if retrieval == "soft":  # 허용업종이 없는 공고는 버리지 않는다
+            mask |= np.array([not (r["bidprc_psbl_indstryty_nm"] or "").strip() for r in notices])
+        ind = [i for i in order if mask[i]][: pool * 2]
+        if retrieval in ("prefilter", "soft"):
+            order = ind
+        else:  # hybrid: 업종 채널과 dense 채널을 번갈아(동률 RRF 와 같은 효과)
+            merged: list[int] = []; seen_i: set[int] = set()
+            for a, b in zip(ind, order[: pool * 2]):
+                for i in (a, b):
+                    if i not in seen_i: seen_i.add(i); merged.append(i)
+            order = merged
+    order = order[: pool * 2]
     dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
     # dedup: 공고번호 첫 등장 + 내용 지문 (운영과 동일)
     seen: set[str] = set(); seen_c: set[tuple] = set(); cand: list[dict] = []
@@ -255,6 +271,7 @@ def main() -> None:
     ap.add_argument("--as-of", required=True); ap.add_argument("--companies", type=int, default=300)
     ap.add_argument("--pool", type=int, default=200); ap.add_argument("--limit", type=int, default=30)
     ap.add_argument("--seed", type=int, default=7); ap.add_argument("--run-id", default=None)
+    ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid"], default="dense")
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
@@ -278,7 +295,7 @@ def main() -> None:
         vec = company_vector_at(conn, prof, clean, t, cache, s["n_hist"])  # tier 라벨과 같은 유효건수
         if vec is None:
             skipped += 1; continue
-        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit)
+        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval)
         # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
@@ -303,7 +320,7 @@ def main() -> None:
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
     agg["positives_dropped"] = positives_dropped
     manifest = {"as_of": t.isoformat(), "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
-                "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
+                "retrieval": args.retrieval, "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
                           "peer_instt_counts 비활성(운영과 동일), 기관통계는 t 이전 2년 계약으로 재계산",
@@ -317,7 +334,7 @@ def main() -> None:
         w = csv.DictWriter(f, fieldnames=["biz", "tier", "bid_ntce_no", "title", "lost_at", "dense_rank"]); w.writeheader(); w.writerows(failures)
     m, lines = agg["macro"], []
     lines += [f"# 추천 평가 baseline — t={t} (run {run_id})", "",
-              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit}", "",
+              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit} · retrieval {args.retrieval}", "",
               "| 지표 | macro | micro |", "|---|---|---|"]
     lines += [f"| {k} | {m[k]:.3f} | {agg['micro'][k]:.3f} |" for k in ("r_dense", "r_qual", "r_scored30", "r_final30", "mrr")]
     lines += ["", "## 군별 (macro)", "", "| 군 | n | dense@pool | qual@pool | scored@30 | final@30 | mrr |", "|---|---|---|---|---|---|---|"]
