@@ -7,6 +7,7 @@ baseline 보존: 산출물은 gitignore 대상 — 기준점은 docs/recommender
 from __future__ import annotations
 
 import argparse
+from itertools import zip_longest
 import csv
 import json
 import os
@@ -20,6 +21,7 @@ import numpy as np
 import psycopg
 from dotenv import load_dotenv
 
+from app.core.config import get_settings
 from app.recommender.evaluation import (
     aggregate, company_tier, mrr, recall_at_k, stage_lost, strip_leaked_history,
 )
@@ -227,9 +229,9 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
             order = ind
         else:  # hybrid: 업종 채널과 dense 채널을 번갈아(동률 RRF 와 같은 효과)
             merged: list[int] = []; seen_i: set[int] = set()
-            for a, b in zip(ind, order[: pool * 2]):
+            for a, b in zip_longest(ind, order[: pool * 2]):  # 한쪽이 짧아도 다른 쪽은 끝까지
                 for i in (a, b):
-                    if i not in seen_i: seen_i.add(i); merged.append(i)
+                    if i is not None and i not in seen_i: seen_i.add(i); merged.append(i)
             order = merged
     order = order[: pool * 2]
     dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
@@ -271,7 +273,8 @@ def main() -> None:
     ap.add_argument("--as-of", required=True); ap.add_argument("--companies", type=int, default=300)
     ap.add_argument("--pool", type=int, default=200); ap.add_argument("--limit", type=int, default=30)
     ap.add_argument("--seed", type=int, default=7); ap.add_argument("--run-id", default=None)
-    ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid"], default="dense")
+    ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid"], default=get_settings().reco_retrieval,
+                     help="기본값은 운영 설정 RECO_RETRIEVAL")
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"

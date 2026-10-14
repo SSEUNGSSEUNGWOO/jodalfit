@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,6 +26,10 @@ class Settings(BaseSettings):
 
     # Sentry — 비우면 비활성.
     sentry_dsn: str | None = None
+
+    # 추천 후보 검색 방식 — dense(벡터 1채널) / hybrid(dense + 업종 허용 공고 채널, 0044 필요).
+    # 근거: docs/recommender/exp-2026-10-14-retrieval.md. 문제 시 dense 로 즉시 롤백.
+    reco_retrieval: Literal["dense", "hybrid"] = "hybrid"
 
 
 @lru_cache

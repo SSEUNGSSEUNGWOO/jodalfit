@@ -15,11 +15,13 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
+from itertools import zip_longest
 from typing import Any, Literal
 
 import numpy as np
 from postgrest.exceptions import APIError
 
+from app.core.config import get_settings
 from app.core.timing import submit_timed, timed
 from app.services.openai_client import embed_texts, vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
@@ -66,6 +68,36 @@ def _rpc_with_retry(client, fn: str, params: dict):
             raise
         logger.warning("RPC %s statement timeout — 1회 재시도", fn)
         return client.rpc(fn, params).execute()
+
+
+def _match_notices(client, params: dict, horizon: date) -> list[dict]:
+    """match_bid_notices 1회. 0018 미적용 환경은 max_clse_date 없이 받아 파이썬에서 거른다."""
+    try:
+        res = _rpc_with_retry(client, "match_bid_notices", {**params, "max_clse_date": horizon.isoformat()})
+        return res.data or []
+    except APIError as e:
+        if e.code != FUNCTION_NOT_FOUND:
+            raise
+        logger.warning("match_bid_notices max_clse_date 미지원 (0018 미적용) — 파이썬 필터로 degrade")
+        res = _rpc_with_retry(client, "match_bid_notices", params)
+        return [r for r in (res.data or []) if _within_horizon(r, horizon)]
+
+
+def _interleave(first: list[dict], second: list[dict]) -> list[dict]:
+    """두 채널을 번갈아 합친다(동률 RRF). 같은 (no, ord)는 첫 등장만.
+    평가 하네스 jobs/evaluate_recommender.py::replay(hybrid) 와 같은 순서여야 한다."""
+    out: list[dict] = []
+    seen: set[tuple] = set()
+    for a, b in zip_longest(first, second):
+        for r in (a, b):
+            if r is None:
+                continue
+            k = (r.get("bid_ntce_no"), r.get("bid_ntce_ord"))
+            if k in seen:
+                continue
+            seen.add(k)
+            out.append(r)
+    return out
 
 
 _LEGAL_FORMS = ("주식회사", "유한회사", "유한책임회사", "합자회사", "합명회사", "사단법인", "재단법인",
@@ -447,23 +479,26 @@ def _search_with_embedding(
         "match_count": candidate_pool * 2,
         "min_clse_date": today.isoformat(),
     }
-    try:
+    names = sorted(company_industry_names or ())
+    if get_settings().reco_retrieval == "hybrid" and names:
+        # 업종 채널: 회사 등록업종을 허용하는 공고 안에서 유사도 검색(0044) → dense 채널과 번갈아 합친다.
+        # dense 가 놓친 낙찰 공고의 56% 가 이런 공고였다 (docs/recommender/exp-2026-10-14-retrieval.md).
+        with ThreadPoolExecutor(max_workers=2) as ex:
+            f_dense = submit_timed(ex, "match_bid_notices", _match_notices, client, params, horizon)
+            f_ind = submit_timed(ex, "match_industry", _match_notices, client, {**params, "industry_names": names}, horizon)
+            dense_raw = f_dense.result()
+            try:
+                ind_raw = f_ind.result()
+            except APIError as e:
+                if e.code != FUNCTION_NOT_FOUND:
+                    raise
+                logger.warning("match_bid_notices industry_names 미지원 (0044 미적용) — dense 채널만 사용")
+                ind_raw = []
+        raw = _interleave(ind_raw, dense_raw)
+    else:
         with timed("match_bid_notices"):
-            res = _rpc_with_retry(
-                client,
-                "match_bid_notices",
-                {**params, "max_clse_date": horizon.isoformat()},
-            )
-        raw = res.data or []
-    except APIError as e:
-        # 0018 미적용 환경 — 상한 없이 가져와서 파이썬에서 거른다. 후보 수가 줄지만
-        # 장기 단가계약 공고가 상위를 먹는 것보다 낫다.
-        if e.code != FUNCTION_NOT_FOUND:
-            raise
-        logger.warning("match_bid_notices max_clse_date 미지원 (0018 미적용) — 파이썬 필터로 degrade")
-        res = _rpc_with_retry(client, "match_bid_notices", params)
-        raw = [r for r in (res.data or []) if _within_horizon(r, horizon)]
-    # similarity 내림차순 정렬은 RPC가 보장 → 첫 등장 유지
+            raw = _match_notices(client, params, horizon)
+    # 채널별 similarity 내림차순은 RPC가 보장, 합친 뒤에는 번갈아 순서 → 첫 등장 유지
     # 1차: 공고번호 / 2차: 내용 지문 — 나라장터가 같은 공고를 다른 번호로
     # 재발번하는 케이스(제목·기관·마감·추정가 동일)까지 걸러낸다
     seen: set[str] = set()
