@@ -59,8 +59,8 @@ def fetch_positives(conn, t: date, horizon: date) -> dict[str, set[tuple[str, st
         """select a.bizrno_norm, a.bid_ntce_no, a.bid_ntce_ord
            from award_results a join bid_notices b using (bid_ntce_no, bid_ntce_ord)
            where a.is_winner and a.bizrno_norm <> '' and b.embedding is not null
-             and b.bid_ntce_date < %s and b.bid_clse_date >= %s and b.bid_clse_date <= %s""",
-        (t, t, horizon),
+             and b.bid_ntce_date < %s and b.bid_clse_date >= %s and b.bid_clse_date <= %s  -- 마감 2일 이상 남은 것만: 1일 내 마감은 t 에 '발견'할 수 없는 공고(운영 마감 임박 -30 과 같은 기준)""",
+        (t, t + timedelta(days=2), horizon),
     ).fetchall()
     out: dict[str, set[tuple[str, str]]] = defaultdict(set)
     for biz, no, od in rows:
@@ -215,7 +215,7 @@ def fetch_limits(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], dic
 
 def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict, instts: set[str],
            median: float | None, instt_stats: dict, t: date, pool: int, limit: int,
-           retrieval: str = "dense") -> dict[str, list[tuple[str, str]]]:
+           retrieval: str = "dense", features_out: list[dict] | None = None) -> dict[str, list[tuple[str, str]]]:
     """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환.
     retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지) / hybrid(dense 와 prefilter 교대 합침)."""
     sims = X @ vec
@@ -258,6 +258,15 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
         raw, bd = score_notice(r, company_rgn=prof["rgn"], company_terms=prof["terms"], company_institutions=instts,
                                company_amt_median=median, today=t, peer_instt_counts={}, instt_stats=instt_stats)
         r["score_raw"] = round(raw, 1)
+        if features_out is not None:  # 점수 재보정용 특징 덤프 (운영 경로와 무관)
+            allowed = r.get("bidprc_psbl_indstryty_nm") or ""
+            row = {"bid_ntce_no": r["bid_ntce_no"], "bid_ntce_ord": r["bid_ntce_ord"], "bsns_div": r.get("bsns_div_nm") or "?",
+                   "sim": round(float(r["similarity"]), 4), "score_raw": r["score_raw"],
+                   "has_allowed": int(bool(allowed.strip())), "industry_name_match": int(any(n in allowed for n in prof["names"])),
+                   "instt_known": int(bool(instts)), "n_names": len(prof["names"])}
+            for b in bd:
+                row[b["key"]] = b["points"]
+            features_out.append(row)
     passed.sort(key=lambda r: r["score_raw"], reverse=True)
     scored = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in passed]
     top = passed[:MMR_POOL]
@@ -275,6 +284,7 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=7); ap.add_argument("--run-id", default=None)
     ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid"], default=get_settings().reco_retrieval,
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
+    ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
@@ -286,7 +296,7 @@ def main() -> None:
     instt_stats = fetch_instt_stats_before(conn, t)
     nidx = {(n["bid_ntce_no"], n["bid_ntce_ord"]): n for n in notices}
     print(f"t={t} active={len(notices):,} sample={len(sample)} positives(total)={sum(len(positives[s['biz']]) for s in sample):,}")
-    cache: dict = {}; per: list[dict] = []; failures: list[dict] = []; skipped = 0; positives_dropped = 0
+    cache: dict = {}; per: list[dict] = []; failures: list[dict] = []; skipped = 0; all_feats: list[dict] = []; positives_dropped = 0
     for i, s in enumerate(sample, 1):
         biz = s["biz"]; pos = {k for k in positives[biz] if k in nidx}
         positives_dropped += len(positives[biz]) - len(pos)
@@ -298,11 +308,16 @@ def main() -> None:
         vec = company_vector_at(conn, prof, clean, t, cache, s["n_hist"])  # tier 라벨과 같은 유효건수
         if vec is None:
             skipped += 1; continue
-        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval)
+        feats: list[dict] | None = [] if args.dump_features else None
+        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval, feats)
         # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
         st_nos = {k: [no for no, _ in v] for k, v in st.items()}
+        if feats is not None:
+            for f in feats:
+                f.update(biz=biz, tier=s["tier"], is_pos=int(f["bid_ntce_no"] in pos_nos))
+                all_feats.append(f)
         div = nidx[min(pos)]["bsns_div_nm"] or "?"
         per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos),
                     "r_dense": recall_at_k(st_nos["dedup"], pos_nos, args.pool), "r_qual": recall_at_k(st_nos["qualified"], pos_nos, args.pool),
@@ -348,6 +363,11 @@ def main() -> None:
               "- dense: dense 상위 pool×2 밖 · dedup: 후보 풀 pool 컷(지문 중복 제거 포함) · qualified: 자격 하드 제외 · scored: 점수 순위 limit 밖 · final: MMR 에 밀림",
               "", "| 단계 | 건수 |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(lost_counts.items(), key=lambda x: -x[1])]
     (out_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if all_feats:
+        cols = sorted({k for f in all_feats for k in f}, key=lambda k: (k not in ("biz", "tier", "bid_ntce_no", "bid_ntce_ord", "is_pos"), k))
+        with (out_dir / "features.csv").open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=cols, restval=0); w.writeheader(); w.writerows(all_feats)
+        lines.append(f"features.csv: {len(all_feats):,} rows")
     print("\n".join(lines)); print(f"\nsaved: {out_dir}")
 
 

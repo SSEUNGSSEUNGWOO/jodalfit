@@ -5,7 +5,7 @@
 코드: `backend/jobs/evaluate_recommender.py`(DB 추출·재생·보고서), `backend/app/recommender/evaluation.py`(지표 순수 함수, `uv run python -m app.recommender.evaluation` 으로 self-check).
 
 ## 규칙
-- 정답 = `award_results.is_winner` 인 공고 중, t 에 활성(게시 < t ≤ 마감 ≤ t+90일)이었던 것. 미낙찰·미참가는 음성이 아님.
+- 정답 = `award_results.is_winner` 인 공고 중, t 에 활성(게시 < t, t+2일 ≤ 마감 ≤ t+90일)이었던 것. 마감 1일 이내 공고는 t 시점에 발견할 수 없는(이미 입찰 중인) 공고라 제외 — 운영의 '마감 임박 −30' 과 같은 기준(2026-10-14, 9/1 정답의 35%가 이 경우였다). 미낙찰·미참가는 음성이 아님.
 - 회사 벡터·거래기관·금액 중간값·기관 통계는 **t 이전 데이터로 재합성**. 정답 공고와 같은 공고번호는 이력에서 제거(누수 차단).
 - 회사 표본 = 정답이 있는 회사 중 cold(이력 0) / small(1~5) / rich(6+) 각 100곳, seed 고정. 이력 건수는 계약 1.0 + 참가 0.4 가중.
 - 후보 집합 = t 에 활성이고 임베딩 있는 공고 전부 (운영 RPC 조건과 동일). dense 는 정확 코사인.
