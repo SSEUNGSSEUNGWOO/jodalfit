@@ -3,6 +3,10 @@
 각 시그널은 {key, label, points} 형태로 breakdown에 남는다.
 label은 그대로 프론트 배지가 되고(Phase 3), points 합이 raw score.
 스케일: 벡터 유사도 0~100 기준. 프론트 표시용 정규화는 pipeline에서.
+
+점수표는 2026-10-14 채점표(과거 낙찰 held-out, 3개 시점)로 재보정했다 — docs/recommender/exp-2026-10-14-score.md.
+핵심: 보너스가 유사도를 압도하고 있었다. 재출현 기관 50→40, 예산대 20→5, 예산 괴리 −15→−5, 고정 거래처 −20→−10,
+'신규 진입 열린 기관' +15 와 '검토 여유' +10 은 예측력이 없어 제거. 지역 30, 업종·물품 토큰 10/개(≤30), 마감 임박 −30 유지.
 """
 
 from __future__ import annotations
@@ -37,7 +41,7 @@ def score_notice(
 
     instt = (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
     if instt and instt in company_institutions:
-        breakdown.append({"key": "institution", "label": "재출현 기관", "points": 50, "instt": instt})
+        breakdown.append({"key": "institution", "label": "재출현 기관", "points": 40, "instt": instt})
     elif instt and peer_instt_counts and peer_instt_counts.get(instt, 0) >= 2:
         # 재출현(+50)과 스택 방지 — 미거래 기관만. 1건짜리 기관은 노이즈라 2건+만,
         # 점수는 재출현(50)보다 낮은 보조 시그널로
@@ -49,9 +53,8 @@ def score_notice(
         if total >= 10:
             repeat_ratio = 1 - (st.get("distinct_winners") or 0) / total
             if repeat_ratio >= 0.5:
-                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": -20, "repeat_ratio": round(repeat_ratio, 2)})
-            elif repeat_ratio <= 0.25:
-                breakdown.append({"key": "instt_open", "label": "신규 진입 열린 기관", "points": 15, "repeat_ratio": round(repeat_ratio, 2)})
+                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": -10, "repeat_ratio": round(repeat_ratio, 2)})
+            # '신규 진입 열린 기관'(repeat_ratio ≤ 0.25, +15) 은 낙찰 예측력이 없어(lift 0.79) 제거
 
     sido = company_rgn.split()[0] if company_rgn else None
     if sido and r.get("prtcpt_psbl_rgn_nm") and sido in r["prtcpt_psbl_rgn_nm"]:
@@ -62,9 +65,9 @@ def score_notice(
         if price and price > 0:
             ratio = price / company_amt_median
             if 0.7 <= ratio <= 1.5:
-                breakdown.append({"key": "budget", "label": "예산대 매칭", "points": 20, "ratio": round(ratio, 2)})
+                breakdown.append({"key": "budget", "label": "예산대 매칭", "points": 5, "ratio": round(ratio, 2)})
             elif ratio < 0.1 or ratio > 10.0:
-                breakdown.append({"key": "budget_mismatch", "label": "예산대 괴리", "points": -15, "ratio": round(ratio, 2)})
+                breakdown.append({"key": "budget_mismatch", "label": "예산대 괴리", "points": -5, "ratio": round(ratio, 2)})
 
     if company_terms:
         notice_terms = _tokenize(r.get("bidprc_psbl_indstryty_nm")) | _tokenize(r.get("bid_ntce_nm"))
@@ -79,7 +82,6 @@ def score_notice(
         days_left = (clse_dt - today).days
         if days_left <= 1:
             breakdown.append({"key": "deadline_urgent", "label": "마감 임박", "points": -30, "days_left": days_left})
-        elif 6 <= days_left <= 14:
-            breakdown.append({"key": "deadline_ok", "label": "검토 여유", "points": 10, "days_left": days_left})
+        # '검토 여유'(6~14일, +10) 은 낙찰 예측력이 없어(lift 0.75) 제거
 
     return sum(b["points"] for b in breakdown), breakdown
