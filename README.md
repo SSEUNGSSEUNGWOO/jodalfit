@@ -388,6 +388,7 @@ uv run python -m jobs.verify_setup
 | `SUPABASE_URL` | Supabase 프로젝트 URL | `https://xxx.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role 키 (admin 권한, 매우 민감) | `eyJhbG...` |
 | `CORS_ORIGINS` | (선택) JSON 배열 | `["http://localhost:3000"]` |
+| `RECO_RETRIEVAL` | 후보 검색 방식 dense/hybrid — 문제 시 dense 로 즉시 롤백 (0044 필요) | `hybrid` |
 
 `frontend/.env.local`:
 

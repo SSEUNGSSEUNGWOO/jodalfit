@@ -10,6 +10,7 @@
 
 begin;
 
+drop function if exists match_bid_notices(vector, int, date, text);        -- 0016 잔재(0018 미적용 환경) — overload 방지
 drop function if exists match_bid_notices(vector, int, date, text, date);
 
 create function match_bid_notices(
@@ -54,7 +55,7 @@ as $$
       and (bsns_div_filter is null or b.bsns_div_nm = bsns_div_filter)
       and (industry_names is null
            or exists (select 1 from unnest(industry_names) n
-                      where b.bidprc_psbl_indstryty_nm like '%' || n || '%'))
+                      where position(n in b.bidprc_psbl_indstryty_nm) > 0))
   )
   select a.bid_ntce_no, a.bid_ntce_ord, a.bid_ntce_nm, a.bsns_div_nm,
          a.bid_ntce_date, a.bid_clse_date, a.openg_date,

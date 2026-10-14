@@ -70,6 +70,9 @@ def _rpc_with_retry(client, fn: str, params: dict):
         return client.rpc(fn, params).execute()
 
 
+_INDUSTRY_CHANNEL = True  # ponytail: 프로세스 로컬 1회성 — 0044 미적용이면 첫 실패 후 업종 채널을 끈다(재배포로 리셋)
+
+
 def _match_notices(client, params: dict, horizon: date) -> list[dict]:
     """match_bid_notices 1회. 0018 미적용 환경은 max_clse_date 없이 받아 파이썬에서 거른다."""
     try:
@@ -77,6 +80,8 @@ def _match_notices(client, params: dict, horizon: date) -> list[dict]:
         return res.data or []
     except APIError as e:
         if e.code != FUNCTION_NOT_FOUND:
+            raise
+        if "industry_names" in params:  # 0044 미적용 — 0018 폴백 대상이 아니다
             raise
         logger.warning("match_bid_notices max_clse_date 미지원 (0018 미적용) — 파이썬 필터로 degrade")
         res = _rpc_with_retry(client, "match_bid_notices", params)
@@ -470,6 +475,7 @@ def _search_with_embedding(
     company_bizrno_norm: str | None = None,
     embeddings_out: dict | None = None,
 ) -> list[dict]:
+    global _INDUSTRY_CHANNEL
     client = get_admin_client()
     today = date.today()
     horizon = today + timedelta(days=MAX_CLSE_HORIZON_DAYS)
@@ -480,7 +486,7 @@ def _search_with_embedding(
         "min_clse_date": today.isoformat(),
     }
     names = sorted(company_industry_names or ())
-    if get_settings().reco_retrieval == "hybrid" and names:
+    if _INDUSTRY_CHANNEL and get_settings().reco_retrieval == "hybrid" and names:
         # 업종 채널: 회사 등록업종을 허용하는 공고 안에서 유사도 검색(0044) → dense 채널과 번갈아 합친다.
         # dense 가 놓친 낙찰 공고의 56% 가 이런 공고였다 (docs/recommender/exp-2026-10-14-retrieval.md).
         with ThreadPoolExecutor(max_workers=2) as ex:
@@ -493,8 +499,9 @@ def _search_with_embedding(
                 if e.code != FUNCTION_NOT_FOUND:
                     raise
                 logger.warning("match_bid_notices industry_names 미지원 (0044 미적용) — dense 채널만 사용")
+                _INDUSTRY_CHANNEL = False
                 ind_raw = []
-        raw = _interleave(ind_raw, dense_raw)
+        raw = _interleave(ind_raw, dense_raw)[: candidate_pool * 2]  # 하네스 replay(hybrid) 와 같은 절단
     else:
         with timed("match_bid_notices"):
             raw = _match_notices(client, params, horizon)
