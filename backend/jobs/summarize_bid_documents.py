@@ -157,10 +157,46 @@ def _ingest_output(sb, client, batch) -> tuple[int, int]:
         except Exception as e:  # 한 건 때문에 배치 전체를 버리지 않는다
             failed += 1
             print(f"  ! {no} failed: {type(e).__name__}: {str(e)[:120]}")
+    ok = 0
     for i in range(0, len(rows), 200):
         chunk = rows[i:i + 200]
-        _db("upsert_insights", lambda: upsert_rows(TABLE, chunk, on_conflict="bid_ntce_no,bid_ntce_ord"))
-    return len(rows), failed
+        try:
+            _db("upsert_insights", lambda: upsert_rows(TABLE, chunk, on_conflict="bid_ntce_no,bid_ntce_ord"))
+            ok += len(chunk)
+        except Exception as e:  # 한 행이 청크를 죽이면(22P02 등) 행 단위로 다시 — 나머지는 살린다
+            print(f"  ! chunk upsert failed ({type(e).__name__}), retrying row by row")
+            for row in chunk:
+                try:
+                    _db("upsert_insight_row", lambda: upsert_rows(TABLE, [row], on_conflict="bid_ntce_no,bid_ntce_ord"), retries=1)
+                    ok += 1
+                except Exception as e2:
+                    failed += 1
+                    print(f"  ! {row['bid_ntce_no']} upsert failed: {str(e2)[:100]}")
+    return ok, failed
+
+
+def _coerce_insight(ins: dict) -> dict:
+    """tool_use 입력이 스키마와 어긋난 흔한 경우를 바로잡는다 — 배열이 JSON 문자열로 오거나 원소가 문자열이 아닌 경우
+    (Postgres text[] upsert 가 22P02 로 배치 전체를 죽이던 원인, 2026-10-15). 못 고치면 ValueError → 그 건만 실패."""
+    out = dict(ins)
+    for k in ("scope", "keywords"):
+        v = out.get(k)
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except ValueError:
+                v = [v]
+        if not isinstance(v, list):
+            raise ValueError(f"{k} is not a list")
+        out[k] = [str(x).strip() for x in v if x is not None and str(x).strip()]
+    if not isinstance(out.get("requirements"), list) or not all(isinstance(r, dict) for r in out["requirements"]):
+        raise ValueError("requirements malformed")
+    for k in ("evaluation", "schedule"):
+        if not isinstance(out.get(k), dict):
+            raise ValueError(f"{k} malformed")
+    if not isinstance(out.get("summary"), str):
+        raise ValueError("summary malformed")
+    return out
 
 
 def _ingest_anthropic(sb, client, batch_id: str) -> tuple[int, int]:
@@ -173,7 +209,7 @@ def _ingest_anthropic(sb, client, batch_id: str) -> tuple[int, int]:
             if item.result.type != "succeeded":
                 raise ValueError(f"result {item.result.type}")
             tool = next(b for b in item.result.message.content if b.type == "tool_use")
-            ins = tool.input
+            ins = _coerce_insight(tool.input)
             rows.append({
                 "bid_ntce_no": no, "bid_ntce_ord": ord_,
                 "summary": ins["summary"], "scope": ins["scope"],
@@ -184,10 +220,22 @@ def _ingest_anthropic(sb, client, batch_id: str) -> tuple[int, int]:
         except Exception as e:  # 한 건 때문에 배치 전체를 버리지 않는다
             failed += 1
             print(f"  ! {no} failed: {type(e).__name__}: {str(e)[:120]}")
+    ok = 0
     for i in range(0, len(rows), 200):
         chunk = rows[i:i + 200]
-        _db("upsert_insights", lambda: upsert_rows(TABLE, chunk, on_conflict="bid_ntce_no,bid_ntce_ord"))
-    return len(rows), failed
+        try:
+            _db("upsert_insights", lambda: upsert_rows(TABLE, chunk, on_conflict="bid_ntce_no,bid_ntce_ord"))
+            ok += len(chunk)
+        except Exception as e:  # 한 행이 청크를 죽이면(22P02 등) 행 단위로 다시 — 나머지는 살린다
+            print(f"  ! chunk upsert failed ({type(e).__name__}), retrying row by row")
+            for row in chunk:
+                try:
+                    _db("upsert_insight_row", lambda: upsert_rows(TABLE, [row], on_conflict="bid_ntce_no,bid_ntce_ord"), retries=1)
+                    ok += 1
+                except Exception as e2:
+                    failed += 1
+                    print(f"  ! {row['bid_ntce_no']} upsert failed: {str(e2)[:100]}")
+    return ok, failed
 
 
 def collect(sb) -> tuple[int, int, int]:
