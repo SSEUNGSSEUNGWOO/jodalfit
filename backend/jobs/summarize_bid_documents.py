@@ -9,7 +9,7 @@
 동작 (한 번 실행 = 수거 → 제출):
   1. collect — 진행 중 배치를 조회해 완료된 것의 결과를 bid_notice_insights에 채운다.
      실패·만료 배치는 placeholder를 지워 다음 제출에서 다시 잡히게 한다.
-  2. submit  — 대기 공고 최대 --limit건(≤500)을 JSONL 한 파일로 묶어 배치 1개를 제출하고,
+  2. submit  — 대기 공고 최대 --limit건을 500건씩(배치 1개 = 500건) 나눠 제출하고,
      placeholder 행(summary null, model='batch:<id>')을 넣어 중복 제출을 막는다.
   결과는 보통 수십 분~수 시간 뒤(최대 24h) 도착하고 다음 실행의 collect가 가져간다.
   UI·추천 설명은 summary null인 행을 없는 것으로 취급한다.
@@ -246,9 +246,13 @@ def run(limit: int = 100) -> None:
     try:
         ok, failed, running = collect(sb)
         print(f"[{JOB_NAME}] collected ok={ok} failed={failed} running_batches={running}")
-        if limit > 0:
-            batch_id, n = submit(sb, limit)
+        remaining = limit
+        while remaining > 0:
+            batch_id, n = submit(sb, min(MAX_SUBMIT, remaining))
             print(f"[{JOB_NAME}] submitted {n} notices" + (f" as {batch_id}" if batch_id else ""))
+            if not n:  # 대기 공고 소진
+                break
+            remaining -= n
         log_ingest_finish(run_id, "success", rows_inserted=ok, rows_failed=failed)
         print(f"[{JOB_NAME}] done. ok={ok} failed={failed}")
     except Exception as e:
@@ -258,6 +262,7 @@ def run(limit: int = 100) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=100, help="이번 실행에서 제출할 공고 수 (0=수거만, 최대 500)")
+    parser.add_argument("--limit", type=int, default=100,
+                        help="이번 실행 제출 상한 (0=수거만, 500 단위 배치 여러 개로 나눠 제출)")
     args = parser.parse_args()
     run(args.limit)
