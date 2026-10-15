@@ -4,12 +4,15 @@
 회사 벡터의 "등록업종/공급물품" 어휘와 매칭되도록 raw에서 핵심 필드를 추가 추출.
 
 대상:
-  기본: bid_notices.embedded_at IS NULL
+  기본: embedded_at IS NULL (openai) / embedding_k IS NULL (kure)
   --reembed-all: 모든 행 재임베딩 (작업 시작 시각보다 오래된 임베딩만 재처리)
+
+공간(--space)에 따라 읽는 조건·쓰는 컬럼·RPC 가 바뀐다 (0045/0046). 기본값은 settings.embed_space.
 
 실행:
     cd backend
     uv run python -m jobs.embed_bid_notices --limit 5000
+    uv run python -m jobs.embed_bid_notices --space kure --limit 20
     uv run python -m jobs.embed_bid_notices --reembed-all --limit 250000
 """
 
@@ -18,6 +21,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 
+from app.core.config import get_settings
 from app.services.embedding import embed_texts
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
@@ -71,35 +75,59 @@ SELECT_COLS = (
 )
 
 
-def fetch_pending(
-    client, batch: int, reembed_all: bool, job_start: str
-) -> list[dict]:
-    q = client.table("bid_notices").select(SELECT_COLS)
+def pending_query(
+    client, space: str, reembed_all: bool, job_start: str, select: str, count: str | None = None
+):
+    at_col = "embedded_k_at" if space == "kure" else "embedded_at"
+    q = client.table("bid_notices").select(select, count=count)
     if reembed_all:
         # 이번 사이클 시작 이전 임베딩 + NULL → 한 번씩만 처리됨
-        q = q.or_(f"embedded_at.is.null,embedded_at.lt.{job_start}")
+        q = q.or_(f"{at_col}.is.null,{at_col}.lt.{job_start}")
+    elif space == "kure":
+        q = q.is_("embedding_k", "null")
     else:
         q = q.is_("embedded_at", "null")
-    return q.limit(batch).execute().data
+    return q
 
 
-def run(limit: int = 5000, batch: int = 200, reembed_all: bool = False) -> None:
+def run(
+    limit: int = 5000,
+    batch: int = 200,
+    reembed_all: bool = False,
+    space: str | None = None,
+    dry_run: bool = False,
+) -> None:
+    space = space or get_settings().embed_space
+    rpc = "update_bid_notice_embeddings_k" if space == "kure" else "update_bid_notice_embeddings"
     job_start = datetime.now().isoformat()
+    if dry_run:
+        res = (
+            pending_query(
+                get_admin_client(), space, reembed_all, job_start, "bid_ntce_no", count="exact"
+            )
+            .limit(1)
+            .execute()
+        )
+        print(f"[{JOB_NAME}] dry-run space={space} rpc={rpc} 대상={res.count:,} 첫행={res.data}")
+        return
     run_id = log_ingest_start(
         JOB_NAME,
-        {"limit": limit, "batch": batch, "reembed_all": reembed_all},
+        {"limit": limit, "batch": batch, "reembed_all": reembed_all, "space": space},
     )
     client = get_admin_client()
     total = 0
     try:
         while total < limit:
-            rows = fetch_pending(
-                client, min(batch, limit - total), reembed_all, job_start
+            rows = (
+                pending_query(client, space, reembed_all, job_start, SELECT_COLS)
+                .limit(min(batch, limit - total))
+                .execute()
+                .data
             )
             if not rows:
                 break
             texts = [build_text(r) for r in rows]
-            embeddings = embed_texts(texts)
+            embeddings = embed_texts(texts, space)
             now_iso = datetime.now().isoformat()
             updates = [
                 {
@@ -110,9 +138,7 @@ def run(limit: int = 5000, batch: int = 200, reembed_all: bool = False) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            upsert_embeddings_with_retry(
-                client, "update_bid_notice_embeddings", updates
-            )
+            upsert_embeddings_with_retry(client, rpc, updates)
             total += len(rows)
             print(f"  embedded {total:,}")
         log_ingest_finish(run_id, "success", rows_updated=total)
@@ -131,5 +157,7 @@ if __name__ == "__main__":
         action="store_true",
         help="모든 행 재임베딩 (이번 사이클 시작 이전 임베딩만 대상)",
     )
+    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--dry-run", action="store_true", help="대상 건수만 출력, 쓰기 없음")
     args = parser.parse_args()
-    run(args.limit, args.batch, args.reembed_all)
+    run(args.limit, args.batch, args.reembed_all, args.space, args.dry_run)

@@ -15,9 +15,15 @@
   공급물품: {products[10]}
   업무구분: {corp_bsns_div_nm}
 
+공간(--space)에 따라 (1) 대상 선택에 보는 마커 컬럼(embedded_at / embedded_k_at),
+(2) 이력 공고에서 읽는 벡터 컬럼(embedding / embedding_k), (3) 쓰는 RPC 가 바뀐다 (0045/0046).
+합성 수식(dynamic_weights·시간가중)은 두 공간에서 동일하다.
+업종 텍스트 임베딩은 `embed_texts_cached` — kure 는 CPU 라 같은 텍스트 재임베딩이 곧 timeout 이다.
+
 실행:
     cd backend
     uv run python -m jobs.compute_company_vectors --limit 25000
+    uv run python -m jobs.compute_company_vectors --space kure --limit 5 --dry-run
 """
 
 from __future__ import annotations
@@ -30,7 +36,8 @@ from typing import Iterator
 
 import numpy as np
 
-from app.services.embedding import embed_texts
+from app.core.config import get_settings
+from app.services.embedding import embed_texts_cached
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from jobs._common import (
@@ -144,8 +151,11 @@ def fetch_active_bizrnos(client) -> list[str]:
     return sorted(bizrnos)
 
 
-def fetch_embedded_at_map(client) -> dict[str, str | None]:
-    """companies 페이지 스캔 → bizrno_norm별 embedded_at (없으면 None).
+def fetch_embedded_at_map(client, at_col: str = "embedded_at") -> dict[str, str | None]:
+    """companies 페이지 스캔 → bizrno_norm별 임베딩 시각 (없으면 None).
+
+    at_col 은 공간별 마커 — openai 는 embedded_at, kure 는 embedded_k_at. 두 공간이 한 컬럼을
+    공유하면 한쪽이 채운 시각 때문에 다른 쪽 "벡터 없음" 티어가 비어 버린다.
     같은 사업자번호가 여러 행이면 가장 최근 embedded_at (한 행이라도 벡터가 있으면 '있음').
 
     offset 페이징이던 것을 keyset 으로 바꿨다 — 뒤로 갈수록 건너뛸 행이 쌓여 불리하고,
@@ -159,7 +169,7 @@ def fetch_embedded_at_map(client) -> dict[str, str | None]:
     while True:
         q = (
             client.table("companies")
-            .select("bizrno,bizrno_norm,embedded_at")
+            .select(f"bizrno,bizrno_norm,{at_col}")
             .not_.is_("bizrno_norm", "null")
             .order("bizrno")
             .limit(PAGE)
@@ -170,7 +180,7 @@ def fetch_embedded_at_map(client) -> dict[str, str | None]:
         if not r:
             break
         for row in r:
-            n, at = row["bizrno_norm"], row.get("embedded_at")
+            n, at = row["bizrno_norm"], row.get(at_col)
             if n not in out or (at and (out[n] is None or at > out[n])):
                 out[n] = at
         last = r[-1]["bizrno"]
@@ -286,7 +296,7 @@ def build_industry_text(
 
 
 def process_chunk(
-    client, chunk_bizrnos: list[str]
+    client, chunk_bizrnos: list[str], space: str = "openai"
 ) -> tuple[list[dict], int]:
     """100개 회사를 한 번에 처리."""
     # 1. 회사 정보
@@ -357,7 +367,7 @@ def process_chunk(
         else:
             rest.append(nm)
 
-    # 4. 수주 시그널 — 낙찰(contracts) + 참가(award_results) → bid_notices.embedding
+    # 4. 수주 시그널 — 낙찰(contracts) + 참가(award_results) → bid_notices 의 같은 공간 벡터
     # 시간 가중 평균. 반감기 365일 exp decay: weight = 0.5 ** (days_ago / 365)
     # 재료 가중: 낙찰 1.0 vs 참가 0.4 (참가는 의도 시그널이지만 검증 강도가 낮음)
     contracts = (
@@ -380,18 +390,19 @@ def process_chunk(
         | {p["bid_ntce_no"] for p in participations if p.get("bid_ntce_no")}
     )
     emb_map: dict[tuple[str, str], np.ndarray] = {}
+    emb_col = "embedding_k" if space == "kure" else "embedding"
     EMB_PAGE = 300
     for sub in chunks(bid_nos, EMB_PAGE):
         rows = (
             client.table("bid_notices")
-            .select("bid_ntce_no,bid_ntce_ord,embedding")
+            .select(f"bid_ntce_no,bid_ntce_ord,{emb_col}")
             .in_("bid_ntce_no", sub)
-            .not_.is_("embedding", "null")
+            .not_.is_(emb_col, "null")
             .execute()
             .data
         )
         for r in rows:
-            vec = parse_pgvector(r.get("embedding"))
+            vec = parse_pgvector(r.get(emb_col))
             if vec is not None:
                 emb_map[(r["bid_ntce_no"], r["bid_ntce_ord"])] = vec
 
@@ -458,7 +469,7 @@ def process_chunk(
 
     industry_by_biz: dict[str, np.ndarray] = {}
     if industry_texts:
-        embs = embed_texts(industry_texts)
+        embs = embed_texts_cached(industry_texts, space)
         for b, e in zip(industry_targets, embs):
             industry_by_biz[b] = np.array(e, dtype=np.float32)
 
@@ -508,9 +519,18 @@ def process_chunk(
     return updates, skipped
 
 
-def run(limit: int = 25000, chunk_size: int = 100) -> None:
+def run(
+    limit: int = 25000,
+    chunk_size: int = 100,
+    space: str | None = None,
+    dry_run: bool = False,
+) -> None:
+    space = space or get_settings().embed_space
+    at_col = "embedded_k_at" if space == "kure" else "embedded_at"
+    rpc = "update_company_embeddings_k" if space == "kure" else "update_company_embeddings"
     run_id = log_ingest_start(
-        JOB_NAME, {"limit": limit, "chunk": chunk_size, "version": "dynamic_weights_v3"}
+        JOB_NAME,
+        {"limit": limit, "chunk": chunk_size, "version": "dynamic_weights_v3", "space": space},
     )
     client = get_admin_client()
 
@@ -519,16 +539,20 @@ def run(limit: int = 25000, chunk_size: int = 100) -> None:
 
     # 대상(~13만) > limit(25k)라 절단 필요 — 순서는 order_targets 참고.
     # companies 에 없는 회사는 process_chunk 에서 어차피 스킵되므로 제외.
-    emb_at = fetch_embedded_at_map(client)
+    emb_at = fetch_embedded_at_map(client, at_col)
     searched = fetch_user_searched(client)
     enriched = fetch_enriched(client)
     ordered, tier_sizes = order_targets(active, emb_at, searched, enriched, date.today().isoformat())
     target = ordered[:limit]
     print(
-        f"[{JOB_NAME}] active={len(active):,} targets={len(ordered):,} "
+        f"[{JOB_NAME}] space={space} rpc={rpc} active={len(active):,} targets={len(ordered):,} "
         f"(검색됨·벡터없음 {tier_sizes['searched']:,} / 재료있음·벡터없음 {tier_sizes['enriched']:,} / "
         f"나머지 벡터없음 {tier_sizes['rotating']:,} 순환 / 갱신 {tier_sizes['refresh']:,}) will_process={len(target):,}"
     )
+    if dry_run:
+        log_ingest_finish(run_id, "success", rows_updated=0)
+        print(f"[{JOB_NAME}] dry-run — 쓰기 없음. 첫 대상 {target[:5]}")
+        return
 
     total = 0
     total_skipped = 0
@@ -537,11 +561,9 @@ def run(limit: int = 25000, chunk_size: int = 100) -> None:
 
     try:
         for ch in chunks(target, chunk_size):
-            updates, skipped = process_chunk(client, ch)
+            updates, skipped = process_chunk(client, ch, space)
             if updates:
-                upsert_embeddings_with_retry(
-                    client, "update_company_embeddings", updates
-                )
+                upsert_embeddings_with_retry(client, rpc, updates)
             total += len(updates)
             total_skipped += skipped
             chunks_done += 1
@@ -563,5 +585,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=25000)
     parser.add_argument("--chunk-size", type=int, default=100)
+    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--dry-run", action="store_true", help="대상 집계만, 쓰기 없음")
     args = parser.parse_args()
-    run(args.limit, args.chunk_size)
+    run(args.limit, args.chunk_size, args.space, args.dry_run)

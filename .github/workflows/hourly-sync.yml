@@ -25,6 +25,10 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # summarize_bid_documents (Haiku Message Batches)
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure, 0045/0046 적용 후).
+      # kure 면 모델이 로컬 CPU 에서 돈다 → KURE_BACKEND=torch(sentence-transformers fp32, 정확).
+      EMBED_SPACE: ${{ vars.EMBED_SPACE || 'openai' }}
+      KURE_BACKEND: torch
     steps:
       - uses: actions/checkout@v5
 
@@ -36,8 +40,19 @@ jobs:
       - name: Setup Python
         run: uv python install 3.12
 
+      - name: KURE 모델 캐시 (kure 공간일 때만 의미 있음 — torch 백엔드가 HF 허브에서 1.1GB 를 받는다)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: kure-v1
+
       - name: Install dependencies
+        if: vars.EMBED_SPACE != 'kure'
         run: uv sync
+
+      - name: Install dependencies (kure — sentence-transformers/torch)
+        if: vars.EMBED_SPACE == 'kure'
+        run: uv sync --extra embed-cpu
 
       - name: 검색된 회사 등록 (최근 30일 검색, 100곳)
         run: uv run python -m jobs.register_searched_companies --days 30 --limit 100

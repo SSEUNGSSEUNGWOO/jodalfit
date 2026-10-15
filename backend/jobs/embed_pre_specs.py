@@ -2,6 +2,8 @@
 
 입력 텍스트 = 사업명 + 업무구분 + 세부품목 + 수요기관
 
+공간(--space)에 따라 대상 조건·쓰는 컬럼·RPC 가 바뀐다 (0045/0046). 기본값은 settings.embed_space.
+
 실행:
     cd backend
     uv run python -m jobs.embed_pre_specs --limit 5000
@@ -12,6 +14,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 
+from app.core.config import get_settings
 from app.services.embedding import embed_texts
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
@@ -37,16 +40,27 @@ def build_text(r: dict) -> str:
     return "\n".join(parts)
 
 
-def run(limit: int = 5000, batch: int = 200) -> None:
-    run_id = log_ingest_start(JOB_NAME, {"limit": limit, "batch": batch})
+def pending_query(client, space: str, select: str, count: str | None = None):
+    q = client.table("pre_specs").select(select, count=count)
+    return q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+
+
+def run(
+    limit: int = 5000, batch: int = 200, space: str | None = None, dry_run: bool = False
+) -> None:
+    space = space or get_settings().embed_space
+    rpc = "update_pre_specs_embeddings_k" if space == "kure" else "update_pre_specs_embeddings"
+    if dry_run:
+        res = pending_query(get_admin_client(), space, "bf_spec_rgst_no", count="exact").limit(1).execute()
+        print(f"[{JOB_NAME}] dry-run space={space} rpc={rpc} 대상={res.count:,} 첫행={res.data}")
+        return
+    run_id = log_ingest_start(JOB_NAME, {"limit": limit, "batch": batch, "space": space})
     client = get_admin_client()
     total = 0
     try:
         while total < limit:
             rows = (
-                client.table("pre_specs")
-                .select("bf_spec_rgst_no,prdct_clsfc_no_nm,bsns_div_nm,prdct_dtl_list,rl_dminstt_nm")
-                .is_("embedded_at", "null")
+                pending_query(client, space, "bf_spec_rgst_no,prdct_clsfc_no_nm,bsns_div_nm,prdct_dtl_list,rl_dminstt_nm")
                 .limit(min(batch, limit - total))
                 .execute()
                 .data
@@ -54,7 +68,7 @@ def run(limit: int = 5000, batch: int = 200) -> None:
             if not rows:
                 break
             texts = [build_text(r) for r in rows]
-            embeddings = embed_texts(texts)
+            embeddings = embed_texts(texts, space)
             now_iso = datetime.now().isoformat()
             updates = [
                 {
@@ -64,9 +78,7 @@ def run(limit: int = 5000, batch: int = 200) -> None:
                 }
                 for r, e in zip(rows, embeddings)
             ]
-            upsert_embeddings_with_retry(
-                client, "update_pre_specs_embeddings", updates
-            )
+            upsert_embeddings_with_retry(client, rpc, updates)
             total += len(rows)
             print(f"  embedded {total}")
         log_ingest_finish(run_id, "success", rows_updated=total)
@@ -80,5 +92,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=5000)
     parser.add_argument("--batch", type=int, default=200)
+    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--dry-run", action="store_true", help="대상 건수만 출력, 쓰기 없음")
     args = parser.parse_args()
-    run(args.limit, args.batch)
+    run(args.limit, args.batch, args.space, args.dry_run)
