@@ -125,7 +125,7 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     """t 에 활성이고 임베딩 있는 공고 전부(운영 RPC 조건과 동일) + 임베딩 행렬(정규화)."""
     rows = conn.execute(
         f"""select bid_ntce_no, bid_ntce_ord, bid_ntce_nm, bsns_div_nm, bid_clse_date, presmpt_prce,
-                  ntce_instt_nm, dmnd_instt_nm, bidprc_psbl_indstryty_nm, prtcpt_psbl_rgn_nm, {EMB_COL}::text
+                  ntce_instt_nm, dmnd_instt_nm, bidprc_psbl_indstryty_nm, prtcpt_psbl_rgn_nm, {EMB_COL}::text, prdct_clsfc_nos
            from bid_notices where {EMB_COL} is not null and bid_ntce_date < %s and bid_clse_date >= %s and bid_clse_date <= %s
            order by bid_ntce_no, bid_ntce_ord""",
         (t, t, horizon),
@@ -134,7 +134,7 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
         sys.exit(f"t={t} 활성 공고 0건 — --as-of 날짜를 확인하세요")
     notices = [dict(bid_ntce_no=r[0], bid_ntce_ord=r[1], bid_ntce_nm=r[2], bsns_div_nm=r[3],
                     bid_clse_date=r[4], presmpt_prce=r[5], ntce_instt_nm=r[6], dmnd_instt_nm=r[7],
-                    bidprc_psbl_indstryty_nm=r[8], prtcpt_psbl_rgn_nm=r[9]) for r in rows]
+                    bidprc_psbl_indstryty_nm=r[8], prtcpt_psbl_rgn_nm=r[9], prdct_clsfc_nos=set(r[11] or ())) for r in rows]
     if EMB_STORE is not None:  # 로컬 모델 임베딩으로 대체 — 빠진 공고가 있으면 실험 자체가 무효라 fail-loud
         missing = [(r[0], r[1]) for r in rows if (r[0], r[1]) not in EMB_STORE["n"]]
         if missing:
@@ -160,11 +160,13 @@ def fetch_company_profile(conn, biz: str) -> dict:
         names.add(nm); base = nm.split("(")[0].strip()
         if base and base != nm: names.add(base)
         terms |= _tokenize(nm)
-    for nm, rep in conn.execute("select dtl_prdct_clsfc_nm, rprsnt_prdct_yn from company_supply_products where bizrno = any(%s) order by dtl_prdct_clsfc_nm", (pks,)):
+    codes: set[str] = set()
+    for nm, rep, code in conn.execute("select dtl_prdct_clsfc_nm, rprsnt_prdct_yn, dtl_prdct_clsfc_no from company_supply_products where bizrno = any(%s) order by dtl_prdct_clsfc_nm", (pks,)):
+        if code: codes.add(code)
         if not nm or nm in rep_p or nm in rest_p: continue
         (rep_p if rep == "Y" else rest_p).append(nm)
         terms |= _tokenize(nm)
-    return {"rgn": rgn, "industries": (rep_i, rest_i), "products": (rep_p, rest_p), "names": names, "terms": terms}
+    return {"rgn": rgn, "industries": (rep_i, rest_i), "products": (rep_p, rest_p), "names": names, "terms": terms, "codes": codes}
 
 
 def fetch_history_before(conn, biz: str, t: date) -> tuple[list[dict], set[str], float | None]:
@@ -245,7 +247,8 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
            median: float | None, instt_stats: dict, t: date, pool: int, limit: int,
            retrieval: str = "dense", features_out: list[dict] | None = None) -> dict[str, list[tuple[str, str]]]:
     """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환.
-    retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지) / hybrid(dense 와 prefilter 교대 합침)."""
+    retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지)
+    / hybrid(dense 와 prefilter 교대 합침) / hybrid+prd(hybrid + 물품분류 코드 채널, 0048)."""
     sims = X @ vec
     order = np.argsort(-sims, kind="stable")
     if retrieval != "dense" and prof["names"]:
@@ -255,12 +258,20 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
         ind = [i for i in order if mask[i]][: pool * 2]
         if retrieval in ("prefilter", "soft"):
             order = ind
-        else:  # hybrid: 업종 채널과 dense 채널을 번갈아(동률 RRF 와 같은 효과)
-            merged: list[int] = []; seen_i: set[int] = set()
-            for a, b in zip_longest(ind, order[: pool * 2]):  # 한쪽이 짧아도 다른 쪽은 끝까지
-                for i in (a, b):
-                    if i is not None and i not in seen_i: seen_i.add(i); merged.append(i)
-            order = merged
+        else:  # hybrid: 채널들을 번갈아(동률 RRF 와 같은 효과). 운영 _interleave 와 같은 채널 순서여야 한다.
+            def rr(*chs):
+                out: list[int] = []; seen_i: set[int] = set()
+                for group in zip_longest(*chs):  # 한쪽이 짧아도 다른 쪽은 끝까지
+                    for i in group:
+                        if i is not None and i not in seen_i: seen_i.add(i); out.append(i)
+                return out
+            channels = [ind, list(order[: pool * 2])]
+            if retrieval == "hybrid+prd" and prof.get("codes"):
+                # 물품 채널(0048): 세 채널을 나란히(각 1/3). 업종 채널과 한 자리를 나누는 중첩 방식은 업종 몫이 1/4 로 줄어
+                # 9/1 에서 rich −0.06·공사 −0.04 로 전부 나빠졌다(2026-10-15 prd2-0901, 7/1·8/1 은 네트워크 단절로 미완). 평면은 공사 −0.01, 물품 +0.04~0.07, 전체 3/3 상승.
+                pmask = np.array([bool(r["prdct_clsfc_nos"] & prof["codes"]) for r in notices])
+                channels.insert(0, [i for i in order if pmask[i]][: pool * 2])
+            order = rr(*channels)
     order = order[: pool * 2]
     dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
     # dedup: 공고번호 첫 등장 + 내용 지문 (운영과 동일)
@@ -311,7 +322,7 @@ def main() -> None:
     ap.add_argument("--as-of", required=True); ap.add_argument("--companies", type=int, default=300)
     ap.add_argument("--pool", type=int, default=200); ap.add_argument("--limit", type=int, default=30)
     ap.add_argument("--seed", type=int, default=7); ap.add_argument("--run-id", default=None)
-    ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid"], default=get_settings().reco_retrieval,
+    ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid", "hybrid+prd"], default=get_settings().reco_retrieval,
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
     ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")

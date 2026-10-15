@@ -72,6 +72,7 @@ def _rpc_with_retry(client, fn: str, params: dict):
 
 
 _INDUSTRY_CHANNEL = True  # ponytail: 프로세스 로컬 1회성 — 0044 미적용이면 첫 실패 후 업종 채널을 끈다(재배포로 리셋)
+_PRODUCT_CHANNEL = True  # 같은 1회성 — 0048 미적용이면 첫 실패 후 물품 채널을 끈다
 
 
 def _rpc_name(base: str) -> str:
@@ -92,20 +93,20 @@ def _match_notices(client, params: dict, horizon: date) -> list[dict]:
     except APIError as e:
         if e.code != FUNCTION_NOT_FOUND:
             raise
-        if "industry_names" in params:  # 0044 미적용 — 0018 폴백 대상이 아니다
+        if "industry_names" in params or "product_codes" in params:  # 0044/0048 미적용 — 0018 폴백 대상이 아니다
             raise
         logger.warning("match_bid_notices max_clse_date 미지원 (0018 미적용) — 파이썬 필터로 degrade")
         res = _rpc_with_retry(client, _rpc_name("match_bid_notices"), params)
         return [r for r in (res.data or []) if _within_horizon(r, horizon)]
 
 
-def _interleave(first: list[dict], second: list[dict]) -> list[dict]:
-    """두 채널을 번갈아 합친다(동률 RRF). 같은 (no, ord)는 첫 등장만.
+def _interleave(*channels: list[dict]) -> list[dict]:
+    """채널들을 번갈아 합친다(동률 RRF). 같은 (no, ord)는 첫 등장만. 인자 순서가 우선순위.
     평가 하네스 jobs/evaluate_recommender.py::replay(hybrid) 와 같은 순서여야 한다."""
     out: list[dict] = []
     seen: set[tuple] = set()
-    for a, b in zip_longest(first, second):
-        for r in (a, b):
+    for group in zip_longest(*channels):
+        for r in group:
             if r is None:
                 continue
             k = (r.get("bid_ntce_no"), r.get("bid_ntce_ord"))
@@ -489,8 +490,9 @@ def _search_with_embedding(
     algorithm: str = "v1",
     company_bizrno_norm: str | None = None,
     embeddings_out: dict | None = None,
+    company_product_codes: set[str] | None = None,
 ) -> list[dict]:
-    global _INDUSTRY_CHANNEL
+    global _INDUSTRY_CHANNEL, _PRODUCT_CHANNEL
     client = get_admin_client()
     today = date.today()
     horizon = today + timedelta(days=MAX_CLSE_HORIZON_DAYS)
@@ -501,12 +503,15 @@ def _search_with_embedding(
         "min_clse_date": today.isoformat(),
     }
     names = sorted(company_industry_names or ())
+    codes = sorted(company_product_codes or ()) if _PRODUCT_CHANNEL else []
     if _INDUSTRY_CHANNEL and get_settings().reco_retrieval == "hybrid" and names:
         # 업종 채널: 회사 등록업종을 허용하는 공고 안에서 유사도 검색(0044) → dense 채널과 번갈아 합친다.
         # dense 가 놓친 낙찰 공고의 56% 가 이런 공고였다 (docs/recommender/exp-2026-10-14-retrieval.md).
-        with ThreadPoolExecutor(max_workers=2) as ex:
+        # 물품 채널(0048): 회사 공급물품 코드를 가진 공고 — 놓친 물품 낙찰의 55%(공급물품 있는 회사 82%). 코드 없으면 생략.
+        with ThreadPoolExecutor(max_workers=3) as ex:
             f_dense = submit_timed(ex, "match_bid_notices", _match_notices, client, params, horizon)
             f_ind = submit_timed(ex, "match_industry", _match_notices, client, {**params, "industry_names": names}, horizon)
+            f_prd = submit_timed(ex, "match_product", _match_notices, client, {**params, "product_codes": codes}, horizon) if codes else None
             dense_raw = f_dense.result()
             try:
                 ind_raw = f_ind.result()
@@ -516,7 +521,17 @@ def _search_with_embedding(
                 logger.warning("match_bid_notices industry_names 미지원 (0044 미적용) — dense 채널만 사용")
                 _INDUSTRY_CHANNEL = False
                 ind_raw = []
-        raw = _interleave(ind_raw, dense_raw)[: candidate_pool * 2]  # 하네스 replay(hybrid) 와 같은 절단
+            prd_raw: list[dict] = []
+            if f_prd is not None:
+                try:
+                    prd_raw = f_prd.result()
+                except APIError as e:
+                    if e.code != FUNCTION_NOT_FOUND:
+                        raise
+                    logger.warning("match_bid_notices product_codes 미지원 (0048 미적용) — 물품 채널 끔")
+                    _PRODUCT_CHANNEL = False
+        # 세 채널을 나란히(각 1/3). 물품을 업종과 한 자리에 중첩하면 업종 몫이 1/4 로 줄어 전부 나빠졌다(2026-10-15 하네스).
+        raw = _interleave(prd_raw, ind_raw, dense_raw)[: candidate_pool * 2]  # 하네스 replay(hybrid+prd) 와 같은 절단
     else:
         with timed("match_bid_notices"):
             raw = _match_notices(client, params, horizon)
@@ -592,8 +607,8 @@ def _search_with_embedding(
     return ranked_v1
 
 
-def _fetch_company_terms(client, bizrno: str) -> tuple[set[str], set[str]]:
-    """(등록업종 + 공급물품 토큰 set, 등록업종 이름 set).
+def _fetch_company_terms(client, bizrno: str) -> tuple[set[str], set[str], set[str]]:
+    """(등록업종 + 공급물품 토큰 set, 등록업종 이름 set, 공급물품 분류코드 set).
 
     토큰은 재랭킹 보너스, 이름은 면허 자격 매칭용. 예전엔 이름을 별도 함수가
     company_industries 를 한 번 더 읽어 만들었다 — 같은 행이라 한 번에 만든다.
@@ -619,15 +634,18 @@ def _fetch_company_terms(client, bizrno: str) -> tuple[set[str], set[str]]:
                 industry_names.add(base)
     prd = (
         client.table("company_supply_products")
-        .select("dtl_prdct_clsfc_nm")
+        .select("dtl_prdct_clsfc_nm,dtl_prdct_clsfc_no")
         .eq("bizrno", bizrno)
         .execute()
         .data
         or []
     )
+    product_codes: set[str] = set()
     for r in prd:
         terms |= _tokenize(r.get("dtl_prdct_clsfc_nm"))
-    return terms, industry_names
+        if r.get("dtl_prdct_clsfc_no"):
+            product_codes.add(r["dtl_prdct_clsfc_no"])
+    return terms, industry_names, product_codes
 
 
 def _build_industry_text(client, bizrno: str) -> str | None:
@@ -1019,7 +1037,7 @@ def _recommend_by_company(
         f_hist = submit_timed(ex, "history", _fetch_company_history, client, bizrno_norm)
         f_pre = submit_timed(ex, "pre_specs", _search_pre_specs, embedding_str, limit, candidate_pool)
         f_ord = submit_timed(ex, "order_plans", _search_order_plans, embedding_str, limit, candidate_pool)
-        company_terms, company_industry_names = f_terms.result()
+        company_terms, company_industry_names, company_product_codes = f_terms.result()
         company_institutions, company_amt_median = f_hist.result()
 
         ranked = _search_with_embedding(
@@ -1034,6 +1052,7 @@ def _recommend_by_company(
             algorithm=algorithm,
             company_bizrno_norm=bizrno_norm,
             embeddings_out=pool_embs,
+            company_product_codes=company_product_codes,
         )
         pre_specs = f_pre.result()
         order_plans = f_ord.result()

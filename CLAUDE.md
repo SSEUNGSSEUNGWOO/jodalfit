@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 추천 파이프라인 (요청 경로)
 `POST /recommendations` → `app/api/recommendations.py` → `app/services/recommend.py`:
 1. `find_company` — pg_trgm fuzzy + 사업자번호로 회사 식별 (실패 시 키워드 모드)
-2. `_search_with_embedding` — pgvector RPC(`match_bid_notices`) 2채널(dense + 회사 업종 허용 공고, 0044·`RECO_RETRIEVAL`)을 번갈아 합쳐 후보 풀
+2. `_search_with_embedding` — pgvector RPC(`match_bid_notices`) 3채널(dense + 회사 업종 허용 공고 0044 + 회사 공급물품 코드 공고 0048, `RECO_RETRIEVAL`)을 번갈아 합쳐 후보 풀
 3. **v2 랭커 (현재 기본)** — `app/recommender/pipeline.py::rank_v2`:
    자격 하드 제외(`qualifications.py`) → 가중치 score + breakdown(`score.py`) → 협업 시그널(peer 기관, `collaborative.py`) → MMR 다양성(`mmr.py`)
 4. `app/services/explain.py` — LLM 상단 요약 1회 + 카드별 설명 (ThreadPoolExecutor 병렬)
