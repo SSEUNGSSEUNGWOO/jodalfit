@@ -1,4 +1,4 @@
-"""첨부문서 텍스트 → LLM 구조화 인사이트 → bid_notice_insights 저장 잡 (OpenAI Batch API).
+"""첨부문서 텍스트 → LLM 구조화 인사이트 → bid_notice_insights 저장 잡 (Message Batches).
 
 대상: 추출 성공 문서가 있고 인사이트 없는 **진행 중** 공고, 수의계약 제외
 (RPC next_bid_notices_for_insights, 0023 → 0029). 수의계약은 요약 모집단의 43%인데
@@ -14,7 +14,7 @@
   결과는 보통 수십 분~수 시간 뒤(최대 24h) 도착하고 다음 실행의 collect가 가져간다.
   UI·추천 설명은 summary null인 행을 없는 것으로 취급한다.
 
-비용: gpt-4o-mini Batch(정가의 50%), 공고당 입력 ≤12k자(≈8k 토큰) → 공고당 약 1원.
+비용: Haiku 4.5 Message Batch(50% 할인), 공고당 입력 ≈1.3만 토큰 → 약 12원; `INSIGHT_PROVIDER=openai` 로 롤백.
 
 실행:
     cd backend
@@ -30,7 +30,9 @@ import time
 
 from postgrest.exceptions import APIError
 
-from app.services.notice_insights import MODEL, build_input, chat_request
+from app.core.config import get_settings
+from app.services.anthropic_client import get_anthropic_client
+from app.services.notice_insights import ANTHROPIC_MODEL, MODEL, anthropic_request, build_input, chat_request
 from app.services.openai_client import get_openai_client
 from app.services.supabase_client import get_admin_client, upsert_rows
 from jobs._common import log_ingest_finish, log_ingest_start
@@ -40,6 +42,7 @@ TABLE = "bid_notice_insights"
 MAX_SUBMIT = 500  # 배치 1개 = RPC 1회 (PostgREST 1,000행 상한 아래)
 STATEMENT_TIMEOUT = "57014"
 PENDING_PREFIX = "batch:"  # placeholder 행의 model 값: 'batch:<openai batch id>'
+A_PENDING_PREFIX = "abatch:"  # placeholder 행의 model 값: 'abatch:<anthropic batch id>'
 _RUNNING = ("validating", "in_progress", "finalizing", "cancelling")
 
 
@@ -56,8 +59,8 @@ def _db(step: str, fn, retries: int = 3):
             time.sleep(wait)
 
 
-def _build_line(sb, no: str, ord_: str) -> tuple[dict, dict] | None:
-    """공고 하나 → (JSONL 한 줄, placeholder 행). 쓸 만한 텍스트가 없으면 None."""
+def _build_line(sb, no: str, ord_: str) -> tuple[str, str, str, list[int]] | None:
+    """공고 하나 → (custom_id, 공고명, 입력 텍스트, source_seqs). 쓸 만한 텍스트가 없으면 None."""
     docs = _db("select_docs", lambda: (
         sb.table("bid_notice_documents")
         .select("seq,file_name,text")
@@ -71,53 +74,57 @@ def _build_line(sb, no: str, ord_: str) -> tuple[dict, dict] | None:
     text, seqs = build_input(docs)
     if not text:
         return None
-    line = {
-        "custom_id": f"{no}|{ord_}",
-        "method": "POST",
-        "url": "/v1/chat/completions",
-        "body": chat_request(notice["bid_ntce_nm"], text),
-    }
-    placeholder = {
-        "bid_ntce_no": no, "bid_ntce_ord": ord_,
-        "summary": None, "source_seqs": seqs, "input_chars": len(text),
-    }
-    return line, placeholder
+    return f"{no}_{ord_}", notice["bid_ntce_nm"], text, seqs
 
 
-def submit(sb, client, limit: int) -> tuple[str | None, int]:
+def submit(sb, limit: int) -> tuple[str | None, int]:
     """대기 공고를 배치 1개로 제출. (batch_id, 제출 건수)"""
+    provider = get_settings().insight_provider
     targets = _db("rpc_next", lambda: (
         sb.rpc("next_bid_notices_for_insights", {"p_limit": min(limit, MAX_SUBMIT)}).execute().data or []
     ))
-    lines: list[dict] = []
-    placeholders: list[dict] = []
-    for t in targets:
-        built = _build_line(sb, t["bid_ntce_no"], t["bid_ntce_ord"])
-        if built:
-            lines.append(built[0])
-            placeholders.append(built[1])
-    if not lines:
+    built = [b for t in targets if (b := _build_line(sb, t["bid_ntce_no"], t["bid_ntce_ord"]))]
+    if not built:
         return None, 0
 
-    jsonl = "\n".join(json.dumps(line, ensure_ascii=False) for line in lines).encode("utf-8")
-    f = client.files.create(file=(f"{JOB_NAME}.jsonl", jsonl), purpose="batch")
-    batch = client.batches.create(
-        input_file_id=f.id,
-        endpoint="/v1/chat/completions",
-        completion_window="24h",
-        metadata={"job": JOB_NAME},
-    )
+    placeholders = [
+        {"bid_ntce_no": cid.rsplit("_", 1)[0], "bid_ntce_ord": cid.rsplit("_", 1)[1],
+         "summary": None, "source_seqs": seqs, "input_chars": len(text)}
+        for cid, _, text, seqs in built
+    ]
+    if provider == "anthropic":
+        client = get_anthropic_client()
+        batch = client.messages.batches.create(
+            requests=[{"custom_id": cid, "params": anthropic_request(name, text)} for cid, name, text, _ in built],
+        )
+        prefix, cancel = A_PENDING_PREFIX, lambda: client.messages.batches.cancel(batch.id)
+    else:
+        client = get_openai_client()
+        lines = [
+            {"custom_id": cid, "method": "POST", "url": "/v1/chat/completions", "body": chat_request(name, text)}
+            for cid, name, text, _ in built
+        ]
+        jsonl = "\n".join(json.dumps(line, ensure_ascii=False) for line in lines).encode("utf-8")
+        f = client.files.create(file=(f"{JOB_NAME}.jsonl", jsonl), purpose="batch")
+        batch = client.batches.create(
+            input_file_id=f.id,
+            endpoint="/v1/chat/completions",
+            completion_window="24h",
+            metadata={"job": JOB_NAME},
+        )
+        prefix, cancel = PENDING_PREFIX, lambda: client.batches.cancel(batch.id)
+
     for p in placeholders:
-        p["model"] = PENDING_PREFIX + batch.id
+        p["model"] = prefix + batch.id
     try:
         _db("upsert_placeholders", lambda: upsert_rows(
             TABLE, placeholders, on_conflict="bid_ntce_no,bid_ntce_ord",
         ))
     except Exception:
         # placeholder 없이 배치만 돌면 결과를 수거할 길이 없다 — 취소하고 다음 실행에 다시 제출
-        client.batches.cancel(batch.id)
+        cancel()
         raise
-    return batch.id, len(lines)
+    return batch.id, len(built)
 
 
 def _ingest_output(sb, client, batch) -> tuple[int, int]:
@@ -131,7 +138,8 @@ def _ingest_output(sb, client, batch) -> tuple[int, int]:
         if not raw.strip():
             continue
         rec = json.loads(raw)
-        no, ord_ = rec["custom_id"].split("|", 1)
+        sep = "|" if "|" in rec["custom_id"] else "_"
+        no, ord_ = rec["custom_id"].rsplit(sep, 1)
         resp = rec.get("response") or {}
         try:
             if resp.get("status_code") != 200:
@@ -153,51 +161,87 @@ def _ingest_output(sb, client, batch) -> tuple[int, int]:
     return len(rows), failed
 
 
-def collect(sb, client) -> tuple[int, int, int]:
-    """진행 중 배치 수거. (ok, failed, 아직 진행 중인 배치 수)"""
+def _ingest_anthropic(sb, client, batch_id: str) -> tuple[int, int]:
+    """ended 된 Anthropic 배치 결과 → 인사이트 upsert. (ok, failed)"""
+    rows: list[dict] = []
+    failed = 0
+    for item in client.messages.batches.results(batch_id):
+        no, ord_ = item.custom_id.rsplit("_", 1)
+        try:
+            if item.result.type != "succeeded":
+                raise ValueError(f"result {item.result.type}")
+            tool = next(b for b in item.result.message.content if b.type == "tool_use")
+            ins = tool.input
+            rows.append({
+                "bid_ntce_no": no, "bid_ntce_ord": ord_,
+                "summary": ins["summary"], "scope": ins["scope"],
+                "requirements": ins["requirements"], "evaluation": ins["evaluation"],
+                "schedule": ins["schedule"], "keywords": ins["keywords"],
+                "model": ANTHROPIC_MODEL,
+            })
+        except Exception as e:  # 한 건 때문에 배치 전체를 버리지 않는다
+            failed += 1
+            print(f"  ! {no} failed: {type(e).__name__}: {str(e)[:120]}")
+    for i in range(0, len(rows), 200):
+        chunk = rows[i:i + 200]
+        _db("upsert_insights", lambda: upsert_rows(TABLE, chunk, on_conflict="bid_ntce_no,bid_ntce_ord"))
+    return len(rows), failed
+
+
+def collect(sb) -> tuple[int, int, int]:
+    """진행 중 배치 수거(OpenAI/Anthropic 모두). (ok, failed, 아직 진행 중인 배치 수)"""
     pending = _db("select_pending", lambda: (
-        sb.table(TABLE).select("model")
-        .is_("summary", "null").like("model", PENDING_PREFIX + "%")
-        .limit(5000).execute().data or []
+        sb.table(TABLE).select("model").is_("summary", "null").like("model", "%batch:%").limit(5000).execute().data or []
     ))
-    batch_ids = sorted({r["model"][len(PENDING_PREFIX):] for r in pending})
     ok = failed = running = 0
-    for bid in batch_ids:
-        batch = client.batches.retrieve(bid)
-        if batch.status in _RUNNING:
-            running += 1
-            print(f"  batch {bid} {batch.status}: {batch.request_counts.completed}/{batch.request_counts.total}")
+    for model_tag in sorted({r["model"] for r in pending}):
+        if model_tag.startswith(A_PENDING_PREFIX):
+            client = get_anthropic_client()
+            bid = model_tag[len(A_PENDING_PREFIX):]
+            batch = client.messages.batches.retrieve(bid)
+            if batch.processing_status != "ended":
+                running += 1
+                c = batch.request_counts
+                print(f"  abatch {bid} {batch.processing_status}: {c.succeeded}/{c.processing + c.succeeded + c.errored + c.canceled + c.expired}")
+                continue
+            n_ok, n_fail = _ingest_anthropic(sb, client, bid)
+        elif model_tag.startswith(PENDING_PREFIX):
+            client = get_openai_client()
+            bid = model_tag[len(PENDING_PREFIX):]
+            batch = client.batches.retrieve(bid)
+            if batch.status in _RUNNING:
+                running += 1
+                print(f"  batch {bid} {batch.status}: {batch.request_counts.completed}/{batch.request_counts.total}")
+                continue
+            n_ok, n_fail = _ingest_output(sb, client, batch)
+            for fid in (batch.input_file_id, batch.output_file_id, batch.error_file_id):
+                if fid:
+                    try:
+                        client.files.delete(fid)
+                    except Exception:
+                        pass
+        else:
             continue
-        n_ok, n_fail = _ingest_output(sb, client, batch)
         # 결과를 못 받은 placeholder(에러 라인·만료·실패)는 지워서 다음 제출에 다시 잡히게 한다
         leftover = _db("delete_leftover", lambda: (
-            sb.table(TABLE).delete()
-            .eq("model", PENDING_PREFIX + bid).is_("summary", "null")
-            .execute().data or []
+            sb.table(TABLE).delete().eq("model", model_tag).is_("summary", "null").execute().data or []
         ))
         n_fail += len(leftover)
-        print(f"  batch {bid} {batch.status}: ok={n_ok} failed={n_fail}")
+        print(f"  {model_tag} done: ok={n_ok} failed={n_fail}")
         ok += n_ok
         failed += n_fail
-        for fid in (batch.input_file_id, batch.output_file_id, batch.error_file_id):
-            if fid:
-                try:
-                    client.files.delete(fid)
-                except Exception:
-                    pass
     return ok, failed, running
 
 
 def run(limit: int = 100) -> None:
     run_id = log_ingest_start(JOB_NAME, {"limit": limit})
     sb = get_admin_client()
-    client = get_openai_client()
     ok = failed = 0
     try:
-        ok, failed, running = collect(sb, client)
+        ok, failed, running = collect(sb)
         print(f"[{JOB_NAME}] collected ok={ok} failed={failed} running_batches={running}")
         if limit > 0:
-            batch_id, n = submit(sb, client, limit)
+            batch_id, n = submit(sb, limit)
             print(f"[{JOB_NAME}] submitted {n} notices" + (f" as {batch_id}" if batch_id else ""))
         log_ingest_finish(run_id, "success", rows_inserted=ok, rows_failed=failed)
         print(f"[{JOB_NAME}] done. ok={ok} failed={failed}")

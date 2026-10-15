@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Backend: FastAPI (Python 3.12, uv) + slowapi rate limit
 - Frontend: Next.js 16 (App Router, TypeScript, Tailwind v4, React 19)
 - DB: Supabase (Postgres + pgvector HNSW + pg_trgm, 싱가포르 ap-southeast-1 — 2026-10-13 뭄바이에서 이전) — 백엔드는 service_role 키로 직접 접근
-- Embedding: OpenAI `text-embedding-3-small` (1536d) / LLM 설명: `gpt-4o-mini`
+- Embedding: OpenAI `text-embedding-3-small` (1536d) / LLM 설명: `gpt-4o-mini` / 첨부문서 인사이트: claude-haiku-4-5 (Message Batches)
 
 ## 명령어
 - Backend 실행: `cd backend && uv run uvicorn app.main:app --reload` → :8000

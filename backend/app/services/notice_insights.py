@@ -10,6 +10,8 @@ from __future__ import annotations
 import re
 
 MODEL = "gpt-4o-mini"
+ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+ANTHROPIC_MAX_TOKENS = 1500  # 표본 40건 출력 평균 861 토큰
 MAX_INPUT_CHARS = 12_000
 # 파일 종류별 1차 상한 — 제안요청서가 길어도 공고문(참가자격·평가)이 통째로 잘리지 않게.
 # 1차 배분 후 남는 예산은 우선순위 순으로 다시 나눠 총량(MAX_INPUT_CHARS)을 채운다.
@@ -154,4 +156,16 @@ def chat_request(notice_name: str, input_text: str) -> dict:
         "temperature": 0.1,
         "max_tokens": 900,
         "response_format": {"type": "json_schema", "json_schema": SCHEMA},
+    }
+
+
+def anthropic_request(notice_name: str, input_text: str) -> dict:
+    """Message Batches 의 `params` — 같은 SYSTEM/SCHEMA, tool_use 로 구조화 강제."""
+    return {
+        "model": ANTHROPIC_MODEL,
+        "max_tokens": ANTHROPIC_MAX_TOKENS,
+        "system": SYSTEM,
+        "tools": [{"name": "bid_notice_insight", "description": "입찰 문서 구조화 결과", "input_schema": SCHEMA["schema"]}],
+        "tool_choice": {"type": "tool", "name": "bid_notice_insight"},
+        "messages": [{"role": "user", "content": f"[공고명] {notice_name}\n\n{input_text}"}],
     }
