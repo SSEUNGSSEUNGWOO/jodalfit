@@ -176,26 +176,43 @@ def _ingest_output(sb, client, batch) -> tuple[int, int]:
 
 
 def _coerce_insight(ins: dict) -> dict:
-    """tool_use 입력이 스키마와 어긋난 흔한 경우를 바로잡는다 — 배열이 JSON 문자열로 오거나 원소가 문자열이 아닌 경우
-    (Postgres text[] upsert 가 22P02 로 배치 전체를 죽이던 원인, 2026-10-15). 못 고치면 ValueError → 그 건만 실패."""
+    """tool_use 입력이 스키마와 어긋난 흔한 경우를 바로잡는다 — jsonb 컬럼(scope/requirements/evaluation/
+    schedule/summary)은 degrade(빈 값으로)하고, text[] 컬럼(keywords)만 엄격히 검사한다
+    (Postgres text[] upsert 가 22P02 로 배치 전체를 죽이던 원인, 2026-10-15).
+    keywords 를 못 고치거나 summary 가 비면 ValueError → 그 건만 실패."""
     out = dict(ins)
-    for k in ("scope", "keywords"):
-        v = out.get(k)
-        if isinstance(v, str):
-            try:
-                v = json.loads(v)
-            except ValueError:
-                v = [v]
-        if not isinstance(v, list):
-            raise ValueError(f"{k} is not a list")
-        out[k] = [str(x).strip() for x in v if x is not None and str(x).strip()]
-    if not isinstance(out.get("requirements"), list) or not all(isinstance(r, dict) for r in out["requirements"]):
-        raise ValueError("requirements malformed")
+
+    v = out.get("keywords")
+    if isinstance(v, str):
+        try:
+            v = json.loads(v)
+        except ValueError:
+            v = [v]
+    if not isinstance(v, list):
+        raise ValueError("keywords is not a list")
+    out["keywords"] = [str(x).strip() for x in v if x is not None and str(x).strip()]
+
+    v = out.get("scope")
+    if isinstance(v, list):
+        v = [str(x).strip() for x in v if x is not None and str(x).strip()]
+    elif isinstance(v, str):
+        v = [v]
+    else:
+        v = []
+    out["scope"] = v
+
+    reqs = out.get("requirements")
+    out["requirements"] = [r for r in reqs if isinstance(r, dict)] if isinstance(reqs, list) else []
+
     for k in ("evaluation", "schedule"):
         if not isinstance(out.get(k), dict):
-            raise ValueError(f"{k} malformed")
-    if not isinstance(out.get("summary"), str):
-        raise ValueError("summary malformed")
+            out[k] = {}
+
+    summary = out.get("summary")
+    out["summary"] = summary if isinstance(summary, str) else ""
+    if not out["summary"].strip():
+        raise ValueError("empty summary")
+
     return out
 
 
@@ -219,7 +236,7 @@ def _ingest_anthropic(sb, client, batch_id: str) -> tuple[int, int]:
             })
         except Exception as e:  # 한 건 때문에 배치 전체를 버리지 않는다
             failed += 1
-            print(f"  ! {no} failed: {type(e).__name__}: {str(e)[:120]}")
+            print(f"  ! {no} failed: {type(e).__name__}: {str(e)[:120]} (stop_reason={getattr(getattr(item.result, 'message', None), 'stop_reason', None)})")
     ok = 0
     for i in range(0, len(rows), 200):
         chunk = rows[i:i + 200]
@@ -240,11 +257,19 @@ def _ingest_anthropic(sb, client, batch_id: str) -> tuple[int, int]:
 
 def collect(sb) -> tuple[int, int, int]:
     """진행 중 배치 수거(OpenAI/Anthropic 모두). (ok, failed, 아직 진행 중인 배치 수)"""
-    pending = _db("select_pending", lambda: (
-        sb.table(TABLE).select("model").is_("summary", "null").like("model", "%batch:%").limit(5000).execute().data or []
-    ))
+    model_tags: set[str] = set()
+    offset = 0
+    while True:
+        page = _db("select_pending", lambda o=offset: (
+            sb.table(TABLE).select("model").is_("summary", "null").like("model", "%batch:%")
+            .order("model").range(o, o + 999).execute().data or []
+        ))
+        model_tags |= {r["model"] for r in page}
+        if len(page) < 1000:
+            break
+        offset += 1000
     ok = failed = running = 0
-    for model_tag in sorted({r["model"] for r in pending}):
+    for model_tag in sorted(model_tags):
         if model_tag.startswith(A_PENDING_PREFIX):
             client = get_anthropic_client()
             bid = model_tag[len(A_PENDING_PREFIX):]

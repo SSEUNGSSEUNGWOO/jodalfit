@@ -98,7 +98,7 @@ def extract_xlsx(data: bytes, max_rows_per_sheet: int = 2000) -> str:
         lines: list[str] = []
         for i, row in enumerate(ws.iter_rows(values_only=True)):
             if i >= max_rows_per_sheet:
-                lines.append(f"... (이하 {ws.max_row - max_rows_per_sheet}행 생략)")
+                lines.append("... (이하 생략)")  # read_only 모드에선 ws.max_row 가 None 일 수 있음
                 break
             cells = [str(c).strip() for c in row if c is not None and str(c).strip()]
             if cells:
@@ -253,3 +253,43 @@ def _clean(text: str) -> str:
     text = re.sub(r"[-]", "•", text)  # Wingdings/Symbol 글머리표(PUA) → 불릿
     lines = [re.sub(r"[ \t]+", " ", l).strip() for l in text.splitlines()]
     return "\n".join(l for l in lines if l)
+
+
+if __name__ == "__main__":
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    ws1 = wb.active
+    ws1.title = "sheet1"
+    ws1.append(["a", "b"])
+    ws1.append([None, None])  # 빈 행
+    ws1.append(["c", None])  # 빈 셀
+    wb.create_sheet("sheet2").append(["x"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    out = extract_xlsx(buf.getvalue())
+    assert out.count("[시트:") == 2, out
+    for line in out.splitlines():
+        if not line.strip() or line.startswith("[시트:"):
+            continue
+        assert all(seg.strip() for seg in line.split("\t")), f"empty tab segment: {line!r}"
+
+    zbuf = io.BytesIO()
+    # zipfile 은 비-ascii 파일명을 항상 UTF-8 플래그로 쓴다 — 나라장터 zip 처럼 플래그 없이
+    # cp437 바이트 그대로(=cp949로 재해석될 한글) 쓰려면 인코딩 단계를 잠시 바꿔치기한다.
+    _orig_encode = zipfile.ZipInfo._encodeFilenameFlags
+    zipfile.ZipInfo._encodeFilenameFlags = lambda self: (self.filename.encode("cp437"), self.flag_bits)
+    try:
+        with zipfile.ZipFile(zbuf, "w") as zf:
+            zi = zipfile.ZipInfo("x")
+            zi.filename = "규격서.xlsx".encode("cp949").decode("cp437")
+            zf.writestr(zi, b"dummy")
+            zf.writestr("note.txt", b"text file")
+    finally:
+        zipfile.ZipInfo._encodeFilenameFlags = _orig_encode
+    members = iter_zip_members(zbuf.getvalue())
+    names = [n for n, _ in members]
+    assert "규격서.xlsx" in names, names
+    assert not any(n.endswith(".txt") for n in names), names
+
+    print("doc_extract self-check ok")

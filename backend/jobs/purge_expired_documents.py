@@ -31,9 +31,10 @@ from t where d.bid_ntce_no = t.bid_ntce_no and d.bid_ntce_ord = t.bid_ntce_ord a
 
 
 def run(grace_days: int, batch: int) -> None:
-    if not DATABASE_URL:
-        raise SystemExit("DATABASE_URL 이 필요합니다 (backend/.env)")
     run_id = log_ingest_start(JOB_NAME, {"grace_days": grace_days, "batch": batch})
+    if not DATABASE_URL:
+        log_ingest_finish(run_id, "failed", error_msg="DATABASE_URL 이 필요합니다 (backend/.env)")
+        raise SystemExit("DATABASE_URL 이 필요합니다 (backend/.env)")
     purged = 0
     try:
         # autocommit — 배치 UPDATE 하나가 곧 트랜잭션 하나

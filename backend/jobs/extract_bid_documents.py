@@ -54,11 +54,13 @@ def _db(step: str, fn, retries: int = 3):
             wait = 3 * (attempt + 1)
             print(f"  {step}: statement timeout, retry in {wait}s")
             time.sleep(wait)
+
+
 RPC_BATCH = 500  # 한 번에 받아올 대상 공고 수 (PostgREST 1,000행 상한 아래)
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TEXT_CHARS = 200_000
 MAX_ZIP_MEMBERS = 99  # 멤버 seq = 부모seq*100 + k (k=1..99)
-MAX_REPROCESS_ROWS = 2000  # --reprocess-skipped 한 번에 가져올 행 수 상한
+MAX_REPROCESS_ROWS = 1000  # --reprocess-skipped 한 번에 가져올 행 수 상한 (PostgREST 1,000행 상한)
 DOWNLOAD_DELAY_SEC = 0.3  # 나라장터 부하 완화
 
 # 우선순위: 낮을수록 먼저. 제안요청서/과업지시서 > 공고문 > 나머지
@@ -105,7 +107,8 @@ def _store(row: dict, text: str, seen_hashes: dict[str, int]) -> None:
     if not text.strip():
         row["status"] = "empty"
         return
-    h = hashlib.sha1(" ".join(text.split())[:20_000].encode()).hexdigest()
+    norm = " ".join(text.split())
+    h = hashlib.sha1(f"{len(text)}:{norm[:20_000]}".encode()).hexdigest()
     if h in seen_hashes:
         row.update(status="duplicate", error=f"same as seq {seen_hashes[h]}")
         return
@@ -204,13 +207,18 @@ def run(limit: int = 200, reprocess_skipped: int = 0) -> None:
 
     def handle(no: str, ord_: str, attachments: list[dict]) -> None:
         nonlocal notices_done
-        rows = process_notice(client, no, ord_, attachments)
-        if rows:
-            _db("upsert_docs", lambda r=rows: upsert_rows(
-                "bid_notice_documents", r, on_conflict="bid_ntce_no,bid_ntce_ord,seq"
-            ))
-        for r in rows:
-            stats[r["status"]] = stats.get(r["status"], 0) + 1
+        try:
+            rows = process_notice(client, no, ord_, attachments)
+            rows = list({r["seq"]: r for r in rows}.values())  # zip 멤버 seq가 실제 seq(>=100)와 겹칠 수 있음
+            if rows:
+                _db("upsert_docs", lambda r=rows: upsert_rows(
+                    "bid_notice_documents", r, on_conflict="bid_ntce_no,bid_ntce_ord,seq"
+                ))
+            for r in rows:
+                stats[r["status"]] = stats.get(r["status"], 0) + 1
+        except Exception as e:  # 한 공고 때문에 잡 전체가 죽지 않게
+            print(f"  ! {no} handle failed: {type(e).__name__}: {str(e)[:200]}")
+            stats["notice_error"] = stats.get("notice_error", 0) + 1
         notices_done += 1
         if notices_done % 50 == 0:
             print(f"  {notices_done} notices, files={stats}")
@@ -248,6 +256,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=200, help="처리할 공고 수")
     parser.add_argument("--reprocess-skipped", type=int, default=0,
-                        help=f"skipped 로 기록된 xlsx·zip 을 최대 N행 재처리 (최대 {MAX_REPROCESS_ROWS}, --limit 무시)")
+                        help="skipped 로 기록된 xlsx·zip 을 최대 N행 재처리 (PostgREST 1,000행 상한, --limit 무시)")
     args = parser.parse_args()
     run(args.limit, args.reprocess_skipped)
