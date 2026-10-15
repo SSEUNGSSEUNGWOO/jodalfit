@@ -185,18 +185,18 @@ def qual_docs(d):
     """문서에서 읽은 면허·증명 — 판정하지 않는다. 서류로만 증빙되는 층.
     (이전 시안의 '4건 중 등록업종으로 확인되는 것 0건' 은 text.split()[0] 부분일치라 양방향으로 틀릴 수 있었다.
      시스템이 아는 것은 '문서에 이런 요구가 적혀 있다'까지다 — 거기까지만 말한다.)"""
-    man, _ = reqs(d)
-    docs = [r for r in man if r.get("kind") in ("license", "certification")]
+    man, opt = reqs(d)
     if not d["insight"]:
         att = len(d["n"]["attachments"] or [])
-        return 0, f'첨부 {att}건을 아직 읽지 않았습니다', "면허·증명 요구가 있는지 모릅니다"
-    if not docs:
-        return 0, "문서에 면허·증명 요구 없음", f"읽은 필수 조건 {len(man)}개 중 해당 없음"
+        return 0, f'첨부 {att}건을 아직 읽지 않았습니다', "어떤 조건이 적혀 있는지 모릅니다"
+    if not man and not opt:
+        return 0, "문서에 참가 조건 없음", "첨부문서에서 읽음"
+    # 아래 목록과 숫자가 맞아야 한다 — 면허·증명만 세면 '6건' 머리에 8줄 목록이 붙는다.
     kinds = {}
-    for r in docs:
+    for r in man:
         kinds[r.get("kind")] = kinds.get(r.get("kind"), 0) + 1
-    txt = " · ".join(f'{KIND_KO.get(k, k)} {v}건' for k, v in kinds.items())
-    return len(docs), txt, "서류로 증빙 — 자동 판정하지 않습니다"
+    txt = " · ".join(f'{KIND_KO.get(k, k)} {v}' for k, v in kinds.items()) + (f' · 우대 {len(opt)}' if opt else "")
+    return len(man) + len(opt), txt, "서류로 증빙 — 자동 판정하지 않습니다"
 
 
 def qual_block(d, prof, login, gate=True):
@@ -211,7 +211,7 @@ def qual_block(d, prof, login, gate=True):
         foot = (f'<div class="qf">판정 근거는 나라장터 업체정보(등록업종 {len(prof["industries"][0] + prof["industries"][1])}개 · '
                 f'본사 {esc(prof["rgn"])}, 10.14 갱신)와 공고의 제한 필드뿐입니다. '
                 f'서류로만 증빙되는 조건은 판정하지 않습니다. <a href="#">기준 보기</a></div>')
-        return f'<div class="qual">{body}{docs_tier(dn, dtxt, dbas)}{foot}</div>'
+        return f'<div class="qual">{body}{doc_rows(d)}{docs_tier(dn, dtxt, dbas)}{foot}</div>'
     raw = "".join(
         f'<div class="qr raw"><span class="qk">{lab}</span><span class="qv">{txt}</span>'
         f'<span class="qb">공고에 적힌 제한</span></div>' for st, lab, txt, bas, _s, _r in rows)
@@ -219,12 +219,27 @@ def qual_block(d, prof, login, gate=True):
             '등록업종·본사 소재지를 나라장터 업체정보에서 읽어 허용업종·지역 제한과 맞춰 보고, '
             '이 기관과의 과거 계약 건수도 같이 나옵니다. '
             '<span class="in"><span>회사명 또는 사업자번호</span><span class="bt dark">자격 확인</span></span></div>')
-    return f'<div class="qual">{raw}{docs_tier(dn, dtxt, dbas)}{gate_html if gate else ""}</div>'
+    return f'<div class="qual">{raw}{doc_rows(d)}{docs_tier(dn, dtxt, dbas)}{gate_html if gate else ""}</div>'
 
 
 def docs_tier(dn, dtxt, dbas):
-    return (f'<div class="qr s-doc"><span class="qk">서류로 증빙</span>'
+    """문서 조건 머리줄 — 바로 아래 목록(cond_block)의 제목 역할. 숫자는 목록 줄 수와 같다."""
+    lab = f"문서에 적힌 조건 {dn}" if dn else "문서에 적힌 조건"
+    return (f'<div class="qr s-doc"><span class="qk">{lab}</span>'
             f'<span class="qv">{dtxt}</span><span class="qb">{dbas}</span></div>')
+
+
+def doc_rows(d):
+    """낙찰 방식·일정 — 공고 제한과 같은 표에 두 줄로. 따로 옆에 두면 허공에 뜬다."""
+    if not d["insight"]:
+        return ""
+    et, note = eval_text(d)
+    sr = sched_rows(d)
+    ev = et + (f' <span class="dim">— {note}</span>' if note else "")
+    sc = " · ".join(f"{esc(v)}" if lab == "기간" else f"{lab} {esc(v)}" for lab, v in sr) \
+        or '<span class="dim">문서에서 찾지 못함 — 마감·개찰일은 위에</span>'
+    return (f'<div class="qr s-info"><span class="qk">낙찰 방식</span><span class="qv">{ev}</span><span class="qb">첨부문서에서 읽음</span></div>'
+            f'<div class="qr s-info"><span class="qk">일정</span><span class="qv">{sc}</span><span class="qb">첨부문서에서 읽음</span></div>')
 
 
 # ---------------------------------------------------------------- 블록
@@ -313,15 +328,7 @@ def cond_block(d):
 
     li = "".join(f'<li><span class="rq">필수</span>{esc(r["text"])}<span class="rk">{kd(r)}</span></li>' for r in man)
     li += "".join(f'<li><span class="rq o">우대</span>{esc(r["text"])}<span class="rk">{kd(r)}</span></li>' for r in opt)
-    et, note = eval_text(d)
-    sr = sched_rows(d)
-    side = (f'<div class="cs"><span class="k">낙찰 방식</span><div class="cv">{et}</div>'
-            + (f'<div class="cn">비고 · {note}</div>' if note else "")
-            + '<span class="k" style="margin-top:16px">일정</span>'
-            + (f'<div class="cv">{"".join(f"<i>{lab}</i>{esc(v)}<br>" for lab, v in sr)}</div>'
-               if sr else '<div class="cv mute">문서에서 일정을 찾지 못했습니다 — 마감·개찰일은 위에 있습니다</div>')
-            + "</div>")
-    return f'<div class="cond"><ul class="reqs">{li}</ul>{side}</div>'
+    return f'<div class="cond"><ul class="reqs">{li}</ul></div>'
 
 
 def inst_block(d, login):
@@ -439,8 +446,8 @@ h1.t { margin:12px 0 0; font-size:30px; letter-spacing:-0.035em; font-weight:650
 .qr.s-ok .qk::before, .qr.s-warn .qk::before, .qr.s-raw .qk::before { position:absolute; left:0; font-weight:700 }
 /* ✓ 는 먹, 어긋난 것만 인주 하나 — 색은 먹 4단계 + 인주 하나가 전부다 */
 .qr.s-ok .qk::before { content:"✓"; color:#141414 } .qr.s-warn .qk::before { content:"✕"; color:#e8431b }
-.qr.s-raw .qk::before, .qr.s-doc .qk::before { content:"·"; color:#737370 }
-.qr.s-doc { background:#faf9f6 } .qr.s-doc .qk { color:#6b6b67 } .qr.s-doc .qv { font-size:13.5px; color:#55554f }
+.qr.s-raw .qk::before { content:"·"; color:#737370 }
+.qr.s-doc { background:#faf9f6; margin-top:14px } .qr.s-doc .qk { color:#141414; font-weight:600 } .qr.s-info .qv .dim { color:#6b6b67 } .qr.s-doc .qv { font-size:13.5px; color:#55554f }
 .qf { padding:16px 0 0; font-size:12.5px; color:#6b6b67; line-height:1.7; max-width:720px } .qf a { border-bottom:1px solid #d8d6d0; color:#141414 }
 .qf.gate { font-size:13.5px; color:#55554f } .qf.gate b { color:#141414; font-weight:650 }
 .qf.gate .in { display:flex; gap:6px; margin-top:12px } .qf.gate .in span:first-child { width:260px; height:36px; border:1px solid #e3e1dc; border-radius:8px; background:#fff; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
@@ -455,12 +462,10 @@ ul.scope li:last-child { border-right:0 }
 .empty b { font-size:14.5px; font-weight:650 } .empty p { margin:7px 0 10px; font-size:13.5px; line-height:1.7; color:#55554f } .empty .mute { font-size:12px }
 .empty.small { padding:14px 18px; font-size:13.5px; color:#55554f }
 /* 조건 */
-.cond { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:40px }
+.cond { display:block }
 ul.reqs { margin:0; padding:0; list-style:none } ul.reqs li { display:grid; grid-template-columns:40px minmax(0,1fr) 92px; gap:12px; padding:9px 0; border-bottom:1px solid #ececea; font-size:14px; align-items:baseline }
 .rq { font-size:10.5px; font-weight:700; letter-spacing:.04em; color:#e8431b } .rq.o { color:#737370 }
 .rk { font-size:11px; color:#737370; text-align:right }
-.cs .k { display:block } .cs .cv { margin-top:7px; font-size:14px; line-height:1.7 } .cs .cv i { display:inline-block; width:62px; font-style:normal; font-size:12px; color:#6b6b67 }
-.cs .cn { margin-top:6px; font-size:12.5px; color:#6b6b67 }
 /* 단계 */
 .stages { display:grid; grid-template-columns:repeat(6,1fr); gap:0 }
 .sg { padding:12px 10px 12px 0; border-top:2px solid #ececea } .sg.on { border-top-color:#141414 }
@@ -499,7 +504,7 @@ table.aw tr.win td { font-weight:600 } table.aw i { font-style:normal; margin-le
 .foot { margin-top:40px; padding-top:18px; border-top:1px solid #e6e4df; font-size:12px; color:#737370; line-height:1.7 }
 @media (max-width:1140px) { .wrap, .wrap2 { width:auto !important; padding-left:20px; padding-right:20px } }
 @media (max-width:820px) {
-  .cond { grid-template-columns:minmax(0,1fr); gap:24px } .qr { grid-template-columns:minmax(0,1fr); gap:4px } .qr .qb { padding-left:16px }
+  .qr { grid-template-columns:minmax(0,1fr); gap:4px } .qr .qb { padding-left:16px }
   .stages { grid-template-columns:repeat(2,1fr) } h1.t { font-size:24px } .nums { flex-wrap:wrap }
 }
 """
@@ -509,7 +514,6 @@ body { background:#faf9f7 } .wrap { width:720px; margin:0 auto; padding:0 0 130p
 h1.t { font-size:28px; max-width:30ch }
 p.sum { font-size:19px; line-height:1.8 }
 .qr { grid-template-columns:118px minmax(0,1fr); gap:0 18px } .qr .qb { grid-column:2; padding-left:0; margin-top:3px }
-.cond { grid-template-columns:minmax(0,1fr); gap:26px } .cs { border-top:1px solid #e6e4df; padding-top:18px }
 .stages { grid-template-columns:repeat(3,1fr) }
 .ist > div { padding-right:20px; margin-right:20px }
 """
@@ -648,7 +652,7 @@ def l3(d, prof, login):
     main = ((sec("정정 이력", "이전 차수와 달라진 항목만. 나라장터에서는 차수를 하나씩 열어 눈으로 비교해야 보입니다.",
                  amend_block(d), aid + "-amend") if amendments(d["versions"]) else "")
             + sec("과업 내용", "첨부문서를 읽어 정리한 과업 내용과 범위.", work_block(d))
-            + sec("참가 조건", "공고 필드의 제한은 판정하고, 문서에서 읽은 요구는 그대로 둡니다.",
+            + sec("참가 조건", "공고에 적힌 제한과 첨부문서에서 읽은 조건.",
                   qual_block(d, prof, login, gate=False) + cond_block(d), aid + "-cond")
             + sec("진행 단계", "", lifecycle(d))
             + sec("발주기관 이력", "과거 계약 기록으로만 말합니다.", inst_block(d, login)))
