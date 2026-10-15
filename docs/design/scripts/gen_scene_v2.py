@@ -103,7 +103,7 @@ function fillFunnel(i, to, ms){
 }
 
 async function scene1(){            // 쌓임
-  capK.textContent='오늘 올라온 공고'; capS.textContent='나라장터 전체 · 마감 90일 이내';
+  capK.textContent='지금 입찰 가능한 공고'; capS.textContent='나라장터 전체 · 마감 90일 이내 · 매시간 갱신';
   const n = 26, cx = W/2 - PW/2;
   for(let i=0;i<n;i++){
     const t = [...T.drop_ind, ...T.drop_rgn, ...T.keep][i % 38] || '';
@@ -248,7 +248,7 @@ def fun_header(co, prof, f, n_res):
     """gen_results_v6.head() 와 같은 네 칸(라벨·숫자·근거·기준 보기)을 만들되, 숫자는 0에서 시작."""
     inds = prof["industries"][0] + prof["industries"][1]
     rep = prof["industries"][0]
-    steps = [("오늘 올라온 공고", f["total"], "나라장터 전체, 마감 90일 이내", None),
+    steps = [("지금 입찰 가능한 공고", f["total"], "나라장터 전체, 마감 90일 이내", None),
              ("업종이 맞는 공고", f["industry"], f'등록업종 {len(inds)}개 중 하나 허용<br><u>기준 보기</u>', "ind"),
              ("자격이 되는 공고", f["qualified"], "면허·지역 제한 통과<br><u>기준 보기</u>", "qual"),
              ("검토할 공고", n_res, "회사 설명과 과거 수주 이력에 가장 가까운 순서", None)]

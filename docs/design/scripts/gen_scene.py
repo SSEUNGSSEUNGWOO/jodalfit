@@ -80,7 +80,7 @@ function count(to, ms, cls){ const from = +capN.dataset.v || 0; const t0 = perfo
 const wait = ms => new Promise(r=>setTimeout(r, ms));
 
 async function scene1(){            // 쌓임
-  capK.textContent='오늘 올라온 공고'; capS.textContent='나라장터 전체 · 마감 90일 이내';
+  capK.textContent='지금 입찰 가능한 공고'; capS.textContent='나라장터 전체 · 마감 90일 이내 · 매시간 갱신';
   const n = 26, cx = W/2 - PW/2;
   for(let i=0;i<n;i++){
     const t = [...T.drop_ind, ...T.drop_rgn, ...T.keep][i % 38] || '';
@@ -164,7 +164,7 @@ def page(d, f, titles):
     f = dict(f); f["result"] = len(res)
     body = (f'<div class="wrap"><div class="nav"><div class="brand"><i></i>조달핏</div><div>추천 · 검토함 · 개선 기록</div></div>'
             f'<div class="q"><b>{esc(co["corp_nm"])}</b>{esc(co["rgn_nm"])} · 등록업종 15 · 공급물품 없음</div>'
-            f'<div class="stage" id="stage"><div class="cap"><span class="k" id="capK">오늘 올라온 공고</span>'
+            f'<div class="stage" id="stage"><div class="cap"><span class="k" id="capK">지금 입찰 가능한 공고</span>'
             f'<div class="n" id="capN" data-v="0"><span id="capV">0</span><small>건</small></div><div class="sub" id="capS"></div></div></div>'
             f'<div class="res" id="res"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span>근거</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div>{rows_html(res)}</div>'
             f'<div class="foot">장면은 서버 단계 신호에 맞춰 넘어갑니다(여기선 모의). 종이에 적힌 공고명·숫자는 2026-10-15 실제 데이터. 재방문·움직임 줄이기 설정에서는 짧은 버전.</div></div>'

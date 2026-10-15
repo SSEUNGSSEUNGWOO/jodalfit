@@ -83,7 +83,7 @@ def nav():
 
 def head_funnel(co, prof, f, n_res):
     inds = prof["industries"][0] + prof["industries"][1]
-    steps = [("오늘 올라온 공고", f["total"], "나라장터 전체, 마감 90일 이내", 1.0),
+    steps = [("지금 입찰 가능한 공고", f["total"], "나라장터 전체, 마감 90일 이내", 1.0),
              ("업종이 맞는 공고", f["industry"], f"등록업종 {len(inds)}개 중 하나를 허용", f["industry"] / f["total"]),
              ("자격이 되는 공고", f["qualified"], "면허·지역 제한 통과", f["qualified"] / f["total"]),
              ("검토할 공고", n_res, "회사 설명·이력과 가장 가까운 순", n_res / f["total"])]

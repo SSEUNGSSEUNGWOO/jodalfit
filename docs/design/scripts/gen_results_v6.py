@@ -81,7 +81,7 @@ def ribbon(vals):
 def head(co, prof, f, n_res, login):
     inds = prof["industries"][0] + prof["industries"][1]
     rep = prof["industries"][0]
-    steps = [("오늘 올라온 공고", f["total"], "나라장터 전체, 마감 90일 이내", None),
+    steps = [("지금 입찰 가능한 공고", f["total"], "나라장터 전체, 마감 90일 이내", None),
              ("업종이 맞는 공고", f["industry"], f'등록업종 {len(inds)}개 중 하나 허용<br><u>기준 보기</u>', "ind"),
              ("자격이 되는 공고", f["qualified"], "면허·지역 제한 통과<br><u>기준 보기</u>", "qual"),
              ("검토할 공고", n_res, "회사 설명과 과거 수주 이력에 가장 가까운 순서", None)]
