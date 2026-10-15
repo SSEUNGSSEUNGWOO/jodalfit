@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from app.services.openai_client import embed_texts
+from app.services.embedding import embed_texts
 from app.services.supabase_client import get_admin_client
 
 

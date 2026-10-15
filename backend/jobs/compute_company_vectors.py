@@ -30,7 +30,8 @@ from typing import Iterator
 
 import numpy as np
 
-from app.services.openai_client import embed_texts, vector_to_pgvector_str
+from app.services.embedding import embed_texts
+from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from jobs._common import (
     log_ingest_finish,

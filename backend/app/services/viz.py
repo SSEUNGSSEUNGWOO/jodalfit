@@ -13,7 +13,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from app.services.openai_client import embed_texts
+from app.services.embedding import embed_texts
 
 # 시계 방향 배치 (IT 12시 = -90°, 시계방향 30°씩). 인접 영역끼리 묶음:
 # IT-AI-콘텐츠-디자인-행사-HRD-교육-컨설팅-의료-시설/청소-건설-물품/자재

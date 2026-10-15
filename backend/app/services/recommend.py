@@ -23,7 +23,8 @@ from postgrest.exceptions import APIError
 
 from app.core.config import get_settings
 from app.core.timing import submit_timed, timed
-from app.services.openai_client import embed_texts, vector_to_pgvector_str
+from app.services.embedding import embed_texts
+from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from app.services.viz import anchor_positions, project_many, project_point
 

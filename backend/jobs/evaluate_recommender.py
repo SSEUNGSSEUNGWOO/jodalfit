@@ -25,7 +25,7 @@ from app.core.config import get_settings
 from app.recommender.evaluation import (
     aggregate, company_tier, mrr, recall_at_k, stage_lost, strip_leaked_history,
 )
-from app.services.openai_client import embed_texts
+from app.services.embedding import embed_texts
 from jobs.compute_company_vectors import build_industry_text, dynamic_weights
 from app.recommender.mmr import mmr_diversify
 from app.recommender.pipeline import MMR_POOL
