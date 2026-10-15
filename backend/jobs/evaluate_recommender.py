@@ -60,7 +60,7 @@ def fetch_positives(conn, t: date, horizon: date, positives: str = "winner") -> 
     rows = conn.execute(
         f"""select a.bizrno_norm, a.bid_ntce_no, a.bid_ntce_ord
            from award_results a join bid_notices b using (bid_ntce_no, bid_ntce_ord)
-           where {win} a.bizrno_norm <> '' and b.embedding is not null
+           where {win} a.bizrno_norm <> '' and b.{EMB_COL} is not null
              and b.bid_ntce_date < %s and b.bid_clse_date >= %s and b.bid_clse_date <= %s  -- 마감 2일 이상 남은 것만: 1일 내 마감은 t 에 '발견'할 수 없는 공고(운영 마감 임박 -30 과 같은 기준)""",
         (t, t + timedelta(days=2), horizon),
     ).fetchall()
@@ -108,6 +108,8 @@ def sample_companies(conn, positives: dict, t: date, n: int, seed: int) -> list[
     return out
 
 
+EMB_SPACE = "openai"  # --space: openai(embedding, 1536) | kure(embedding_k, 1024)
+EMB_COL = "embedding"
 EMB_STORE: dict | None = None  # --embeddings: {"n": {(no, ord): vec}, "t": {industry_text: vec}} — 다른 임베딩 모델 실험용
 
 
@@ -122,9 +124,9 @@ def load_emb_store(path: str) -> dict:
 def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.ndarray]:
     """t 에 활성이고 임베딩 있는 공고 전부(운영 RPC 조건과 동일) + 임베딩 행렬(정규화)."""
     rows = conn.execute(
-        """select bid_ntce_no, bid_ntce_ord, bid_ntce_nm, bsns_div_nm, bid_clse_date, presmpt_prce,
-                  ntce_instt_nm, dmnd_instt_nm, bidprc_psbl_indstryty_nm, prtcpt_psbl_rgn_nm, embedding::text
-           from bid_notices where embedding is not null and bid_ntce_date < %s and bid_clse_date >= %s and bid_clse_date <= %s
+        f"""select bid_ntce_no, bid_ntce_ord, bid_ntce_nm, bsns_div_nm, bid_clse_date, presmpt_prce,
+                  ntce_instt_nm, dmnd_instt_nm, bidprc_psbl_indstryty_nm, prtcpt_psbl_rgn_nm, {EMB_COL}::text
+           from bid_notices where {EMB_COL} is not null and bid_ntce_date < %s and bid_clse_date >= %s and bid_clse_date <= %s
            order by bid_ntce_no, bid_ntce_ord""",
         (t, t, horizon),
     ).fetchall()
@@ -195,7 +197,7 @@ def company_vector_at(conn, prof: dict, hist: list[dict], t: date, cache: dict, 
                 sys.exit("--embeddings 에 업종 텍스트 없음: " + text[:60])
             cache[text] = np.array(EMB_STORE["t"][text], dtype=np.float32)
         else:
-            cache[text] = np.array(embed_texts([text])[0], dtype=np.float32)
+            cache[text] = np.array(embed_texts([text], space=EMB_SPACE)[0], dtype=np.float32)
     ind = cache[text]; ind = ind / (np.linalg.norm(ind) + 1e-9)
     keys = [(h["bid_ntce_no"], h["bid_ntce_ord"]) for h in hist]
     emb: dict[tuple[str, str], np.ndarray] = {}
@@ -203,7 +205,7 @@ def company_vector_at(conn, prof: dict, hist: list[dict], t: date, cache: dict, 
         emb = {k: EMB_STORE["n"][k] for k in keys if k in EMB_STORE["n"]}
     elif keys:
         for no, od, e in conn.execute(
-            "select bid_ntce_no, bid_ntce_ord, embedding::text from bid_notices where (bid_ntce_no, bid_ntce_ord) in (select unnest(%s::text[]), unnest(%s::text[])) and embedding is not null",
+            f"select bid_ntce_no, bid_ntce_ord, {EMB_COL}::text from bid_notices where (bid_ntce_no, bid_ntce_ord) in (select unnest(%s::text[]), unnest(%s::text[])) and {EMB_COL} is not null",
             ([k[0] for k in keys], [k[1] for k in keys])):
             emb[(no, od)] = np.array(json.loads(e), dtype=np.float32)
     acc = np.zeros_like(ind); tw = 0.0
@@ -312,6 +314,7 @@ def main() -> None:
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
     ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
+    ap.add_argument("--space", choices=["openai", "kure"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045 적용 후)")
     ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
@@ -320,7 +323,8 @@ def main() -> None:
     conn = connect()
     positives = fetch_positives(conn, t, horizon, args.positives)
     sample = sample_companies(conn, positives, t, args.companies, args.seed)
-    global EMB_STORE
+    global EMB_STORE, EMB_SPACE, EMB_COL
+    EMB_SPACE = args.space; EMB_COL = "embedding_k" if args.space == "kure" else "embedding"
     if args.embeddings:
         EMB_STORE = load_emb_store(args.embeddings)
         print(f"embeddings: {args.embeddings} (dim {EMB_STORE['dim']}, notices {len(EMB_STORE['n']):,})")
@@ -369,7 +373,7 @@ def main() -> None:
     for f in failures: lost_counts[f["lost_at"]] += 1
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
     agg["positives_dropped"] = positives_dropped
-    manifest = {"as_of": t.isoformat(), "positives": args.positives, "embeddings": args.embeddings, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
+    manifest = {"as_of": t.isoformat(), "positives": args.positives, "space": args.space, "embeddings": args.embeddings, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
                 "retrieval": args.retrieval, "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
