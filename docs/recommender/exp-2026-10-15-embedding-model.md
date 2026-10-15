@@ -72,3 +72,6 @@ pooling CLS + L2(= 모델의 `1_Pooling/config.json`), max_len 512.
 → 합격선 0.85 통과. **서빙(Railway 요청 시점)은 569MB int8(zip 409MB, 20~25ms/문장) 채택.**
 매일 배치·GPU 백필은 양자화 손실을 안 쓸 이유가 없어 sentence-transformers 원본(`KURE_BACKEND=torch`,
 `uv sync --extra embed-cpu`)으로 간다. 두 백엔드 동일 3문장 코사인 0.980~0.983 (`x` 같은 1글자 입력은 0.978).
+
+## 부록 C — KURE 공간 점수표 재적합 (2026-10-15, Task 7)
+DB `embedding_k` 로 `--space kure --dump-features` 3시점 → `jobs.fit_score_weights`. 8/1 적합 표(재출현 +15·지역 +20·허용업종존재 −10·토큰 5)는 **held-out 9/1 에서 현재 표보다 나빴다**(풀 내 r30 0.836→0.805, r5 0.571→0.535). 7/1 은 백필 범위(마감 90일 이내 + 이력 공고) 밖 공고가 빠져 활성 4,790건으로 줄어 비교 불가. 결론: **점수표는 현재 표 유지**(KURE 로 바꿔도 보너스 비중 재조정 효과 없음). 하네스 검증: 8/1 `--space kure` final@30 0.489 (npz 실험 0.488).
