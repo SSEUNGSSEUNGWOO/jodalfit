@@ -35,3 +35,24 @@
 2. 재임베딩: 활성 공고 ~1만 + 매일 신규 ~1.5천, 회사 7.8만(업종 텍스트), 사전규격·발주계획. GPU PC 에서 1~2시간, 이후 매일 잡.
 3. 서빙: 회사 모드는 벡터가 미리 계산돼 모델이 필요 없다. **키워드 모드 질의 임베딩**만 실시간 — (a) Railway CPU 에 ONNX int8 로 싣기(~300ms, 메모리 1GB), (b) Modal 같은 서버리스 GPU, (c) 호스팅 API 는 KURE 가 없어 bge-m3 로 타협. (a) 가 가장 단순.
 4. 채점표 재보정(점수표) 후 전후 비교 → 배포. 롤백은 컬럼 스위치.
+
+## 부록: ONNX int8 양자화 손실 (2026-10-15, 전환 Task 1)
+
+CPU 서빙용(Railway 요청 시점·Actions 배치) ONNX int8 을 만들려 했으나 **dynamic int8 은 계획의 합격선
+(fp16 GPU 임베딩 대비 코사인 평균 ≥ 0.995, 최소 ≥ 0.98)을 어떤 변형으로도 못 넘는다.**
+`docs/recommender/scripts/export_kure_onnx.py [out] [variant]` 로 재현. 비교 200건 = `texts-2026-08-01.json` 공고 텍스트,
+pooling CLS + L2(= 모델의 `1_Pooling/config.json`), max_len 512.
+
+| variant | 파일 | 코사인 평균 | 최소 | 1문장 지연(16코어 CPU, 4스레드) |
+|---|---|---|---|---|
+| fp32 (양자화 없음) | 2,267MB | 1.00000 | 1.00000 | 160 ms |
+| `ffn-pc` attention 제외 FFN MatMul per-channel | 1,664MB | 0.99149 | 0.98985 | — |
+| `mm-pc` MatMul per-channel QInt8 | 1,363MB | 0.98507 | 0.98068 | 45 ms |
+| `mm` MatMul per-tensor QInt8 | 1,362MB | 0.97723 | 0.97157 | — |
+| `all` 전 op QInt8(임베딩 Gather 포함) | 569MB | 0.97741 | 0.97092 | 25 ms |
+
+- fp32 ONNX 는 fp16 GPU 와 코사인 1.00000 — export·pooling·tokenizer 는 정확하다. 손실은 전부 양자화에서 온다.
+- 임베딩 행렬(250k×1024)을 양자화하면 0.977 로 떨어지고, 거기서 빼면 파일이 1.36GB 로 커진다(계획이 가정한 ~560MB 불가).
+- per-channel 이 per-tensor 대비 +0.008. QUInt8 가중치(0.98485)·`reduce_range`(0.98198)는 개선 없음.
+- **결정 필요**: ① 합격선을 완화(0.985 가 실제 추천 품질을 얼마나 깎는지는 하네스 `--space kure` 로 재서빙 비교해야 안다)
+  ② fp16 ONNX(1.13GB, 코사인 ~1.0, 단 ORT CPU fp16 은 fp32 로 캐스팅해 느림) ③ 요청 시점만 GPU 서버리스(Modal).
