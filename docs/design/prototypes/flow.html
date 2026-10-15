@@ -33,18 +33,22 @@ a { color:inherit; text-decoration:none } .dim { color:#6b6b67 } .mute { color:#
 
 .q { padding:26px 0 0; font-size:13.5px; color:#55554f } .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px }
 .stage { margin-top:20px; border-top:1px solid #141414 }
-.band { position:relative; height:252px; overflow:hidden; transition:height .55s cubic-bezier(.3,.7,.2,1) }
-.band svg { display:block; transition:transform .55s cubic-bezier(.3,.7,.2,1) }
-.lab { position:absolute; opacity:0; transition:opacity .4s ease } .lab.on { opacity:1 }
+.labs { position:relative; height:56px; overflow:hidden; transition:height .5s cubic-bezier(.3,.7,.2,1) }
+.field { position:relative; height:392px; overflow:hidden; transition:height .55s cubic-bezier(.3,.7,.2,1) }
+.field canvas { display:block; width:100%; height:392px; transition:transform .55s cubic-bezier(.3,.7,.2,1) }
+.lab { position:absolute; top:4px; opacity:0; transition:opacity .4s ease } .lab.on { opacity:1 }
+.lab.g { border-left:1px solid #d8d6d0; padding-left:12px }
 .lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; line-height:1.3 }
 .lab .n { margin-top:5px; font-size:26px; letter-spacing:-0.04em; font-weight:650; line-height:1; font-variant-numeric:tabular-nums; color:#141414 }
 .lab .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:5px }
 .lab.last .n { color:#e8431b }
-.ttl { position:absolute; font-size:11.5px; line-height:1; color:#6b6b67; letter-spacing:-0.015em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-       opacity:0; transition:opacity .35s ease } .ttl.on { opacity:1 }
+/* 덩어리 위에 글자를 얹으려면 판을 깔아야 읽힌다 — 흰 판 + 회색 글자(대비 5.1:1) */
+.ttl { position:absolute; font-size:11.5px; line-height:1.45; color:#6b6b67; letter-spacing:-0.015em; white-space:nowrap;
+       overflow:hidden; text-overflow:ellipsis; background:#fff; padding:1px 5px; opacity:0; transition:opacity .35s ease }
+.ttl.on { opacity:1 }
 .chain { display:flex; align-items:baseline; gap:10px; font-size:13px; color:#737370; height:0; opacity:0; overflow:hidden; transition:opacity .4s ease .15s, height .4s ease }
 .chain b { font-size:17px; font-weight:650; color:#141414; letter-spacing:-0.02em; font-variant-numeric:tabular-nums } .chain b.acc { color:#e8431b } .chain i { font-style:normal; color:#c9c9c4 }
-.done .band { height:0 } .done .band svg { transform:translateY(-120px) }
+.done .field, .done .labs { height:0 } .done .field canvas { transform:translateY(-150px) }
 .done .chain { height:48px; opacity:1; padding-top:16px }
 .res { opacity:0; max-height:0; overflow:hidden; transition:opacity .5s ease .2s } .done .res { opacity:1; max-height:none }
 .ctl { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px }
@@ -52,15 +56,129 @@ a { color:inherit; text-decoration:none } .dim { color:#6b6b67 } .mute { color:#
 .foot { max-width:880px; line-height:1.6 }
 /* 적합은 숫자 없이 막대만 (docs/design/README.md 표현·요소 결정 2026-10-15) */
 .tr .fit i { margin-right:0 }
-@media (prefers-reduced-motion: reduce) { .band, .band svg, .lab, .ttl, .chain, .res { transition:none !important } }
-</style></head><body><div class="wrap"><div class="nav"><div class="brand"><i></i>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div><div class="q"><b>한종산업개발 주식회사</b>경상남도 창원시 마산합포구 · 등록업종 15 · 공급물품 없음</div><div class="stage"><div class="band"><svg viewBox="0 0 1120 252" width="100%" height="252" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="c"><rect id="front" x="0" y="0" width="0" height="252"/></clipPath><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" x2="1120"><stop offset="0" stop-color="#141414" stop-opacity=".3"/><stop offset="0.754" stop-color="#141414" stop-opacity=".3"/><stop offset="0.798" stop-color="#e8431b" stop-opacity=".85"/><stop offset="1" stop-color="#e8431b" stop-opacity=".85"/></linearGradient><linearGradient id="p0" gradientUnits="userSpaceOnUse" x1="0" x2="288"><stop offset="0" stop-color="#141414" stop-opacity=".11"/><stop offset="0.847" stop-color="#141414" stop-opacity=".11"/><stop offset="0.979" stop-color="#141414" stop-opacity=".27"/><stop offset="1" stop-color="#141414" stop-opacity=".08"/></linearGradient><linearGradient id="e0" gradientUnits="userSpaceOnUse" x1="0" x2="288"><stop offset="0" stop-color="#141414" stop-opacity=".5"/><stop offset="0.847" stop-color="#141414" stop-opacity=".5"/><stop offset="0.979" stop-color="#141414" stop-opacity=".88"/><stop offset="1" stop-color="#141414" stop-opacity=".12"/></linearGradient><linearGradient id="p1" gradientUnits="userSpaceOnUse" x1="288" x2="576"><stop offset="0" stop-color="#141414" stop-opacity=".11"/><stop offset="0.847" stop-color="#141414" stop-opacity=".11"/><stop offset="0.979" stop-color="#141414" stop-opacity=".27"/><stop offset="1" stop-color="#141414" stop-opacity=".08"/></linearGradient><linearGradient id="e1" gradientUnits="userSpaceOnUse" x1="288" x2="576"><stop offset="0" stop-color="#141414" stop-opacity=".5"/><stop offset="0.847" stop-color="#141414" stop-opacity=".5"/><stop offset="0.979" stop-color="#141414" stop-opacity=".88"/><stop offset="1" stop-color="#141414" stop-opacity=".12"/></linearGradient><linearGradient id="p2" gradientUnits="userSpaceOnUse" x1="576" x2="864"><stop offset="0" stop-color="#141414" stop-opacity=".11"/><stop offset="0.847" stop-color="#141414" stop-opacity=".11"/><stop offset="0.979" stop-color="#141414" stop-opacity=".27"/><stop offset="1" stop-color="#141414" stop-opacity=".08"/></linearGradient><linearGradient id="e2" gradientUnits="userSpaceOnUse" x1="576" x2="864"><stop offset="0" stop-color="#141414" stop-opacity=".5"/><stop offset="0.847" stop-color="#141414" stop-opacity=".5"/><stop offset="0.979" stop-color="#141414" stop-opacity=".88"/><stop offset="1" stop-color="#141414" stop-opacity=".12"/></linearGradient></defs><line x1="288.5" y1="0" x2="288.5" y2="252" stroke="#d8d6d0"/><line x1="576.5" y1="0" x2="576.5" y2="252" stroke="#d8d6d0"/><line x1="864.5" y1="0" x2="864.5" y2="252" stroke="#d8d6d0"/><g clip-path="url(#c)"><rect x="0" y="89.0" width="288" height="105.9" fill="#141414" fill-opacity=".11"/><rect x="0" y="64.0" width="288" height="25.0" fill="url(#p0)"/><line x1="0" y1="64.0" x2="288" y2="64.0" stroke="url(#e0)" stroke-width="1"/><rect x="0" y="195.0" width="288" height="25.0" fill="url(#p0)"/><line x1="0" y1="220.0" x2="288" y2="220.0" stroke="url(#e0)" stroke-width="1"/><rect x="288" y="97.0" width="288" height="90.0" fill="#141414" fill-opacity=".11"/><rect x="288" y="89.0" width="288" height="8.0" fill="url(#p1)"/><line x1="288" y1="89.0" x2="576" y2="89.0" stroke="url(#e1)" stroke-width="1"/><rect x="288" y="187.0" width="288" height="8.0" fill="url(#p1)"/><line x1="288" y1="195.0" x2="576" y2="195.0" stroke="url(#e1)" stroke-width="1"/><rect x="576" y="133.0" width="288" height="18.0" fill="#141414" fill-opacity=".11"/><rect x="576" y="97.0" width="288" height="36.0" fill="url(#p2)"/><line x1="576" y1="97.0" x2="864" y2="97.0" stroke="url(#e2)" stroke-width="1"/><rect x="576" y="151.0" width="288" height="36.0" fill="url(#p2)"/><line x1="576" y1="187.0" x2="864" y2="187.0" stroke="url(#e2)" stroke-width="1"/><rect x="864" y="133.0" width="72" height="18.0" fill="#e8431b" fill-opacity=".16"/><line x1="864" y1="133.0" x2="936" y2="133.0" stroke="#141414" stroke-opacity=".5" stroke-width="1"/><line x1="864" y1="151.0" x2="936" y2="151.0" stroke="#141414" stroke-opacity=".5" stroke-width="1"/><path d="M0,69.0 L244,69.0 C268,69.0 272,91.0 288,91.0 L532,91.0 C556,91.0 560,99.0 576,99.0 L820,99.0 C844,99.0 848,135.0 864,135.0 L936,135.0 C1006,135.0 1050,42.0 1120,42.0" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,82.3 L244,82.3 C268,82.3 272,100.3 288,100.3 L532,100.3 C556,100.3 560,106.8 576,106.8 L820,106.8 C844,106.8 848,136.3 864,136.3 L936,136.3 C1006,136.3 1050,60.2 1120,60.2" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,95.5 L244,95.5 C268,95.5 272,109.6 288,109.6 L532,109.6 C556,109.6 560,114.6 576,114.6 L820,114.6 C844,114.6 848,137.5 864,137.5 L936,137.5 C1006,137.5 1050,78.4 1120,78.4" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,108.8 L244,108.8 C268,108.8 272,118.8 288,118.8 L532,118.8 C556,118.8 560,122.5 576,122.5 L820,122.5 C844,122.5 848,138.8 864,138.8 L936,138.8 C1006,138.8 1050,96.5 1120,96.5" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,122.1 L244,122.1 C268,122.1 272,128.1 288,128.1 L532,128.1 C556,128.1 560,130.3 576,130.3 L820,130.3 C844,130.3 848,140.1 864,140.1 L936,140.1 C1006,140.1 1050,114.7 1120,114.7" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,135.4 L244,135.4 C268,135.4 272,137.4 288,137.4 L532,137.4 C556,137.4 560,138.1 576,138.1 L820,138.1 C844,138.1 848,141.4 864,141.4 L936,141.4 C1006,141.4 1050,132.9 1120,132.9" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,148.6 L244,148.6 C268,148.6 272,146.6 288,146.6 L532,146.6 C556,146.6 560,145.9 576,145.9 L820,145.9 C844,145.9 848,142.6 864,142.6 L936,142.6 C1006,142.6 1050,151.1 1120,151.1" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,161.9 L244,161.9 C268,161.9 272,155.9 288,155.9 L532,155.9 C556,155.9 560,153.7 576,153.7 L820,153.7 C844,153.7 848,143.9 864,143.9 L936,143.9 C1006,143.9 1050,169.3 1120,169.3" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,175.2 L244,175.2 C268,175.2 272,165.2 288,165.2 L532,165.2 C556,165.2 560,161.5 576,161.5 L820,161.5 C844,161.5 848,145.2 864,145.2 L936,145.2 C1006,145.2 1050,187.5 1120,187.5" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,188.5 L244,188.5 C268,188.5 272,174.4 288,174.4 L532,174.4 C556,174.4 560,169.4 576,169.4 L820,169.4 C844,169.4 848,146.5 864,146.5 L936,146.5 C1006,146.5 1050,205.6 1120,205.6" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,201.7 L244,201.7 C268,201.7 272,183.7 288,183.7 L532,183.7 C556,183.7 560,177.2 576,177.2 L820,177.2 C844,177.2 848,147.7 864,147.7 L936,147.7 C1006,147.7 1050,223.8 1120,223.8" fill="none" stroke="url(#g)" stroke-width=".9"/><path d="M0,215.0 L244,215.0 C268,215.0 272,193.0 288,193.0 L532,193.0 C556,193.0 560,185.0 576,185.0 L820,185.0 C844,185.0 848,149.0 864,149.0 L936,149.0 C1006,149.0 1050,242.0 1120,242.0" fill="none" stroke="url(#g)" stroke-width=".9"/><line x1="288" y1="64.0" x2="288" y2="89.0" stroke="#141414" stroke-width="2.5"/><line x1="281" y1="89.0" x2="295" y2="89.0" stroke="#141414" stroke-width="1.5"/><line x1="288" y1="220.0" x2="288" y2="195.0" stroke="#141414" stroke-width="2.5"/><line x1="281" y1="195.0" x2="295" y2="195.0" stroke="#141414" stroke-width="1.5"/><line x1="576" y1="89.0" x2="576" y2="97.0" stroke="#141414" stroke-width="2.5"/><line x1="569" y1="97.0" x2="583" y2="97.0" stroke="#141414" stroke-width="1.5"/><line x1="576" y1="195.0" x2="576" y2="187.0" stroke="#141414" stroke-width="2.5"/><line x1="569" y1="187.0" x2="583" y2="187.0" stroke="#141414" stroke-width="1.5"/><line x1="864" y1="97.0" x2="864" y2="133.0" stroke="#141414" stroke-width="2.5"/><line x1="857" y1="133.0" x2="871" y2="133.0" stroke="#141414" stroke-width="1.5"/><line x1="864" y1="187.0" x2="864" y2="151.0" stroke="#141414" stroke-width="2.5"/><line x1="857" y1="151.0" x2="871" y2="151.0" stroke="#141414" stroke-width="1.5"/></g></svg><div class="lab " data-x="0" style="left:0.000%;top:12px"><span class="k">지금 입찰 가능한 공고 · 마감 90일 이내</span><div class="n"><span class="cnt" data-to="9285">0</span><small>건</small></div></div><div class="lab " data-x="288" style="left:26.786%;top:37px"><span class="k">업종이 맞는 공고 · 전체의 8.9%</span><div class="n"><span class="cnt" data-to="831">0</span><small>건</small></div></div><div class="lab " data-x="576" style="left:52.500%;top:45px"><span class="k">자격이 되는 공고 · 면허·지역 46% 통과</span><div class="n"><span class="cnt" data-to="385">0</span><small>건</small></div></div><div class="lab last" data-x="864" style="left:78.214%;top:81px"><span class="k">검토할 공고 · 앞 단계의 3.1%</span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div><div class="ttl" data-x="272" style="left:1.429%;top:72px;max-width:22.857%">데이터분석 소프트웨어 라이선스 갱신</div><div class="ttl" data-x="272" style="left:1.429%;top:98px;max-width:22.857%">각계2교 정밀안전진단용역</div><div class="ttl" data-x="272" style="left:1.429%;top:124px;max-width:22.857%">문경농협 산지유통센터 신축공사(건축, 기계설비공사)</div><div class="ttl" data-x="272" style="left:1.429%;top:150px;max-width:22.857%">2027년 국가지식자원 통합 플랫폼 유지운영</div><div class="ttl" data-x="272" style="left:1.429%;top:176px;max-width:22.857%">상주교육지원청사 외 1기관(유아교육체험센터) 옥상방수 및 기타공사</div><div class="ttl" data-x="272" style="left:1.429%;top:200px;max-width:22.857%">2026년 하반기 주거환경개선공사 대전</div><div class="ttl" data-x="560" style="left:27.143%;top:104px;max-width:22.857%">[대학혁신지원사업] [SMART환경개선] 사회과학관 노후 냉난방설비 교체 공사(전기)</div><div class="ttl" data-x="560" style="left:27.143%;top:136px;max-width:22.857%">충추역 3층 맞이방 편의점 전기내선공사</div><div class="ttl" data-x="560" style="left:27.143%;top:168px;max-width:22.857%">2026년 화전농공단지 가로등 보수공사</div></div><div class="chain"><span class="k">걸러낸 경로</span><b>9,285</b><i>→</i><b>831</b><i>→</i><b>385</b><i>→</i><b class="acc">12</b><span>건</span></div></div><div class="res"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span>근거</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div><div class="tr"><span class="no">01</span><span class="t">양산하수처리장 악취저감사업 실시설계용역</span><span class="org">경상남도 양산시 상하수도사업소</span><span class="why">지역 매칭</span><span class="r d hot">D-5<small>10.20</small></span><span class="r">5,808만</span><span class="r fit"><i><b style="width:58%"></b></i></span></div><div class="x"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 허용업종 16개 중 엔지니어링사업 외 보유</li><li class="ok">지역 — 경상남도 양산시 제한, 본사 경상남도</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>이 기관은 최근 낙찰의 50%를 같은 회사가 가져갔다.</li><li>공고의 지역 제한이 본사 소재지 경상남도와 맞는다.</li><li>추정가가 회사 평균 수주가의 0.01배라 체급 차이가 크다.</li><li>등록업종 표현이 허용업종과 겹친다 — 건설엔지니어링업(설계, 사업관리, 설계등용역.</li><li>공고 내용과 회사 업종 설명의 유사도 71%.</li></ul></div><div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01769297&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt" href="#">검토</a></div></div></div><div class="tr"><span class="no">02</span><span class="t">국가소유(여수 4단계) 공공폐수처리시설 관리대행</span><span class="org">한국환경공단</span><span class="why">업종·물품 일치</span><span class="r d ">D-27<small>11.11</small></span><span class="r">41.2억</span><span class="r fit"><i><b style="width:52%"></b></i></span></div><div class="tr"><span class="no">03</span><span class="t">과학문화센터 건립사업 건설사업관리용역</span><span class="org">행정중심복합도시건설청</span><span class="why">업종·물품 일치</span><span class="r d ">D-26<small>11.10</small></span><span class="r">37.2억</span><span class="r fit"><i><b style="width:51%"></b></i></span></div><div class="tr"><span class="no">04</span><span class="t">중랑물재생센터 총인처리시설 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-42<small>11.26</small></span><span class="r">36.8억</span><span class="r fit"><i><b style="width:50%"></b></i></span></div><div class="tr"><span class="no">05</span><span class="t">군산항 4,5부두 리뉴얼사업 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">36.6억</span><span class="r fit"><i><b style="width:49%"></b></i></span></div><div class="fade"><div class="tr"><span class="no">06</span><span class="t">중랑물재생센터 일부시설물 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-40<small>11.24</small></span><span class="r">199.7억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">07</span><span class="t">시흥1동 주택가 시·구유 공영주차장 통합·증축 건설사업관리용역(감독권한대행)</span><span class="org">서울특별시 금천구</span><span class="why">업종·물품 일치</span><span class="r d hot">D-6<small>10.21</small></span><span class="r">24.6억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">08</span><span class="t">청주공항 국내선 및 지원시설 증축 건설사업관리용역</span><span class="org">한국공항공사</span><span class="why">업종·물품 일치</span><span class="r d ">D-20<small>11.04</small></span><span class="r">26.5억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">09</span><span class="t">양산시 공공하수도시설 관리대행용역(협상)</span><span class="org">경상남도 양산시</span><span class="why">재출현 기관</span><span class="r d ">D-26<small>11.10</small></span><span class="r">277.3억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">10</span><span class="t">새만금항 신항 항로 준설공사(2026) 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">20.6억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">11</span><span class="t">신창동 지역주택조합 유탑유블레스 승계공사 건설사업관리</span><span class="org">주택도시보증공사</span><span class="why">업종·물품 일치</span><span class="r d hot">D-4<small>10.19</small></span><span class="r">6억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">12</span><span class="t">평택~시흥고속도로 민간투자사업 관리운영위수탁</span><span class="org">제이서해안고속도로주식회사</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">462.3억</span><span class="r fit"><i><b style="width:46%"></b></i></span></div></div><div class="gateline"><b>나머지 7건은 이메일로.</b><span class="dim">처음 5건은 누구나, 전부는 이메일 하나로. 비밀번호 없음.</span><span class="sp"></span><span class="in"><span>you@company.co.kr</span><span class="bt dark">전부 보기</span></span></div></div><div class="foot">띠의 두께가 남은 건수다 — 9,285건과 12건을 한 화면에 같이 읽히게 하려고 <b>로그 눈금</b>으로 그렸다(두께가 절반이면 건수는 약 1/100). 세로 벽 세 개가 관문이고, 뚫린 통로 높이가 통과한 건수다. 통로에 안 맞는 양은 <b>벽 앞에서 눌려 사라진다</b> — 떨어뜨리는 게 아니라 이 회사에 해당되지 않을 뿐이고, 같은 공고가 다른 회사에서는 통과한다. 안에 흐르는 가는 선 12개는 결이지 개수가 아니고, 그중 끝까지 남은 선이 아래 표의 12줄이 된다. 숫자·공고명은 2026-10-15 실제 추천 결과.</div></div><div class="ctl"><span data-run="full">처음 방문</span><span data-run="fast">재방문(짧게)</span><span data-run="still">움직임 줄이기</span></div><script>
+@media (prefers-reduced-motion: reduce) { .field, .field canvas, .labs, .lab, .ttl, .chain, .res { transition:none !important } }
+</style></head><body><div class="wrap"><div class="nav"><div class="brand"><i></i>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div><div class="q"><b>한종산업개발 주식회사</b>경상남도 창원시 마산합포구 · 등록업종 15 · 공급물품 없음</div><div class="stage"><div class="labs"><div class="lab  " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고 · 마감 90일 이내</span><div class="n"><span class="cnt" data-to="9285">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">업종이 맞는 공고 · 전체의 8.9%</span><div class="n"><span class="cnt" data-to="831">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">자격이 되는 공고 · 면허·지역 46% 통과</span><div class="n"><span class="cnt" data-to="385">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고 · 앞 단계의 3.1%</span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas id="cv" height="392" aria-hidden="true"></canvas><div class="ttl" data-x="272" style="left:1.429%;top:58px;max-width:22.857%">데이터분석 소프트웨어 라이선스 갱신</div><div class="ttl" data-x="272" style="left:1.429%;top:108px;max-width:22.857%">각계2교 정밀안전진단용역</div><div class="ttl" data-x="272" style="left:1.429%;top:158px;max-width:22.857%">문경농협 산지유통센터 신축공사(건축, 기계설비공사)</div><div class="ttl" data-x="272" style="left:1.429%;top:208px;max-width:22.857%">2027년 국가지식자원 통합 플랫폼 유지운영</div><div class="ttl" data-x="272" style="left:1.429%;top:258px;max-width:22.857%">상주교육지원청사 외 1기관(유아교육체험센터) 옥상방수 및 기타공사</div><div class="ttl" data-x="272" style="left:1.429%;top:308px;max-width:22.857%">2026년 하반기 주거환경개선공사 대전</div><div class="ttl" data-x="560" style="left:27.143%;top:96px;max-width:22.857%">[대학혁신지원사업] [SMART환경개선] 사회과학관 노후 냉난방설비 교체 공사(전기)</div><div class="ttl" data-x="560" style="left:27.143%;top:188px;max-width:22.857%">충추역 3층 맞이방 편의점 전기내선공사</div><div class="ttl" data-x="560" style="left:27.143%;top:280px;max-width:22.857%">2026년 화전농공단지 가로등 보수공사</div></div><div class="chain"><span class="k">걸러낸 경로</span><b>9,285</b><i>→</i><b>831</b><i>→</i><b>385</b><i>→</i><b class="acc">12</b><span>건</span></div></div><div class="res"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span>근거</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div><div class="tr"><span class="no">01</span><span class="t">양산하수처리장 악취저감사업 실시설계용역</span><span class="org">경상남도 양산시 상하수도사업소</span><span class="why">지역 매칭</span><span class="r d hot">D-5<small>10.20</small></span><span class="r">5,808만</span><span class="r fit"><i><b style="width:58%"></b></i></span></div><div class="x"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 허용업종 16개 중 엔지니어링사업 외 보유</li><li class="ok">지역 — 경상남도 양산시 제한, 본사 경상남도</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>이 기관은 최근 낙찰의 50%를 같은 회사가 가져갔다.</li><li>공고의 지역 제한이 본사 소재지 경상남도와 맞는다.</li><li>추정가가 회사 평균 수주가의 0.01배라 체급 차이가 크다.</li><li>등록업종 표현이 허용업종과 겹친다 — 건설엔지니어링업(설계, 사업관리, 설계등용역.</li><li>공고 내용과 회사 업종 설명의 유사도 71%.</li></ul></div><div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01769297&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt" href="#">검토</a></div></div></div><div class="tr"><span class="no">02</span><span class="t">국가소유(여수 4단계) 공공폐수처리시설 관리대행</span><span class="org">한국환경공단</span><span class="why">업종·물품 일치</span><span class="r d ">D-27<small>11.11</small></span><span class="r">41.2억</span><span class="r fit"><i><b style="width:52%"></b></i></span></div><div class="tr"><span class="no">03</span><span class="t">과학문화센터 건립사업 건설사업관리용역</span><span class="org">행정중심복합도시건설청</span><span class="why">업종·물품 일치</span><span class="r d ">D-26<small>11.10</small></span><span class="r">37.2억</span><span class="r fit"><i><b style="width:51%"></b></i></span></div><div class="tr"><span class="no">04</span><span class="t">중랑물재생센터 총인처리시설 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-42<small>11.26</small></span><span class="r">36.8억</span><span class="r fit"><i><b style="width:50%"></b></i></span></div><div class="tr"><span class="no">05</span><span class="t">군산항 4,5부두 리뉴얼사업 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">36.6억</span><span class="r fit"><i><b style="width:49%"></b></i></span></div><div class="fade"><div class="tr"><span class="no">06</span><span class="t">중랑물재생센터 일부시설물 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-40<small>11.24</small></span><span class="r">199.7억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">07</span><span class="t">시흥1동 주택가 시·구유 공영주차장 통합·증축 건설사업관리용역(감독권한대행)</span><span class="org">서울특별시 금천구</span><span class="why">업종·물품 일치</span><span class="r d hot">D-6<small>10.21</small></span><span class="r">24.6억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">08</span><span class="t">청주공항 국내선 및 지원시설 증축 건설사업관리용역</span><span class="org">한국공항공사</span><span class="why">업종·물품 일치</span><span class="r d ">D-20<small>11.04</small></span><span class="r">26.5억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">09</span><span class="t">양산시 공공하수도시설 관리대행용역(협상)</span><span class="org">경상남도 양산시</span><span class="why">재출현 기관</span><span class="r d ">D-26<small>11.10</small></span><span class="r">277.3억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">10</span><span class="t">새만금항 신항 항로 준설공사(2026) 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">20.6억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">11</span><span class="t">신창동 지역주택조합 유탑유블레스 승계공사 건설사업관리</span><span class="org">주택도시보증공사</span><span class="why">업종·물품 일치</span><span class="r d hot">D-4<small>10.19</small></span><span class="r">6억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">12</span><span class="t">평택~시흥고속도로 민간투자사업 관리운영위수탁</span><span class="org">제이서해안고속도로주식회사</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">462.3억</span><span class="r fit"><i><b style="width:46%"></b></i></span></div></div><div class="gateline"><b>나머지 7건은 이메일로.</b><span class="dim">처음 5건은 누구나, 전부는 이메일 하나로. 비밀번호 없음.</span><span class="sp"></span><span class="in"><span>you@company.co.kr</span><span class="bt dark">전부 보기</span></span></div></div><div class="foot"><b>선 하나가 공고 하나다. 9,285개를 전부 그렸다</b> — 줄여 그리거나 띠로 뭉뚱그리지 않았다. 왼쪽 끝 선 간격은 0.039px 라 덩어리로 보이고, 관문을 지날 때마다 0.39 → 0.78 → 18.2px 로 벌어져 마지막엔 12개가 눈으로 세어진다. <b>비율을 말하는 건 두께가 아니라 이 간격</b>이고, 퍼센트 글자는 그걸 확인해줄 뿐이다. 세로 벽 셋이 관문이고, 통로에 못 든 선은 아래로 떨어지는 게 아니라 벽면에서 눌려 흩어진다 — 그 공고가 나쁜 게 아니라 이 회사에 해당되지 않을 뿐이고, 같은 공고가 다른 회사에서는 통과한다. 숫자·공고명은 2026-10-15 실제 추천 결과.</div></div><div class="ctl"><span data-run="full">처음 방문</span><span data-run="fast">재방문(짧게)</span><span data-run="still">움직임 줄이기</span></div><script type="application/json" id="cfg">{"W": 1120, "H": 392, "CY": 196, "XS": [0, 288, 576, 864], "HH": [180, 160, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44, "CNT": [9285, 831, 385, 12]}</script><script>
+const C = JSON.parse(document.getElementById('cfg').textContent);
+const {W, H, CY, XS, HH, CNT, FAN_X, FAN_SP, CONV, PRESS} = C;
+const N = CNT[0];
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const L = [...document.querySelectorAll('.lab')], T = [...document.querySelectorAll('.ttl')];
-const front = document.getElementById('front');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let raf = 0;
 
+/* ---- 선 기하: 한 번만 계산한다 ---------------------------------------- */
+function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// 살아남는 선은 씨앗 고정으로 고른다 — 그림이 매번 같아야 비교가 된다.
+// 뒤섞은 뒤 앞에서 831 / 385 / 12 를 잘라 쓰면 자동으로 부분집합이 된다.
+const rnd = rng(7), idx = new Int32Array(N);
+for (let i=0;i<N;i++) idx[i]=i;
+for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+
+const fate = new Uint8Array(N).fill(1);          // 1=1번 벽에서 막힘 … 4=끝까지 통과
+const alive = [];
+for (let s=1;s<=3;s++){
+  const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
+  for (const i of a) fate[i] = s+1;
+  alive.push(a);
+}
+
+// y[i*4+s] = s 구간에서의 y. 각 구간마다 생존자를 통로 전체에 고르게 다시 편다 —
+// 간격이 벌어지는 것이 곧 '몇 개가 남았나'이다.
+// 간격이 1px 아래로 내려가면 '고르게 배치'가 장치 픽셀 격자와 맞물려 굵은 무아레 띠를 만든다.
+// 0.45px 지터로 위상을 흩는다 — 공고가 실제로 고른 간격일 리도 없다.
+const Y = new Float32Array(N*4);
+const jit = p => p < 1.2 ? (rnd()*2-1)*0.45 : 0;
+const pitch = s => 2*HH[s] / (CNT[s]-1);
+for (let i=0;i<N;i++) Y[i*4] = CY + (i/(N-1)*2-1)*HH[0] + jit(pitch(0));
+for (let s=1;s<=3;s++){
+  const a = alive[s-1], m = a.length, pj = pitch(s);
+  for (let r=0;r<m;r++) Y[a[r]*4+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
+}
+
+// 코호트별 Path2D 4개. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
+const P = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+for (let i=0;i<N;i++){
+  const f = fate[i], p = P[f-1];
+  let y = Y[i*4];
+  p.moveTo(0, y);
+  for (let s=1;s<f;s++){                          // 통과한 벽마다 통로 폭으로 모인다
+    const g = XS[s], ny = Y[i*4+s];
+    p.lineTo(g-CONV, y);
+    p.bezierCurveTo(g-20, y, g-16, ny, g, ny);
+    y = ny;
+  }
+  if (f < 4) p.lineTo(XS[f], y);                  // 벽까지 가서 멈춘다 (아래로 새지 않는다)
+  else {
+    p.lineTo(FAN_X, y);
+    const row = CY + (y-CY)/HH[3]*FAN_SP;
+    p.bezierCurveTo(FAN_X+70, y, W-70, row, W, row);
+  }
+}
+
+/* ---- 그리기 ------------------------------------------------------------ */
+// 막힌 코호트는 '벽 앞에서 눌렸다 벽면에서 흩어진다'. 벽면에서 0 이 아니라 옅게 남겨야
+// 잉크가 벽에 닿아 '막혔다'로 읽힌다 — 벽 앞에서 끊기면 그냥 사라진 것이 된다.
+function fade(c, x1, a, pressed, tail){
+  const g = c.createLinearGradient(0,0,x1,0);
+  g.addColorStop(0, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-PRESS)/x1, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-6)/x1, `rgba(20,20,20,${pressed})`);
+  g.addColorStop(1, `rgba(20,20,20,${tail})`);
+  return g;
+}
+// 9,285개를 매 프레임 다시 래스터화하면 소프트웨어 래스터라이저에서 70ms 가 넘는다.
+// 그림 자체는 움직이지 않고 '어디까지 보이나'만 움직이므로, 한 번 그려서 오프스크린에
+// 넣어두고 매 프레임은 왼쪽 일부만 blit 한다 — 선은 하나도 줄이지 않는다.
+let off = null, sx = 1, ms = 0;
+
+function render(){
+  const g = off.getContext('2d'), dpr = devicePixelRatio || 1;
+  g.setTransform(sx*dpr, 0, 0, dpr, 0, 0);        // 설계 좌표 그대로 쓰고 레티나는 dpr 로
+  g.clearRect(0, 0, W, H);
+  g.lineCap = 'butt';
+  const last = g.createLinearGradient(0,0,W,0);   // 마지막 12개만 인주
+  last.addColorStop(0, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[3]-20)/W, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[3]+30)/W, 'rgba(232,67,27,.9)');
+  last.addColorStop(1, 'rgba(232,67,27,.9)');
+  const pen = [[fade(g, XS[1], .055, .16, .03), .30], [fade(g, XS[2], .30, .60, .08), .35],
+               [fade(g, XS[3], .34, .65, .09), .35], [last, .9]];
+  for (let c=0;c<4;c++){ g.strokeStyle = pen[c][0]; g.lineWidth = pen[c][1]; g.stroke(P[c]); }
+  g.strokeStyle = '#141414';
+  for (let k=1;k<=3;k++){
+    const x = XS[k];
+    for (const sg of [-1, 1]){
+      g.lineWidth = 2.5; g.beginPath();            // 벽은 화면 끝까지, 통로만 뚫려 있다
+      g.moveTo(x, sg<0 ? 0 : CY+HH[k]); g.lineTo(x, sg<0 ? CY-HH[k] : H); g.stroke();
+      g.lineWidth = 1.5; g.beginPath();            // 통로 입술 — 구멍임을 분명히
+      g.moveTo(x-7, CY+sg*HH[k]); g.lineTo(x+7, CY+sg*HH[k]); g.stroke();
+    }
+  }
+}
+
+function setup(){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  sx = r.width / W;
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(H*dpr);
+  off = Object.assign(document.createElement('canvas'), {width: cv.width, height: cv.height});
+  ctx.setTransform(1, 0, 0, 1, 0, 0);              // blit 는 장치 픽셀로
+  render();
+}
+
+function draw(front){
+  const t0 = performance.now();
+  const fw = Math.max(1, Math.round(front * sx * (devicePixelRatio || 1)));
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(off, 0, 0, fw, cv.height, 0, 0, fw, cv.height);
+  ms = ms ? ms*.85 + (performance.now()-t0)*.15 : performance.now()-t0;
+  window.__ms = ms;
+}
+
+/* ---- 진행 -------------------------------------------------------------- */
+let raf = 0;
 function paint(x, settled){
-  front.setAttribute('width', x);
+  draw(x);
   T.forEach(t => t.classList.toggle('on', x >= +t.dataset.x));
   L.forEach(g => {
     g.classList.toggle('on', x >= +g.dataset.x);
@@ -74,17 +192,19 @@ function paint(x, settled){
 function run(mode){
   cancelAnimationFrame(raf);
   document.querySelectorAll('.ctl span').forEach(s => s.classList.toggle('on', s.dataset.run === mode));
-  if (mode === 'still') { paint(1120, true); return; }
+  if (mode === 'still') { paint(W, true); return; }
   const dur = mode === 'fast' ? 1100 : 3600, t0 = performance.now();
   const tick = now => {
     const p = Math.min(1, (now - t0) / dur);
-    paint(1120 * (1 - Math.pow(1 - p, 2.2)), false);
+    paint(W * (1 - Math.pow(1 - p, 2.2)), false);
     if (p < 1) raf = requestAnimationFrame(tick);
     else setTimeout(() => document.body.classList.add('done'), mode === 'fast' ? 150 : 480);
   };
   raf = requestAnimationFrame(tick);
 }
 
+setup();
 document.querySelectorAll('.ctl span').forEach(s => s.onclick = () => run(s.dataset.run));
+addEventListener('resize', () => { setup(); paint(W, document.body.classList.contains('done')); });
 run(reduce ? 'still' : 'full');
 </script></body></html>
