@@ -317,14 +317,14 @@ def main() -> None:
     ap.add_argument("--space", choices=["openai", "kure"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045 적용 후)")
     ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
     args = ap.parse_args()
+    global EMB_STORE, EMB_SPACE, EMB_COL
+    EMB_SPACE = args.space; EMB_COL = "embedding_k" if args.space == "kure" else "embedding"
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
     out_dir = Path(__file__).resolve().parents[1] / "data" / "recommender_eval" / run_id; out_dir.mkdir(parents=True, exist_ok=True)
     conn = connect()
     positives = fetch_positives(conn, t, horizon, args.positives)
     sample = sample_companies(conn, positives, t, args.companies, args.seed)
-    global EMB_STORE, EMB_SPACE, EMB_COL
-    EMB_SPACE = args.space; EMB_COL = "embedding_k" if args.space == "kure" else "embedding"
     if args.embeddings:
         EMB_STORE = load_emb_store(args.embeddings)
         print(f"embeddings: {args.embeddings} (dim {EMB_STORE['dim']}, notices {len(EMB_STORE['n']):,})")

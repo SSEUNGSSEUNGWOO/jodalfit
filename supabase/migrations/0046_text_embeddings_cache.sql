@@ -127,6 +127,9 @@ begin
 end;
 $$;
 
+-- service_role 은 우회, anon 쓰기 차단
+alter table text_embeddings enable row level security;
+
 notify pgrst, 'reload schema';
 
 commit;

@@ -296,9 +296,10 @@ def build_industry_text(
 
 
 def process_chunk(
-    client, chunk_bizrnos: list[str], space: str = "openai"
+    client, chunk_bizrnos: list[str], space: str | None = None
 ) -> tuple[list[dict], int]:
     """100개 회사를 한 번에 처리."""
+    space = space or get_settings().embed_space
     # 1. 회사 정보
     corps = (
         client.table("companies")

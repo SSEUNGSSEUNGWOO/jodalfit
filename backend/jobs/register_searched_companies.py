@@ -25,6 +25,7 @@ import argparse
 import re
 from datetime import datetime, timedelta, timezone
 
+from app.core.config import get_settings
 from app.services.supabase_client import get_admin_client, upsert_rows
 from jobs._common import log_ingest_finish, log_ingest_start, upsert_embeddings_with_retry
 from jobs.backfill_companies_basic import fetch_basic
@@ -78,7 +79,9 @@ def register(client, norm: str) -> dict:
         upsert_rows("company_supply_products", sups, on_conflict="bizrno,dtl_prdct_clsfc_no", ignore_duplicates=True)
     updates, _ = process_chunk(client, [norm])
     if updates:
-        upsert_embeddings_with_retry(client, "update_company_embeddings", updates)
+        space = get_settings().embed_space
+        rpc = "update_company_embeddings_k" if space == "kure" else "update_company_embeddings"
+        upsert_embeddings_with_retry(client, rpc, updates)
     return {"bizrno_norm": norm, "result": "registered", "corp_nm": row.get("corp_nm"),
             "n_industries": len(inds), "n_supplies": len(sups), "vector_built": bool(updates)}
 

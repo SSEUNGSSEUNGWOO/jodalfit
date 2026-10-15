@@ -82,4 +82,6 @@
 - 리포 Variables `EMBED_SPACE=kure`(Actions), Railway `EMBED_SPACE=kure`, Vercel `NEXT_PUBLIC_EMBED_SPACE=kure`. 배포 후 운영 추천 호출 확인, Sentry 24h.
 - changelog.md 항목 추가. 1주 뒤 문제 없으면 OpenAI 임베딩 스텝 제거·옛 컬럼은 유지(롤백용, 디스크 여유).
 - **OpenAI 스텝을 끊기 전에** 프론트에서 옛 `embedding` 컬럼 유무로 판단하는 두 곳을 `embedding_k` 로 바꿀 것: 회사 브라우즈/사이트맵의 '깡통 회사' 필터(`.not("embedding","is",null)`)와 `notice.ts` 의 `has_embedding`. 안 바꾸면 신규 회사·공고가 전부 '벡터 없음'으로 사이트맵에서 빠진다(Task 5 보고).
+- 같은 이유로 백엔드에도 openai-only 스팟 두 곳이 더 있다: `jobs/ingest_bid_participants.py`(`.not_.is_("embedding","null")` — 이 조건으로 참가업체 수집 대상 회사를 고른다)와 `jobs/evaluate_recommendations.py:71`(`fetch_candidate_companies` 의 같은 필터). 컷오버 때 `embedding_k` 로 바꿀 것.
+- `recommend.py` 의 `_row_by_norm`/`_pick_best`(동명 회사 중 하나 고르기)는 `embedded_at` 으로 정렬·우선순위를 매긴다 — kure 로 완전 전환하면 이 정렬 기준도 `embedded_k_at` 으로 바꿔야 한다(안 바꾸면 kure 로 막 임베딩된 회사가 옛 openai 시각 기준으로 밀린다).
 - 협업 경로(`collaborative.fetch_peer_institutions` → `match_companies`)는 현재 꺼져 있음. 되살릴 때 `_k` 분기 필요.

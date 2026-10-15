@@ -36,8 +36,11 @@ async def lifespan(app: FastAPI):
         def warm() -> None:
             from app.services import local_embed
 
-            local_embed._session()
-            logger.info("KURE ONNX 세션 준비 완료")
+            try:
+                local_embed.embed_texts_kure(["워밍업"])
+                logger.info("KURE 세션 준비 완료")
+            except Exception:
+                logger.exception("KURE 워밍 실패 — 첫 요청이 모델 로드를 기다린다")
 
         threading.Thread(target=warm, daemon=True).start()
     yield

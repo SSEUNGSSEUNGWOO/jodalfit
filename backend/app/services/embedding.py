@@ -9,7 +9,7 @@ from app.core.config import get_settings
 
 DIMS = {"openai": 1536, "kure": 1024}
 CACHE_TABLE = "text_embeddings"
-CACHE_LOOKUP_CHUNK = 500  # in_ 필터 URL 길이 한계(sha1 40자 × N) — 500 이면 ~21KB
+CACHE_LOOKUP_CHUNK = 150  # PostgREST URL 길이 ~7KB 안전선 — compute_company_vectors EMB_PAGE 와 같은 근거
 
 
 def dim(space: str | None = None) -> int:
@@ -49,7 +49,9 @@ def _cached(
     misses = [s for s in uniq if s not in hits]
     if misses:
         fresh = dict(zip(misses, embed([by_sha[s] for s in misses])))
-        store(fresh)
+        fresh_items = list(fresh.items())
+        for i in range(0, len(fresh_items), CACHE_LOOKUP_CHUNK):
+            store(dict(fresh_items[i : i + CACHE_LOOKUP_CHUNK]))
         hits.update(fresh)
     return [hits[s] for s in shas]
 
