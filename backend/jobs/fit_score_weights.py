@@ -4,6 +4,7 @@
   uv run python -m jobs.evaluate_recommender --as-of 2026-08-01 --dump-features --run-id feat-0801
   uv run python -m jobs.fit_score_weights data/recommender_eval/feat-0801 data/recommender_eval/feat-0901 [...]
     → 첫 run 으로 적합, 나머지 run 에서 held-out 평가. 지표는 자격 통과 풀 안에서의 recall@30/@5·MRR(회사 macro).
+    주의: features.csv 의 industry_tokens 는 2026-10-15 부터 점수가 아니라 일치 개수(≤3)다 — 그 전 덤프는 이 도구와 안 맞는다.
 
 원리: 특징을 회사 안에서 중심화(회사 평균 빼기)한 뒤 로지스틱 회귀 → 회사 간 유사도 수준 차이에 휘둘리지 않는
 '같은 회사 안에서 어느 후보가 낙찰 공고인가' 계수. 계수를 유사도 1%p = 1점 기준으로 환산해 5점 단위 점수표로 만든다.
@@ -24,8 +25,8 @@ BIN = ["institution", "instt_closed", "instt_open", "region", "budget", "budget_
 NAMES = ["sim"] + BIN + ["ind_tokens"]
 
 # 운영 점수표 (score.py 와 같아야 한다). 비교 기준.
-CURRENT = dict(institution=40, instt_closed=-10, instt_open=0, region=30, budget=5, budget_mismatch=-5, deadline_urgent=-30,
-               deadline_ok=0, industry_name_match=0, has_allowed=0, ind_tokens=10)
+CURRENT = dict(institution=12, instt_closed=-3, instt_open=0, region=9, budget=2, budget_mismatch=-2, deadline_urgent=-9,
+               deadline_ok=0, industry_name_match=0, has_allowed=0, ind_tokens=3)  # 2026-10-15 배율 0.3 (exp-2026-10-15-score-kure.md)
 
 
 def load(run: str) -> dict[str, list[dict]]:
@@ -40,7 +41,7 @@ def _on(r: dict, k: str) -> float:
 
 
 def feats(r: dict) -> list[float]:
-    return [float(r["sim"]) * 100] + [_on(r, k) for k in BIN] + [min(float(r.get("industry_tokens", 0) or 0) / 10, 3)]
+    return [float(r["sim"]) * 100] + [_on(r, k) for k in BIN] + [min(float(r.get("industry_tokens", 0) or 0), 3)]
 
 
 def metrics(by: dict, scorer) -> dict:
@@ -67,7 +68,7 @@ def metrics(by: dict, scorer) -> dict:
 def points_scorer(table: dict):
     def f(rows):
         return [100 * float(r["sim"]) + sum(table[k] * _on(r, k) for k in BIN)
-                + table["ind_tokens"] * min(float(r.get("industry_tokens", 0) or 0) / 10, 3) for r in rows]
+                + table["ind_tokens"] * min(float(r.get("industry_tokens", 0) or 0), 3) for r in rows]
     return f
 
 

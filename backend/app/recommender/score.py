@@ -4,6 +4,11 @@
 label은 그대로 프론트 배지가 되고(Phase 3), points 합이 raw score.
 스케일: 벡터 유사도 0~100 기준. 프론트 표시용 정규화는 pipeline에서.
 
+2026-10-15 KURE 전환 후 보너스 전체를 0.3 배로 — docs/recommender/exp-2026-10-15-score-kure.md.
+KURE 는 회사 안 1~30위 유사도 폭이 OpenAI 의 0.64 배라 같은 보너스가 상대적으로 세진다. 특징 파일 위에서 배율을 훑어
+세 시점 모두 0.2~0.35 에서 꼭짓점, 하네스 확인에서 MRR 이 3/3 상승(0.161→0.172, 0.188→0.202, 0.241→0.250).
+항목 간 비율은 아래 2026-10-14 값 그대로(기관 40→12, 유사 회사 기관 30→9, 지역 30→9, 토큰 3/개≤9, 예산 ±2, 고정 거래처 −3, 마감 −9).
+
 점수표는 2026-10-14 채점표(과거 낙찰 held-out, 3개 시점)로 재보정했다 — docs/recommender/exp-2026-10-14-score.md.
 핵심: 보너스가 유사도를 압도하고 있었다. 재출현 기관 50→40, 예산대 20→5, 예산 괴리 −15→−5, 고정 거래처 −20→−10,
 '신규 진입 열린 기관' +15 와 '검토 여유' +10 은 예측력이 없어 제거. 지역 30, 업종·물품 토큰 10/개(≤30), 마감 임박 −30 유지.
@@ -41,11 +46,11 @@ def score_notice(
 
     instt = (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
     if instt and instt in company_institutions:
-        breakdown.append({"key": "institution", "label": "재출현 기관", "points": 40, "instt": instt})
+        breakdown.append({"key": "institution", "label": "재출현 기관", "points": 12, "instt": instt})
     elif instt and peer_instt_counts and peer_instt_counts.get(instt, 0) >= 2:
         # 재출현(+50)과 스택 방지 — 미거래 기관만. 1건짜리 기관은 노이즈라 2건+만,
         # 점수는 재출현(50)보다 낮은 보조 시그널로
-        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": 30, "peer_awards": peer_instt_counts[instt]})
+        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": 9, "peer_awards": peer_instt_counts[instt]})
 
     if instt and instt_stats and instt in instt_stats:
         st = instt_stats[instt]
@@ -53,27 +58,27 @@ def score_notice(
         if total >= 10:
             repeat_ratio = 1 - (st.get("distinct_winners") or 0) / total
             if repeat_ratio >= 0.5:
-                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": -10, "repeat_ratio": round(repeat_ratio, 2)})
+                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": -3, "repeat_ratio": round(repeat_ratio, 2)})
             # '신규 진입 열린 기관'(repeat_ratio ≤ 0.25, +15) 은 낙찰 예측력이 없어(lift 0.79) 제거
 
     sido = company_rgn.split()[0] if company_rgn else None
     if sido and r.get("prtcpt_psbl_rgn_nm") and sido in r["prtcpt_psbl_rgn_nm"]:
-        breakdown.append({"key": "region", "label": "지역 매칭", "points": 30, "rgn": sido})
+        breakdown.append({"key": "region", "label": "지역 매칭", "points": 9, "rgn": sido})
 
     if company_amt_median and company_amt_median > 0:
         price = r.get("presmpt_prce") or r.get("asign_bdgt_amt")
         if price and price > 0:
             ratio = price / company_amt_median
             if 0.7 <= ratio <= 1.5:
-                breakdown.append({"key": "budget", "label": "예산대 매칭", "points": 5, "ratio": round(ratio, 2)})
+                breakdown.append({"key": "budget", "label": "예산대 매칭", "points": 2, "ratio": round(ratio, 2)})
             elif ratio < 0.1 or ratio > 10.0:
-                breakdown.append({"key": "budget_mismatch", "label": "예산대 괴리", "points": -5, "ratio": round(ratio, 2)})
+                breakdown.append({"key": "budget_mismatch", "label": "예산대 괴리", "points": -2, "ratio": round(ratio, 2)})
 
     if company_terms:
         notice_terms = _tokenize(r.get("bidprc_psbl_indstryty_nm")) | _tokenize(r.get("bid_ntce_nm"))
         overlap = sorted(company_terms & notice_terms)
         if overlap:
-            pts = min(10 * len(overlap), 30)
+            pts = min(3 * len(overlap), 9)
             breakdown.append({"key": "industry_tokens", "label": "업종·물품 일치", "points": pts, "matched": overlap[:5]})
 
     clse = r.get("bid_clse_date")
@@ -81,7 +86,7 @@ def score_notice(
         clse_dt = date.fromisoformat(clse) if isinstance(clse, str) else clse
         days_left = (clse_dt - today).days
         if days_left <= 1:
-            breakdown.append({"key": "deadline_urgent", "label": "마감 임박", "points": -30, "days_left": days_left})
+            breakdown.append({"key": "deadline_urgent", "label": "마감 임박", "points": -9, "days_left": days_left})
         # '검토 여유'(6~14일, +10) 은 낙찰 예측력이 없어(lift 0.75) 제거
 
     return sum(b["points"] for b in breakdown), breakdown

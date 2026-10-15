@@ -293,7 +293,8 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
                    "has_allowed": int(bool(allowed.strip())), "industry_name_match": int(any(n in allowed for n in prof["names"])),
                    "instt_known": int(bool(instts)), "n_names": len(prof["names"])}
             for b in bd:
-                row[b["key"]] = b["points"]
+                # 토큰 일치는 점수가 아니라 개수로 — 점수표 배율을 바꿔도 특징이 안 변하게(2026-10-15, matched 는 5개 캡).
+                row[b["key"]] = min(len(b.get("matched") or []), 3) if b["key"] == "industry_tokens" else b["points"]
             features_out.append(row)
     passed.sort(key=lambda r: r["score_raw"], reverse=True)
     scored = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in passed]
