@@ -75,7 +75,7 @@ g.append(node(*n5, NW, "매칭 · 자격", "가까운 100건 · 면허·지역 �
 g.append(f'<text x="{n5[0]+NW+12}" y="{r2y+NH/2-8}" font-size="11" fill="{MUTE}" {F}>통과 88</text>')
 g.append(f'<text x="{n5[0]+NW/2+10}" y="{r2y+NH+40}" font-size="11" fill="{MUTE}" {F}>미충족 12</text>')
 g.append(node(*n6, NW, "점수 · 정렬", "기관 · 지역 · 예산 · 마감 · 다양성", "sort", "#e8efff", "#2f6bf6"))
-g.append(node(n6[0], r3y, NW, "결과 30건", "행마다 왜 남았나", "check", "#eaf7ee", "#1a8a4a"))
+g.append(node(n6[0], r3y, NW, "결과 30건", "행마다 추천 근거", "check", "#eaf7ee", "#1a8a4a"))
 g.append(node(n5[0], r3y, NW, "제외 12건", "면허 9 · 지역 3", "x", "#f1f1ef", "#8a8a86", muted=True))
 g.append("</svg>")
 canvas = "".join(g)

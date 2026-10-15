@@ -85,7 +85,7 @@ def detail(r, compact=False):
             f'<div class="dt2">{esc(r["bid_ntce_nm"])}</div>'
             f'<div class="kv"><div><b>마감</b>{d.month}.{d.day:02d} · D-{n}</div><div><b>추정가</b>{won(r.get("presmpt_prce"))}</div>'
             f'<div><b>자격</b>{q}</div><div><b>적합</b>{round(float(r["score"]) * 100)} / 100</div></div>'
-            f'<div class="sub">왜 남았나</div><div class="bars">{bar_html}</div>'
+            f'<div class="sub">추천 근거</div><div class="bars">{bar_html}</div>'
             f'<div class="sub">진행 단계</div><div class="life">{life_html}</div>'
             f'<div class="acts"><a class="bt dark" href="{esc(r.get("bid_ntce_url"))}" target="_blank" rel="noopener">나라장터에서 보기</a><a class="bt" href="#">검토 인장</a></div>'
             f'</div>')
@@ -102,7 +102,7 @@ def layout_a(res, login):
     vis = res if login else res[:5]
     hid = [] if login else res[5:]
     parts = [row_a(i, r, sel=(i == 1), stamp=(login and i == 2)) for i, r in enumerate(vis, 1)]
-    parts.insert(1, detail(res[0]))  # 1행 펼침: '왜 남았나'
+    parts.insert(1, detail(res[0]))  # 1행 펼침: '추천 근거'
     rows = "".join(parts)
     gated = ""
     if hid:

@@ -68,7 +68,7 @@ def table(res, prof):
                      f'<span class="r">{won(r.get("presmpt_prce"))}</span><span class="r fit"><i><b style="width:{round(float(r["score"]) * 100)}%"></b></i>{round(float(r["score"]) * 100)}</span></div>'))
     r0 = res[0]; org0 = r0.get("dmnd_instt_nm") or ""
     ql = "".join(f'<li class="{c}">{t}</li>' for c, t in qual_lines(r0, prof)); wl = "".join(f"<li>{w}</li>" for w in why_lines(r0, org0))
-    x = (f'<div class="x"><div><span class="k">낼 수 있나</span><ul>{ql}</ul></div><div><span class="k">왜 남았나</span><ul>{wl}</ul></div>'
+    x = (f'<div class="x"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
          f'<div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div>'
          f'<div class="acts"><a class="bt dark" href="{esc(r0["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a></div></div></div>')
     gate = (f'<div class="gateline"><b>나머지 {len(res) - 5}건은 이메일로.</b><span class="dim">처음 5건은 누구나, 전부는 이메일 하나로. 비밀번호 없음.</span><span class="sp"></span>'

@@ -96,7 +96,7 @@ def sheet(d, prof, row_db):
     r0 = res[0]; org0 = r0.get("dmnd_instt_nm") or r0.get("ntce_instt_nm") or ""
     ql = "".join(f'<li class="{c}">{t}</li>' for c, t in qual_lines(r0, prof)); wl = "".join(f"<li>{w}</li>" for w in why_lines(r0, org0))
     life = "".join(f'<span class="{"on" if k <= 1 else ""}">{s}</span>' for k, s in enumerate(["사전규격", "공고", "입찰", "개찰", "낙찰", "계약"]))
-    x = (f'<div class="x"><div><span class="k">낼 수 있나</span><ul>{ql}</ul></div><div><span class="k">왜 남았나</span><ul>{wl}</ul></div>'
+    x = (f'<div class="x"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
          f'<div><span class="k">진행</span><div class="life">{life}</div><div class="acts"><a class="bt dark" href="{esc(r0["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a></div></div></div>')
     gate = (f'<div class="gateline"><b>나머지 {len(res) - 5}건은 이메일로.</b><span class="dim">처음 5건은 누구나, 전부는 이메일 하나로. 비밀번호 없음.</span><span class="sp"></span>'
             f'<span class="in"><span>you@company.co.kr</span><span class="bt dark">전부 보기</span></span></div>')
@@ -144,7 +144,7 @@ def brief(d, prof, row_db):
                      f'<div class="w">{ws[0] if ws else ""}</div>{{X}}</div><div class="side"><b class="{"hot" if n <= 7 else ""}">D-{n}</b><small>{dd.month}.{dd.day:02d} 마감</small></div></div>'))
     r0 = res[0]
     ql = "".join(f'<li class="{c}">{t}</li>' for c, t in qual_lines(r0, prof)); wl = "".join(f"<li>{w}</li>" for w in why_lines(r0, r0.get("dmnd_instt_nm") or ""))
-    x = (f'<div class="x"><div><span class="k">낼 수 있나</span><ul>{ql}</ul></div><div><span class="k">왜 남았나</span><ul>{wl}</ul></div>'
+    x = (f'<div class="x"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
          f'<div class="acts"><a class="bt dark" href="{esc(r0["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a><span class="dim" style="font-size:12px;margin-left:6px">단계: 공고 중 (2/6)</span></div></div>')
     ents = [e.replace("{X}", x if i == 0 else "") for i, e in enumerate(ents)]
     gate = f'<div class="gate"><b>나머지 {len(res) - 5}건은 이메일로.</b><br><span class="dim">처음 5건은 누구나, 전부는 이메일 하나로. 비밀번호 없이 링크 한 번. 검토 인장과 회사가 기억됩니다.</span><div class="in"><span>you@company.co.kr</span><span class="bt dark">전부 보기</span></div></div>'

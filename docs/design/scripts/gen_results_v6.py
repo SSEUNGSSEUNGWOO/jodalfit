@@ -117,7 +117,7 @@ def detail(r, prof):
     org = r.get("dmnd_instt_nm") or ""
     ql = "".join(f'<li class="{c}">{t}</li>' for c, t in qual_lines(r, prof))
     wl = "".join(f"<li>{w}</li>" for w in why_lines(r, org))
-    return (f'<div class="x"><div><span class="k">낼 수 있나</span><ul>{ql}</ul></div><div><span class="k">왜 남았나</span><ul>{wl}</ul></div>'
+    return (f'<div class="x"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
             f'<div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div>'
             f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a></div></div></div>')
 

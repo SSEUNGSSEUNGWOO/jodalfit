@@ -68,8 +68,8 @@ def detail(r, prof):
     return (f'<div class="det"><div class="dh"><span class="tag">{esc(r.get("bsns_div_nm"))}</span><span class="m">{esc(org)}</span><span class="sp"></span>'
             f'<span class="m">마감 {d.month}.{d.day:02d} · D-{n} · 추정가 {won(r.get("presmpt_prce"))}</span></div>'
             f'<div class="dt2">{esc(r["bid_ntce_nm"])}</div>'
-            f'<div class="cols"><div><div class="sub">낼 수 있나</div><ul class="ql">{lic_line}{rgn_line}{size_line}</ul></div>'
-            f'<div><div class="sub">왜 남았나</div><ul class="wl">{why_html}</ul></div></div>'
+            f'<div class="cols"><div><div class="sub">참가 자격</div><ul class="ql">{lic_line}{rgn_line}{size_line}</ul></div>'
+            f'<div><div class="sub">추천 근거</div><ul class="wl">{why_html}</ul></div></div>'
             f'<div class="sub">진행 단계</div><div class="life">{life_html}</div>'
             f'<div class="acts"><a class="bt dark" href="{esc(r.get("bid_ntce_url"))}" target="_blank" rel="noopener">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt ghost" href="#">안 맞아요</a>'
             f'<span class="hint">"안 맞아요"는 왜 아닌지 한 줄 받아 추천에 반영합니다</span></div></div>')
@@ -167,7 +167,7 @@ def page(d, prof, row_db):
 <div class="nav"><div class="brand"><i></i>조달핏</div><div class="pillnav"><span class="on">추천</span><span>검토함</span><span>개선 기록</span></div>
 <div class="acct"><span class="chip only-guest">이메일로 전부 보기</span><span class="chip only-login"><i>J</i>{ACCOUNT}</span><span class="chip only-login">검토함 3</span></div></div>
 <div class="wrap">{"".join(vs)}
-<div class="note"><b>흐름</b> 검색 → 회사 카드(걸러낸 기준 · 맞아요/수정) → 남은 공고(근거 칩) → 펼침(낼 수 있나 → 왜 남았나 → 단계 → 검토/안 맞아요) · 비로그인 5건 게이트 · 사전규격·발주계획은 탭 · 숫자·공고명은 2026-10-15 실제 추천 결과</div>
+<div class="note"><b>흐름</b> 검색 → 회사 카드(걸러낸 기준 · 맞아요/수정) → 남은 공고(근거 칩) → 펼침(참가 자격 → 추천 근거 → 단계 → 검토/안 맞아요) · 비로그인 5건 게이트 · 사전규격·발주계획은 탭 · 숫자·공고명은 2026-10-15 실제 추천 결과</div>
 </div></div>
 <div class="sw"><div class="g"><em>상태</em><span data-ss="guest">비로그인 첫 방문</span><span data-ss="login">로그인</span><span data-ss="edit">회사 정보 수정 중</span></div></div>
 """

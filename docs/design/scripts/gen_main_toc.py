@@ -42,7 +42,7 @@ page = f'''<div class="page"><div class="wash"></div>
 <p class="lede">회사명 하나면 등록업종·공급물품·수주 이력을 읽어 오늘 공고 전부를 걸러냅니다. 회원가입 없이 바로.</p>
 <div class="search" id="hs"><span class="ph" id="hph">회사명 또는 사업자번호 10자리</span><span class="bt" id="hbt">읽기</span></div>
 <div class="sub">회사가 없으면 <u>키워드로</u></div>
-<svg class="cur" id="cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10 20z" fill="#141414" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg><div class="pop" id="pop"><b>왜 남았나 · 적합 77</b>공고의 과업(교육 콘텐츠·이러닝 유지관리)이 등록업종·공급물품과 겹칩니다. 조달청은 이 분야 반복 발주 기관입니다.<div class="tags"><span>업종 겹침 +28</span><span>물품 겹침 +22</span><span>반복 기관 +12</span></div></div>
+<svg class="cur" id="cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10 20z" fill="#141414" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg><div class="pop" id="pop"><b>추천 근거 · 적합 77</b>공고의 과업(교육 콘텐츠·이러닝 유지관리)이 등록업종·공급물품과 겹칩니다. 조달청은 이 분야 반복 발주 기관입니다.<div class="tags"><span>업종 겹침 +28</span><span>물품 겹침 +22</span><span>반복 기관 +12</span></div></div>
 <div class="peek">{gl.window(gate=False, n_clear=5)}</div></div>
 
 <div class="plat"><div class="head"><span class="tag">플랫폼</span>

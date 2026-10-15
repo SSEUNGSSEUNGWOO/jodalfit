@@ -49,7 +49,7 @@ main = f'''<div class="w main"><div class="tb"><i></i><i></i><i></i><span class=
 <div class="h"><h1 id="h1">오늘 {N:,}건. <span style="color:#8a8a86;font-weight:450">회사명을 넣으면 볼 것만 남깁니다.</span></h1><small>05:00 갱신</small></div>
 <div class="chips" id="chips" style="opacity:0"><span class="on">전체 {TOP}</span><span>7일 내 마감 {n7}</span><span>1억 이상 {nB}</span><span>검토 인장 1</span></div>
 <div class="th"><span>#</span><span>공고</span><span>발주기관</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div>
-{tr(1,i0)}<div class="why" id="why"><div><b>왜 남았나</b> — 교육 콘텐츠·이러닝 유지관리 과업이 등록업종·공급물품과 겹칩니다. {rows[i0][1]}은 이 분야 반복 발주 기관(최근 1년 3건).<div class="acts"><span id="stamp">검토 인장</span><span>상세 분석</span><span class="p">나라장터 원문 ↗</span></div></div></div>
+{tr(1,i0)}<div class="why" id="why"><div><b>추천 근거</b> — 교육 콘텐츠·이러닝 유지관리 과업이 등록업종·공급물품과 겹칩니다. {rows[i0][1]}은 이 분야 반복 발주 기관(최근 1년 3건).<div class="acts"><span id="stamp">검토 인장</span><span>상세 분석</span><span class="p">나라장터 원문 ↗</span></div></div></div>
 {"".join(tr(k+2,i) for k,i in enumerate(top[1:5]))}
 <div class="gate" id="gate" style="opacity:0"><div class="rows">{"".join(tr(k+6,i) for k,i in enumerate(top[5:8]))}</div><div class="cover"><div class="gcard"><b>나머지 {TOP-5}건은 이메일로 열립니다</b><p>비밀번호 없음 · 메일 링크가 로그인 · 아침 7시에 새로 남은 것만</p><div class="in"><span>name@company.co.kr</span><span>{TOP-5}건 열기</span></div></div></div></div>
 </div><svg class="cur" id="cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10 20z" fill="#141414" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>'''
@@ -102,6 +102,6 @@ loop();
 
 html = f'''<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>{CSS} .hw h2 {{ margin:0 0 4px; font-size:20px }} .hw p.sub {{ margin:0 0 16px; font-size:13px; color:#555; line-height:1.6 }}</style>
-<div class="lg hw"><h2>히어로 — 실제 웹이 가운데</h2><p class="sub">가운데: 실제 조달핏 결과 페이지(헤더 검색 → 회사명 타이핑 → 읽기 → 5건 + 게이트 → 1행 펼쳐 "왜 남았나" → 검토 인장). 왼쪽 위: 아침 7시 메일이 도착. 왼쪽 아래: 오늘 05:00 실행이 단계별로 완료. 오른쪽: 1위 공고의 상세 페이지. 패럴랙스 없음, 약 16초 주기 반복.</p>
+<div class="lg hw"><h2>히어로 — 실제 웹이 가운데</h2><p class="sub">가운데: 실제 조달핏 결과 페이지(헤더 검색 → 회사명 타이핑 → 읽기 → 5건 + 게이트 → 1행 펼쳐 "추천 근거" → 검토 인장). 왼쪽 위: 아침 7시 메일이 도착. 왼쪽 아래: 오늘 05:00 실행이 단계별로 완료. 오른쪽: 1위 공고의 상세 페이지. 패럴랙스 없음, 약 16초 주기 반복.</p>
 <div class="scene">{main}{mail}{runw}{det}</div>{JS}</div>'''
 open(out, "w", encoding="utf-8").write(html); print("written", len(html))

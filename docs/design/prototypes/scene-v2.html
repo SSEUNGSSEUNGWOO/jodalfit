@@ -1,0 +1,286 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 — 일하는 장면 + 결과</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>
+* { box-sizing:border-box } body { margin:0; background:#fff; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+a { color:inherit; text-decoration:none } .dim { color:#6b6b67 } .mute { color:#8f8f8b } .acc { color:#e8431b }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:700; font-size:14.5px } .brand i { width:7px; height:7px; border-radius:50%; background:#e8431b; display:inline-block }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+.k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+.ok::after { content:"✓"; color:#1f5f3a; font-weight:700; margin-left:6px } .warn::after { content:"!"; color:#e8431b; font-weight:700; margin-left:6px }
+.bt { display:inline-flex; align-items:center; height:36px; padding:0 14px; border-radius:8px; border:1px solid #e3e1dc; font-size:13px; font-weight:600; background:#fff } .bt.dark { background:#141414; color:#fff; border-color:#141414 } .bt.txt { border:0; padding:0 4px; color:#55554f; font-weight:500 } .bt.txt u { text-decoration:none; border-bottom:1px solid #d8d6d0 }
+
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.head { padding:28px 0 22px; border-bottom:1px solid #141414 }
+.head h1 { margin:0; font-size:30px; letter-spacing:-0.035em; font-weight:650; line-height:1.15 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head .meta { margin-top:8px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.head .ind { margin-top:14px; font-size:13.5px; line-height:1.7; max-width:880px } .head .ind b { font-weight:600 } .head .ind .k { margin-right:10px }
+.head .act { margin-top:14px; display:flex; align-items:center; gap:14px; font-size:13px; color:#55554f } .head .act .q { color:#e8431b; font-weight:600 }
+.count { display:flex; align-items:flex-end; justify-content:space-between; padding:26px 0 14px }
+.count .n { font-size:44px; letter-spacing:-0.04em; font-weight:650; line-height:1 } .count .n small { font-size:14px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:10px }
+.count .f { display:flex; gap:20px; font-size:13px; color:#6b6b67 } .count .f b { color:#141414; font-weight:600; border-bottom:1px solid #141414; padding-bottom:2px }
+.th, .tr { display:grid; grid-template-columns:36px minmax(0,1fr) 200px 180px 92px 88px 60px; gap:0 16px; align-items:baseline }
+.th { padding:10px 0 8px; border-bottom:1px solid #141414; font-size:11px; letter-spacing:.06em; color:#737370; font-weight:600 }
+.tr { padding:15px 0; border-bottom:1px solid #ececea; font-size:14px; cursor:pointer } .tr:hover .t { color:#e8431b }
+.tr .no { font-size:12px; color:#8f8f8b } .tr .t { font-weight:550; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em }
+.tr .org, .tr .why { font-size:13px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .why { color:#6b6b67 }
+.tr .r { text-align:right } .tr .d { font-weight:600 } .tr .d.hot { color:#e8431b } .tr .d small { color:#737370; font-weight:450; margin-left:6px }
+.tr .fit { font-weight:600 } .tr .fit i { display:inline-block; width:26px; height:3px; background:#e6e4df; margin-right:8px; vertical-align:middle; position:relative } .tr .fit i b { position:absolute; left:0; top:0; height:100%; background:#141414 }
+.x { padding:22px 0 26px 52px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:1.1fr 1.2fr .8fr; gap:40px }
+.x .k { display:block; margin-bottom:10px } .x ul { margin:0; padding:0; list-style:none } .x li { font-size:13.5px; line-height:1.65; padding:4px 0; color:#333 } .x li.todo { color:#737370 }
+.x .life { display:flex; gap:0; margin-top:4px } .x .life span { flex:1; font-size:11.5px; color:#8f8f8b; padding-top:8px; border-top:2px solid #ececea } .x .life span.on { color:#141414; border-top-color:#141414 }
+.x .acts { margin-top:18px; display:flex; gap:8px; flex-wrap:wrap }
+.fade .tr { opacity:.32; filter:blur(1.5px); pointer-events:none }
+.gateline { display:flex; align-items:center; gap:14px; padding:22px 0; border-bottom:1px solid #141414; font-size:14px } .gateline b { font-weight:650 } .gateline .sp { flex:1 } .gateline .in { display:flex; gap:6px } .gateline .in span:first-child { width:260px; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
+.foot { margin-top:28px; font-size:12px; color:#737370 }
+
+.nav { padding:22px 0 }
+.reveal { opacity:0; transform:translateY(10px); transition:opacity .6s ease var(--d,0s), transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s) } .in .reveal { opacity:1; transform:none }
+@media (prefers-reduced-motion: reduce) { .reveal, .rib path { transition:none !important; opacity:1 !important; transform:none !important } }
+.fh { padding:26px 0 0 } .fh .co { font-size:14px; color:#55554f; display:flex; align-items:baseline; gap:10px } .fh .co b { color:#141414; font-size:17px; font-weight:650; letter-spacing:-0.01em } .fh .co .sp { flex:1 } .fh .co .new { color:#e8431b; font-weight:600 }
+/* 깔때기 — 마지막 칸이 주인공 */
+.fun { display:grid; grid-template-columns:1fr 1fr 1fr 1.5fr; margin-top:20px; border-top:1px solid #141414; align-items:end }
+.fun > div { padding:18px 18px 16px 0; position:relative } .fun > div + div { padding-left:20px } .fun > div.step { cursor:pointer }
+.fun .k { display:block } .fun .n { margin-top:6px; font-size:30px; letter-spacing:-0.035em; font-weight:600; line-height:1; font-variant-numeric:tabular-nums; color:#55554f }
+.fun .n small { font-size:12.5px; color:#8f8f8b; font-weight:450; letter-spacing:0; margin-left:5px }
+.fun .last { padding-left:26px; border-left:1px solid #141414 } .fun .last .n { font-size:72px; letter-spacing:-0.05em; font-weight:700; color:#e8431b } .fun .last .n small { font-size:16px; color:#6b6b67 }
+.fun .why { margin-top:7px; font-size:12.5px; color:#6b6b67; line-height:1.5; max-width:230px } .fun .last .why { font-size:13.5px; color:#55554f; max-width:320px }
+.fun .step .why u { text-decoration:none; border-bottom:1px solid #d8d6d0; color:#141414 } .fun .step:hover .why u { border-color:#141414 }
+.fun .step.open { background:#faf9f6; border-radius:6px 6px 0 0 }
+.fun .arw { position:absolute; right:8px; bottom:22px; color:#c9c9c4; font-size:13px }
+.rib { height:26px; margin-top:0 } .rib svg { width:100%; height:100%; display:block } .rib path { fill:none; stroke:#141414; stroke-width:1; opacity:.25 } .rib path.acc { stroke:#e8431b; opacity:1; stroke-width:1.5 }
+.crit { display:none; border-top:1px solid #141414; border-bottom:1px solid #e6e4df; padding:18px 0 16px; grid-template-columns:1.2fr 1fr auto; gap:28px; align-items:start } .crit.open { display:grid }
+.crit .k { display:block; margin-bottom:8px } .crit .txt { font-size:13.5px; line-height:1.75; color:#333 } .crit .txt b { font-weight:600 } .crit .txt .dim { color:#8f8f8b }
+.crit .act { display:flex; flex-direction:column; gap:8px; align-items:flex-end } .crit .act .mute { font-size:11.5px }
+.count { padding:20px 0 10px } .count .f { font-size:13px; color:#6b6b67 } .count .f b { color:#141414; font-weight:600; border-bottom:1px solid #141414; padding-bottom:2px } .count .f span + span { margin-left:16px }
+/* 게이트 B — 분량은 보이고 가치는 가림 */
+.lead { border-top:1px solid #141414; padding:0 }
+.lead .tr { background:#faf9f6; margin:0 -14px; padding:15px 14px; border-radius:6px 6px 0 0; border-bottom:0 }
+.lead .x { background:#faf9f6; margin:0 -14px; padding:18px 14px 22px 52px; border-radius:0 0 6px 6px; border-bottom:0 }
+.lead .tag1 { display:inline-block; margin-bottom:8px; font-size:11px; letter-spacing:.06em; font-weight:600; color:#e8431b }
+.locked .tr { cursor:default } .locked .tr .t { color:#8f8f8b; filter:blur(0.35px) }
+.locked .tr span:not(.t) { color:transparent !important; position:relative }
+.locked .tr span:not(.t) > * { visibility:hidden }
+.locked .tr span:not(.t)::after { content:""; position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:9px; background:#ececea; border-radius:2px }
+.locked .tr .r::after { left:auto; width:58px; right:0 }
+.locked .tr .no::after { width:18px } .locked .tr .fit::after { width:44px }
+.gate2 { display:flex; align-items:center; gap:16px; padding:20px 0 22px; border-top:1px solid #141414; margin-top:-1px }
+.gate2 b { font-size:15.5px; font-weight:650; letter-spacing:-0.01em } .gate2 .dim { font-size:13px } .gate2 .sp { flex:1 }
+.gate2 .in { display:flex; gap:6px } .gate2 .in span:first-child { width:280px; height:38px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#8f8f8b; font-size:13px }
+.sw { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; gap:4px; padding:6px 8px; background:#141414; color:#c9c9c4; border-radius:999px; box-shadow:0 20px 40px -20px rgba(0,0,0,.6); font-size:12.5px } .sw span { padding:6px 11px; border-radius:999px; cursor:pointer } .sw span.on { background:#fff; color:#141414; font-weight:600 }
+.vs { display:none } .vs.on { display:block }
+
+.fh { padding:26px 0 0 }
+.stage { position:relative; height:330px; margin-top:18px; border-top:1px solid #141414; overflow:hidden; transition:height .6s cubic-bezier(.2,.7,.2,1) }
+.stage.done { height:0; border-top:0 }
+.stage.fly { overflow:visible; z-index:30 }
+.cap { position:absolute; left:0; top:22px; z-index:5 }
+.cap .k { font-size:11px; letter-spacing:.08em; color:#737370; font-weight:600; display:block }
+.cap .n { font-size:64px; letter-spacing:-0.05em; font-weight:700; line-height:1; margin-top:6px } .cap .n small { font-size:15px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:8px }
+.cap .n.done { color:#e8431b }
+.cap .sub { margin-top:8px; font-size:13.5px; color:#55554f; min-height:20px }
+.p { position:absolute; width:116px; height:150px; background:#fff; border:1px solid #e3e1dc; border-radius:3px; box-shadow:0 1px 2px rgba(0,0,0,.05), 0 10px 24px -16px rgba(0,0,0,.3); padding:10px 11px; overflow:hidden;
+     transition:transform .55s cubic-bezier(.2,.7,.2,1), opacity .45s ease; will-change:transform, opacity }
+.p .ttl { font-size:8.5px; line-height:1.35; color:#55554f; height:34px; overflow:hidden; font-weight:550 }
+.p .ln { height:2px; background:#ececea; border-radius:1px; margin-top:5px } .p .ln.s { width:62% } .p .ln.m { width:84% }
+.p .stamp { position:absolute; right:7px; bottom:7px; font-size:11.5px; font-weight:700; letter-spacing:.03em; padding:2px 6px; border-radius:3px; opacity:0; transform:rotate(-8deg); transform-origin:center }
+.p .stamp.no { color:#8f8f8b; border:1px solid #e3e1dc } .p .stamp.yes { color:#c8381a; border:1.5px solid #e8431b }
+.p.show .stamp { opacity:1 }
+.p .stamp.punch { animation:stampPunch .35s cubic-bezier(.22,.8,.3,1.2) }
+.p.gone { opacity:0 }
+@keyframes stampPunch { 0% { transform:scale(1.7) rotate(-8deg); opacity:0 } 55% { transform:scale(.9) rotate(-8deg); opacity:1 } 100% { transform:scale(1) rotate(-8deg); opacity:1 } }
+
+.fun > div:not(.filled) .n, .fun > div:not(.filled) .n small { color:#8f8f8b }
+.fun > div:not(.filled) .why, .fun > div:not(.filled) .arw { opacity:0 }
+.fun > div.filled .why, .fun > div.filled .arw { opacity:1; transition:opacity .45s ease }
+.fun > div.step:not(.filled) { pointer-events:none }
+body:not(.login) .only-login { display:none } body.login .only-guest { display:none }
+#resultsWrap { visibility:hidden; opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1) }
+body.revealed #resultsWrap { visibility:visible; opacity:1; transform:none }
+.rib { opacity:0; transition:opacity .6s ease }
+body.revealed .rib { opacity:1 }
+.sw { gap:14px; padding:8px 10px }
+.sw .g { display:flex; gap:4px; align-items:center } .sw .g em { color:#9a9a96; font-style:normal; margin:0 6px 0 4px }
+body.reduced *, body.reduced *::before, body.reduced *::after { transition:none !important; animation:none !important }
+@media (prefers-reduced-motion: reduce) {
+  .p { display:none }
+  .stage { height:0 !important; border-top:0 !important }
+  #resultsWrap { opacity:1 !important; transform:none !important; visibility:visible !important }
+  .rib { opacity:1 !important }
+}
+</style></head><body><div class="wrap"><div class="nav"><div class="brand"><i></i>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div><div class="fh"><div class="co"><b>한종산업개발 주식회사</b><span>경상남도 창원시 마산합포구</span><span class="sp"></span><span class="only-login new">어제 이후 새로 3건</span><span class="only-login">검토함 3</span><span class="only-guest dim">처음 오셨나요? 걸러낸 기준이 맞는지 한 번만 확인해 주세요</span></div><div class="stage" id="stage"><div class="cap"><span class="k" id="capK"></span><div class="n" id="capN" data-v="0"><span id="capV">0</span><small>건</small></div><div class="sub" id="capS"></div></div></div><div class="fun" id="fun"><div class="" ><span class="k">오늘 올라온 공고</span><div class="n"><span class="cnt" data-to="9285">0</span><small>건</small></div><div class="why">나라장터 전체, 마감 90일 이내</div><span class=arw>→</span></div><div class=" step" data-k=ind><span class="k">업종이 맞는 공고</span><div class="n"><span class="cnt" data-to="831">0</span><small>건</small></div><div class="why">등록업종 15개 중 하나 허용<br><u>기준 보기</u></div><span class=arw>→</span></div><div class=" step" data-k=qual><span class="k">자격이 되는 공고</span><div class="n"><span class="cnt" data-to="385">0</span><small>건</small></div><div class="why">면허·지역 제한 통과<br><u>기준 보기</u></div><span class=arw>→</span></div><div class="last" ><span class="k">검토할 공고</span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div><div class="why">회사 설명과 과거 수주 이력에 가장 가까운 순서</div></div></div><div class="rib"><svg viewBox="0 0 100 26" preserveAspectRatio="none"><path class="" d="M 11.11,4.00 C 22.22,4.00 22.22,9.28 33.33,9.28"/><path class="" d="M 33.33,9.28 C 44.44,9.28 44.44,10.97 55.56,10.97"/><path class="acc" d="M 55.56,10.97 C 69.44,10.97 69.44,18.56 83.33,18.56"/></svg></div><div class="crit" data-k="ind"><div><span class="k">등록업종 15 · 대표 기타자유업종</span><div class="txt">기타자유업종, 가축분뇨시설관리업, 건설엔지니어링업, 공공하수도 관리대행업, 공공하수도 관리대행업, 산업·환경설비공사업, 시설물관리를 전문으로 하는 자, 엔지니어링사업, 엔지니어링사업, 엔지니어링사업 <span class="dim">외 5</span></div></div><div><span class="k">공급물품</span><div class="txt"><span class="dim">등록 없음</span> — 물품 공고를 받으려면 추가가 필요합니다</div></div><div class="act"><a class="bt dark" href="#">맞아요</a><a class="bt txt" href="#"><u>업종·물품 수정 요청</u></a><span class="mute">나라장터 업체정보 · 10.14 갱신</span></div></div><div class="crit" data-k="qual"><div><span class="k">지역</span><div class="txt">본사 <b>경상남도 창원시 마산합포구</b> · 지역 제한 공고는 경상남도 기준으로 판정</div><span class="k" style="margin-top:12px">면허</span><div class="txt">공고가 요구하는 면허 그룹마다 등록업종 중 하나가 들어가면 통과</div></div><div><span class="k">규모</span><div class="txt"><span class="dim">미입력</span> — 소기업·중소기업 제한 공고 판정에 쓰입니다<br><span class="dim">사업자 상태</span> 계속사업자 · <span class="dim">제재</span> 없음</div></div><div class="act"><a class="bt dark" href="#">맞아요</a><a class="bt txt" href="#"><u>지역·규모 수정 요청</u></a></div></div></div><div id="resultsWrap"><div class="count"><div class="f"><b>공고 12</b><span>사전규격 12</span><span>발주계획 12</span><span class="mute">|</span><span>이번 주 마감 3</span><span>적합 순</span></div></div><div class="vs on" data-s="guest"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span>근거</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div><div class="lead"><span class="tag1">오늘의 한 건 — 근거까지 공개</span><div class="tr"><span class="no">01</span><span class="t">양산하수처리장 악취저감사업 실시설계용역</span><span class="org">경상남도 양산시 상하수도사업소</span><span class="why">지역 매칭</span><span class="r d hot">D-5<small>10.20</small></span><span class="r">5,808만</span><span class="r fit"><i><b style="width:58%"></b></i>58</span></div><div class="x"><div><span class="k">낼 수 있나</span><ul><li class="ok">면허 — 허용업종 16개 중 엔지니어링사업 외 보유</li><li class="ok">지역 — 경상남도 양산시 제한, 본사 경상남도</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">왜 남았나</span><ul><li>이 기관은 최근 낙찰의 50%를 같은 회사가 가져갔다.</li><li>공고의 지역 제한이 본사 소재지 경상남도와 맞는다.</li><li>추정가가 회사 평균 수주가의 0.01배라 체급 차이가 크다.</li><li>등록업종 표현이 허용업종과 겹친다 — 건설엔지니어링업(설계, 사업관리, 설계등용역.</li><li>공고 내용과 회사 업종 설명의 유사도 71%.</li></ul></div><div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01769297&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a></div></div></div></div><div class="locked"><div class="tr"><span class="no">02</span><span class="t">국가소유(여수 4단계) 공공폐수처리시설 관리대행</span><span class="org">한국환경공단</span><span class="why">업종·물품 일치</span><span class="r d ">D-27<small>11.11</small></span><span class="r">41.2억</span><span class="r fit"><i><b style="width:52%"></b></i>52</span></div><div class="tr"><span class="no">03</span><span class="t">과학문화센터 건립사업 건설사업관리용역</span><span class="org">행정중심복합도시건설청</span><span class="why">업종·물품 일치</span><span class="r d ">D-26<small>11.10</small></span><span class="r">37.2억</span><span class="r fit"><i><b style="width:51%"></b></i>51</span></div><div class="tr"><span class="no">04</span><span class="t">중랑물재생센터 총인처리시설 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-42<small>11.26</small></span><span class="r">36.8억</span><span class="r fit"><i><b style="width:50%"></b></i>50</span></div><div class="tr"><span class="no">05</span><span class="t">군산항 4,5부두 리뉴얼사업 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">36.6억</span><span class="r fit"><i><b style="width:49%"></b></i>49</span></div><div class="tr"><span class="no">06</span><span class="t">중랑물재생센터 일부시설물 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-40<small>11.24</small></span><span class="r">199.7억</span><span class="r fit"><i><b style="width:48%"></b></i>48</span></div><div class="tr"><span class="no">07</span><span class="t">시흥1동 주택가 시·구유 공영주차장 통합·증축 건설사업관리용역(감독권한대행)</span><span class="org">서울특별시 금천구</span><span class="why">업종·물품 일치</span><span class="r d ">D-6<small>10.21</small></span><span class="r">24.6억</span><span class="r fit"><i><b style="width:48%"></b></i>48</span></div><div class="tr"><span class="no">08</span><span class="t">청주공항 국내선 및 지원시설 증축 건설사업관리용역</span><span class="org">한국공항공사</span><span class="why">업종·물품 일치</span><span class="r d ">D-20<small>11.04</small></span><span class="r">26.5억</span><span class="r fit"><i><b style="width:48%"></b></i>48</span></div><div class="tr"><span class="no">09</span><span class="t">양산시 공공하수도시설 관리대행용역(협상)</span><span class="org">경상남도 양산시</span><span class="why">재출현 기관</span><span class="r d ">D-26<small>11.10</small></span><span class="r">277.3억</span><span class="r fit"><i><b style="width:47%"></b></i>47</span></div><div class="tr"><span class="no">10</span><span class="t">새만금항 신항 항로 준설공사(2026) 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">20.6억</span><span class="r fit"><i><b style="width:47%"></b></i>47</span></div><div class="tr"><span class="no">11</span><span class="t">신창동 지역주택조합 유탑유블레스 승계공사 건설사업관리</span><span class="org">주택도시보증공사</span><span class="why">업종·물품 일치</span><span class="r d ">D-4<small>10.19</small></span><span class="r">6억</span><span class="r fit"><i><b style="width:47%"></b></i>47</span></div><div class="tr"><span class="no">12</span><span class="t">평택~시흥고속도로 민간투자사업 관리운영위수탁</span><span class="org">제이서해안고속도로주식회사</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">462.3억</span><span class="r fit"><i><b style="width:46%"></b></i>46</span></div></div><div class="gate2"><div><b>나머지 11건의 순서와 근거는 이메일 하나로.</b><br><span class="dim">공고 제목은 지금도 보입니다. 어느 것이 먼저이고 왜 남았는지, 마감과 추정가는 메일 주소를 넣으면 바로 열립니다. 비밀번호 없음.</span></div><span class="sp"></span><span class="in"><span>you@company.co.kr</span><span class="bt dark">순서·근거 보기</span></span></div></div><div class="vs " data-s="login"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span>근거</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div><div class="tr"><span class="no">01</span><span class="t">양산하수처리장 악취저감사업 실시설계용역</span><span class="org">경상남도 양산시 상하수도사업소</span><span class="why">지역 매칭</span><span class="r d hot">D-5<small>10.20</small></span><span class="r">5,808만</span><span class="r fit"><i><b style="width:58%"></b></i>58</span></div><div class="x"><div><span class="k">낼 수 있나</span><ul><li class="ok">면허 — 허용업종 16개 중 엔지니어링사업 외 보유</li><li class="ok">지역 — 경상남도 양산시 제한, 본사 경상남도</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">왜 남았나</span><ul><li>이 기관은 최근 낙찰의 50%를 같은 회사가 가져갔다.</li><li>공고의 지역 제한이 본사 소재지 경상남도와 맞는다.</li><li>추정가가 회사 평균 수주가의 0.01배라 체급 차이가 크다.</li><li>등록업종 표현이 허용업종과 겹친다 — 건설엔지니어링업(설계, 사업관리, 설계등용역.</li><li>공고 내용과 회사 업종 설명의 유사도 71%.</li></ul></div><div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01769297&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a></div></div></div><div class="tr"><span class="no">02</span><span class="t">국가소유(여수 4단계) 공공폐수처리시설 관리대행</span><span class="org">한국환경공단</span><span class="why">업종·물품 일치</span><span class="r d ">D-27<small>11.11</small></span><span class="r">41.2억</span><span class="r fit"><i><b style="width:52%"></b></i>52</span></div><div class="tr"><span class="no">03</span><span class="t">과학문화센터 건립사업 건설사업관리용역</span><span class="org">행정중심복합도시건설청</span><span class="why">업종·물품 일치</span><span class="r d ">D-26<small>11.10</small></span><span class="r">37.2억</span><span class="r fit"><i><b style="width:51%"></b></i>51</span></div><div class="tr"><span class="no">04</span><span class="t">중랑물재생센터 총인처리시설 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-42<small>11.26</small></span><span class="r">36.8억</span><span class="r fit"><i><b style="width:50%"></b></i>50</span></div><div class="tr"><span class="no">05</span><span class="t">군산항 4,5부두 리뉴얼사업 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">36.6억</span><span class="r fit"><i><b style="width:49%"></b></i>49</span></div><div class="tr"><span class="no">06</span><span class="t">중랑물재생센터 일부시설물 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-40<small>11.24</small></span><span class="r">199.7억</span><span class="r fit"><i><b style="width:48%"></b></i>48</span></div><div class="tr"><span class="no">07</span><span class="t">시흥1동 주택가 시·구유 공영주차장 통합·증축 건설사업관리용역(감독권한대행)</span><span class="org">서울특별시 금천구</span><span class="why">업종·물품 일치</span><span class="r d hot">D-6<small>10.21</small></span><span class="r">24.6억</span><span class="r fit"><i><b style="width:48%"></b></i>48</span></div><div class="tr"><span class="no">08</span><span class="t">청주공항 국내선 및 지원시설 증축 건설사업관리용역</span><span class="org">한국공항공사</span><span class="why">업종·물품 일치</span><span class="r d ">D-20<small>11.04</small></span><span class="r">26.5억</span><span class="r fit"><i><b style="width:48%"></b></i>48</span></div><div class="tr"><span class="no">09</span><span class="t">양산시 공공하수도시설 관리대행용역(협상)</span><span class="org">경상남도 양산시</span><span class="why">재출현 기관</span><span class="r d ">D-26<small>11.10</small></span><span class="r">277.3억</span><span class="r fit"><i><b style="width:47%"></b></i>47</span></div><div class="tr"><span class="no">10</span><span class="t">새만금항 신항 항로 준설공사(2026) 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">20.6억</span><span class="r fit"><i><b style="width:47%"></b></i>47</span></div><div class="tr"><span class="no">11</span><span class="t">신창동 지역주택조합 유탑유블레스 승계공사 건설사업관리</span><span class="org">주택도시보증공사</span><span class="why">업종·물품 일치</span><span class="r d hot">D-4<small>10.19</small></span><span class="r">6억</span><span class="r fit"><i><b style="width:47%"></b></i>47</span></div><div class="tr"><span class="no">12</span><span class="t">평택~시흥고속도로 민간투자사업 관리운영위수탁</span><span class="org">제이서해안고속도로주식회사</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">462.3억</span><span class="r fit"><i><b style="width:46%"></b></i>46</span></div></div></div><div class="foot">장면은 서버 단계 신호에 맞춰 넘어갑니다(여기선 모의). 깔때기는 그 결과로 채워집니다. 재방문·움직임 줄이기 설정에서는 짧은 버전. 숫자·공고명은 2026-10-15 실제 데이터.</div></div><div class="sw"><div class="g"><em>방문</em><span class="on" data-run="full">처음 방문</span><span data-run="revisit">재방문</span><span data-run="reduced">움직임 줄이기</span></div><div class="g"><em>상태</em><span class="on" data-ss="guest">비로그인</span><span data-ss="login">로그인</span></div></div><script type="application/json" id="titles">{"drop_ind": ["데이터분석 소프트웨어 라이선스 갱신", " 각계2교 정밀안전진단용역", "문경농협 산지유통센터 신축공사(건축, 기계설비공사)", "2027년 국가지식자원 통합 플랫폼 유지운영", "상주교육지원청사 외 1기관(유아교육체험센터) 옥상방수 및 기타공사 ", "2026년 하반기 주거환경개선공사 대전", "2027학년도 금파공업고등학교 교복(동복∙하복) 학교주관구매 입찰 공고", "2026년 SAS 소프트웨어 라이선스 갱신", "도내 4개 기업 대상 특허 출원명세서 작성 및 특허 동향 조사 보고서 작성", "상용SW 제3자단가계약((주)코난테크놀로지, Konan RAG-X v3.0(커스터마이징))", "차룡1교 외 1개교 정밀안전진단 및 내진성능평가용역", "KPS-1 버스시스템 모사 시험장치 개발", "2027학년도 부산컴퓨터과학고등학교 신입생 교복(생활복 동·하복)  학교주관구매 입찰 공고(규격가격동시입찰)", "2026년 11월 울산산업고등학교 학교급식용 부식구매 소액수의 견적제출 공고 "], "drop_rgn": ["이현지구 자연재해위험개선지구 정비사업 지하안전평가 용역", "심학초 교사동 냉난방기 전기공사", "2026년 AID사업 AI CUBE 첨단실습실 구축 공사(전기)", "지역경찰관서(안동송하·봉화봉화·청송진보) 내진보강설계용역", "송지 내장지구 가뭄대비 용수개발사업 전기공사", "2026년 하반기 보안등 교체공사", "[대학혁신지원사업] [SMART환경개선] 사회과학관 노후 냉난방설비 교체 공사(전기)", "충추역 3층 맞이방 편의점 전기내선공사", "2026년 화전농공단지 가로등 보수공사", "화순 의생명과학융합센터 노후 냉난방기 교체 전기공사"], "keep": ["2026년 동해바다숲(울진군 봉평리) 유주자액 살포(1년차)", "새만금항 신항 순찰선 건조 전면 책임감리용역", "슈퍼컴퓨팅지원동 기반시설 운영관리 용역", "신창동 지역주택조합 유탑유블레스 승계공사 건설사업관리", "모충초 본관 공간재구조화공사 감독 권한대행 등 건설사업관리용역", "호남고속철도 2단계(고막원~목포) 단권변압기(몰드) 제조설치", "대창면 행정복지센터 건립 감독권한대행 등 건설사업관리 용역", "선부2동 공공복합청사 건립 감독권한대행 등 건설사업관리용역 ", "사천항공산업대교 부대공사 실시설계 용역", "삼천포처리구역 차집관로 정비사업 건설사업관리용역(총괄분)", "동삭동 행정복지센터 및 동삭도서관 건립공사(전기)(장기계속)", "신계배수지외 4개소 무인가압장 감시제어시스템 개량 및 구축사업", "해양무인시스템 시험지원선박 의장 및 전장 설비 제작 및 설치", "바이오슈가 실험설비 안전장치 자율안전확인신고 대행 용역"]}</script><script type="application/json" id="funnel">{"total": 9285, "industry": 831, "qualified": 385, "result": 12}</script><script>
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const stage = document.getElementById('stage'), capK = document.getElementById('capK'), capN = document.getElementById('capN'), capV = document.getElementById('capV'), capS = document.getElementById('capS');
+const funCells = document.querySelectorAll('#fun > div');
+const T = JSON.parse(document.getElementById('titles').textContent);
+const F = JSON.parse(document.getElementById('funnel').textContent);
+const W = 1120, PW = 116, PH = 150;
+let papers = [];
+const rnd = (a,b)=>a+Math.random()*(b-a);
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const wait = ms => new Promise(r=>setTimeout(r, ms));
+
+function makePaper(title, x, y, rot, z){
+  const el = document.createElement('div'); el.className='p';
+  el.innerHTML = `<div class="ttl">${title}</div><div class="ln m"></div><div class="ln s"></div><div class="ln m"></div><div class="ln s"></div><span class="stamp no"></span>`;
+  el.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`; el.style.zIndex = z;
+  stage.appendChild(el); return el;
+}
+function stampSet(el, cls, text){
+  el.classList.add('show');
+  const st = el.querySelector('.stamp'); st.className = 'stamp ' + cls; st.textContent = text;
+  st.classList.remove('punch'); void st.offsetWidth; st.classList.add('punch');
+}
+function staggerDelays(n, start, decay, min){ const d=[]; let t=0; for(let i=0;i<n;i++){ d.push(t); t += Math.max(min, start - i*decay); } return d; }
+function count(to, ms, cls){ const from = +capN.dataset.v || 0; const t0 = performance.now();
+  capN.classList.toggle('done', !!cls);
+  const tick = now => { const p = Math.min(1,(now-t0)/ms), e = 1-Math.pow(1-p,3);
+    capV.textContent = fmt(from + (to-from)*e); if(p<1) requestAnimationFrame(tick); else capN.dataset.v = to; };
+  requestAnimationFrame(tick);
+}
+function fillFunnel(i, to, ms){
+  const cell = funCells[i]; if(!cell) return; cell.classList.add('filled');
+  const el = cell.querySelector('.cnt'); if(!el) return;
+  if(!ms){ el.textContent = fmt(to); return; }
+  const t0 = performance.now();
+  const tick = now => { const p = Math.min(1,(now-t0)/ms), e = 1-Math.pow(1-p,3);
+    el.textContent = fmt(to*e); if(p<1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
+async function scene1(){            // 쌓임
+  capK.textContent='오늘 올라온 공고'; capS.textContent='나라장터 전체 · 마감 90일 이내';
+  const n = 26, cx = W/2 - PW/2;
+  for(let i=0;i<n;i++){
+    const t = [...T.drop_ind, ...T.drop_rgn, ...T.keep][i % 38] || '';
+    const el = makePaper(t.slice(0,34), cx + rnd(-14,14), -PH, rnd(-7,7), i);
+    el.style.transition = 'transform .62s cubic-bezier(.22,.88,.3,1.08), opacity .4s ease';
+    papers.push(el);
+    requestAnimationFrame(()=>{ el.style.transform = `translate(${cx + rnd(-16,16)}px, ${rnd(120,150)}px) rotate(${rnd(-6,6)}deg)`; });
+    await wait(Math.max(8, 30 - i*0.75));
+  }
+  count(F.total, 900); fillFunnel(0, F.total, 900);
+  await wait(650);
+}
+async function scene2(){            // 훑기 — 업종 안 맞는 것 버림
+  capK.textContent='업종이 맞는 공고'; capS.textContent='등록업종 15개 중 하나를 허용하는 공고만';
+  const keepN = 14, delays = staggerDelays(papers.length, 24, 0.55, 7);
+  papers.forEach((el,i)=>{
+    const keep = i >= papers.length - keepN;
+    setTimeout(()=>{
+      if(keep){ el.style.transform = `translate(${W/2 - PW/2 + rnd(-10,10)}px, ${rnd(120,145)}px) rotate(${rnd(-4,4)}deg)`; }
+      else {
+        stampSet(el, 'no', '업종 안 맞음');
+        const left = i % 2 === 0;
+        const dx = left ? rnd(-280,-130) : rnd(130,280), rot = left ? rnd(-30,-8) : rnd(8,30);
+        el.style.transform = `translate(${dx}px, ${rnd(150,270)}px) rotate(${rot}deg)`; el.classList.add('gone');
+      }
+    }, delays[i]);
+  });
+  count(F.industry, 800); fillFunnel(1, F.industry, 800);
+  await wait(900);
+  papers = papers.filter(el=>!el.classList.contains('gone'));
+}
+async function scene3(){            // 거르기 — 자격
+  capK.textContent='자격이 되는 공고'; capS.textContent='면허·지역 제한을 통과한 공고만';
+  const keepN = F.result, delays = staggerDelays(papers.length, 26, 0.6, 8);
+  papers.forEach((el,i)=>{
+    const keep = i >= papers.length - keepN;
+    setTimeout(()=>{
+      if(!keep){
+        stampSet(el, 'no', i % 2 ? '지역 제한' : '면허 미충족');
+        const left = i % 2 !== 0;
+        const dx = left ? rnd(-260,-110) : rnd(110,260), rot = left ? rnd(-28,-6) : rnd(6,28);
+        el.style.transform = `translate(${dx}px, ${rnd(140,250)}px) rotate(${rot}deg)`; el.classList.add('gone');
+      }
+    }, delays[i]);
+  });
+  count(F.qualified, 700); fillFunnel(2, F.qualified, 700);
+  await wait(800);
+  papers = papers.filter(el=>!el.classList.contains('gone'));
+  await recentre();
+}
+async function recentre(){          // 부채로 펼치기 전, 가운데로 모여 숨 고르기
+  const n = papers.length, cx = W/2 - PW/2;
+  papers.forEach((el,i)=>{ const f = i-(n-1)/2; el.style.transform = `translate(${cx+f*28}px, 128px) rotate(${rnd(-3,3)}deg)`; el.style.zIndex=i; });
+  await wait(420);
+}
+async function scene4(){            // 고르기 — 부채로 펼친 뒤 표의 행으로 날아가 앉음
+  capK.textContent='검토할 공고'; capS.textContent='회사 설명과 과거 수주 이력에 가장 가까운 순서';
+  const n = papers.length, span = 760, cx = W/2 - PW/2;
+  papers.forEach((el,i)=>{ const f = (i-(n-1)/2);
+    el.style.transform = `translate(${cx + f*(span/n)}px, ${118 + Math.abs(f)*5}px) rotate(${f*2.4}deg)`; el.style.zIndex = 50-Math.abs(f);
+    stampSet(el, 'yes', '검토'); });
+  count(F.result, 650, true); fillFunnel(3, F.result, 650);
+  await wait(640);
+  await flyToTable();
+  stage.classList.add('done');
+  await wait(650);
+  revealResults();
+}
+async function flyToTable(){
+  const rowEls = Array.from(document.querySelectorAll('#resultsWrap .vs[data-s="guest"] .tr'));
+  const stageRect = stage.getBoundingClientRect(), cx = W/2 - PW/2;
+  stage.classList.add('fly');
+  const delays = staggerDelays(papers.length, 20, 0.5, 6);
+  papers.forEach((el,i)=>{
+    const target = rowEls[i];
+    setTimeout(()=>{
+      el.style.transition = 'transform .6s cubic-bezier(.3,.6,.25,1), opacity .4s ease .22s';
+      if(target){
+        const tr = target.getBoundingClientRect();
+        el.style.transform = `translate(${tr.left - stageRect.left}px, ${tr.top - stageRect.top}px) rotate(0deg) scale(.4)`;
+      } else {
+        el.style.transform = `translate(${cx}px, ${-PH-20}px) rotate(0deg)`;
+      }
+      el.style.opacity = '0'; el.classList.add('gone');
+    }, delays[i]);
+  });
+  await wait(760);
+}
+function revealResults(){ document.body.classList.add('revealed'); }
+
+function resetAll(){
+  papers.forEach(el=>el.remove()); papers = [];
+  stage.classList.remove('done','fly');
+  funCells.forEach(c=>{ c.classList.remove('filled'); const cnt=c.querySelector('.cnt'); if(cnt) cnt.textContent='0'; });
+  document.querySelectorAll('.fun .step').forEach(s=>s.classList.remove('open'));
+  document.querySelectorAll('.crit').forEach(c=>c.classList.remove('open'));
+  document.body.classList.remove('revealed');
+  capK.textContent=''; capS.textContent=''; capV.textContent='0'; capN.dataset.v=0; capN.classList.remove('done');
+}
+function instantFinish(){
+  stage.classList.add('done');
+  fillFunnel(0, F.total, 0); fillFunnel(1, F.industry, 0); fillFunnel(2, F.qualified, 0); fillFunnel(3, F.result, 0);
+  revealResults();
+}
+async function quickRun(){
+  stage.classList.add('done');
+  const seq = [F.total, F.industry, F.qualified, F.result];
+  for(let i=0;i<4;i++){ fillFunnel(i, seq[i], 260); await wait(150); }
+  await wait(200);
+  revealResults();
+}
+async function run(mode){
+  resetAll();
+  document.body.classList.toggle('reduced', mode==='reduced');
+  if(mode==='reduced'){ instantFinish(); return; }
+  if(mode==='revisit'){ await quickRun(); return; }
+  await scene1(); await scene2(); await scene3(); await scene4();
+}
+
+document.querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('[data-run]').forEach(x=>x.classList.toggle('on',x===b)); run(b.dataset.run); });
+document.querySelectorAll('[data-ss]').forEach(e=>e.onclick=()=>{
+  const k = e.dataset.ss;
+  document.querySelectorAll('[data-ss]').forEach(x=>x.classList.toggle('on',x===e));
+  document.body.classList.toggle('login', k==='login');
+  document.querySelectorAll('#resultsWrap .vs').forEach(v=>v.classList.toggle('on', v.dataset.s===k));
+});
+document.querySelectorAll('.fun .step').forEach(s=>s.addEventListener('click',()=>{
+  if(!s.classList.contains('filled')) return;
+  const k = s.dataset.k, was = s.classList.contains('open');
+  document.querySelectorAll('.fun .step').forEach(x=>x.classList.remove('open'));
+  document.querySelectorAll('.crit').forEach(c=>c.classList.remove('open'));
+  if(!was){ s.classList.add('open'); document.querySelector('.crit[data-k="'+k+'"]').classList.add('open'); }
+}));
+
+if(RM){ document.querySelector('[data-run="reduced"]').classList.add('on'); document.querySelector('[data-run="full"]').classList.remove('on'); run('reduced'); }
+else { run('full'); }
+</script></body></html>

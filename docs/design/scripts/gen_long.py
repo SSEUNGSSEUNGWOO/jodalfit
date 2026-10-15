@@ -81,7 +81,7 @@ def window(n_clear=5, gate=True, n_blur=6, head=True):
 {f'<div class="wbar"><b>{CO}</b><span class="m">오늘 {N:,}건 중 남은 {TOP}건 · 가까운 순</span><span class="sp"></span><span class="chip on">전체 {TOP}</span><span class="chip">7일 내 마감 {n7}</span><span class="chip">1억 이상 {nB}</span></div>' if head else ''}
 <div class="th"><span>#</span><span>공고</span><span>발주기관</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div>{body}</div>'''
 i0=top[0]
-why = f'''<div class="card"><div class="h"><i>왜</i>왜 남았나 · 적합 {int(sims[i0]*100)}</div><div class="t">{rows[i0][0]}</div>
+why = f'''<div class="card"><div class="h"><i>왜</i>추천 근거 · 적합 {int(sims[i0]*100)}</div><div class="t">{rows[i0][0]}</div>
 <p>공고의 과업(교육 콘텐츠·이러닝 유지관리)이 이 회사의 등록업종·공급물품과 겹칩니다. {rows[i0][1]}은 이 분야 반복 발주 기관입니다.</p>
 <div style="margin-top:12px"><div class="ev"><i>업</i>등록업종 겹침 — 소프트웨어개발업<span>+28</span></div><div class="ev"><i>물</i>공급물품 겹침 — 이러닝 콘텐츠<span>+22</span></div><div class="ev"><i>기</i>반복 발주 기관 — 최근 1년 3건<span>+12</span></div><div class="ev"><i>자</i>자격 제한 없음<span>통과</span></div></div>
 <div class="kv"><div><b>{dd(days[i0])}</b><span>마감</span></div><div><b>{fmt(rows[i0][4])}</b><span>추정가</span></div><div><b>87.2%</b><span>비슷한 공고 평균 투찰률 (n=14)</span></div><div><b>3건</b><span>이 기관 최근 1년 발주</span></div></div></div>'''
