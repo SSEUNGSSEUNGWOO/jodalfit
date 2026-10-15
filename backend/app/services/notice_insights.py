@@ -11,7 +11,7 @@ import re
 
 MODEL = "gpt-4o-mini"
 ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
-ANTHROPIC_MAX_TOKENS = 1500  # 표본 40건 출력 평균 861 토큰
+ANTHROPIC_MAX_TOKENS = 3000  # 표본 40건 출력 평균 861 토큰 — 한도는 생성분만 과금되므로 넉넉히(잘리면 tool_use 가 깨져 영원히 재제출된다)
 MAX_INPUT_CHARS = 12_000
 # 파일 종류별 1차 상한 — 제안요청서가 길어도 공고문(참가자격·평가)이 통째로 잘리지 않게.
 # 1차 배분 후 남는 예산은 우선순위 순으로 다시 나눠 총량(MAX_INPUT_CHARS)을 채운다.

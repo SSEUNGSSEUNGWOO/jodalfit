@@ -25,6 +25,8 @@
 from __future__ import annotations
 
 import argparse
+
+import anthropic
 import json
 import time
 
@@ -204,7 +206,11 @@ def collect(sb) -> tuple[int, int, int]:
                 c = batch.request_counts
                 print(f"  abatch {bid} {batch.processing_status}: {c.succeeded}/{c.processing + c.succeeded + c.errored + c.canceled + c.expired}")
                 continue
-            n_ok, n_fail = _ingest_anthropic(sb, client, bid)
+            try:
+                n_ok, n_fail = _ingest_anthropic(sb, client, bid)
+            except anthropic.AnthropicError as e:  # 결과 보관 만료(~29일)·일시 오류 — leftover 삭제로 다음 제출에 다시 잡힌다
+                print(f"  abatch {bid} results unavailable: {str(e)[:120]}")
+                n_ok, n_fail = 0, 0
         elif model_tag.startswith(PENDING_PREFIX):
             client = get_openai_client()
             bid = model_tag[len(PENDING_PREFIX):]
