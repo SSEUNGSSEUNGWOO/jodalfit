@@ -29,5 +29,5 @@
 
 ## 결정
 - 전환: `INSIGHT_PROVIDER=anthropic` 기본, Haiku 4.5, Message Batches. 롤백은 `openai`.
-- 후속: 커버리지 100%(진행 중 경쟁입찰 전부), xlsx 규격서 읽기, 마감 지난 문서 텍스트 비우기, 절 단위 입력.
+- 후속: ☐ 커버리지 100%(진행 중 경쟁입찰 전부 — 2026-10-15 `--limit` 이 500 단위 배치 여러 개를 제출하게 바꿔 길이 열림), ☑ xlsx 규격서 읽기(zip 전개 포함), ☑ 마감 지난 문서 텍스트 비우기(`purge_expired_documents`, 1.6GB → 481MB), ☐ 절 단위 입력.
 - 임베딩은 그대로 OpenAI (Anthropic 은 임베딩 모델 없음).
