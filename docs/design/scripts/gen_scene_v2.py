@@ -17,7 +17,7 @@ from jobs.evaluate_recommender import connect, fetch_company_profile  # noqa: E4
 # ---------- 무대(종이) CSS — gen_scene.py 에서 가져와 다듬음 ----------
 STAGE_CSS = r"""
 .fh { padding:26px 0 0 }
-.stage { position:relative; height:330px; margin-top:18px; border-top:1px solid #141414; overflow:hidden; transition:height .6s cubic-bezier(.2,.7,.2,1) }
+.stage { position:relative; height:330px; margin-top:18px; border-top:1px solid #141414; overflow:hidden; transition:height .44s cubic-bezier(.2,.7,.2,1) }
 .stage.done { height:0; border-top:0 }
 .stage.done .cap { visibility:hidden }
 .stage.fly { overflow:visible; z-index:30 }
@@ -30,12 +30,12 @@ STAGE_CSS = r"""
      transition:transform .55s cubic-bezier(.2,.7,.2,1), opacity .45s ease; will-change:transform, opacity }
 .p .ttl { font-size:8.5px; line-height:1.35; color:#55554f; height:34px; overflow:hidden; font-weight:550 }
 .p .ln { height:2px; background:#ececea; border-radius:1px; margin-top:5px } .p .ln.s { width:62% } .p .ln.m { width:84% }
-.p .stamp { position:absolute; right:7px; bottom:7px; font-size:11.5px; font-weight:700; letter-spacing:.03em; padding:2px 6px; border-radius:3px; opacity:0; transform:rotate(-8deg); transform-origin:center }
-.p .stamp.no { color:#8f8f8b; border:1px solid #e3e1dc } .p .stamp.yes { color:#c8381a; border:1.5px solid #e8431b }
+.p .stamp { --sr:-8deg; position:absolute; right:6px; bottom:6px; font-size:11.5px; font-weight:700; letter-spacing:.02em; white-space:nowrap; padding:2px 5px; border-radius:3px; opacity:0; transform:rotate(var(--sr)); transform-origin:center }
+.p .stamp.no { color:#6b6b67; border:1px solid #ddd9d2; background:rgba(255,255,255,.9) } .p .stamp.yes { color:#c8381a; border:1.5px solid #e8431b; background:rgba(255,255,255,.9) }
 .p.show .stamp { opacity:1 }
-.p .stamp.punch { animation:stampPunch .35s cubic-bezier(.22,.8,.3,1.2) }
+.p .stamp.punch { animation:stampPunch .12s cubic-bezier(.2,.8,.3,1) }
 .p.gone { opacity:0 }
-@keyframes stampPunch { 0% { transform:scale(1.7) rotate(-8deg); opacity:0 } 55% { transform:scale(.9) rotate(-8deg); opacity:1 } 100% { transform:scale(1) rotate(-8deg); opacity:1 } }
+@keyframes stampPunch { 0% { transform:scale(1.25) rotate(var(--sr)); opacity:0 } 35% { opacity:1 } 100% { transform:scale(1) rotate(var(--sr)); opacity:1 } }
 """
 
 # ---------- 깔때기 채워짐 상태 + 결과 노출 + 토글 + reduced-motion ----------
@@ -46,7 +46,9 @@ EXTRA_CSS = r"""
 .fun > div.step:not(.filled) { pointer-events:none }
 body:not(.login) .only-login { display:none } body.login .only-guest { display:none }
 #resultsWrap { visibility:hidden; opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1) }
-body.revealed #resultsWrap { visibility:visible; opacity:1; transform:none }
+body.revealed #resultsWrap, body.placing #resultsWrap { visibility:visible; opacity:1; transform:none }
+#resultsWrap .tr { transition:opacity .3s ease, transform .3s cubic-bezier(.2,.7,.2,1) }
+#resultsWrap .tr.pending { opacity:0; transform:translateY(7px) }
 .rib { opacity:0; transition:opacity .6s ease }
 body.revealed .rib { opacity:1 }
 .sw { gap:14px; padding:8px 10px }
@@ -74,16 +76,31 @@ const rnd = (a,b)=>a+Math.random()*(b-a);
 const fmt = n => Math.round(n).toLocaleString('ko-KR');
 const wait = ms => new Promise(r=>setTimeout(r, ms));
 
+function place(el, x, y, rot){              // 위치를 dataset 에도 남겨 둔다(무대 접힐 때 고정용)
+  el.dataset.x = x; el.dataset.y = y; el.dataset.rot = rot;
+  el.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+}
 function makePaper(title, x, y, rot, z){
   const el = document.createElement('div'); el.className='p';
   el.innerHTML = `<div class="ttl">${title}</div><div class="ln m"></div><div class="ln s"></div><div class="ln m"></div><div class="ln s"></div><span class="stamp no"></span>`;
-  el.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`; el.style.zIndex = z;
+  place(el, x, y, rot); el.style.zIndex = z;
+  const st = el.querySelector('.stamp');    // 도장은 조금씩 비뚤게 — 찍은 느낌
+  st.style.setProperty('--sr', rnd(-11,-5).toFixed(1)+'deg');
+  st.style.right = rnd(4,10).toFixed(0)+'px'; st.style.bottom = rnd(4,11).toFixed(0)+'px';
   stage.appendChild(el); return el;
 }
 function stampSet(el, cls, text){
   el.classList.add('show');
   const st = el.querySelector('.stamp'); st.className = 'stamp ' + cls; st.textContent = text;
   st.classList.remove('punch'); void st.offsetWidth; st.classList.add('punch');
+}
+function sweepOut(el, cls, text){       // 도장 찍고 좌·우로 쓸어 내보냄
+  stampSet(el, cls, text);
+  const left = Math.random() < 0.5;
+  el.style.transition = 'transform .4s cubic-bezier(.4,.03,.78,.5), opacity .3s ease .1s';
+  const dx = left ? rnd(-440,-240) : rnd(W-10, W+210);
+  place(el, dx, rnd(40,250), left ? rnd(-150,-40) : rnd(40,150));
+  el.classList.add('gone');
 }
 function staggerDelays(n, start, decay, min){ const d=[]; let t=0; for(let i=0;i<n;i++){ d.push(t); t += Math.max(min, start - i*decay); } return d; }
 function count(to, ms, cls){ const from = +capN.dataset.v || 0; const t0 = performance.now();
@@ -102,101 +119,106 @@ function fillFunnel(i, to, ms){
   requestAnimationFrame(tick);
 }
 
-async function scene1(){            // 쌓임
+async function scene1(my){            // 쌓임 — 중력처럼 떨어지고, 간격은 갈수록 좁아짐
   capK.textContent='지금 입찰 가능한 공고'; capS.textContent='나라장터 전체 · 마감 90일 이내 · 매시간 갱신';
   const n = 26, cx = W/2 - PW/2;
   for(let i=0;i<n;i++){
     const t = [...T.drop_ind, ...T.drop_rgn, ...T.keep][i % 38] || '';
-    const el = makePaper(t.slice(0,34), cx + rnd(-14,14), -PH, rnd(-7,7), i);
-    el.style.transition = 'transform .62s cubic-bezier(.22,.88,.3,1.08), opacity .4s ease';
+    const el = makePaper(t.slice(0,34), cx + rnd(-14,14), -PH-rnd(0,60), rnd(-9,9), i);
+    el.style.transition = `transform ${rnd(.4,.58).toFixed(3)}s cubic-bezier(.5,.02,.33,1.04), opacity .3s ease`;
     papers.push(el);
-    requestAnimationFrame(()=>{ el.style.transform = `translate(${cx + rnd(-16,16)}px, ${rnd(120,150)}px) rotate(${rnd(-6,6)}deg)`; });
-    await wait(Math.max(8, 30 - i*0.75));
+    requestAnimationFrame(()=>place(el, cx + rnd(-17,17), rnd(118,150), rnd(-6.5,6.5)));
+    await wait(Math.max(7, 46 - i*2.6)); if(my !== runId) return;
   }
-  count(F.total, 900); fillFunnel(0, F.total, 900);
-  await wait(650);
+  count(F.total, 820); fillFunnel(0, F.total, 820);
+  await wait(300);
 }
-async function scene2(){            // 훑기 — 업종 안 맞는 것 버림
+async function scene2(my){            // 훑기 — 업종 안 맞는 것 버림
   capK.textContent='업종이 맞는 공고'; capS.textContent='등록업종 15개 중 하나를 허용하는 공고만';
   const keepN = 14, delays = staggerDelays(papers.length, 24, 0.55, 7);
   papers.forEach((el,i)=>{
     const keep = i >= papers.length - keepN;
     setTimeout(()=>{
-      if(keep){ el.style.transform = `translate(${W/2 - PW/2 + rnd(-10,10)}px, ${rnd(120,145)}px) rotate(${rnd(-4,4)}deg)`; }
-      else {
-        stampSet(el, 'no', '업종 안 맞음');
-        const left = i % 2 === 0;
-        const dx = left ? rnd(-280,-130) : rnd(130,280), rot = left ? rnd(-30,-8) : rnd(8,30);
-        el.style.transform = `translate(${dx}px, ${rnd(150,270)}px) rotate(${rot}deg)`; el.classList.add('gone');
-      }
+      if(keep) place(el, W/2 - PW/2 + rnd(-10,10), rnd(120,145), rnd(-4,4));
+      else sweepOut(el, 'no', '업종 안 맞음');
     }, delays[i]);
   });
-  count(F.industry, 800); fillFunnel(1, F.industry, 800);
-  await wait(900);
-  papers = papers.filter(el=>!el.classList.contains('gone'));
+  count(F.industry, 700); fillFunnel(1, F.industry, 700);
+  await wait(700);
+  if(my !== runId) return;
+  papers = papers.filter(el=>!el.classList.contains("gone"));
 }
-async function scene3(){            // 거르기 — 자격
+async function scene3(my){            // 거르기 — 자격
   capK.textContent='자격이 되는 공고'; capS.textContent='면허·지역 제한을 통과한 공고만';
   const keepN = F.result, delays = staggerDelays(papers.length, 26, 0.6, 8);
   papers.forEach((el,i)=>{
-    const keep = i >= papers.length - keepN;
-    setTimeout(()=>{
-      if(!keep){
-        stampSet(el, 'no', i % 2 ? '지역 제한' : '면허 미충족');
-        const left = i % 2 !== 0;
-        const dx = left ? rnd(-260,-110) : rnd(110,260), rot = left ? rnd(-28,-6) : rnd(6,28);
-        el.style.transform = `translate(${dx}px, ${rnd(140,250)}px) rotate(${rot}deg)`; el.classList.add('gone');
-      }
-    }, delays[i]);
+    if(i >= papers.length - keepN) return;
+    setTimeout(()=>sweepOut(el, 'no', i % 2 ? '지역 제한' : '면허 미충족'), delays[i]);
   });
-  count(F.qualified, 700); fillFunnel(2, F.qualified, 700);
-  await wait(800);
-  papers = papers.filter(el=>!el.classList.contains('gone'));
+  count(F.qualified, 620); fillFunnel(2, F.qualified, 620);
+  await wait(470);
+  if(my !== runId) return;
+  papers = papers.filter(el=>!el.classList.contains("gone"));
   await recentre();
 }
-async function recentre(){          // 부채로 펼치기 전, 가운데로 모여 숨 고르기
+async function recentre(){          // 부채로 펼치기 전, 가운데로 가지런한 한 묶음으로
   const n = papers.length, cx = W/2 - PW/2;
-  papers.forEach((el,i)=>{ const f = i-(n-1)/2; el.style.transform = `translate(${cx+f*28}px, 128px) rotate(${rnd(-3,3)}deg)`; el.style.zIndex=i; });
-  await wait(420);
+  papers.forEach((el,i)=>{
+    el.style.transition = 'transform .3s cubic-bezier(.2,.7,.2,1), opacity .3s ease';
+    place(el, cx + (i-(n-1)/2)*9, 126, rnd(-1.2,1.2)); el.style.zIndex = i;
+  });
+  await wait(330);
 }
-async function scene4(){            // 고르기 — 부채로 펼친 뒤 표의 행으로 날아가 앉음
+async function scene4(my){          // 고르기 — 부채로 펼친 뒤 표의 행으로 날아가 앉음
   capK.textContent='검토할 공고'; capS.textContent='회사 설명과 과거 수주 이력에 가장 가까운 순서';
   const n = papers.length, span = 760, cx = W/2 - PW/2;
   papers.forEach((el,i)=>{ const f = (i-(n-1)/2);
-    el.style.transform = `translate(${cx + f*(span/n)}px, ${118 + Math.abs(f)*5}px) rotate(${f*2.4}deg)`; el.style.zIndex = 50-Math.abs(f);
-    stampSet(el, 'yes', '검토'); });
-  count(F.result, 650, true); fillFunnel(3, F.result, 650);
-  await wait(640);
+    el.style.transition = 'transform .42s cubic-bezier(.2,.75,.25,1.02), opacity .3s ease';
+    place(el, cx + f*(span/n), 118 + Math.abs(f)*5, f*2.4); el.style.zIndex = 50-Math.abs(f);
+    setTimeout(()=>stampSet(el, 'yes', '검토'), 180 + i*26); });
+  count(F.result, 600, true); fillFunnel(3, F.result, 600);
+  await wait(600);
   await flyToTable();
-  stage.classList.add('done');
-  await wait(650);
-  revealResults();
+  if(my === runId) revealResults();
 }
 async function flyToTable(){
-  const rowEls = Array.from(document.querySelectorAll('#resultsWrap .vs[data-s="guest"] .tr'));
-  const stageRect = stage.getBoundingClientRect(), cx = W/2 - PW/2;
-  stage.classList.add('fly');
-  const delays = staggerDelays(papers.length, 20, 0.5, 6);
-  papers.forEach((el,i)=>{
-    const target = rowEls[i];
-    setTimeout(()=>{
-      el.style.transition = 'transform .6s cubic-bezier(.3,.6,.25,1), opacity .4s ease .22s';
-      if(target){
-        const tr = target.getBoundingClientRect();
-        el.style.transform = `translate(${tr.left - stageRect.left}px, ${tr.top - stageRect.top}px) rotate(0deg) scale(.4)`;
-      } else {
-        el.style.transform = `translate(${cx}px, ${-PH-20}px) rotate(0deg)`;
-      }
-      el.style.opacity = '0'; el.classList.add('gone');
-    }, delays[i]);
+  // 1) 종이를 화면 좌표에 못 박아 두고 무대를 접는다 — 접힌 뒤의 행 위치로 날아가야 "행을 놓은" 것처럼 보인다
+  const sr = stage.getBoundingClientRect();
+  papers.forEach(el=>{
+    el.style.transition = 'none'; el.style.position = 'fixed';
+    el.style.left = (sr.left + +el.dataset.x) + 'px'; el.style.top = (sr.top + +el.dataset.y) + 'px';
+    el.style.transform = `rotate(${el.dataset.rot}deg)`;
+    document.body.appendChild(el);
   });
-  await wait(760);
-  stage.classList.remove('fly');
+  const rows = Array.from(document.querySelectorAll('#resultsWrap .vs.on .tr'));
+  rows.forEach(r=>r.classList.add('pending'));
+  stage.classList.add('done'); document.body.classList.add('placing');
+  await wait(440);                   // 무대 접힘이 끝나 행 위치가 확정될 때까지
+  // 2) 행마다 하나씩 — 종이는 그 행의 y 로 내려가 작아지며 사라지고, 같은 순간 행이 떠오른다
+  papers.forEach((el,i)=>{
+    const row = rows[i];
+    setTimeout(()=>{
+      el.style.transition = 'transform .44s cubic-bezier(.3,.7,.22,1), opacity .3s ease .14s';
+      if(row){
+        const tr = row.getBoundingClientRect();
+        const dx = tr.left + 46 - (parseFloat(el.style.left) + PW/2);
+        const dy = tr.top + tr.height/2 - (parseFloat(el.style.top) + PH/2);
+        el.style.transform = `translate(${dx}px, ${dy}px) rotate(0deg) scale(.2)`;
+        setTimeout(()=>row.classList.remove('pending'), 170);
+      } else { el.style.transform = 'translate(0,-60px) scale(.5)'; }
+      el.style.opacity = '0'; el.classList.add('gone');
+    }, i*38);
+  });
+  await wait(papers.length*38 + 420);
+  rows.forEach(r=>r.classList.remove('pending'));
+  document.querySelectorAll(".p").forEach(el=>el.remove()); papers = [];
 }
-function revealResults(){ document.body.classList.add('revealed'); }
+function revealResults(){ document.body.classList.remove('placing'); document.body.classList.add('revealed'); }
 
 function resetAll(){
-  papers.forEach(el=>el.remove()); papers = [];
+  papers = []; document.querySelectorAll('.p').forEach(el=>el.remove());
+  document.querySelectorAll('#resultsWrap .tr.pending').forEach(r=>r.classList.remove('pending'));
+  document.body.classList.remove('placing');
   stage.classList.remove('done','fly');
   funCells.forEach(c=>{ c.classList.remove('filled'); const cnt=c.querySelector('.cnt'); if(cnt) cnt.textContent='0'; });
   document.querySelectorAll('.fun .step').forEach(s=>s.classList.remove('open'));
@@ -216,12 +238,17 @@ async function quickRun(){
   await wait(200);
   revealResults();
 }
+let runId = 0;
 async function run(mode){
+  const my = ++runId;
   resetAll();
   document.body.classList.toggle('reduced', mode==='reduced');
   if(mode==='reduced'){ instantFinish(); return; }
   if(mode==='revisit'){ await quickRun(); return; }
-  await scene1(); await scene2(); await scene3(); await scene4();
+  await scene1(my); if(my!==runId) return;
+  await scene2(my); if(my!==runId) return;
+  await scene3(my); if(my!==runId) return;
+  await scene4(my);
 }
 
 document.querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('[data-run]').forEach(x=>x.classList.toggle('on',x===b)); run(b.dataset.run); });
