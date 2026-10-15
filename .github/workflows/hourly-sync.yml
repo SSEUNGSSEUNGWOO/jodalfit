@@ -74,8 +74,10 @@ jobs:
         run: uv run python -m jobs.ingest_bid_attachments --days-back 1
         continue-on-error: true
 
-      - name: 첨부 추출 (300건)
-        run: uv run python -m jobs.extract_bid_documents --limit 300
+      # 150: 공고당 첨부 3.5개·파일당 ~2초라 한도까지 차도 ~17분. 300 이면 백로그가 있을 때 35~38분이 걸려
+      # 다음 정각 예약이 밀린다(2026-10-15 19:00·22:07 실측, 그 사이 예약 3번 유실). 정상 유입 ~1천 공고/일 ≪ 150×24.
+      - name: 첨부 추출 (150건)
+        run: uv run python -m jobs.extract_bid_documents --limit 150
         continue-on-error: true
 
       - name: 공고 조건 요약 — 수거 + 제출 (100건)
