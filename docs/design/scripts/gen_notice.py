@@ -9,7 +9,7 @@ import sys
 from datetime import date
 
 sys.path.insert(0, __file__.rsplit("\\", 1)[0] if "\\" in __file__ else __file__.rsplit("/", 1)[0])
-from gen_results import esc, won, dleft, TODAY  # noqa: E402
+from gen_results import esc, dleft, TODAY  # noqa: E402
 from gen_results_v3 import FONT, SHEET_CSS  # noqa: E402
 from gen_results_v4 import nav  # noqa: E402
 from jobs.evaluate_recommender import connect, fetch_company_profile  # noqa: E402
@@ -62,6 +62,24 @@ def fetch(conn, no, od):
     }
 
 
+KIND_KO = {"region": "지역", "license": "면허", "certification": "증명", "performance": "실적",
+           "company_size": "기업 규모", "other": "기타", "experience": "경력", "equipment": "장비",
+           "personnel": "인력", "financial": "재무"}
+
+
+def wn(v):
+    """금액은 페이지 전체에서 원 단위 그대로. 억/만 줄임과 섞으면 같은 수가 두 모양으로 보인다."""
+    return f"{int(v):,}원" if v else "—"
+
+
+def ro(s):
+    """받침에 따라 '으로/로' — 'ㄹ' 받침과 받침 없음은 '로'."""
+    c = s.strip()[-1:]
+    if not c or not ("가" <= c <= "힣"):
+        return "으로"
+    return "로" if (ord(c) - 0xAC00) % 28 in (0, 8) else "으로"
+
+
 def mask(biz):
     d = "".join(c for c in str(biz or "") if c.isdigit())
     return f"{d[:3]}-XX-X{d[7:]}" if len(d) == 10 else "—"
@@ -107,70 +125,84 @@ def eval_text(d):
 
 # ---------------------------------------------------------------- 자격 판정
 def qual(d, prof, login=True):
-    """(상태, 항목, 내용, 근거) — 상태는 ok/warn/raw. 공고 필드상 제한과 문서에서 읽은 요구를 나눠 둔다.
-    비로그인(login=False)이면 판정 대신 공고·문서에 적힌 것을 그대로만 보여 준다."""
+    """공고 필드의 제한만 판정한다 — (상태, 항목, 내용, 근거, 레일용 짧은 판정, 레일용 짧은 원문).
+    문서에서 읽은 면허·증명은 판정하지 않으므로 여기 들어오지 않는다(qual_docs 로 분리).
+    비로그인(login=False)이면 판정 대신 공고에 적힌 것을 그대로만 보여 준다."""
     n = d["n"]
     mine = prof["industries"][0] + prof["industries"][1]
     allowed = [a.strip() for a in (n["bidprc_psbl_indstryty_nm"] or "").split(",") if a.strip()]
     rows = []
     if not allowed:
-        rows.append(("s-ok", "허용 업종", "제한 없음", "공고 업종제한 N"))
+        rows.append(("s-ok", "허용 업종", "제한 없음", "공고 업종제한 N", "제한 없음", "제한 없음"))
     else:
         hit = [a for a in allowed if any(m.split("(")[0] in a or a.split("(")[0] in m for m in mine)]
         txt = ", ".join(esc(a) for a in allowed[:3]) + (f' <span class="mute">외 {len(allowed) - 3}</span>' if len(allowed) > 3 else "")
         rows.append(("s-ok" if hit else "s-warn", "허용 업종", txt,
                      f'등록업종 {len(mine)}개 중 {esc(hit[0])} 보유' if hit
-                     else f"등록업종 {len(mine)}개 중 일치 없음"))
+                     else f"등록업종 {len(mine)}개 중 일치 없음",
+                     f'{esc(hit[0])} 보유' if hit else f"등록업종 {len(mine)}개에 없음",
+                     f"{len(allowed)}개 업종으로 제한"))
     rgn = (n["prtcpt_psbl_rgn_nm"] or "").strip()
     mysido = (prof["rgn"] or "").split()[0] if prof["rgn"] else ""
     mygun = (prof["rgn"] or "").split()[1] if len((prof["rgn"] or "").split()) > 1 else ""
     if not rgn:
-        rows.append(("s-ok", "지역 제한", "제한 없음", "공고 지역제한 N"))
+        rows.append(("s-ok", "지역 제한", "제한 없음", "공고 지역제한 N", "제한 없음", "제한 없음"))
     else:
         parts = [p.strip() for p in rgn.split(",")]
         ok = any(mygun and mygun in p for p in parts) or (not mygun and any(mysido and mysido in p for p in parts))
         rows.append(("s-ok" if ok else "s-warn", "지역 제한",
                      ", ".join(esc(p) for p in parts[:2]) + (f' <span class="mute">외 {len(parts) - 2}</span>' if len(parts) > 2 else ""),
-                     f'본사 {esc(prof["rgn"])}'))
-    man, _ = reqs(d)
-    docs = [r for r in man if r.get("kind") in ("license", "certification")]
-    if not d["insight"]:
-        rows.append(("s-raw", "문서 요구 조건", '<span class="mute">첨부문서를 아직 읽지 않았습니다</span>',
-                     f'첨부 {len((n["attachments"] or []))}건 — 분석 대기'))
-    elif not docs:
-        rows.append(("s-raw", "문서 요구 조건", '<span class="mute">문서에 면허·증명 요구 없음</span>', f"필수 조건 {len(man)}개"))
-    elif not login:
-        rows.append(("s-raw", "문서 요구 면허·증명",
-                     ", ".join(esc(r["text"]) for r in docs[:3])
-                     + (f' <span class="mute">외 {len(docs) - 3}</span>' if len(docs) > 3 else ""),
-                     "첨부문서에서 읽은 것"))
-    else:
-        hit = [r for r in docs if any(r["text"].split()[0] in m for m in mine)]
-        rows.append(("s-ok" if len(hit) == len(docs) else "s-warn", "문서 요구 면허·증명",
-                     f"{len(docs)}건 중 등록업종으로 확인되는 것 {len(hit)}건",
-                     "나머지는 서류로만 증빙 — 자동 판정 안 함"))
+                     f'본사 {esc(prof["rgn"])}',
+                     f'본사 {esc(mygun or mysido)} ' + ("포함" if ok else "제외"),
+                     esc(parts[0]) + (f" 외 {len(parts) - 1}곳{ro('곳')} 제한" if len(parts) > 1
+                                      else f"{ro(parts[0])} 제한")))
     return rows
 
 
-def qual_block(d, prof, login):
+def qual_docs(d):
+    """문서에서 읽은 면허·증명 — 판정하지 않는다. 서류로만 증빙되는 층.
+    (이전 시안의 '4건 중 등록업종으로 확인되는 것 0건' 은 text.split()[0] 부분일치라 양방향으로 틀릴 수 있었다.
+     시스템이 아는 것은 '문서에 이런 요구가 적혀 있다'까지다 — 거기까지만 말한다.)"""
+    man, _ = reqs(d)
+    docs = [r for r in man if r.get("kind") in ("license", "certification")]
+    if not d["insight"]:
+        att = len(d["n"]["attachments"] or [])
+        return 0, f'첨부 {att}건을 아직 읽지 않았습니다', "면허·증명 요구가 있는지 모릅니다"
+    if not docs:
+        return 0, "문서에 면허·증명 요구 없음", f"읽은 필수 조건 {len(man)}개 중 해당 없음"
+    kinds = {}
+    for r in docs:
+        kinds[r.get("kind")] = kinds.get(r.get("kind"), 0) + 1
+    txt = " · ".join(f'{KIND_KO.get(k, k)} {v}건' for k, v in kinds.items())
+    return len(docs), txt, "서류로 증빙 — 자동 판정하지 않습니다"
+
+
+def qual_block(d, prof, login, gate=True):
+    """판정층(공고 제한) + 증빙층(문서 면허·증명)을 한 표에 쌓는다.
+    gate=False 는 레일 안내가 이미 같은 말을 하는 rail 레이아웃용."""
     rows = qual(d, prof, login)
+    dn, dtxt, dbas = qual_docs(d)
     if login:
         body = "".join(
             f'<div class="qr {st}"><span class="qk">{lab}</span><span class="qv">{txt}</span>'
-            f'<span class="qb">{bas}</span></div>' for st, lab, txt, bas in rows)
+            f'<span class="qb">{bas}</span></div>' for st, lab, txt, bas, _s, _r in rows)
         foot = (f'<div class="qf">판정 근거는 나라장터 업체정보(등록업종 {len(prof["industries"][0] + prof["industries"][1])}개 · '
                 f'본사 {esc(prof["rgn"])}, 10.14 갱신)와 공고의 제한 필드뿐입니다. '
                 f'서류로만 증빙되는 조건은 판정하지 않습니다. <a href="#">기준 보기</a></div>')
-        return f'<div class="qual">{body}{foot}</div>'
+        return f'<div class="qual">{body}{docs_tier(dn, dtxt, dbas)}{foot}</div>'
     raw = "".join(
         f'<div class="qr raw"><span class="qk">{lab}</span><span class="qv">{txt}</span>'
-        f'<span class="qb">{bas if lab.startswith("문서") else "공고에 적힌 제한"}</span></div>'
-        for st, lab, txt, bas in rows)
-    gate = ('<div class="qf gate"><b>회사명을 넣으면 이 세 줄에 판정이 붙습니다.</b> '
+        f'<span class="qb">공고에 적힌 제한</span></div>' for st, lab, txt, bas, _s, _r in rows)
+    gate_html = ('<div class="qf gate"><b>회사명을 넣으면 위 두 줄에 판정이 붙습니다.</b> '
             '등록업종·본사 소재지를 나라장터 업체정보에서 읽어 허용업종·지역 제한과 맞춰 보고, '
             '이 기관과의 과거 계약 건수도 같이 나옵니다. '
             '<span class="in"><span>회사명 또는 사업자번호</span><span class="bt dark">자격 확인</span></span></div>')
-    return f'<div class="qual">{raw}{gate}</div>'
+    return f'<div class="qual">{raw}{docs_tier(dn, dtxt, dbas)}{gate_html if gate else ""}</div>'
+
+
+def docs_tier(dn, dtxt, dbas):
+    return (f'<div class="qr s-doc"><span class="qk">서류로 증빙</span>'
+            f'<span class="qv">{dtxt}</span><span class="qb">{dbas}</span></div>')
 
 
 # ---------------------------------------------------------------- 블록
@@ -198,6 +230,39 @@ def stages(d):
             + ("" if done_cl else ""))
 
 
+def clse_move(d):
+    """정정으로 마감일이 움직였나 — (처음, 지금, 당겨짐). 레일 D-day 바로 아래에 띄운다.
+    마감이 당겨지는 건 돈이고, 나라장터에서는 차수를 하나씩 열어 눈으로 비교해야 보인다."""
+    v = d["versions"]
+    mv = [(p["bid_clse_date"], c["bid_clse_date"]) for p, c in zip(v, v[1:])
+          if str(p["bid_clse_date"]) != str(c["bid_clse_date"])]
+    if not mv:
+        return None
+    first, last = mv[0][0], mv[-1][1]
+    if not (isinstance(first, date) and isinstance(last, date)):
+        return None
+    return first, last, last < first
+
+
+def lifecycle(d):
+    """진행 단계 + 개찰·계약을 한 섹션으로 합친다.
+    사전규격→계약은 거의 모든 공고에서 비어 있다(README: 빈 칸이 기본값) — 그래서 빈 상태를 기본 모양으로 만든다.
+    한 줄로 지금 단계와 앞으로 들어올 것을 말하고, 6단계 표는 펼쳐서 볼 수 있게 남긴다. 숨기지는 않는다."""
+    if d["awards"] or d["contracts"]:
+        return stages(d) + result_block(d)
+    n, cl = d["n"], d["n"]["bid_clse_date"]
+    k = dleft(cl)[0] if isinstance(cl, date) else None
+    if k is not None and k >= 0:
+        now = f'지금은 <b>입찰 공고</b> 단계 — 마감까지 {k}일, 개찰 {dstr(n["openg_date"])}.'
+    else:
+        now = '지금은 <b>입찰 공고</b> 단계 — 마감은 지났고 개찰 결과가 아직 수집되지 않았습니다.'
+    link = "연결된 사전규격·발주계획 기록 없음" if not (d["pre_specs"] or d["order_plans"]) else "사전규격·발주계획 기록 있음"
+    return (f'<details class="lc"><summary><span class="lcn">{now}</span>'
+            f'<span class="lcx">개찰 뒤 참가 업체·투찰금액·낙찰률, 계약 체결 뒤 계약 상대·금액이 이 자리에 들어옵니다. '
+            f'{link}.</span><span class="lcm">6단계 전체</span></summary>'
+            f'<div class="lcb">{stages(d)}</div></details>')
+
+
 def work_block(d):
     ins = d["insight"]
     if not ins or not ins.get("summary"):
@@ -217,11 +282,15 @@ def work_block(d):
 def cond_block(d):
     man, opt = reqs(d)
     if not d["insight"]:
-        return '<div class="empty small">문서 조건이 아직 없습니다. 공고에 적힌 제한(업종·지역)은 위 참가 자격에 있습니다.</div>'
+        return '<div class="empty small">첨부문서를 아직 읽지 않아 문서에서 읽은 조건이 없습니다. 공고 필드의 제한은 위에 있습니다.</div>'
     if not man and not opt:
         return '<div class="empty small">문서에 명시된 참가 조건을 찾지 못했습니다.</div>'
-    li = "".join(f'<li><span class="rq">필수</span>{esc(r["text"])}<span class="rk">{esc(r.get("kind") or "")}</span></li>' for r in man)
-    li += "".join(f'<li><span class="rq o">우대</span>{esc(r["text"])}<span class="rk">{esc(r.get("kind") or "")}</span></li>' for r in opt)
+    def kd(r):
+        k = r.get("kind") or ""
+        return esc(KIND_KO.get(k, k))
+
+    li = "".join(f'<li><span class="rq">필수</span>{esc(r["text"])}<span class="rk">{kd(r)}</span></li>' for r in man)
+    li += "".join(f'<li><span class="rq o">우대</span>{esc(r["text"])}<span class="rk">{kd(r)}</span></li>' for r in opt)
     et, note = eval_text(d)
     sr = sched_rows(d)
     side = (f'<div class="cs"><span class="k">낙찰 방식</span><div class="cv">{et}</div>'
@@ -243,7 +312,7 @@ def inst_block(d, login):
                 '<span class="mute">근거: contracts 테이블의 수요기관명 일치 건수 0</span></div>')
     share = top[0][1] / cnt if top else 0
     lines = (f'<div class="ist"><div><b>{cnt:,}</b><span>수집된 계약</span></div>'
-             f'<div><b>{won(med)}</b><span>계약금액 중앙값</span></div>'
+             f'<div><b>{wn(med)}</b><span>계약금액 중앙값</span></div>'
              f'<div><b>{top[0][1]}건</b><span>가장 많이 받은 곳 — {esc(top[0][0])} ({share * 100:.1f}%)</span></div></div>'
              f'<div class="src mute">근거: 수요기관명이 <b>{esc(d["inst"])}</b>와 같은 계약 {cnt:,}건. '
              f'기관명이 바뀌거나 사업소가 따로 잡히면 이 수가 쪼개집니다. <a href="#">계약 목록</a></div>')
@@ -267,14 +336,14 @@ def result_block(d):
     if aw:
         rows = "".join(
             f'<tr class="{"win" if w else ""}"><td>{r}{"<i>낙찰</i>" if w else ""}</td><td>{esc(nm)}</td>'
-            f'<td class="r">{won(amt)}</td><td class="r">{f"{float(rt):.2f}%" if rt else "—"}</td></tr>'
+            f'<td class="r">{wn(amt)}</td><td class="r">{f"{float(rt):.2f}%" if rt else "—"}</td></tr>'
             for r, nm, amt, rt, w in aw[:10])
         out += (f'<div class="scrollx"><table class="aw"><thead><tr><th>순위</th><th>업체</th>'
                 f'<th class="r">투찰금액</th><th class="r">낙찰률</th></tr></thead><tbody>{rows}</tbody></table></div>'
                 f'<div class="src mute">{len(aw)}사 참가{" · 상위 10사만" if len(aw) > 10 else ""}. 나라장터 개찰결과 그대로.</div>')
     for nm, cd, amt, corp, biz in ct:
         out += (f'<div class="ctr"><span class="k">계약 체결</span><b>{esc(corp)}</b>'
-                f'<span class="mute">{mask(biz)}</span><span>{dstr(cd)}</span><b class="r">{won(amt)}</b></div>')
+                f'<span class="mute">{mask(biz)}</span><span>{dstr(cd)}</span><b class="r">{wn(amt)}</b></div>')
     return out
 
 
@@ -308,7 +377,7 @@ def heads(d):
         f'마감 {dstr(cl)}', f'개찰 {dstr(n["openg_date"])}', esc(n["cntrct_cncls_mthd_nm"] or ""),
         esc(n["bidwinr_dcsn_mthd_nm"] or "")] if v)
     nums = "".join(f'<div class="nb"><span class="k">{lab}</span><b>{v}</b></div>' for lab, v in [
-        ("추정가", won(n["presmpt_prce"])), ("배정 예산", won(n["asign_bdgt_amt"])), ("개찰일", dstr(n["openg_date"]))])
+        ("추정가", wn(n["presmpt_prce"])), ("배정 예산", wn(n["asign_bdgt_amt"])), ("개찰일", dstr(n["openg_date"]))])
     att = "".join(f'<li><a href="{esc(f["url"])}">{esc(f.get("name") or f"첨부 {f["seq"]}")}</a></li>'
                   for f in (n["attachments"] or [])[:6])
     acts = (f'<a class="bt dark" href="{esc(n["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토</a>')
@@ -346,7 +415,10 @@ h1.t { margin:12px 0 0; font-size:30px; letter-spacing:-0.035em; font-weight:650
 .qr .qk { font-size:12.5px; color:#55554f; font-weight:600; padding-left:16px }
 .qr .qv { font-size:14.5px; line-height:1.5 } .qr .qb { font-size:12px; color:#6b6b67; line-height:1.5 }
 .qr.s-ok .qk::before, .qr.s-warn .qk::before, .qr.s-raw .qk::before { position:absolute; left:0; font-weight:700 }
-.qr.s-ok .qk::before { content:"✓"; color:#1f5f3a } .qr.s-warn .qk::before { content:"!"; color:#e8431b } .qr.s-raw .qk::before { content:"·"; color:#737370 }
+/* ✓ 는 먹, 어긋난 것만 인주 하나 — 색은 먹 4단계 + 인주 하나가 전부다 */
+.qr.s-ok .qk::before { content:"✓"; color:#141414 } .qr.s-warn .qk::before { content:"✕"; color:#e8431b }
+.qr.s-raw .qk::before, .qr.s-doc .qk::before { content:"·"; color:#737370 }
+.qr.s-doc { background:#faf9f6 } .qr.s-doc .qk { color:#6b6b67 } .qr.s-doc .qv { font-size:13.5px; color:#55554f }
 .qf { padding:16px 0 0; font-size:12.5px; color:#6b6b67; line-height:1.7; max-width:720px } .qf a { border-bottom:1px solid #d8d6d0; color:#141414 }
 .qf.gate { font-size:13.5px; color:#55554f } .qf.gate b { color:#141414; font-weight:650 }
 .qf.gate .in { display:flex; gap:6px; margin-top:12px } .qf.gate .in span:first-child { width:260px; height:36px; border:1px solid #e3e1dc; border-radius:8px; background:#fff; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
@@ -374,6 +446,14 @@ ul.reqs { margin:0; padding:0; list-style:none } ul.reqs li { display:grid; grid
 .sg .sd { display:block; margin-top:3px; font-size:12px; color:#737370 }
 .sfoot { margin-top:14px; font-size:12px; color:#6b6b67; display:flex; gap:16px; flex-wrap:wrap; align-items:baseline }
 .sclose { font-weight:650; color:#141414; font-size:13px } .sclose.hot { color:#e8431b }
+/* 진행 단계 — 빈 상태가 기본 모양. 접힌 한 줄이 지금 단계와 앞으로 들어올 것을 말한다 */
+.lc { border-top:1px solid #e6e4df; padding-top:14px } .lc > summary { list-style:none; cursor:pointer; display:block; max-width:640px }
+.lc > summary::-webkit-details-marker { display:none }
+.lc .lcn { display:block; font-size:14.5px; line-height:1.6 } .lc .lcn b { font-weight:650 }
+.lc .lcx { display:block; margin-top:6px; font-size:12.5px; color:#6b6b67; line-height:1.65 }
+.lc .lcm { display:inline-block; margin-top:9px; font-size:12px; color:#141414; border-bottom:1px solid #d8d6d0 }
+.lc .lcm::after { content:" ↓"; color:#737370 } .lc[open] .lcm::after { content:" ↑" }
+.lc .lcb { margin-top:20px } .lc:hover .lcm { border-bottom-color:#141414 }
 /* 기관 */
 .ist { display:flex; gap:0; border-top:1px solid #e6e4df; flex-wrap:wrap }
 .ist > div { padding:14px 28px 14px 0; margin-right:28px; border-right:1px solid #e6e4df } .ist > div:last-child { border-right:0; margin-right:0 }
@@ -419,15 +499,29 @@ L3_CSS = r"""
 .rail .rdd { font-size:46px; letter-spacing:-0.045em; font-weight:700; line-height:1 } .rail .rdd.hot { color:#e8431b }
 .rail .rsub { margin-top:6px; font-size:12.5px; color:#55554f }
 .rail .rn { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #ececea; font-size:13px } .rail .rn:first-of-type { border-top:1px solid #ececea } .rail .rn b { font-weight:650 }
-.rail .rqwrap { margin-top:20px } .rail .rqr { display:flex; gap:8px; padding:8px 0; border-bottom:1px solid #ececea; font-size:12.5px; line-height:1.5; position:relative; padding-left:16px }
-.rail .rqr::before { position:absolute; left:0; top:8px; font-weight:700 }
-.rail .rqr.s-ok::before { content:"✓"; color:#1f5f3a } .rail .rqr.s-warn::before { content:"!"; color:#e8431b } .rail .rqr.s-raw::before { content:"·"; color:#737370 }
-.rail .rqr span:first-child { width:78px; color:#55554f; flex:none; font-weight:600 }
+/* 레일은 판정만 — 조건 전체 목록·근거는 본문 '참가 조건'이 갖는다 */
+.rail .rqwrap { margin-top:22px }
+.rail .rv { margin-top:8px; font-size:15px; letter-spacing:-0.02em; font-weight:650; line-height:1.45 }
+.rail .rv.no { color:#e8431b } .rail .rv.yes::before { content:"✓ "; color:#141414 }
+.rail .rqr { display:flex; gap:8px; padding:7px 0 7px 11px; border-left:2px solid #d8d6d0; margin-top:6px; font-size:12.5px; line-height:1.5 }
+.rail .rqr.s-ok { border-left-color:#141414 } .rail .rqr.s-warn { border-left-color:#e8431b }
+.rail .rqr span:first-child { width:62px; color:#55554f; flex:none; font-weight:600 }
+.rail .rdoc { margin-top:12px; padding-top:11px; border-top:1px solid #ececea; font-size:12px; color:#6b6b67; line-height:1.6 }
+.rail .rdoc b { color:#55554f; font-weight:600 }
+.rail .rmore { display:inline-block; margin-top:12px; font-size:12.5px; border-bottom:1px solid #d8d6d0 }
+.rail .rmore::after { content:" ↓"; color:#737370 }
+/* 마감이 움직인 공고 — 나라장터에서는 차수를 열어 눈으로 비교해야 보인다. 놓치면 돈이다 */
+.rail .ramd { display:block; margin-top:14px; padding:11px 12px; border-left:2px solid #e8431b; background:#fdf3f0; font-size:12.5px; line-height:1.55; color:#141414 }
+.rail .ramd b { color:#e8431b; font-weight:700 } .rail .ramd span { display:block; margin-top:4px; font-size:11.5px; color:#6b6b67 }
 .rail .racts { margin-top:18px; display:flex; flex-direction:column; gap:7px } .rail .bt { justify-content:center }
 .rail .rnote { margin-top:14px; font-size:11.5px; color:#6b6b67; line-height:1.6 }
 .rail .rin { margin-top:10px } .rail .rin span:first-child { display:flex; align-items:center; height:34px; border:1px solid #e3e1dc; border-radius:8px; background:#fff; padding:0 11px; color:#737370; font-size:12.5px; margin-bottom:6px }
 .cols .sec:first-child { border-top:0; margin-top:0; padding-top:0 }
-@media (max-width:980px) { .cols { grid-template-columns:minmax(0,1fr); gap:32px } .rail { position:static } }
+/* 좁은 화면에선 고정할 자리가 없다 — 레일을 본문 위로 올려 한 번은 보이게 한다(고정은 포기) */
+@media (max-width:980px) {
+  .cols { grid-template-columns:minmax(0,1fr); gap:30px } .rail { position:static; order:-1 }
+  .rail .rdd { font-size:34px } .rail .racts { flex-direction:row } .rail .racts .bt { flex:1 }
+}
 """
 
 JS = r"""
@@ -443,8 +537,10 @@ sync();
 
 
 # ---------------------------------------------------------------- 레이아웃
-def sec(title, lead, body):
-    return f'<div class="sec reveal"><h2>{title}</h2>' + (f'<p class="lead">{lead}</p>' if lead else "") + body + "</div>"
+def sec(title, lead, body, anchor=""):
+    aid = ' id="%s"' % anchor if anchor else ""
+    return (f'<div class="sec reveal"{aid}><h2>{title}</h2>'
+            + (f'<p class="lead">{lead}</p>' if lead else "") + body + "</div>")
 
 
 def l1(d, prof, login):
@@ -479,36 +575,61 @@ def l2(d, prof, login):
 
 
 def l3(d, prof, login):
-    """rail — 오른쪽 고정 레일에 마감·자격·수치."""
+    """rail — 오른쪽 고정 레일은 '낼 수 있나'의 판정만 갖는다(늘 화면에 있으므로 짧게).
+    조건 전체 목록·근거·기준은 본문 '참가 조건'이 갖는다 — 같은 말을 두 번 하지 않는다."""
     h = heads(d)
     n = d["n"]
     rows = qual(d, prof, login)
+    dn, dtxt, _ = qual_docs(d)
+    # 같은 파일에 6개 뷰가 들어 있으므로 앵커는 뷰마다 달라야 한다
+    aid = f'{n["bid_ntce_no"]}-{"l" if login else "g"}'
     if login:
-        rq = "".join(f'<div class="rqr {st}"><span>{lab}</span><span>{txt}</span></div>' for st, lab, txt, _ in rows)
-        rnote = ('<div class="rnote">근거: 나라장터 업체정보(등록업종 '
-                 f'{len(prof["industries"][0] + prof["industries"][1])}개 · 본사 {esc(prof["rgn"])}, 10.14) + 공고 제한 필드. '
-                 '서류로만 증빙되는 조건은 판정하지 않습니다.</div>')
+        bad = [r for r in rows if r[0] == "s-warn"]
+        if all(r[2] == "제한 없음" for r in rows):
+            head, hcls = "공고에 업종·지역 제한 없음", ""
+        elif bad:
+            head = (f"공고 제한 {len(rows)}건 모두 불충족" if len(bad) == len(rows)
+                    else f"공고 제한 {len(rows)}건 중 {len(bad)}건 불충족")
+            hcls = "no"
+            # ponytail: 불충족 사유가 여러 개여도 레일은 한 줄로만 말한다 — 느낌표를 줄 세우면 오류 화면이 된다
+        else:
+            head, hcls = f"공고 제한 {len(rows)}건 충족", "yes"
+        rq = "".join(f'<div class="rqr {st}"><span>{lab}</span><span>{short}</span></div>'
+                     for st, lab, _t, _b, short, _r in rows)
+        rdoc = (f'<div class="rdoc">그 밖에 문서에 적힌 <b>{dtxt}</b> — 서류로 증빙합니다. 판정하지 않습니다.</div>'
+                if dn else f'<div class="rdoc">{dtxt}</div>')
         rin = ""
     else:
-        rq = "".join(f'<div class="rqr raw"><span>{lab}</span><span>{txt}</span></div>' for _, lab, txt, _ in rows)
-        rnote = '<div class="rnote">회사명을 넣으면 세 줄에 ✓/확인 필요가 붙고, 이 기관과의 과거 계약 건수도 나옵니다.</div>'
+        head, hcls = "공고에 적힌 제한", ""
+        rq = "".join(f'<div class="rqr raw"><span>{lab}</span><span>{rawshort}</span></div>'
+                     for _st, lab, _t, _b, _s, rawshort in rows)
+        rdoc = f'<div class="rdoc">{dtxt}</div>'
         rin = '<div class="rin"><span>회사명 또는 사업자번호</span><span class="bt dark">자격 확인</span></div>'
     rn = "".join(f'<div class="rn"><span>{lab}</span><b>{v}</b></div>' for lab, v in [
-        ("추정가", won(n["presmpt_prce"])), ("배정 예산", won(n["asign_bdgt_amt"])),
-        ("개찰일", dstr(n["openg_date"])), ("계약방식", esc(n["cntrct_cncls_mthd_nm"] or "—")),
+        ("추정가", wn(n["presmpt_prce"])), ("배정 예산", wn(n["asign_bdgt_amt"])),
+        ("계약방식", esc(n["cntrct_cncls_mthd_nm"] or "—")),
         ("낙찰방법", esc(n["bidwinr_dcsn_mthd_nm"] or "—"))])
     k = h["k"]
+    mv = clse_move(d)
+    ramd = ""
+    if mv:
+        o, c, pulled = mv
+        ramd = (f'<a class="ramd" href="#amend">마감이 {dstr(o)} → <b>{dstr(c)}</b> 로 '
+                f'{"당겨졌습니다" if pulled else "늦춰졌습니다"}<span>정정 {int(n["bid_ntce_ord"])}차 · 바뀐 항목 보기</span></a>')
     rail = (f'<div class="rail reveal" style="--d:.1s"><div class="rdd {"hot" if k is not None and 0 <= k <= 7 else ""}">'
             f'{f"D-{k}" if k is not None and k >= 0 else "마감"}</div>'
-            f'<div class="rsub">마감 {dstr(n["bid_clse_date"])} · 개찰 {dstr(n["openg_date"])}</div>'
-            f'{rn}<div class="rqwrap"><span class="k">참가 자격</span>{rq}{rin}{rnote}</div>'
+            f'<div class="rsub">마감 {dstr(n["bid_clse_date"])} · 개찰 {dstr(n["openg_date"])}</div>{ramd}'
+            f'{rn}<div class="rqwrap"><span class="k">참가 자격</span>'
+            f'<div class="rv {hcls}">{head}</div>{rq}{rdoc}{rin}'
+            f'<a class="rmore" href="#cond">조건 전체와 판정 근거</a></div>'
             f'<div class="racts">{h["acts"]}</div>{h["att"]}</div>')
-    main = (sec("과업 내용", "첨부문서를 읽어 정리한 과업 내용과 범위.", work_block(d))
-            + sec("참가 조건", "", cond_block(d))
-            + sec("진행 단계", "", stages(d))
-            + sec("발주기관 이력", "과거 계약 기록으로만 말합니다.", inst_block(d, login))
-            + sec("개찰·계약", "", result_block(d))
-            + sec("정정 이력", "", amend_block(d)))
+    main = ((sec("정정 이력", "이전 차수와 달라진 항목만. 나라장터에서는 차수를 하나씩 열어 눈으로 비교해야 보입니다.",
+                 amend_block(d), aid + "-amend") if amendments(d["versions"]) else "")
+            + sec("과업 내용", "첨부문서를 읽어 정리한 과업 내용과 범위.", work_block(d))
+            + sec("참가 조건", "공고 필드의 제한은 판정하고, 문서에서 읽은 요구는 그대로 둡니다.",
+                  qual_block(d, prof, login, gate=False) + cond_block(d), aid + "-cond")
+            + sec("진행 단계", "", lifecycle(d))
+            + sec("발주기관 이력", "과거 계약 기록으로만 말합니다.", inst_block(d, login)))
     return (f'<div class="head reveal"><div class="tags">{h["tags"]}</div><h1 class="t">{h["h1"]}</h1>'
             f'<div class="meta">{h["meta"]}</div></div>'
             f'<div class="cols" style="margin-top:30px"><div>{main}</div>{rail}</div>')
