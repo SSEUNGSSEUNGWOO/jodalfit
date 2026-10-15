@@ -18,6 +18,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}  # purge_expired_documents 는 psycopg 직결
     steps:
       - uses: actions/checkout@v5
 
@@ -85,6 +86,10 @@ jobs:
             [ "$code" = "200" ] || fail=1
           done
           exit $fail
+
+      - name: 마감 지난 공고 문서 텍스트 비우기 (저장 증가 차단)
+        run: uv run python -m jobs.purge_expired_documents
+        continue-on-error: true
 
   enrich-companies:
     # 매일 회사 마스터 풍부화 — 1,500개/일 (UsrInfoService02 엔드포인트별 일 10k 한도 내)
