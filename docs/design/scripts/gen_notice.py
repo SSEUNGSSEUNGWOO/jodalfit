@@ -103,24 +103,46 @@ def reqs(d):
     return [r for r in rs if r.get("mandatory")], [r for r in rs if not r.get("mandatory")]
 
 
-def sched_rows(d):
-    s = (d["insight"] or {}).get("schedule") or {}
-    labs = [("start", "착수"), ("end", "종료"), ("duration", "기간"), ("delivery_deadline", "납품기한")]
+def _sv(s, k):
     # 모델이 문자열 "null" 을 넣어 두는 칸이 있다 — 없는 것으로 본다.
-    return [(lab, s[k]) for k, lab in labs if s.get(k) and str(s[k]).strip().lower() != "null"]
+    v = s.get(k)
+    return str(v).strip() if v and str(v).strip().lower() != "null" else None
+
+
+def sched_rows(d):
+    """일정을 표가 아니라 문장으로 — '착수 계약체결일 / 기간 180일' 은 읽는 사람이 다시 조립해야 한다.
+    조합이 되면 한 줄('계약 체결일부터 180일'), 안 되면 남은 항목만 (라벨, 값) 으로."""
+    s = (d["insight"] or {}).get("schedule") or {}
+    start, end, dur, dl = (_sv(s, k) for k in ("start", "end", "duration", "delivery_deadline"))
+    out = []
+    if start and dur:
+        out.append(("기간", f"{start}부터 {dur}"))
+    elif start and end:
+        out.append(("기간", f"{start} ~ {end}"))
+    elif dur:
+        out.append(("기간", dur))
+    else:
+        if start:
+            out.append(("착수", start))
+        if end:
+            out.append(("종료", end))
+    if dl and dl != end:
+        out.append(("납품기한", dl))
+    return out
 
 
 def eval_text(d):
+    """낙찰 방식 한 줄. 기술 비율이 없으면 '가격 100' 은 방식 이름과 중복이라 빼고,
+    제안 발표는 '없음' 이 기본이므로 있을 때만 말한다. note 는 비고로 따로."""
     e = (d["insight"] or {}).get("evaluation") or {}
     out = []
     if e.get("method"):
         out.append(esc(e["method"]))
     if e.get("technical_pct") is not None and e.get("price_pct") is not None:
-        out.append(f'기술 {e["technical_pct"]} : 가격 {e["price_pct"]}')
-    elif e.get("price_pct") is not None:
-        out.append(f'가격 {e["price_pct"]}')
-    out.append("제안 발표 있음" if e.get("presentation") else "제안 발표 없음")
-    return " · ".join(out), esc(e.get("note") or "")
+        out.append(f'기술 {e["technical_pct"]}% : 가격 {e["price_pct"]}%')
+    if e.get("presentation"):
+        out.append("제안 발표 있음")
+    return " · ".join(out) or '<span class="mute">문서에서 낙찰 방식을 찾지 못했습니다</span>', esc(e.get("note") or "")
 
 
 # ---------------------------------------------------------------- 자격 판정
@@ -294,7 +316,7 @@ def cond_block(d):
     et, note = eval_text(d)
     sr = sched_rows(d)
     side = (f'<div class="cs"><span class="k">낙찰 방식</span><div class="cv">{et}</div>'
-            + (f'<div class="cn">{note}</div>' if note else "")
+            + (f'<div class="cn">비고 · {note}</div>' if note else "")
             + '<span class="k" style="margin-top:16px">일정</span>'
             + (f'<div class="cv">{"".join(f"<i>{lab}</i>{esc(v)}<br>" for lab, v in sr)}</div>'
                if sr else '<div class="cv mute">문서에서 일정을 찾지 못했습니다 — 마감·개찰일은 위에 있습니다</div>')
