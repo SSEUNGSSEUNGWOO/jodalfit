@@ -74,10 +74,20 @@ def _rpc_with_retry(client, fn: str, params: dict):
 _INDUSTRY_CHANNEL = True  # ponytail: 프로세스 로컬 1회성 — 0044 미적용이면 첫 실패 후 업종 채널을 끈다(재배포로 리셋)
 
 
+def _rpc_name(base: str) -> str:
+    """임베딩 공간에 맞는 RPC 이름. kure(1024d)는 `_k` 변형(0045)을 쓴다."""
+    return f"{base}_k" if get_settings().embed_space == "kure" else base
+
+
+def _emb_col() -> str:
+    """임베딩 공간에 맞는 벡터 컬럼. 읽을 때 `embedding:<col>` 별칭을 줘서 호출부는 늘 'embedding' 키를 본다."""
+    return "embedding_k" if get_settings().embed_space == "kure" else "embedding"
+
+
 def _match_notices(client, params: dict, horizon: date) -> list[dict]:
     """match_bid_notices 1회. 0018 미적용 환경은 max_clse_date 없이 받아 파이썬에서 거른다."""
     try:
-        res = _rpc_with_retry(client, "match_bid_notices", {**params, "max_clse_date": horizon.isoformat()})
+        res = _rpc_with_retry(client, _rpc_name("match_bid_notices"), {**params, "max_clse_date": horizon.isoformat()})
         return res.data or []
     except APIError as e:
         if e.code != FUNCTION_NOT_FOUND:
@@ -85,7 +95,7 @@ def _match_notices(client, params: dict, horizon: date) -> list[dict]:
         if "industry_names" in params:  # 0044 미적용 — 0018 폴백 대상이 아니다
             raise
         logger.warning("match_bid_notices max_clse_date 미지원 (0018 미적용) — 파이썬 필터로 degrade")
-        res = _rpc_with_retry(client, "match_bid_notices", params)
+        res = _rpc_with_retry(client, _rpc_name("match_bid_notices"), params)
         return [r for r in (res.data or []) if _within_horizon(r, horizon)]
 
 
@@ -108,7 +118,11 @@ def _interleave(first: list[dict], second: list[dict]) -> list[dict]:
 
 _LEGAL_FORMS = ("주식회사", "유한회사", "유한책임회사", "합자회사", "합명회사", "사단법인", "재단법인",
                 "협동조합", "(주)", "㈜", "(유)", "(사)", "(재)")
-COMPANY_COLS = "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,embedding,is_restricted,optout_at"
+def company_cols() -> str:
+    return (
+        "bizrno,corp_nm,english_nm,ceo_nm,corp_bsns_div_nm,rgn_nm,"
+        f"embedding:{_emb_col()},is_restricted,optout_at"
+    )
 
 
 def _name_core(name: str | None) -> str:
@@ -161,7 +175,7 @@ def _row_by_norm(client, bizrno: str) -> dict | None:
     """
     norm = "".join(ch for ch in bizrno if ch.isdigit())
     res = (
-        client.table("companies").select(COMPANY_COLS)
+        client.table("companies").select(company_cols())
         .eq("bizrno_norm", norm)
         .order("embedded_at", desc=True, nullsfirst=False)
         .limit(1).execute()
@@ -333,9 +347,9 @@ def _fetch_result_embeddings(
     bid_nos = list({k[0] for k in keys})
     rows = (
         client.table("bid_notices")
-        .select("bid_ntce_no,bid_ntce_ord,embedding")
+        .select(f"bid_ntce_no,bid_ntce_ord,embedding:{_emb_col()}")
         .in_("bid_ntce_no", bid_nos)
-        .not_.is_("embedding", "null")
+        .not_.is_(_emb_col(), "null")
         .execute()
         .data
         or []
@@ -412,7 +426,7 @@ def _search_pre_specs(
     client = get_admin_client()
     res = _rpc_with_retry(
         client,
-        "match_pre_specs",
+        _rpc_name("match_pre_specs"),
         {
             "query_embedding": embedding_str,
             "match_count": candidate_pool,
@@ -443,7 +457,7 @@ def _search_order_plans(
     client = get_admin_client()
     res = _rpc_with_retry(
         client,
-        "match_order_plans",
+        _rpc_name("match_order_plans"),
         {"query_embedding": embedding_str, "match_count": candidate_pool},
     )
     raw = res.data or []
@@ -908,7 +922,8 @@ def _recommend_by_keywords(
             "order_plan_results": [],
         }
 
-    embedding = embed_texts([f"관심 영역: {text}"])[0]
+    with timed("embed_query"):
+        embedding = embed_texts([f"관심 영역: {text}"])[0]
     embedding_str = vector_to_pgvector_str(embedding)
     ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
     pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
@@ -987,7 +1002,8 @@ def _recommend_by_company(
 
     keywords_text = (keywords or "").strip()
     if keywords_text:
-        keyword_vec = embed_texts([f"관심 영역: {keywords_text}"])[0]
+        with timed("embed_query"):
+            keyword_vec = embed_texts([f"관심 영역: {keywords_text}"])[0]
         blended = _blend_embeddings(raw_company_vec, keyword_vec)
         embedding_str = vector_to_pgvector_str(blended)
     else:

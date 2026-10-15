@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
+import { IS_KURE, rpcName } from "./embed-space";
 import type { NoticeInsight } from "@/types/recommendations";
 import { diffNoticeVersions, type Amendment, type NoticeVersion } from "./notice-diff";
 
@@ -295,7 +296,11 @@ export async function fetchSimilarNotices(
   // 1) source notice embedding 조회 (가장 최근 ord)
   const { data: src } = await c
     .from("bid_notices")
-    .select("bid_ntce_no,bid_ntce_ord,embedding")
+    .select(
+      IS_KURE
+        ? "bid_ntce_no,bid_ntce_ord,embedding:embedding_k"
+        : "bid_ntce_no,bid_ntce_ord,embedding"
+    )
     .eq("bid_ntce_no", bidNtceNo)
     .order("bid_ntce_ord", { ascending: false })
     .limit(1)
@@ -305,7 +310,7 @@ export async function fetchSimilarNotices(
   // 2) match_bid_notices RPC 호출 (오늘 이후 마감만)
   const today = new Date().toISOString().slice(0, 10);
   const candidatePool = limit * 4 + 5; // 자기 자신 제외 여유분
-  const { data } = await c.rpc("match_bid_notices", {
+  const { data } = await c.rpc(rpcName("match_bid_notices"), {
     query_embedding: src.embedding,
     match_count: candidatePool,
     min_clse_date: today,

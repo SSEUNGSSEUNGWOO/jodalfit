@@ -1,4 +1,6 @@
 import logging
+import threading
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +24,27 @@ if settings.sentry_dsn:
 
 logger = logging.getLogger("jodalfit")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """kure 공간이면 ONNX 세션(없으면 모델 다운로드)을 백그라운드에서 미리 띄운다.
+
+    첫 요청이 409MB 다운로드를 기다리면 타임아웃이다. 스레드라 startup 은 막지 않는다.
+    Railway 는 재시작마다 다시 받는다 — KURE_MODEL_DIR 을 볼륨으로 잡아야 캐시가 남는다.
+    """
+    if settings.embed_space == "kure":
+
+        def warm() -> None:
+            from app.services import local_embed
+
+            local_embed._session()
+            logger.info("KURE ONNX 세션 준비 완료")
+
+        threading.Thread(target=warm, daemon=True).start()
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="jodalfit API",
     version="0.0.1",
     docs_url="/docs" if settings.enable_docs else None,

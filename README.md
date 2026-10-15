@@ -396,6 +396,8 @@ uv run python -m jobs.verify_setup
 | `INSIGHT_PROVIDER` | 인사이트 공급자, openai 로 롤백 | `anthropic` |
 | `EXPLAIN_PROVIDER` | 추천 설명 공급자 (anthropic=Haiku 4.5 기본 / openai=gpt-4o-mini). anthropic 인데 키 없으면 openai 로 degrade | `anthropic` |
 | `DATABASE_URL` | Postgres 직결(세션 풀러 :5432) — backfill/사업자상태/purge/채점표 잡 | `postgresql://...` |
+| `EMBED_SPACE` | 임베딩 공간 `openai`(1536d, `embedding`) / `kure`(1024d, `embedding_k`+`_k` RPC, 0045 필요). 롤백 = 이 값 하나 | `openai` |
+| `KURE_MODEL_DIR` | KURE ONNX 모델 캐시 경로. 비우면 임시 폴더 → Railway 재시작마다 409MB 재다운로드. 영구 볼륨을 가리킬 것 | `/data/kure` |
 
 `frontend/.env.local`:
 
@@ -405,6 +407,7 @@ uv run python -m jobs.verify_setup
 | `NEXT_PUBLIC_USE_MOCK` | `true` 시 백엔드 없이 mock 데이터로 디자인 미리보기 |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon 키 (frontend 전용) |
+| `NEXT_PUBLIC_EMBED_SPACE` | `openai`(기본) / `kure` — 직접 RPC 호출·벡터 컬럼 분기. 백엔드 `EMBED_SPACE` 와 같이 바꾼다 |
 
 > ⚠️ **보안 주의**:
 > - `SUPABASE_SERVICE_ROLE_KEY`는 **RLS를 우회하는 admin 권한**. 절대 frontend나 git에 노출 금지.

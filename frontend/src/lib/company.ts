@@ -1,5 +1,6 @@
 import "server-only";
 import { getServerSupabase } from "./supabase-server";
+import { IS_KURE, rpcName } from "./embed-space";
 
 export interface CompanyDetail {
   bizrno: string;
@@ -144,7 +145,7 @@ export async function fetchSimilarNoticeAwardees(
 ): Promise<CompetitorProfile[]> {
   if (!SIMILAR_AWARDEES_ENABLED) return [];
   const c = getServerSupabase();
-  const { data, error } = await c.rpc("similar_notice_awardees", {
+  const { data, error } = await c.rpc(rpcName("similar_notice_awardees"), {
     p_bizrno_norm: bizrnoNorm,
     p_similar_pool: similarPool,
     p_top_n: topN,
@@ -209,7 +210,9 @@ export async function fetchCompanyByBizrno(
   const { data } = await c
     .from("companies")
     .select(
-      "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,optout_at"
+      IS_KURE
+        ? "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding:embedding_k,is_restricted,contract_count,biz_status_cd,biz_closed_dt,optout_at"
+        : "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,optout_at"
     )
     .eq("bizrno_norm", bizrnoNorm)
     .limit(1)
