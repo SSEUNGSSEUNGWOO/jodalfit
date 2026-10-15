@@ -18,6 +18,7 @@ from gen_results_v2 import strongest  # noqa: E402
 from jobs.evaluate_recommender import connect, fetch_company_profile  # noqa: E402
 
 CSS = r"""
+.tr .fit i { margin-right:0 }
 .nav { padding:22px 0 }
 .reveal { opacity:0; transform:translateY(10px); transition:opacity .6s ease var(--d,0s), transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s) } .in .reveal { opacity:1; transform:none }
 @media (prefers-reduced-motion: reduce) { .reveal, .rib path { transition:none !important; opacity:1 !important; transform:none !important } }
@@ -110,7 +111,7 @@ def row(i, r, locked=False):
     n, dd = dleft(r["bid_clse_date"])
     return (f'<div class="tr"><span class="no">{i:02d}</span><span class="t">{esc(r["bid_ntce_nm"])}</span><span class="org">{esc(org)}</span>'
             f'<span class="why">{esc(s["label"]) if s else ""}</span><span class="r d {"hot" if n <= 7 and not locked else ""}">D-{n}<small>{dd.month}.{dd.day:02d}</small></span>'
-            f'<span class="r">{won(r.get("presmpt_prce"))}</span><span class="r fit"><i><b style="width:{round(float(r["score"]) * 100)}%"></b></i>{round(float(r["score"]) * 100)}</span></div>')
+            f'<span class="r">{won(r.get("presmpt_prce"))}</span><span class="r fit"><i><b style="width:{round(float(r["score"]) * 100)}%"></b></i></span></div>')
 
 
 def detail(r, prof):
@@ -119,7 +120,7 @@ def detail(r, prof):
     wl = "".join(f"<li>{w}</li>" for w in why_lines(r, org))
     return (f'<div class="x"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
             f'<div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div>'
-            f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토 인장</a><a class="bt txt" href="#"><u>안 맞아요</u></a></div></div></div>')
+            f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt" href="#">검토</a></div></div></div>')
 
 
 def body_table(res, prof, login):
