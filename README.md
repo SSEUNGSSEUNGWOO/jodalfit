@@ -391,6 +391,7 @@ uv run python -m jobs.verify_setup
 | `RECO_RETRIEVAL` | 후보 검색 방식 dense/hybrid — 문제 시 dense 로 즉시 롤백 (0044 필요) | `hybrid` |
 | `ANTHROPIC_API_KEY` | 첨부문서 인사이트(Haiku) | (비움) |
 | `INSIGHT_PROVIDER` | 인사이트 공급자, openai 로 롤백 | `anthropic` |
+| `EXPLAIN_PROVIDER` | 추천 설명 공급자 (anthropic=Haiku 4.5 기본 / openai=gpt-4o-mini). anthropic 인데 키 없으면 openai 로 degrade | `anthropic` |
 
 `frontend/.env.local`:
 

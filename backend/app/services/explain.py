@@ -1,16 +1,30 @@
 """추천 이유 LLM 설명 (차별화 핵심).
-
 회사 컨텍스트 + 추천 공고 → "왜 추천했는지" 자연어 설명.
-모델: gpt-4o-mini (저렴 + 충분).
+모델: 설정 EXPLAIN_PROVIDER — anthropic(claude-haiku-4-5, 기본) / openai(gpt-4o-mini).
+2026-10-15 비교(실제 추천 5건 병렬): Haiku 2.3s vs 4o-mini 3.3s, 4o-mini 는 금지한 일반론("의미적으로 연결")을
+자주 쓰고 Haiku 는 자격·업종을 구체 인용. Haiku 는 길이 규칙을 무시하는 경향이 있어 FORMAT_RULES 를 덧붙인다.
 """
 
 from __future__ import annotations
 
 import time
 
+import logging
+
+from app.core.config import get_settings
 from app.services.openai_client import get_openai_client
 
+logger = logging.getLogger("jodalfit")
+
 MODEL = "gpt-4o-mini"
+ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+
+# 두 공급자 공통. Haiku 가 특히 두 문장·마크다운으로 길어지는 것을 막는다.
+FORMAT_RULES = """
+# 출력 형식 (엄수)
+- 정확히 한 문장, 70~110자. 두 문장 금지. 쉼표로 이어 붙여 길이를 늘리지 말 것.
+- 마크다운·굵게·따옴표 장식 금지. 평문만.
+- 자격 미충족 가능성은 "~면허 확인 필요" 정도로 짧게 한 번만."""
 
 
 SYSTEM_COMPANY = """당신은 한국 공공조달(나라장터) 입찰공고 추천 설명 모듈입니다.
@@ -213,32 +227,39 @@ def build_keyword_prompt(query: str, bid: dict) -> str:
     return "\n".join(lines)
 
 
-def explain_recommendation(company: dict, bid: dict) -> str:
-    client = get_openai_client()
-    resp = client.chat.completions.create(
+_warned_no_key = False
+
+
+def _complete(system: str, user: str, max_tokens: int) -> str:
+    """공급자 스위치. anthropic 인데 키가 없으면 openai 로 degrade (경고 1회)."""
+    global _warned_no_key
+    settings = get_settings()
+    if settings.explain_provider == "anthropic" and settings.anthropic_api_key:
+        from app.services.anthropic_client import get_anthropic_client  # lazy — openai 전용 환경에서 import 비용 회피
+
+        resp = get_anthropic_client().messages.create(
+            model=ANTHROPIC_MODEL, max_tokens=max_tokens, system=system,
+            messages=[{"role": "user", "content": user}],
+        )
+        return next(b.text for b in resp.content if b.type == "text").strip()
+    if settings.explain_provider == "anthropic" and not _warned_no_key:
+        _warned_no_key = True
+        logger.warning("EXPLAIN_PROVIDER=anthropic 이지만 ANTHROPIC_API_KEY 없음 — gpt-4o-mini 로 degrade")
+    resp = get_openai_client().chat.completions.create(
         model=MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_COMPANY},
-            {"role": "user", "content": build_company_prompt(company, bid)},
-        ],
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         temperature=0.3,
-        max_tokens=200,
+        max_tokens=max_tokens,
     )
     return resp.choices[0].message.content.strip()
+
+
+def explain_recommendation(company: dict, bid: dict) -> str:
+    return _complete(SYSTEM_COMPANY + FORMAT_RULES, build_company_prompt(company, bid), 200)
 
 
 def explain_keyword_match(query: str, bid: dict) -> str:
-    client = get_openai_client()
-    resp = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_KEYWORDS},
-            {"role": "user", "content": build_keyword_prompt(query, bid)},
-        ],
-        temperature=0.3,
-        max_tokens=180,
-    )
-    return resp.choices[0].message.content.strip()
+    return _complete(SYSTEM_KEYWORDS + FORMAT_RULES, build_keyword_prompt(query, bid), 180)
 
 
 def explain_batch(
@@ -308,17 +329,7 @@ def explain_summary(company: dict, bids: list[dict]) -> str:
     if hit and time.time() - hit[0] < SUMMARY_CACHE_TTL:
         return hit[1]
 
-    client = get_openai_client()
-    resp = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_SUMMARY},
-            {"role": "user", "content": _build_summary_prompt(company, bids)},
-        ],
-        temperature=0.3,
-        max_tokens=300,
-    )
-    text = resp.choices[0].message.content.strip()
+    text = _complete(SYSTEM_SUMMARY, _build_summary_prompt(company, bids), 300)
     _summary_cache[key] = (time.time(), text)
     if len(_summary_cache) > 500:
         oldest = min(_summary_cache, key=lambda k: _summary_cache[k][0])
