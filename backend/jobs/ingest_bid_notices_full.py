@@ -7,8 +7,8 @@
 bid_notices에 upsert (`ignore_duplicates=True`)로 기존 데이터 보존.
 
 --fill: 상세 API 에만 오는 필드 4개(0047: 물품분류번호 배열·사전규격 번호·참가자격 등록 마감·공동수급 방식)를
-기존 행에도 채운다. 1차 패스가 새 행을 통째로 넣고, 2차 패스가 키 + 그 4개 컬럼만 merge-upsert 한다
-(PostgREST merge 는 보낸 컬럼만 갱신하므로 표준 API 가 넣어 둔 나머지 컬럼은 건드리지 않는다).
+기존 행에도 채운다. 1차 패스가 새 행을 통째로 넣고(PostgREST, 있는 행은 건드리지 않음), 2차 패스가
+psycopg 직결로 그 4개 컬럼만 UPDATE 한다. DATABASE_URL 필요.
 
 실행:
     cd backend
@@ -20,9 +20,12 @@ bid_notices에 upsert (`ignore_duplicates=True`)로 기존 데이터 보존.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 from datetime import datetime, timedelta
 from typing import Any
+
+import psycopg
 
 from app.services.supabase_client import upsert_rows
 from jobs._common import (
@@ -133,23 +136,33 @@ def windows(
 _DETAIL_KEYS = ("prdct_clsfc_nos", "bf_spec_rgst_no", "bid_qlfct_rgst_dt", "cmmn_spldmd_methd_nm")
 
 
-def _flush(batch: list[dict], fill: bool) -> None:
+_FILL_SQL = """
+update bid_notices set
+  prdct_clsfc_nos = %(prdct_clsfc_nos)s, bf_spec_rgst_no = %(bf_spec_rgst_no)s,
+  bid_qlfct_rgst_dt = %(bid_qlfct_rgst_dt)s, cmmn_spldmd_methd_nm = %(cmmn_spldmd_methd_nm)s
+where bid_ntce_no = %(bid_ntce_no)s and bid_ntce_ord = %(bid_ntce_ord)s
+"""
+
+
+def _flush(batch: list[dict], conn) -> None:
     # 1차: 새 행은 통째로, 있는 행은 건드리지 않는다.
     upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord", ignore_duplicates=True)
-    if not fill:
+    if conn is None:
         return
-    # 2차: 키 + 상세 4개만 merge — 표준 API 가 채운 나머지 컬럼은 그대로. 값이 하나도 없는 행은 보내지 않는다.
-    slim = [
-        {"bid_ntce_no": r["bid_ntce_no"], "bid_ntce_ord": r["bid_ntce_ord"], **{k: r[k] for k in _DETAIL_KEYS}}
+    # 2차: 진짜 UPDATE. upsert 로 키+4개만 보내면 Postgres 가 충돌 판정보다 NOT NULL(bid_ntce_nm) 검사를
+    # 먼저 해서 거절한다 — 그래서 PostgREST merge 가 아니라 psycopg 직결(backfill_companies_basic 과 같은 길).
+    rows = [
+        {k: r[k] for k in ("bid_ntce_no", "bid_ntce_ord", *_DETAIL_KEYS)}
         for r in batch
         if any(r[k] is not None for k in _DETAIL_KEYS)
     ]
-    if slim:
-        upsert_rows("bid_notices", slim, on_conflict="bid_ntce_no,bid_ntce_ord")
+    if rows:
+        with conn.cursor() as cur:
+            cur.executemany(_FILL_SQL, rows)
 
 
 def run_one_window(
-    label: str, url: str, begin: datetime, end: datetime, batch_size: int, fill: bool = False
+    label: str, url: str, begin: datetime, end: datetime, batch_size: int, conn=None
 ) -> int:
     extra = {
         "inqryDiv": "1",
@@ -164,11 +177,11 @@ def run_one_window(
             continue
         batch.append(row)
         if len(batch) >= batch_size:
-            _flush(batch, fill)
+            _flush(batch, conn)
             total += len(batch)
             batch.clear()
     if batch:
-        _flush(batch, fill)
+        _flush(batch, conn)
         total += len(batch)
     return total
 
@@ -199,6 +212,11 @@ def run(
         f"range={wins[-1][0].strftime('%Y-%m-%d')} ~ {wins[0][1].strftime('%Y-%m-%d')}"
     )
 
+    conn = None
+    if fill:
+        if not os.getenv("DATABASE_URL"):
+            raise SystemExit("--fill 에는 DATABASE_URL 이 필요합니다 (backend/.env)")
+        conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     grand_total = 0
     try:
         for i, (begin, win_end) in enumerate(wins, 1):
@@ -208,7 +226,7 @@ def run(
             for label, url in ENDPOINTS.items():
                 if divs and label not in divs:
                     continue
-                n = run_one_window(label, url, begin, win_end, batch_size, fill)
+                n = run_one_window(label, url, begin, win_end, batch_size, conn)
                 print(f"  {label}: +{n:,}")
                 grand_total += n
         log_ingest_finish(run_id, "success", rows_inserted=grand_total)
@@ -216,6 +234,9 @@ def run(
     except Exception as e:
         log_ingest_finish(run_id, "failed", rows_inserted=grand_total, error_msg=str(e))
         raise
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 if __name__ == "__main__":
