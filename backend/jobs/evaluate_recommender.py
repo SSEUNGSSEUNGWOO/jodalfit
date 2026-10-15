@@ -53,12 +53,14 @@ def connect() -> psycopg.Connection:
     return conn
 
 
-def fetch_positives(conn, t: date, horizon: date) -> dict[str, set[tuple[str, str]]]:
-    """t 에 활성(게시 < t ≤ 마감 ≤ t+horizon)이었고 나중에 낙찰한 (회사norm → {(no, ord)})."""
+def fetch_positives(conn, t: date, horizon: date, positives: str = "winner") -> dict[str, set[tuple[str, str]]]:
+    """t 에 활성(게시 < t, t+2 ≤ 마감 ≤ t+horizon)이었고 나중에 낙찰(winner) 또는 입찰 참가(participant, 낙찰 포함)한 (회사norm → {(no, ord)}).
+    participant 는 정답이 ~10배(8/1: 4,074 → 43,472 쌍, 회사 3.6천 → 19천)라 측정이 안정되고 '검토할 만한 공고' 라는 제품 목적에 더 가깝다."""
+    win = "a.is_winner and" if positives == "winner" else ""
     rows = conn.execute(
-        """select a.bizrno_norm, a.bid_ntce_no, a.bid_ntce_ord
+        f"""select a.bizrno_norm, a.bid_ntce_no, a.bid_ntce_ord
            from award_results a join bid_notices b using (bid_ntce_no, bid_ntce_ord)
-           where a.is_winner and a.bizrno_norm <> '' and b.embedding is not null
+           where {win} a.bizrno_norm <> '' and b.embedding is not null
              and b.bid_ntce_date < %s and b.bid_clse_date >= %s and b.bid_clse_date <= %s  -- 마감 2일 이상 남은 것만: 1일 내 마감은 t 에 '발견'할 수 없는 공고(운영 마감 임박 -30 과 같은 기준)""",
         (t, t + timedelta(days=2), horizon),
     ).fetchall()
@@ -285,12 +287,13 @@ def main() -> None:
     ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid"], default=get_settings().reco_retrieval,
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
     ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
+    ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
     out_dir = Path(__file__).resolve().parents[1] / "data" / "recommender_eval" / run_id; out_dir.mkdir(parents=True, exist_ok=True)
     conn = connect()
-    positives = fetch_positives(conn, t, horizon)
+    positives = fetch_positives(conn, t, horizon, args.positives)
     sample = sample_companies(conn, positives, t, args.companies, args.seed)
     notices, X = fetch_active_notices(conn, t, horizon)
     instt_stats = fetch_instt_stats_before(conn, t)
@@ -337,12 +340,12 @@ def main() -> None:
     for f in failures: lost_counts[f["lost_at"]] += 1
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
     agg["positives_dropped"] = positives_dropped
-    manifest = {"as_of": t.isoformat(), "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
+    manifest = {"as_of": t.isoformat(), "positives": args.positives, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
                 "retrieval": args.retrieval, "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
                           "peer_instt_counts 비활성(운영과 동일), 기관통계는 t 이전 2년 계약으로 재계산",
-                          "정답=낙찰(award_results.is_winner). 미낙찰은 음성 아님",
+                          "정답=낙찰(award_results.is_winner) 또는 --positives participant 면 입찰 참가(낙찰 포함). 미참가는 음성 아님",
                           "참가 이력의 시점은 openg_date(개찰일) 기준 — 운영 잡은 raw bidprcDt 를 쓰지만 t 시점 '알 수 있었던' 기준으로는 개찰일이 맞다",
                           "정답·순위 비교는 공고번호 단위(차수 무시) — 운영 dedup 과 같은 단위",
                           "게시일 = t 인 공고는 제외(bid_ntce_date < t) — 보수적, 시점당 수십 건"]}
