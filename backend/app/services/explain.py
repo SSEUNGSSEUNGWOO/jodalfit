@@ -26,6 +26,12 @@ FORMAT_RULES = """
 - 마크다운·굵게·따옴표 장식 금지. 평문만.
 - 자격 미충족 가능성은 "~면허 확인 필요" 정도로 짧게 한 번만."""
 
+# 상단 요약 전용 형식. Haiku 가 "# 추천 공고 요약" 같은 제목을 붙이는 것을 막는다 (운영에서 그대로 노출됨, 2026-10-15).
+SUMMARY_FORMAT_RULES = """
+# 출력 형식 (엄수)
+- 제목·머리말·마크다운(#, **, -) 금지. 평문 문단 하나.
+- 2~3문장, 총 200~260자."""
+
 
 SYSTEM_COMPANY = """당신은 한국 공공조달(나라장터) 입찰공고 추천 설명 모듈입니다.
 
@@ -329,7 +335,7 @@ def explain_summary(company: dict, bids: list[dict]) -> str:
     if hit and time.time() - hit[0] < SUMMARY_CACHE_TTL:
         return hit[1]
 
-    text = _complete(SYSTEM_SUMMARY, _build_summary_prompt(company, bids), 300)
+    text = _complete(SYSTEM_SUMMARY + SUMMARY_FORMAT_RULES, _build_summary_prompt(company, bids), 300)
     _summary_cache[key] = (time.time(), text)
     if len(_summary_cache) > 500:
         oldest = min(_summary_cache, key=lambda k: _summary_cache[k][0])
