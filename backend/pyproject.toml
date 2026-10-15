@@ -10,6 +10,7 @@ dependencies = [
     "numpy>=2.4.6",
     "olefile>=0.47",
     "openai>=2.38.0",
+    "openpyxl>=3.1.5",
     "playwright>=1.63.0",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.1",

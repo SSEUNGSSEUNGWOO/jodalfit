@@ -1,4 +1,4 @@
-"""입찰 첨부파일(hwp / hwpx / pdf) 텍스트 추출.
+"""입찰 첨부파일(hwp / hwpx / pdf / xlsx, zip 묶음) 텍스트 추출.
 
 외부 프로그램 없이 순수 Python. pyhwp는 유지보수 중단 + 무출력 문제로 쓰지 않고
 HWP 5.0 공개 스펙대로 BodyText 문단 레코드를 직접 읽는다.
@@ -16,7 +16,8 @@ import xml.etree.ElementTree as ET
 import olefile
 from pypdf import PdfReader
 
-SUPPORTED_EXTS = ("hwp", "hwpx", "pdf")
+SUPPORTED_EXTS = ("hwp", "hwpx", "pdf", "xlsx")
+ARCHIVE_EXTS = ("zip",)
 
 
 class UnsupportedDocument(Exception):
@@ -45,6 +46,9 @@ def sniff_format(data: bytes) -> str | None:
 
 
 def extract_text(data: bytes, ext: str) -> str:
+    # xlsx 는 zip 매직이 hwpx 와 겹쳐 sniff 로 가릴 수 없다 → 확장자 우선
+    if ext == "xlsx":
+        return extract_xlsx(data)
     fmt = sniff_format(data) or ext
     if fmt == "hwp":
         return extract_hwp(data)
@@ -80,6 +84,57 @@ def extract_pdf(data: bytes) -> str:
         except Exception:  # 일부 페이지의 폰트 구조 오류(KeyError '/DescendantFonts' 등)는 그 페이지만 포기
             continue
     return _clean("\n".join(pages))
+
+
+# ----- XLSX (규격서·내역서) -----
+
+def extract_xlsx(data: bytes, max_rows_per_sheet: int = 2000) -> str:
+    """시트별 텍스트. 셀은 탭, 행은 줄바꿈, 빈 셀·빈 행 생략. 수식은 값으로."""
+    import openpyxl  # lazy — hwp/pdf 만 쓰는 경로의 import 비용 회피
+
+    wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    parts: list[str] = []
+    for ws in wb.worksheets:
+        lines: list[str] = []
+        for i, row in enumerate(ws.iter_rows(values_only=True)):
+            if i >= max_rows_per_sheet:
+                lines.append(f"... (이하 {ws.max_row - max_rows_per_sheet}행 생략)")
+                break
+            cells = [str(c).strip() for c in row if c is not None and str(c).strip()]
+            if cells:
+                lines.append("\t".join(cells))
+        if lines:
+            parts.append(f"[시트: {ws.title}]\n" + "\n".join(lines))
+    wb.close()
+    return "\n\n".join(parts)
+
+
+# ----- ZIP (첨부 묶음) -----
+
+def iter_zip_members(data: bytes) -> list[tuple[str, bytes]]:
+    """zip 안의 지원 형식 파일만 (이름, 바이트) 로. 20MB 초과 멤버·암호 zip 은 건너뜀."""
+    out: list[tuple[str, bytes]] = []
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        for info in zf.infolist():
+            if info.is_dir() or info.file_size > 20 * 1024 * 1024:
+                continue
+            name = _decode_zip_name(info)
+            if ext_of(name) in SUPPORTED_EXTS:
+                try:
+                    out.append((name, zf.read(info)))
+                except RuntimeError:  # 암호
+                    continue
+    return out
+
+
+def _decode_zip_name(info: zipfile.ZipInfo) -> str:
+    """한글 파일명: UTF-8 플래그 없으면 cp949 로 복원 (나라장터 zip 대부분)."""
+    if info.flag_bits & 0x800:
+        return info.filename
+    try:
+        return info.filename.encode("cp437").decode("cp949")
+    except Exception:
+        return info.filename
 
 
 # ----- HWPX (OWPML, zip + xml) -----
