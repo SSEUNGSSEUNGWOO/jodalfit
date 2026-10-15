@@ -19,6 +19,7 @@ STAGE_CSS = r"""
 .fh { padding:26px 0 0 }
 .stage { position:relative; height:330px; margin-top:18px; border-top:1px solid #141414; overflow:hidden; transition:height .6s cubic-bezier(.2,.7,.2,1) }
 .stage.done { height:0; border-top:0 }
+.stage.done .cap { visibility:hidden }
 .stage.fly { overflow:visible; z-index:30 }
 .cap { position:absolute; left:0; top:22px; z-index:5 }
 .cap .k { font-size:11px; letter-spacing:.08em; color:#737370; font-weight:600; display:block }
@@ -190,6 +191,7 @@ async function flyToTable(){
     }, delays[i]);
   });
   await wait(760);
+  stage.classList.remove('fly');
 }
 function revealResults(){ document.body.classList.add('revealed'); }
 
