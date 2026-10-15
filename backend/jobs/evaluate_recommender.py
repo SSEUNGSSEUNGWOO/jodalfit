@@ -108,6 +108,17 @@ def sample_companies(conn, positives: dict, t: date, n: int, seed: int) -> list[
     return out
 
 
+EMB_STORE: dict | None = None  # --embeddings: {"n": {(no, ord): vec}, "t": {industry_text: vec}} — 다른 임베딩 모델 실험용
+
+
+def load_emb_store(path: str) -> dict:
+    """embed_local.py 가 만든 npz → 스토어. 공고 키 'no|ord', 업종 텍스트 원문 그대로."""
+    z = np.load(path, allow_pickle=True)
+    n = {tuple(k.split("|", 1)): v for k, v in zip(z["keys"].tolist(), z["N"])}
+    t = {str(k): v for k, v in zip(z["texts"].tolist(), z["I"])}
+    return {"n": n, "t": t, "dim": int(z["N"].shape[1])}
+
+
 def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.ndarray]:
     """t 에 활성이고 임베딩 있는 공고 전부(운영 RPC 조건과 동일) + 임베딩 행렬(정규화)."""
     rows = conn.execute(
@@ -122,7 +133,13 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     notices = [dict(bid_ntce_no=r[0], bid_ntce_ord=r[1], bid_ntce_nm=r[2], bsns_div_nm=r[3],
                     bid_clse_date=r[4], presmpt_prce=r[5], ntce_instt_nm=r[6], dmnd_instt_nm=r[7],
                     bidprc_psbl_indstryty_nm=r[8], prtcpt_psbl_rgn_nm=r[9]) for r in rows]
-    X = np.array([json.loads(r[10]) for r in rows], dtype=np.float32)
+    if EMB_STORE is not None:  # 로컬 모델 임베딩으로 대체 — 빠진 공고가 있으면 실험 자체가 무효라 fail-loud
+        missing = [(r[0], r[1]) for r in rows if (r[0], r[1]) not in EMB_STORE["n"]]
+        if missing:
+            sys.exit(f"--embeddings 에 활성 공고 {len(missing)}건 없음 (예: {missing[0]})")
+        X = np.array([EMB_STORE["n"][(r[0], r[1])] for r in rows], dtype=np.float32)
+    else:
+        X = np.array([json.loads(r[10]) for r in rows], dtype=np.float32)
     X /= np.linalg.norm(X, axis=1, keepdims=True) + 1e-9
     return notices, X
 
@@ -173,11 +190,18 @@ def company_vector_at(conn, prof: dict, hist: list[dict], t: date, cache: dict, 
     if not text:
         return None
     if text not in cache:
-        cache[text] = np.array(embed_texts([text])[0], dtype=np.float32)
+        if EMB_STORE is not None:
+            if text not in EMB_STORE["t"]:
+                sys.exit("--embeddings 에 업종 텍스트 없음: " + text[:60])
+            cache[text] = np.array(EMB_STORE["t"][text], dtype=np.float32)
+        else:
+            cache[text] = np.array(embed_texts([text])[0], dtype=np.float32)
     ind = cache[text]; ind = ind / (np.linalg.norm(ind) + 1e-9)
     keys = [(h["bid_ntce_no"], h["bid_ntce_ord"]) for h in hist]
     emb: dict[tuple[str, str], np.ndarray] = {}
-    if keys:
+    if keys and EMB_STORE is not None:
+        emb = {k: EMB_STORE["n"][k] for k in keys if k in EMB_STORE["n"]}
+    elif keys:
         for no, od, e in conn.execute(
             "select bid_ntce_no, bid_ntce_ord, embedding::text from bid_notices where (bid_ntce_no, bid_ntce_ord) in (select unnest(%s::text[]), unnest(%s::text[])) and embedding is not null",
             ([k[0] for k in keys], [k[1] for k in keys])):
@@ -288,6 +312,7 @@ def main() -> None:
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
     ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
+    ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
@@ -295,6 +320,10 @@ def main() -> None:
     conn = connect()
     positives = fetch_positives(conn, t, horizon, args.positives)
     sample = sample_companies(conn, positives, t, args.companies, args.seed)
+    global EMB_STORE
+    if args.embeddings:
+        EMB_STORE = load_emb_store(args.embeddings)
+        print(f"embeddings: {args.embeddings} (dim {EMB_STORE['dim']}, notices {len(EMB_STORE['n']):,})")
     notices, X = fetch_active_notices(conn, t, horizon)
     instt_stats = fetch_instt_stats_before(conn, t)
     nidx = {(n["bid_ntce_no"], n["bid_ntce_ord"]): n for n in notices}
@@ -340,7 +369,7 @@ def main() -> None:
     for f in failures: lost_counts[f["lost_at"]] += 1
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
     agg["positives_dropped"] = positives_dropped
-    manifest = {"as_of": t.isoformat(), "positives": args.positives, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
+    manifest = {"as_of": t.isoformat(), "positives": args.positives, "embeddings": args.embeddings, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
                 "retrieval": args.retrieval, "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
