@@ -27,6 +27,7 @@
 - 다이어트(후속): halfvec 전환은 손실 무시 수준 → 진행. `raw`는 **embed 잡이 읽음**(품목분류·규격 등) → 활성 공고 raw는 유지, 마감 지난 것만 비움. 첨부 원문은 로컬 덤프 보관 후 마감 공고만 비움.
 - 임베딩 모델 교체 검토: `docs/design/prototypes/embed-eval.html`(블라인드 비교, 모델 매핑은 `_mapping.txt`). OpenAI↔BGE/KURE 겹침 20%. 코덱스 의견(`C:\dev\ops\jodalfit\design\codex_answer.md`): 교체 전에 자격 반영 후보 검색 + 업종·물품 하이브리드(RRF)가 먼저, 평가는 과거 낙찰 held-out(Recall@100)로, 운영 추론은 Railway 동거 금지(Modal GPU 또는 API).
 - 추천 평가 하네스(채점표) 완료(2026-10-13, 브랜치 `feat/recommender-eval`): `jobs/evaluate_recommender.py`, 규칙 `docs/recommender/evaluation.md`, baseline 8/1·9/1. 결과: 정답의 절반이 dense 후보 400 밖에서 사라짐(cold 군 가장 심함), 자격 제외 손실은 5~8%, MMR 손실 0. → 다음 작업은 후보 검색(하이브리드/자격 선필터), 점수 재보정은 그 뒤.
+- **KURE-v1 임베딩 전환 완료(2026-10-15 14:10 KST)**: 두 공간 병행(`embedding`/`embedding_k`), `EMBED_SPACE=kure`(Actions 변수·Railway·Vercel `NEXT_PUBLIC_EMBED_SPACE`). 백필 공고 266,110·사전규격 2,521·발주계획 20·회사 59,498, 인덱스 4개. 운영 확인: 회사 모드 1.67s, 키워드 모드 0.47s(embed_query 28ms, ONNX int8 상주). 롤백 = 세 변수를 openai 로. 후속: 다음 hourly-sync 에서 torch CPU 설치·임베딩 시간 확인, 1주 뒤 OpenAI 임베딩 스텝 제거 전에 프론트 '벡터 없음' 필터·ingest_bid_participants·register_searched 전환(계획 Task 8). 기록 `docs/recommender/exp-2026-10-15-embedding-model.md`, 계획 `docs/superpowers/plans/2026-10-15-kure-embedding.md`.
 - 컴퓨트는 **Small로 시작**, 이전 후 Server-Timing·I/O 측정해서 필요할 때만 Medium (리전은 못 바꾸지만 컴퓨트는 즉시 변경 가능)
 - 포함: 개인정보처리방침 리전 표기 + `PRIVACY_VERSION` 갱신, 벡터 미생성 회사 재계산, 옛 DB 덤프 D: 보관, pg_cron 5개 재생성(`purge-logs-older-than-1y` 포함), MV anon 권한 회수
 - 완료 기준: 행 수 대조 일치, opt-out 1건 존재, 추천 Server-Timing total < 1s, daily-sync 첫 성공
