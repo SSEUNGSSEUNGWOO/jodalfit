@@ -45,11 +45,6 @@ export function Footer({ className }: { className?: string }) {
               </Link>
             </li>
             <li>
-              <a href="/insights" className="hover:text-ink transition-colors">
-                주간 인사이트
-              </a>
-            </li>
-            <li>
               <a
                 href="mailto:jsw7980@gmail.com"
                 className="hover:text-ink transition-colors"

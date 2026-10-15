@@ -44,7 +44,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `app/services/` — supabase/openai 클라이언트, recommend(후보 검색+v1), explain, viz(임베딩 시각화), search_log, notice_events
 - `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative)
 - `jobs/` — 접두사 규칙: `ingest_*`(나라장터 API 수집) / `embed_*`(임베딩 생성) / `compute_company_vectors`(회사 벡터 통합) / `probe_*`(API 응답 탐색, 개발용) / `verify_*`·`check_*`·`diag_*`(검증/진단). 공통 fetch/페이징/타입 변환은 `jobs/_common.py`.
-- `jobs/weekly_insight/` — 주간 콘텐츠 발행 파이프라인 (writer → evaluator → proofreader), `.claude/commands/weekly-market.md`·`weekly-picks.md` 스킬이 이걸 구동. 산출물은 frontend `/insights`에 노출.
 - `jobs/marketing_report/` — 일일 마케팅 성적표 (`/marketing-report`, 설명서 `docs/marketing/README.md`).
 
 ### 로그 지표 — 내부 SSR과 실사용자 구분 (필수)

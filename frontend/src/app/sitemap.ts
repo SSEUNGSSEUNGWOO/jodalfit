@@ -2,7 +2,6 @@ import type { MetadataRoute } from "next";
 import { fetchSitemapUrls } from "@/lib/sitemap-urls";
 import { fetchOptoutBizrnos } from "@/lib/optout";
 import { fetchIndustryDirectory } from "@/lib/industry";
-import { listAllInsights } from "@/lib/insights";
 import {
   COMPANY_SEGMENTS,
   NOTICE_SEGMENT_ID,
@@ -67,7 +66,7 @@ export default async function sitemap({
     }));
   }
 
-  // 마지막 세그먼트: 정적 라우트 + 인사이트
+  // 마지막 세그먼트: 정적 라우트
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -86,12 +85,6 @@ export default async function sitemap({
       url: `${BASE_URL}/companies`,
       lastModified: STATIC_LASTMOD,
       changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/insights`,
-      lastModified: STATIC_LASTMOD,
-      changeFrequency: "weekly",
       priority: 0.8,
     },
     {
@@ -123,18 +116,5 @@ export default async function sitemap({
     // industry_directory 없으면 skip
   }
 
-  let insightRoutes: MetadataRoute.Sitemap = [];
-  try {
-    const items = await listAllInsights();
-    insightRoutes = items.map((i) => ({
-      url: `${BASE_URL}/insights/${i.type}/${i.slug}`,
-      lastModified: new Date(i.published_at),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
-  } catch {
-    // 인사이트 폴더 없으면 skip
-  }
-
-  return [...staticRoutes, ...industryRoutes, ...insightRoutes];
+  return [...staticRoutes, ...industryRoutes];
 }
