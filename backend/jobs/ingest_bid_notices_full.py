@@ -6,15 +6,21 @@
 
 bid_notices에 upsert (`ignore_duplicates=True`)로 기존 데이터 보존.
 
+--fill: 상세 API 에만 오는 필드 4개(0047: 물품분류번호 배열·사전규격 번호·참가자격 등록 마감·공동수급 방식)를
+기존 행에도 채운다. 1차 패스가 새 행을 통째로 넣고, 2차 패스가 키 + 그 4개 컬럼만 merge-upsert 한다
+(PostgREST merge 는 보낸 컬럼만 갱신하므로 표준 API 가 넣어 둔 나머지 컬럼은 건드리지 않는다).
+
 실행:
     cd backend
     uv run python -m jobs.ingest_bid_notices_full --months 1   # 한 달치 probe
     uv run python -m jobs.ingest_bid_notices_full --months 12  # 1년치 풀
+    uv run python -m jobs.ingest_bid_notices_full --months 4 --div 물품 --fill   # 물품 통로용 분류번호 채우기
 """
 
 from __future__ import annotations
 
 import argparse
+import re
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -38,6 +44,33 @@ ENDPOINTS = {
 JOB_NAME = "ingest_bid_notices_full"
 
 DATE_FMT = "%Y%m%d%H%M"
+
+_PRDCT_CODE = re.compile(r"\^(\d{10})\^")  # purchsObjPrdctList: '[1^4227171301^이름],[1^...]'
+
+
+def _to_ts(s: str | None) -> str | None:
+    """'2026-02-03 18:00' → ISO. 빈 값·이상값은 None."""
+    if not s or not str(s).strip():
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(str(s).strip(), fmt).isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def detail_fields(it: dict) -> dict[str, Any]:
+    """상세 API 에만 오는 4개(0047). 표준 API 응답에는 키 자체가 없어 전부 None 이 된다."""
+    codes = _PRDCT_CODE.findall(str(it.get("purchsObjPrdctList") or ""))
+    if not codes and it.get("dtilPrdctClsfcNo"):
+        codes = [str(it["dtilPrdctClsfcNo"])]
+    return {
+        "prdct_clsfc_nos": sorted(set(codes)) or None,
+        "bf_spec_rgst_no": (it.get("bfSpecRgstNo") or "").strip() or None,
+        "bid_qlfct_rgst_dt": _to_ts(it.get("bidQlfctRgstDt")),
+        "cmmn_spldmd_methd_nm": (it.get("cmmnSpldmdMethdNm") or "").strip() or None,
+    }
 
 
 def map_item(it: dict, bsns_div: str) -> dict[str, Any]:
@@ -70,6 +103,7 @@ def map_item(it: dict, bsns_div: str) -> dict[str, Any]:
         "rgn_lmt_yn": to_yn(it.get("cmmnSpldmdCorpRgnLmtYn")),
         "indstryty_lmt_yn": to_yn(it.get("bidPrtcptLmtYn")),
         "raw": it,
+        **detail_fields(it),
     }
 
 
@@ -96,8 +130,26 @@ def windows(
     return out
 
 
+_DETAIL_KEYS = ("prdct_clsfc_nos", "bf_spec_rgst_no", "bid_qlfct_rgst_dt", "cmmn_spldmd_methd_nm")
+
+
+def _flush(batch: list[dict], fill: bool) -> None:
+    # 1차: 새 행은 통째로, 있는 행은 건드리지 않는다.
+    upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord", ignore_duplicates=True)
+    if not fill:
+        return
+    # 2차: 키 + 상세 4개만 merge — 표준 API 가 채운 나머지 컬럼은 그대로. 값이 하나도 없는 행은 보내지 않는다.
+    slim = [
+        {"bid_ntce_no": r["bid_ntce_no"], "bid_ntce_ord": r["bid_ntce_ord"], **{k: r[k] for k in _DETAIL_KEYS}}
+        for r in batch
+        if any(r[k] is not None for k in _DETAIL_KEYS)
+    ]
+    if slim:
+        upsert_rows("bid_notices", slim, on_conflict="bid_ntce_no,bid_ntce_ord")
+
+
 def run_one_window(
-    label: str, url: str, begin: datetime, end: datetime, batch_size: int
+    label: str, url: str, begin: datetime, end: datetime, batch_size: int, fill: bool = False
 ) -> int:
     extra = {
         "inqryDiv": "1",
@@ -112,21 +164,11 @@ def run_one_window(
             continue
         batch.append(row)
         if len(batch) >= batch_size:
-            upsert_rows(
-                "bid_notices",
-                batch,
-                on_conflict="bid_ntce_no,bid_ntce_ord",
-                ignore_duplicates=True,
-            )
+            _flush(batch, fill)
             total += len(batch)
             batch.clear()
     if batch:
-        upsert_rows(
-            "bid_notices",
-            batch,
-            on_conflict="bid_ntce_no,bid_ntce_ord",
-            ignore_duplicates=True,
-        )
+        _flush(batch, fill)
         total += len(batch)
     return total
 
@@ -137,6 +179,8 @@ def run(
     until: datetime | None = None,
     win_days: int = 30,
     batch_size: int = 500,
+    divs: list[str] | None = None,
+    fill: bool = False,
 ) -> None:
     end = until or datetime.now()
     wins = windows(end, months=months, since=since, win_days=win_days)
@@ -162,7 +206,9 @@ def run(
                 f"\n[window {i}/{len(wins)}] {begin.strftime('%Y-%m-%d')} ~ {win_end.strftime('%Y-%m-%d')}"
             )
             for label, url in ENDPOINTS.items():
-                n = run_one_window(label, url, begin, win_end, batch_size)
+                if divs and label not in divs:
+                    continue
+                n = run_one_window(label, url, begin, win_end, batch_size, fill)
                 print(f"  {label}: +{n:,}")
                 grand_total += n
         log_ingest_finish(run_id, "success", rows_inserted=grand_total)
@@ -194,6 +240,8 @@ if __name__ == "__main__":
         help="윈도우 일수 (데이터 많아 API '입력 초과' 에러 시 15로 단축)",
     )
     parser.add_argument("--batch-size", type=int, default=500)
+    parser.add_argument("--div", action="append", choices=list(ENDPOINTS), help="이 구분만 (반복 가능). 기본 전부")
+    parser.add_argument("--fill", action="store_true", help="기존 행에도 상세 필드 4개(0047)를 채운다")
     args = parser.parse_args()
     since_dt = (
         datetime.strptime(args.since, "%Y-%m-%d") if args.since else None
@@ -209,4 +257,6 @@ if __name__ == "__main__":
         until=until_dt,
         win_days=args.win_days,
         batch_size=args.batch_size,
+        divs=args.div,
+        fill=args.fill,
     )
