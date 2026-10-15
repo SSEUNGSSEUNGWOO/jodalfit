@@ -39,10 +39,17 @@ SPOTS = ([("drop_ind", 16, 58), ("drop_ind", 16, 108), ("drop_ind", 16, 158),
           ("drop_ind", 16, 208), ("drop_ind", 16, 258), ("drop_ind", 16, 308)]
          + [("drop_rgn", 304, 96), ("drop_rgn", 304, 188), ("drop_rgn", 304, 280)])
 
+# 벽마다 '왜 막혔나' 한 줄. 막힌 쪽(벽 왼쪽)에 오른쪽 끝을 벽에 붙이고,
+# 그 벽이 실제로 막기 시작할 때 나타난다. 그림이 주장이고 글자는 캡션이라 작고 조용하게.
+RSN_Y = 346
+REASONS = [(XS[1], "등록업종이 허용되지 않음"),
+           (XS[2], "면허·지역 제한에 걸림"),
+           (XS[3], "회사와 덜 가까움")]
+
 
 CSS = SHEET_CSS + r"""
 .q { padding:26px 0 0; font-size:13.5px; color:#55554f } .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px }
-.stage { margin-top:20px; border-top:1px solid #141414 }
+.stage { margin-top:20px; border-top:1px solid #141414; cursor:pointer } .done .stage { cursor:auto }
 .labs { position:relative; height:56px; overflow:hidden; transition:height .5s cubic-bezier(.3,.7,.2,1) }
 .field { position:relative; height:392px; overflow:hidden; transition:height .55s cubic-bezier(.3,.7,.2,1) }
 .field canvas { display:block; width:100%; height:392px; transition:transform .55s cubic-bezier(.3,.7,.2,1) }
@@ -56,6 +63,8 @@ CSS = SHEET_CSS + r"""
 .ttl { position:absolute; font-size:11.5px; line-height:1.45; color:#6b6b67; letter-spacing:-0.015em; white-space:nowrap;
        overflow:hidden; text-overflow:ellipsis; background:#fff; padding:1px 5px; opacity:0; transition:opacity .35s ease }
 .ttl.on { opacity:1 }
+/* 탈락 이유는 같은 흰 판을 쓰지만 벽에 오른쪽을 붙이고 한 톤 진하다 — 공고명과 섞이지 않게 */
+.ttl.rsn { text-align:right; color:#55554f }
 .chain { display:flex; align-items:baseline; gap:10px; font-size:13px; color:#737370; height:0; opacity:0; overflow:hidden; transition:opacity .4s ease .15s, height .4s ease }
 .chain b { font-size:17px; font-weight:650; color:#141414; letter-spacing:-0.02em; font-variant-numeric:tabular-nums } .chain b.acc { color:#e8431b } .chain i { font-style:normal; color:#c9c9c4 }
 .done .field, .done .labs { height:0 } .done .field canvas { transform:translateY(-150px) }
@@ -215,7 +224,17 @@ function run(mode){
   raf = requestAnimationFrame(tick);
 }
 
+// 스테이지 아무 곳이나 누르면(키 아무거나도) 끝 상태로 건너뛴다 — 사용자는 애니메이션이 아니라
+// 공고를 보러 왔다. 이미 끝났으면 아무 일도 하지 않는다. .ctl 은 .stage 밖(fixed)이라 안 걸린다.
+function settle(){
+  if (document.body.classList.contains('done')) return;
+  cancelAnimationFrame(raf);
+  paint(W, true);
+}
+
 setup();
+document.querySelector('.stage').onclick = settle;
+addEventListener('keydown', settle);
 document.querySelectorAll('.ctl span').forEach(s => s.onclick = () => run(s.dataset.run));
 addEventListener('resize', () => { setup(); paint(W, document.body.classList.contains('done')); });
 run(reduce ? 'still' : 'full');
@@ -237,7 +256,10 @@ def field(titles):
     # 글자는 전진선이 제 폭을 다 지나간 뒤에만 나타난다 — 잉크보다 앞서 나가면 계측이 아니다
     tx = "".join(f'<div class="ttl" data-x="{x + TW}" style="left:{x / W * 100:.3f}%;top:{y}px;max-width:{TW / W * 100:.3f}%">{titles[src][k]}</div>'
                  for k, (src, x, y) in enumerate(SPOTS))
-    return f'<div class="field"><canvas id="cv" height="{H}" aria-hidden="true"></canvas>{tx}</div>'
+    # 이유도 .ttl 이다 — 전진선 기준 등장 로직(JS 의 T)을 그대로 쓴다. +14 는 '막히는 걸 본 뒤'.
+    rx = "".join(f'<div class="ttl rsn" data-x="{x + 14}" style="right:{(W - x) / W * 100:.3f}%;top:{RSN_Y}px">{t}</div>'
+                 for x, t in REASONS)
+    return f'<div class="field"><canvas id="cv" height="{H}" aria-hidden="true"></canvas>{tx}{rx}</div>'
 
 
 def cfg():
@@ -301,7 +323,12 @@ def demo():
     for a in range(len(SPOTS)):
         for b in range(a + 1, len(SPOTS)):
             assert SPOTS[a][1] != SPOTS[b][1] or abs(SPOTS[a][2] - SPOTS[b][2]) >= 26, (a, b)
-    print("ok gap(px) =", [round(g, 3) for g in gap], "통로", HH)
+    # 탈락 이유: 벽 셋에 하나씩, 막힌 쪽에 붙고, 캔버스 안이며 공고명 줄과 겹치지 않는다
+    assert [x for x, _ in REASONS] == XS[1:], REASONS
+    assert CY - HH[0] < RSN_Y < CY + HH[0] and RSN_Y + 20 <= H, RSN_Y
+    for _, _, y in SPOTS:
+        assert abs(y - RSN_Y) >= 26, y
+    print("ok gap(px) =", [round(g, 3) for g in gap], "통로", HH, "이유 y", RSN_Y)
 
 
 if __name__ == "__main__":
