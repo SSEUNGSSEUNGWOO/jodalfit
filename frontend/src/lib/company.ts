@@ -1,6 +1,6 @@
 import "server-only";
 import { getServerSupabase } from "./supabase-server";
-import { IS_KURE, rpcName } from "./embed-space";
+import { EMB_COL, IS_KURE, rpcName } from "./embed-space";
 
 export interface CompanyDetail {
   bizrno: string;
@@ -393,7 +393,7 @@ export async function fetchCompaniesBrowsePage(
     .select("bizrno,bizrno_norm,corp_nm,rgn_nm,corp_bsns_div_nm", {
       count: "exact",
     })
-    .not("embedding", "is", null)
+    .not(EMB_COL, "is", null)
     .not("bizrno_norm", "is", null)
     .is("optout_at", null); // 비공개 요청 회사 제외 (0037)
   if (sido !== "all") q = q.like("rgn_nm", `${sido}%`);

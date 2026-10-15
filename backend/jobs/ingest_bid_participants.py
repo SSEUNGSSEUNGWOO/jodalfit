@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 
 import httpx
 
+from app.services.embedding import emb_col
 from app.services.supabase_client import get_admin_client, upsert_rows
 from jobs._common import (
     iter_all_items,
@@ -101,7 +102,7 @@ def fetch_queue(client, days_back: int, limit: int) -> list[dict]:
             client.table("bid_notices")
             .select("bid_ntce_no")
             .in_("bid_ntce_no", sub)
-            .not_.is_("embedding", "null")
+            .not_.is_(emb_col(), "null")
             .execute()
             .data
         )

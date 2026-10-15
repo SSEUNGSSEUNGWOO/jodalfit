@@ -16,6 +16,11 @@ def dim(space: str | None = None) -> int:
     return DIMS[space or get_settings().embed_space]
 
 
+def emb_col(space: str | None = None) -> str:
+    """벡터 컬럼 이름 — kure 는 0045 의 `_k` 변형. recommend.py::_emb_col 과 같은 규칙."""
+    return "embedding_k" if (space or get_settings().embed_space) == "kure" else "embedding"
+
+
 def embed_texts(texts: list[str], space: str | None = None) -> list[list[float]]:
     if (space or get_settings().embed_space) == "kure":
         from app.services.local_embed import embed_texts_kure
