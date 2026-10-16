@@ -1,0 +1,510 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>조달핏 — 입구가 첫 장면</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>
+* { box-sizing:border-box } body { margin:0; background:#fff; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+a { color:inherit; text-decoration:none } .dim { color:#6b6b67 } .mute { color:#8f8f8b } .acc { color:#e8431b }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:700; font-size:14.5px } .brand i { width:7px; height:7px; border-radius:50%; background:#e8431b; display:inline-block }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+.k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+.ok::after { content:"✓"; color:#1f5f3a; font-weight:700; margin-left:6px } .warn::after { content:"!"; color:#e8431b; font-weight:700; margin-left:6px }
+.bt { display:inline-flex; align-items:center; height:36px; padding:0 14px; border-radius:8px; border:1px solid #e3e1dc; font-size:13px; font-weight:600; background:#fff } .bt.dark { background:#141414; color:#fff; border-color:#141414 } .bt.txt { border:0; padding:0 4px; color:#55554f; font-weight:500 } .bt.txt u { text-decoration:none; border-bottom:1px solid #d8d6d0 }
+
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.head { padding:28px 0 22px; border-bottom:1px solid #141414 }
+.head h1 { margin:0; font-size:30px; letter-spacing:-0.035em; font-weight:650; line-height:1.15 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head .meta { margin-top:8px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.head .ind { margin-top:14px; font-size:13.5px; line-height:1.7; max-width:880px } .head .ind b { font-weight:600 } .head .ind .k { margin-right:10px }
+.head .act { margin-top:14px; display:flex; align-items:center; gap:14px; font-size:13px; color:#55554f } .head .act .q { color:#e8431b; font-weight:600 }
+.count { display:flex; align-items:flex-end; justify-content:space-between; padding:26px 0 14px }
+.count .n { font-size:44px; letter-spacing:-0.04em; font-weight:650; line-height:1 } .count .n small { font-size:14px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:10px }
+.count .f { display:flex; gap:20px; font-size:13px; color:#6b6b67 } .count .f b { color:#141414; font-weight:600; border-bottom:1px solid #141414; padding-bottom:2px }
+.th, .tr { display:grid; grid-template-columns:36px minmax(0,1fr) 200px 180px 92px 88px 60px; gap:0 16px; align-items:baseline }
+.th { padding:10px 0 8px; border-bottom:1px solid #141414; font-size:11px; letter-spacing:.06em; color:#737370; font-weight:600 }
+.tr { padding:15px 0; border-bottom:1px solid #ececea; font-size:14px; cursor:pointer } .tr:hover .t { color:#e8431b }
+.tr .no { font-size:12px; color:#8f8f8b } .tr .t { font-weight:550; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em }
+.tr .org, .tr .why { font-size:13px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .why { color:#6b6b67 }
+.tr .r { text-align:right } .tr .d { font-weight:600 } .tr .d.hot { color:#e8431b } .tr .d small { color:#737370; font-weight:450; margin-left:6px }
+.tr .fit { font-weight:600 } .tr .fit i { display:inline-block; width:26px; height:3px; background:#e6e4df; margin-right:8px; vertical-align:middle; position:relative } .tr .fit i b { position:absolute; left:0; top:0; height:100%; background:#141414 }
+.x { padding:22px 0 26px 52px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:1.1fr 1.2fr .8fr; gap:40px }
+.x .k { display:block; margin-bottom:10px } .x ul { margin:0; padding:0; list-style:none } .x li { font-size:13.5px; line-height:1.65; padding:4px 0; color:#333 } .x li.todo { color:#737370 }
+.x .life { display:flex; gap:0; margin-top:4px } .x .life span { flex:1; font-size:11.5px; color:#8f8f8b; padding-top:8px; border-top:2px solid #ececea } .x .life span.on { color:#141414; border-top-color:#141414 }
+.x .acts { margin-top:18px; display:flex; gap:8px; flex-wrap:wrap }
+.fade .tr { opacity:.32; filter:blur(1.5px); pointer-events:none }
+.gateline { display:flex; align-items:center; gap:14px; padding:22px 0; border-bottom:1px solid #141414; font-size:14px } .gateline b { font-weight:650 } .gateline .sp { flex:1 } .gateline .in { display:flex; gap:6px } .gateline .in span:first-child { width:260px; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
+.foot { margin-top:28px; font-size:12px; color:#737370 }
+
+.q { padding:26px 0 0; font-size:13.5px; color:#55554f } .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px }
+.stage { margin-top:20px; border-top:1px solid #141414; cursor:pointer } .done .stage { cursor:auto }
+.labs { position:relative; height:56px; overflow:hidden; transition:height .5s cubic-bezier(.3,.7,.2,1) }
+.field { position:relative; height:392px; overflow:hidden; transition:height .55s cubic-bezier(.3,.7,.2,1) }
+.field canvas { display:block; width:100%; height:392px; transition:transform .55s cubic-bezier(.3,.7,.2,1) }
+.lab { position:absolute; top:4px; opacity:0; transition:opacity .4s ease } .lab.on { opacity:1 }
+.lab.g { border-left:1px solid #d8d6d0; padding-left:12px }
+.lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; line-height:1.3 }
+.lab .n { margin-top:5px; font-size:26px; letter-spacing:-0.04em; font-weight:650; line-height:1; font-variant-numeric:tabular-nums; color:#141414 }
+.lab .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:5px }
+.lab.last .n { color:#e8431b }
+/* 덩어리 위에 글자를 얹으려면 판을 깔아야 읽힌다 — 흰 판 + 회색 글자(대비 5.1:1) */
+.ttl { position:absolute; font-size:11.5px; line-height:1.45; color:#6b6b67; letter-spacing:-0.015em; white-space:nowrap;
+       overflow:hidden; text-overflow:ellipsis; background:#fff; padding:1px 5px; opacity:0; transition:opacity .35s ease }
+.ttl.on { opacity:1 }
+/* 탈락 이유는 같은 흰 판을 쓰지만 벽에 오른쪽을 붙이고 한 톤 진하다 — 공고명과 섞이지 않게 */
+.ttl.rsn { text-align:right; color:#55554f }
+.chain { display:flex; align-items:baseline; gap:10px; font-size:13px; color:#737370; height:0; opacity:0; overflow:hidden; transition:opacity .4s ease .15s, height .4s ease }
+.chain b { font-size:17px; font-weight:650; color:#141414; letter-spacing:-0.02em; font-variant-numeric:tabular-nums } .chain b.acc { color:#e8431b } .chain i { font-style:normal; color:#c9c9c4 }
+.done .field, .done .labs { height:0 } .done .field canvas { transform:translateY(-150px) }
+.done .chain { height:48px; opacity:1; padding-top:16px }
+.res { opacity:0; max-height:0; overflow:hidden; transition:opacity .5s ease .2s } .done .res { opacity:1; max-height:none }
+.ctl { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px }
+.ctl span { padding:6px 14px; border-radius:999px; color:#55554f; cursor:pointer } .ctl span.on { background:#141414; color:#fff }
+.foot { max-width:880px; line-height:1.6 }
+/* 적합은 숫자 없이 막대만 (docs/design/README.md 표현·요소 결정 2026-10-15) */
+.tr .fit i { margin-right:0 }
+@media (prefers-reduced-motion: reduce) { .field, .field canvas, .labs, .lab, .ttl, .chain, .res { transition:none !important } }
+
+.wrap { min-height:100vh; display:flex; flex-direction:column }
+@media (max-width:1140px) { .wrap { width:auto; padding-left:20px; padding-right:20px } }
+.ctl { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:2px; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; z-index:9; white-space:nowrap }
+.ctl span { padding:6px 13px; border-radius:999px; color:#55554f; cursor:pointer } .ctl span.on { background:#141414; color:#fff }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+/* 입력 — 상자가 아니라 괘선. 글자는 제목 크기. */
+.in { position:relative }
+.in input { width:100%; border:0; border-bottom:1px solid #141414; border-radius:0; background:transparent; padding:10px 0 12px; font:inherit; font-size:30px; letter-spacing:-0.03em; font-weight:550; color:#141414; outline:none }
+.in input::placeholder { color:#8f8f8b; font-weight:450 } .in input:focus { border-bottom-width:2px; padding-bottom:11px }
+/* 목록 — 행은 표의 행. 회사 행과 키워드 행이 같은 격자, 같은 글자 크기. */
+.ls { margin:0; padding:0; list-style:none }
+.ls li { display:grid; grid-template-columns:minmax(0,1.4fr) 150px minmax(0,1fr) 84px 118px; gap:0 14px; align-items:baseline; padding:12px 8px; margin:0 -8px; border-bottom:1px solid #ececea; font-size:14px; cursor:pointer; border-radius:6px }
+.ls li[aria-selected="true"], .ls li:hover { background:#f6f5f2 } .ls li[aria-selected="true"] { box-shadow:inset 2px 0 0 #141414 }
+.ls li .nm { font-weight:550; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .ls li .nm mark { background:none; color:inherit; border-bottom:1px solid #e8431b }
+.ls li .rg, .ls li .rp { font-size:13px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .ls li .rp.none { color:#8f8f8b }
+.ls li .nc { font-size:13px; text-align:right; font-variant-numeric:tabular-nums } .ls li .nc.none { color:#8f8f8b } .ls li .bz { font-size:12px; color:#737370; text-align:right }
+.ls li.kw .nm::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:#e8431b; margin-right:9px; vertical-align:1px }
+.ls li.kw .rg { grid-column:2 / -1; color:#141414 } .ls li.kw .rg small { color:#6b6b67; margin-left:8px }
+.ls .hd { display:flex; justify-content:space-between; padding:14px 0 6px; font-size:12px; color:#737370 } .ls .hd b { color:#141414; font-weight:600 }
+.ls .hd.first { padding-top:10px }
+.ls .more { padding:10px 0 0; font-size:12.5px; color:#6b6b67 }
+.ls .miss { padding:16px 0 4px; font-size:13.5px; color:#55554f; line-height:1.6 } .ls .miss b { color:#141414; font-weight:600 }
+/* 약속 한 줄 */
+.pr { font-size:13.5px; color:#55554f; line-height:1.6 } .pr b { color:#141414; font-weight:600; font-variant-numeric:tabular-nums }
+/* 최근 회사 */
+.rc { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:#6b6b67; align-items:baseline }
+.rc a { color:#141414; font-weight:550; border-bottom:1px solid #d8d6d0; padding-bottom:1px; cursor:pointer } .rc a small { color:#737370; font-weight:450; margin-left:6px }
+/* 넘김 — 머리(flow.html 의 .q + .labs)는 처음부터 DOM 에 있고 높이 0. 보낼 때 입력 영역이 접히고 머리가 펴진다. */
+.entry { overflow:hidden; transition:height .5s cubic-bezier(.3,.7,.2,1), padding .5s cubic-bezier(.3,.7,.2,1), opacity .3s ease }
+.go .entry { opacity:0; pointer-events:none; padding-top:0 !important; padding-bottom:0 !important }
+.head2 { height:0; overflow:hidden; opacity:0; transition:height .55s cubic-bezier(.3,.7,.2,1), opacity .3s ease .1s }
+.go .head2 { opacity:1 }
+.head2 .q { padding:26px 0 0; font-size:13.5px; color:#55554f } .head2 .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px; display:inline-block; will-change:transform }
+.head2 .q .back { margin-left:14px; color:#737370; border-bottom:1px solid #d8d6d0; cursor:pointer }
+.head2 .stage { margin-top:20px; border-top:1px solid #141414; transform:scaleX(0); transform-origin:0 0; transition:transform .5s cubic-bezier(.3,.7,.2,1) .15s } .go .head2 .stage { transform:none }
+.head2 .labs { display:grid; grid-template-columns:repeat(4,1fr); gap:0 16px; height:56px; margin-top:4px }
+.head2 .lab { padding-top:4px } .head2 .lab + .lab { border-left:1px solid #d8d6d0; padding-left:12px }
+.head2 .lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; text-transform:none; letter-spacing:0 } .head2 .lab .n { margin-top:5px; font-size:26px; letter-spacing:-0.04em; font-weight:650; line-height:1; color:#141414; display:inline-block; will-change:transform }
+.head2 .lab .n.wait { color:#c9c9c4 } .head2 .lab .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:5px }
+.head2 .field { height:392px; border-bottom:1px solid #ececea; display:flex; align-items:center; justify-content:center; font-size:12.5px; color:#8f8f8b; text-align:center; line-height:1.7 }
+.foot { margin-top:auto; padding:40px 0 70px; font-size:12.5px; color:#6b6b67; line-height:1.7; max-width:880px } .foot b { color:#141414; font-weight:600 }
+@media (max-width:640px) {
+  .in input { font-size:22px } .ctl { font-size:11.5px } .ctl span { padding:6px 9px }
+  .ls li { grid-template-columns:minmax(0,1fr) 96px; grid-template-areas:"nm nc" "rg rg" "rp bz"; gap:3px 10px; padding:11px 8px } .ls li .bz { white-space:nowrap }
+  .ls li .nm { grid-area:nm } .ls li .rg { grid-area:rg } .ls li .rp { grid-area:rp } .ls li .nc { grid-area:nc } .ls li .bz { grid-area:bz }
+  .ls li.kw .rg { grid-column:auto } .ls li.kw .bz, .ls li.kw .rp, .ls li.kw .nc { display:none }
+  .head2 .labs { grid-template-columns:1fr 1fr; height:auto; row-gap:10px } .head2 .lab + .lab { border-left:0; padding-left:0 } .head2 .field { height:220px }
+}
+@media (prefers-reduced-motion: reduce) { .entry, .head2, .head2 .stage, .ls li { transition:none !important } }
+
+.q:empty { padding:0 } .q .back { margin-left:14px; color:#737370; border-bottom:1px solid #d8d6d0; cursor:pointer }
+.stage { position:relative; margin-top:14px }
+/* 라벨 줄은 회사가 정해진 뒤에만 선다. .done 이 다시 0 으로 접는다(flow CSS) */
+.labs { height:0 } body.go:not(.done) .labs { height:56px }
+.set { position:absolute; inset:0 } body.kw .co-only, body:not(.kw) .kw-only, body.kw .ttl { display:none }   /* 공고명·탈락 이유는 회사 표본의 것 */
+/* 두 캔버스가 한 자리: #drift 는 결 있는 띠를 CSS 로 미는 살아 있는 덩어리, #cv 는 열쇠가 돌면 그 위에 뜨는 멈춘 덩어리 + 체 */
+#drift, #cv { position:absolute; left:0; top:0 }
+#drift { width:132.143%; animation:drift 15s linear infinite; transition:opacity .45s ease }   /* (W+LAM)/W */
+#cv { opacity:0; transition:opacity .45s ease }
+.go #drift { opacity:0; animation-play-state:paused } .go #cv { opacity:1 }
+@keyframes drift { to { transform:translateX(-24.3243%) } }                                     /* LAM/(W+LAM) — 한 파장이면 이음새가 없다 */
+/* 입력은 전경, 덩어리는 배경 — 흰 판 위에 괘선 입력. 판이 없으면 글자가 덩어리에 묻힌다 */
+.plate { position:absolute; left:50%; top:72px; transform:translateX(-50%); width:min(680px,100%); z-index:3; background:rgba(255,255,255,.97); border-radius:12px;
+         padding:20px 26px 16px; box-shadow:0 0 0 1px rgba(20,20,20,.07), 0 24px 60px -30px rgba(20,20,20,.4); transition:opacity .3s ease, transform .5s cubic-bezier(.3,.7,.2,1) }
+.go .plate { opacity:0; pointer-events:none; transform:translate(-50%,-16px) }
+.plate .rc { margin-bottom:10px } .plate .rc:empty { margin:0 }
+.plate .pr { margin:12px 0 0 } .plate .ls { max-height:min(52vh,460px); overflow:hidden auto } .plate .ls li { margin:0; padding-left:8px; padding-right:8px }
+/* 목록이 스크롤돼도 키워드 행은 늘 보인다 — 회사 길과 같은 무게라는 약속이 스크롤 아래로 숨으면 거짓이 된다 */
+.plate .ls li.kw { position:sticky; bottom:0; background:#fff; border-top:1px solid #141414; z-index:1 }
+.field .ttl { z-index:2 }
+.kwnote { padding:22px 0; font-size:13.5px; color:#55554f; line-height:1.6; border-bottom:1px solid #ececea }
+.foot b { color:#141414; font-weight:600 }
+@media (max-width:640px) {
+  .field, .field canvas, #drift, #cv { height:280px } .ttl { display:none }
+  .plate { left:0; right:0; width:auto; transform:none; top:14px; padding:12px 14px 10px; border-radius:10px } .go .plate { transform:translateY(-12px) }
+  .plate .ls { max-height:44vh }
+  body.go:not(.done) .labs { height:66px } .lab .k { white-space:normal; font-size:10.5px; line-height:1.25; max-width:88px } .lab .n { font-size:18px; margin-top:3px }
+  .chain { flex-wrap:wrap }
+}
+@media (prefers-reduced-motion: reduce) { #drift { animation:none } .plate, #drift, #cv { transition:none !important } }
+</style></head><body><div class="wrap"><div class="nav"><div class="brand"><i></i>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div><div class="q" id="hq"></div><div class="stage"><div class="labs"><div class="set co-only"><div class="lab  " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고 · 마감 90일 이내</span><div class="n"><span class="cnt" data-to="9374">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">업종이 맞는 공고 · 전체의 8.9%</span><div class="n"><span class="cnt" data-to="831">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">자격이 되는 공고 · 면허·지역 46% 통과</span><div class="n"><span class="cnt" data-to="385">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고 · 앞 단계의 3.1%</span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="set kw-only"><div class="lab  " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고 · 마감 90일 이내</span><div class="n"><span class="cnt" data-to="9374">0</span><small>건</small></div></div><div class="lab g " data-x="432" style="left:38.571%"><span class="k">이 말과 가까운 공고 · 후보 풀</span><div class="n"><span class="cnt" data-to="100">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고</span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div></div><div class="field"><canvas id="drift" aria-hidden="true"></canvas><canvas id="cv" height="392" aria-hidden="true"></canvas><div class="ttl" data-x="272" style="left:1.429%;top:58px;max-width:22.857%">데이터분석 소프트웨어 라이선스 갱신</div><div class="ttl" data-x="272" style="left:1.429%;top:108px;max-width:22.857%">각계2교 정밀안전진단용역</div><div class="ttl" data-x="272" style="left:1.429%;top:158px;max-width:22.857%">문경농협 산지유통센터 신축공사(건축, 기계설비공사)</div><div class="ttl" data-x="272" style="left:1.429%;top:208px;max-width:22.857%">2027년 국가지식자원 통합 플랫폼 유지운영</div><div class="ttl" data-x="272" style="left:1.429%;top:258px;max-width:22.857%">상주교육지원청사 외 1기관(유아교육체험센터) 옥상방수 및 기타공사</div><div class="ttl" data-x="272" style="left:1.429%;top:308px;max-width:22.857%">2026년 하반기 주거환경개선공사 대전</div><div class="ttl" data-x="560" style="left:27.143%;top:96px;max-width:22.857%">[대학혁신지원사업] [SMART환경개선] 사회과학관 노후 냉난방설비 교체 공사(전기)</div><div class="ttl" data-x="560" style="left:27.143%;top:188px;max-width:22.857%">충추역 3층 맞이방 편의점 전기내선공사</div><div class="ttl" data-x="560" style="left:27.143%;top:280px;max-width:22.857%">2026년 화전농공단지 가로등 보수공사</div><div class="ttl rsn" data-x="302" style="right:74.286%;top:346px">등록업종이 허용되지 않음</div><div class="ttl rsn" data-x="590" style="right:48.571%;top:346px">면허·지역 제한에 걸림</div><div class="ttl rsn" data-x="878" style="right:22.857%;top:346px">회사와 덜 가까움</div></div><div class="plate"><div class="rc" id="rc"></div><div class="in"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="회사명 · 사업자번호 · 하는 일" role="combobox" aria-expanded="false" aria-controls="ls" aria-autocomplete="list" aria-label="회사명, 사업자번호, 또는 하는 일" enterkeyhint="search"></div><ul id="ls" role="listbox" class="ls" hidden aria-label="회사 또는 키워드"></ul><div id="live" class="sr" aria-live="polite"></div><p class="pr">지금 입찰 가능한 공고 <b>9,374</b>건 · 회사명이나 하는 일을 넣으면 낼 수 있는 것만 남습니다</p></div><div class="co-only"><div class="chain"><span class="k">걸러낸 경로</span><b class="">9,374</b><i>→</i><b class="">831</b><i>→</i><b class="">385</b><i>→</i><b class="acc">12</b><span>건</span></div></div><div class="kw-only"><div class="chain"><span class="k">걸러낸 경로</span><b class="">9,374</b><i>→</i><b class="">100</b><i>→</i><b class="acc">12</b><span>건</span></div></div></div><div class="res co-only"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span>근거</span><span class="r">마감</span><span class="r">추정가</span><span class="r">적합</span></div><div class="tr"><span class="no">01</span><span class="t">양산하수처리장 악취저감사업 실시설계용역</span><span class="org">경상남도 양산시 상하수도사업소</span><span class="why">지역 매칭</span><span class="r d hot">D-5<small>10.20</small></span><span class="r">5,808만</span><span class="r fit"><i><b style="width:58%"></b></i></span></div><div class="x"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 허용업종 16개 중 엔지니어링사업 외 보유</li><li class="ok">지역 — 경상남도 양산시 제한, 본사 경상남도</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>이 기관은 최근 낙찰의 50%를 같은 회사가 가져갔다.</li><li>공고의 지역 제한이 본사 소재지 경상남도와 맞는다.</li><li>추정가가 회사 평균 수주가의 0.01배라 체급 차이가 크다.</li><li>등록업종 표현이 허용업종과 겹친다 — 건설엔지니어링업(설계, 사업관리, 설계등용역.</li><li>공고 내용과 회사 업종 설명의 유사도 71%.</li></ul></div><div><span class="k">진행</span><div class="life"><span class="on">사전규격</span><span class="on">공고</span><span>입찰</span><span>개찰</span><span>낙찰</span><span>계약</span></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01769297&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt" href="#">검토</a></div></div></div><div class="tr"><span class="no">02</span><span class="t">국가소유(여수 4단계) 공공폐수처리시설 관리대행</span><span class="org">한국환경공단</span><span class="why">업종·물품 일치</span><span class="r d ">D-27<small>11.11</small></span><span class="r">41.2억</span><span class="r fit"><i><b style="width:52%"></b></i></span></div><div class="tr"><span class="no">03</span><span class="t">과학문화센터 건립사업 건설사업관리용역</span><span class="org">행정중심복합도시건설청</span><span class="why">업종·물품 일치</span><span class="r d ">D-26<small>11.10</small></span><span class="r">37.2억</span><span class="r fit"><i><b style="width:51%"></b></i></span></div><div class="tr"><span class="no">04</span><span class="t">중랑물재생센터 총인처리시설 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-42<small>11.26</small></span><span class="r">36.8억</span><span class="r fit"><i><b style="width:50%"></b></i></span></div><div class="tr"><span class="no">05</span><span class="t">군산항 4,5부두 리뉴얼사업 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">36.6억</span><span class="r fit"><i><b style="width:49%"></b></i></span></div><div class="fade"><div class="tr"><span class="no">06</span><span class="t">중랑물재생센터 일부시설물 관리대행</span><span class="org">서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span><span class="r d ">D-40<small>11.24</small></span><span class="r">199.7억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">07</span><span class="t">시흥1동 주택가 시·구유 공영주차장 통합·증축 건설사업관리용역(감독권한대행)</span><span class="org">서울특별시 금천구</span><span class="why">업종·물품 일치</span><span class="r d hot">D-6<small>10.21</small></span><span class="r">24.6억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">08</span><span class="t">청주공항 국내선 및 지원시설 증축 건설사업관리용역</span><span class="org">한국공항공사</span><span class="why">업종·물품 일치</span><span class="r d ">D-20<small>11.04</small></span><span class="r">26.5억</span><span class="r fit"><i><b style="width:48%"></b></i></span></div><div class="tr"><span class="no">09</span><span class="t">양산시 공공하수도시설 관리대행용역(협상)</span><span class="org">경상남도 양산시</span><span class="why">재출현 기관</span><span class="r d ">D-26<small>11.10</small></span><span class="r">277.3억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">10</span><span class="t">새만금항 신항 항로 준설공사(2026) 건설사업관리용역</span><span class="org">해양수산부 군산지방해양수산청</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">20.6억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">11</span><span class="t">신창동 지역주택조합 유탑유블레스 승계공사 건설사업관리</span><span class="org">주택도시보증공사</span><span class="why">업종·물품 일치</span><span class="r d hot">D-4<small>10.19</small></span><span class="r">6억</span><span class="r fit"><i><b style="width:47%"></b></i></span></div><div class="tr"><span class="no">12</span><span class="t">평택~시흥고속도로 민간투자사업 관리운영위수탁</span><span class="org">제이서해안고속도로주식회사</span><span class="why">업종·물품 일치</span><span class="r d ">D-15<small>10.30</small></span><span class="r">462.3억</span><span class="r fit"><i><b style="width:46%"></b></i></span></div></div><div class="gateline"><b>나머지 7건은 이메일로.</b><span class="dim">처음 5건은 누구나, 전부는 이메일 하나로. 비밀번호 없음.</span><span class="sp"></span><span class="in"><span>you@company.co.kr</span><span class="bt dark">전부 보기</span></span></div></div><div class="res kw-only"><div class="kwnote">키워드 길의 실제 결과 표본은 이 시안에 없다 — 실제 화면에서는 여기에 같은 표 12건. 후보 풀 100 은 프런트가 보내는 candidate_pool 기본값이고, 자격 거르기는 하지 않는다.</div></div><div class="foot"><b>왜 키워드 길이 회사 길과 같은 무게인가.</b> 최근 7일 사용자 검색 400건 중 209건(52%)이 회사로 풀리지 않았다 — 165건은 처음부터 키워드 모드, 44건은 회사 모드에서 "회사를 찾을 수 없습니다". 친 문자열은 "감리" · "주차" · "MIS" · "ADATA" · "태양광" 같은 낱말·브랜드다. 동명 회사 목록의 회사·지역·업종·수주는 실제 행이고, 사업자번호는 가운데를 가린다. 지금 입찰 가능 9,374건은 2026-10-16 마감 90일 이내 공고 수. 목록은 ↑↓ Enter Esc, role=combobox/listbox, aria-activedescendant. 아래 알약은 입력란에 값을 넣고 같은 코드를 돌린다 — 입력란에 직접 쳐도 된다 (묶음: 대신네트웍스, 주식회사 한결, 주식회사 다온엔지니어링, 주식회사 신성건설).<br><br><b>입구가 흐름의 첫 장면이다.</b> 도착하면 9,374개 선이 벽 없이 흐르고 있고(코호트 없음 — 불투명도 하나, 결은 CSS translateX 로만 민다), 회사를 고르는 순간 물이 멎고 벽 셋이 단계 완료마다 하나씩 내려앉는다. 같은 캔버스·같은 선 — 다시 시작하지 않는다. 벽은 고정 타임라인이 아니라 <code>stageDone(k)</code> 가 세운다(시안은 타이머로 흉내: 처음 0.7/1.5/2.3초, 재방문 칩 0.12/0.26/0.4초). 831·385·12 과 표는 2026-10-15 한종산업개발 표본(모수 9,285) — 9,374 은 오늘 수라 하루 어긋난다. 어떤 회사를 골라도 체와 표는 이 표본 하나다(시안). 키워드 길은 벽 둘(100 → 12), 표본 없음. 미해결 209/400 는 위 문단.</div></div><div class="ctl" role="group" aria-label="시안 상태"><span data-s="empty">빈 입력</span><span data-s="typing">타이핑 중</span><span data-s="miss">못 찾음</span><span data-s="return">재방문</span></div><script type="application/json" id="cfg">{"W": 1120, "H": 392, "CY": 196, "XS": [0, 288, 576, 864], "HH": [180, 160, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44, "CNT": [9374, 831, 385, 12]}</script><script type="application/json" id="cfgkw">{"W": 1120, "H": 392, "CY": 196, "XS": [0, 432, 864], "HH": [180, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44, "CNT": [9374, 100, 12]}</script><script type="application/json" id="mass">{"LAM": 360, "AMP": 2.2, "TURNS": 2.0, "FULL": [700, 1500, 2300], "FAST": [120, 260, 400]}</script><script type="application/json" id="data">{"groups": {"대신네트웍스": [{"biz": "224-XX-X5110", "nm": "대신네트웍스주식회사", "rgn": "강원특별자치도 원주시", "rep": "정보통신공사업", "nind": 10, "ncon": 22}, {"biz": "306-XX-X2489", "nm": "대신네트웍스 주식회사", "rgn": "대전광역시 서구", "rep": "정보통신공사업", "nind": 11, "ncon": 15}, {"biz": "408-XX-X3289", "nm": "대신네트웍스(주)", "rgn": "전남광주통합특별시 광산구", "rep": "정보통신공사업", "nind": 8, "ncon": 11}, {"biz": "834-XX-X0401", "nm": "대신네트웍스 주식회사", "rgn": "강원특별자치도 춘천시", "rep": "정보통신공사업", "nind": 9, "ncon": 9}, {"biz": "124-XX-X7312", "nm": "대신네트웍스주식회사", "rgn": "경기도 수원시", "rep": "정보통신공사업", "nind": 6, "ncon": 8}, {"biz": "418-XX-X7178", "nm": "대신네트웍스주식회사", "rgn": "전북특별자치도 전주시", "rep": "정보통신공사업", "nind": 9, "ncon": 7}, {"biz": "416-XX-X6725", "nm": "대신네트웍스(주)", "rgn": "전남광주통합특별시 순천시", "rep": "정보통신공사업", "nind": 8, "ncon": 7}, {"biz": "304-XX-X5743", "nm": "대신네트웍스주식회사", "rgn": "충청북도 제천시", "rep": "정보통신공사업", "nind": 8, "ncon": 7}, {"biz": "608-XX-X8002", "nm": "대신네트웍스 주식회사", "rgn": "경상남도 창원시", "rep": "", "nind": 0, "ncon": 7}, {"biz": "514-XX-X7442", "nm": "대신네트웍스(주)", "rgn": "대구광역시 달서구", "rep": "정보통신공사업", "nind": 6, "ncon": 6}, {"biz": "123-XX-X9269", "nm": "대신네트웍스 주식회사", "rgn": "경기도 군포시", "rep": "", "nind": 0, "ncon": 6}, {"biz": "131-XX-X3384", "nm": "대신네트웍스(주)", "rgn": "인천광역시 남동구", "rep": "정보통신공사업", "nind": 6, "ncon": 4}, {"biz": "195-XX-X3133", "nm": "대신네트웍스 주식회사", "rgn": "경기도 화성시", "rep": "정보통신공사업", "nind": 3, "ncon": 4}, {"biz": "126-XX-X7306", "nm": "대신네트웍스(주)", "rgn": "경기도 이천시", "rep": "", "nind": 0, "ncon": 4}, {"biz": "604-XX-X6695", "nm": "대신네트웍스 주식회사", "rgn": "부산광역시 연제구", "rep": "정보통신공사업", "nind": 10, "ncon": 3}, {"biz": "355-XX-X0452", "nm": "대신네트웍스 주식회사", "rgn": "경상북도 구미시", "rep": "정보통신공사업", "nind": 5, "ncon": 2}, {"biz": "104-XX-X8009", "nm": "대신네트웍스주식회사", "rgn": "서울특별시 중구", "rep": "정보통신공사업", "nind": 7, "ncon": 1}], "한결": [{"biz": "409-XX-X6201", "nm": "주식회사 한결씨엔씨", "rgn": "서울특별시 강북구", "rep": "실내건축공사업", "nind": 5, "ncon": 77}, {"biz": "418-XX-X5587", "nm": "주식회사 한결전기", "rgn": "경기도 남양주시", "rep": "전기공사업", "nind": 2, "ncon": 72}, {"biz": "414-XX-X0148", "nm": "주식회사 한결아스콘", "rgn": "경기도 화성시", "rep": "건설폐기물 중간처리업", "nind": 4, "ncon": 30}, {"biz": "469-XX-X0170", "nm": "한결엠", "rgn": "서울특별시 금천구", "rep": "인쇄사", "nind": 8, "ncon": 28}, {"biz": "130-XX-X4934", "nm": "주식회사한결문고", "rgn": "경기도 부천시", "rep": "소프트웨어사업자(데이터베이스제작및검색서비스사업)", "nind": 2, "ncon": 28}, {"biz": "412-XX-X9738", "nm": "한결산업개발 주식회사", "rgn": "충청북도 청주시", "rep": "건축공사업", "nind": 8, "ncon": 17}, {"biz": "402-XX-X1414", "nm": "주식회사 한결이엔티", "rgn": "전북특별자치도 전주시", "rep": "건설폐기물 중간처리업", "nind": 2, "ncon": 16}, {"biz": "367-XX-X2564", "nm": "주식회사 한결", "rgn": "강원특별자치도 춘천시", "rep": "전문소방시설공사업", "nind": 4, "ncon": 14}, {"biz": "298-XX-X0246", "nm": "한결정보기술(주)", "rgn": "전남광주통합특별시 서구", "rep": "소프트웨어사업자(컴퓨터관련서비스사업)", "nind": 5, "ncon": 13}, {"biz": "447-XX-X0367", "nm": "주식회사 한결문화유산", "rgn": "경상남도 합천군", "rep": "종합국가유산수리업(보수단청업)", "nind": 1, "ncon": 11}, {"biz": "475-XX-X1453", "nm": "한결안전지도사사무소", "rgn": "서울특별시 강서구", "rep": "건설재해예방 전문지도기관", "nind": 1, "ncon": 11}, {"biz": "132-XX-X7698", "nm": "주식회사 한결", "rgn": "경기도 남양주시", "rep": "전문소방시설공사업", "nind": 16, "ncon": 9}, {"biz": "504-XX-X1448", "nm": "주식회사 한결", "rgn": "경상북도 청도군", "rep": "엔지니어링사업(상하수도)", "nind": 12, "ncon": 9}, {"biz": "329-XX-X2722", "nm": "주식회사 한결이앤씨", "rgn": "부산광역시 사상구", "rep": "엔지니어링사업(도로, 공항)", "nind": 4, "ncon": 9}, {"biz": "151-XX-X2173", "nm": "한결산업", "rgn": "강원특별자치도 영월군", "rep": "", "nind": 0, "ncon": 8}, {"biz": "546-XX-X2376", "nm": "주식회사 한결구조엔지니어링", "rgn": "경기도 남양주시", "rep": "안전진단전문기관(건축분야)", "nind": 3, "ncon": 7}, {"biz": "577-XX-X2083", "nm": "주식회사 한결그린", "rgn": "전북특별자치도 익산시", "rep": "폐기물중간재활용업(지정폐기물외 폐기물)", "nind": 3, "ncon": 7}, {"biz": "569-XX-X2700", "nm": "주식회사 한결에이엔씨", "rgn": "서울특별시 성북구", "rep": "기타자유업(행사대행업)", "nind": 2, "ncon": 7}, {"biz": "410-XX-X9205", "nm": "한결의약품물류 주식회사", "rgn": "전남광주통합특별시 남구", "rep": "의약품판매업(의약품도매상)", "nind": 2, "ncon": 7}, {"biz": "536-XX-X3000", "nm": "주식회사 한결엔지니어링", "rgn": "전남광주통합특별시 해남군", "rep": "", "nind": 0, "ncon": 7}, {"biz": "505-XX-X1253", "nm": "주식회사 한결건설", "rgn": "경상북도 경주시", "rep": "", "nind": 8, "ncon": 6}, {"biz": "469-XX-X2846", "nm": "주식회사 한결가치", "rgn": "충청남도 아산시", "rep": "기술진단전문기관(공공하수도)", "nind": 4, "ncon": 6}, {"biz": "207-XX-X8860", "nm": "주식회사 한결교육", "rgn": "강원특별자치도 춘천시", "rep": "", "nind": 0, "ncon": 6}, {"biz": "220-XX-X6889", "nm": "(주)한결에이엠", "rgn": "서울특별시 송파구", "rep": "주택관리업", "nind": 9, "ncon": 5}, {"biz": "190-XX-X1687", "nm": "한결종합건설주식회사", "rgn": "대구광역시 달성군", "rep": "건축공사업", "nind": 4, "ncon": 5}, {"biz": "468-XX-X0273", "nm": "한결 건축사사무소", "rgn": "경상남도 창원시", "rep": "건축사사무소", "nind": 2, "ncon": 5}, {"biz": "719-XX-X3507", "nm": "주식회사 한결조경", "rgn": "충청남도 계룡시", "rep": "조경식재ㆍ시설물공사업", "nind": 1, "ncon": 5}, {"biz": "777-XX-X1069", "nm": "한결조경", "rgn": "충청북도 청주시", "rep": "조경식재ㆍ시설물공사업", "nind": 1, "ncon": 5}, {"biz": "343-XX-X0347", "nm": "주식회사한결이엔지", "rgn": "전남광주통합특별시 북구", "rep": "", "nind": 9, "ncon": 4}, {"biz": "431-XX-X3511", "nm": "주식회사 한결코퍼레이션", "rgn": "경상남도 거창군", "rep": "엔지니어링사업(도로, 공항)", "nind": 7, "ncon": 4}, {"biz": "107-XX-X3639", "nm": "(사)대한결핵협회", "rgn": "서울특별시 서초구", "rep": "학술.연구용역", "nind": 6, "ncon": 4}, {"biz": "141-XX-X2115", "nm": "주식회사 한결", "rgn": "인천광역시 검단구", "rep": "옥외광고사업", "nind": 3, "ncon": 4}, {"biz": "890-XX-X0334", "nm": "주식회사 한결피아이에프", "rgn": "서울특별시 성동구", "rep": "소프트웨어사업자(컴퓨터관련서비스사업)", "nind": 2, "ncon": 4}, {"biz": "356-XX-X2905", "nm": "주식회사 한결", "rgn": "경상남도 진주시", "rep": "학술.연구용역", "nind": 1, "ncon": 4}, {"biz": "546-XX-X2960", "nm": "주식회사 한결티에스", "rgn": "경기도 수원시", "rep": "금속창호ㆍ지붕건축물조립공사업", "nind": 1, "ncon": 4}, {"biz": "183-XX-X2705", "nm": "주식회사 한결기술단", "rgn": "서울특별시 성북구", "rep": "", "nind": 0, "ncon": 4}, {"biz": "301-XX-X1862", "nm": "주식회사 한결방수", "rgn": "충청북도 청주시", "rep": "", "nind": 0, "ncon": 4}, {"biz": "261-XX-X2473", "nm": "한결디자인", "rgn": "부산광역시 동구", "rep": "", "nind": 0, "ncon": 4}, {"biz": "142-XX-X0855", "nm": "한결안전기술원", "rgn": "경기도 오산시", "rep": "", "nind": 0, "ncon": 4}, {"biz": "119-XX-X1424", "nm": "한결하이테크", "rgn": "경기도 화성시", "rep": "", "nind": 0, "ncon": 4}, {"biz": "305-XX-X7864", "nm": "한결엔지니어링", "rgn": "대전광역시 서구", "rep": "전문소방공사감리업", "nind": 3, "ncon": 3}, {"biz": "763-XX-X3091", "nm": "한결건설주식회사", "rgn": "경상남도 거제시", "rep": "철근ㆍ콘크리트공사업", "nind": 1, "ncon": 3}, {"biz": "143-XX-X3760", "nm": "한결온 시스템", "rgn": "전남광주통합특별시 여수시", "rep": "기타자유업종", "nind": 1, "ncon": 3}, {"biz": "105-XX-X8402", "nm": "한결퍼니처", "rgn": "세종특별자치시 금남면", "rep": "기타자유업종", "nind": 1, "ncon": 3}, {"biz": "215-XX-X0854", "nm": "주식회사 한결도건", "rgn": "경기도 광주시", "rep": "", "nind": 0, "ncon": 3}, {"biz": "844-XX-X0543", "nm": "주식회사 한결엔터프라이즈", "rgn": "경기도 성남시", "rep": "", "nind": 0, "ncon": 3}, {"biz": "281-XX-X0750", "nm": "한결유통", "rgn": "대구광역시 북구", "rep": "", "nind": 0, "ncon": 3}, {"biz": "581-XX-X2033", "nm": "주식회사 한결교육", "rgn": "전북특별자치도 익산시", "rep": "학술.연구용역", "nind": 4, "ncon": 2}, {"biz": "354-XX-X3832", "nm": "유한회사 한결엔지니어링", "rgn": "전북특별자치도 임실군", "rep": "산림기술용역업(산림경영)", "nind": 3, "ncon": 2}, {"biz": "676-XX-X3123", "nm": "유한회사 한결", "rgn": "전남광주통합특별시 목포시", "rep": "옥외광고사업", "nind": 2, "ncon": 2}, {"biz": "638-XX-X2573", "nm": "주식회사 한결", "rgn": "경상북도 경산시", "rep": "학술.연구용역", "nind": 2, "ncon": 2}, {"biz": "654-XX-X0851", "nm": "유한회사 한결라이팅", "rgn": "전북특별자치도 정읍시", "rep": "전기공사업", "nind": 1, "ncon": 2}, {"biz": "472-XX-X4170", "nm": "주식회사 한결구조", "rgn": "경상북도 포항시", "rep": "안전점검전문기관(건축 분야)", "nind": 1, "ncon": 2}, {"biz": "448-XX-X2418", "nm": "주식회사 한결랩", "rgn": "부산광역시 금정구", "rep": "의료기기판매업", "nind": 1, "ncon": 2}, {"biz": "857-XX-X3350", "nm": "주식회사 한결이엔씨파워텍", "rgn": "인천광역시 남동구", "rep": "전기공사업", "nind": 1, "ncon": 2}, {"biz": "507-XX-X4848", "nm": "한결종합건설주식회사", "rgn": "제주특별자치도 제주시", "rep": "건축공사업", "nind": 1, "ncon": 2}, {"biz": "408-XX-X0798", "nm": "주식회사 한결메디칼", "rgn": "대전광역시 동구", "rep": "", "nind": 0, "ncon": 2}, {"biz": "257-XX-X2743", "nm": "주식회사 한결전기", "rgn": "전북특별자치도 부안군", "rep": "", "nind": 0, "ncon": 2}, {"biz": "279-XX-X2807", "nm": "주식회사 한결전기", "rgn": "경상북도 울진군", "rep": "", "nind": 0, "ncon": 2}, {"biz": "515-XX-X7715", "nm": "주식회사 한결산업개발", "rgn": "경상북도 영천시", "rep": "", "nind": 9, "ncon": 1}, {"biz": "165-XX-X0927", "nm": "주식회사 한결건설", "rgn": "경상북도 김천시", "rep": "", "nind": 4, "ncon": 1}, {"biz": "105-XX-X6121", "nm": "(주)한결소프트", "rgn": "서울특별시 구로구", "rep": "소프트웨어사업자(패키지소프트웨어개발.공급사업)", "nind": 3, "ncon": 1}, {"biz": "304-XX-X4885", "nm": "한결", "rgn": "부산광역시 해운대구", "rep": "기타자유업(행사대행업)", "nind": 3, "ncon": 1}, {"biz": "514-XX-X2058", "nm": "한결자동차상사", "rgn": "대구광역시 달서구", "rep": "자동차관리사업(자동차매매업)", "nind": 3, "ncon": 1}, {"biz": "405-XX-X0691", "nm": "바른한결", "rgn": "충청남도 당진시", "rep": "의료기기판매업", "nind": 2, "ncon": 1}, {"biz": "814-XX-X1877", "nm": "주식회사 한결푸드", "rgn": "세종특별자치시", "rep": "식품판매업(집단급식소식품판매업)", "nind": 2, "ncon": 1}, {"biz": "730-XX-X2496", "nm": "한결OA", "rgn": "세종특별자치시 어진동", "rep": "기타자유업종", "nind": 1, "ncon": 1}, {"biz": "701-XX-X0933", "nm": "한결건축사사무소", "rgn": "경상북도 문경시", "rep": "건축사사무소", "nind": 1, "ncon": 1}, {"biz": "127-XX-X5492", "nm": "한결메디칼", "rgn": "경기도 의정부시", "rep": "의료기기판매업", "nind": 1, "ncon": 1}, {"biz": "778-XX-X2389", "nm": "주식회사 한결비투비", "rgn": "서울특별시 영등포구", "rep": "", "nind": 0, "ncon": 1}, {"biz": "372-XX-X1504", "nm": "특허법인 한얼 클라스한결", "rgn": "서울특별시 송파구", "rep": "", "nind": 0, "ncon": 1}, {"biz": "611-XX-X1067", "nm": "한결ENG", "rgn": "전라남도 담양군", "rep": "", "nind": 0, "ncon": 1}, {"biz": "875-XX-X2597", "nm": "한결공조엔지니어링", "rgn": "경기도 화성시", "rep": "", "nind": 0, "ncon": 1}, {"biz": "136-XX-X0064", "nm": "한결기획", "rgn": "강원특별자치도 횡성군", "rep": "", "nind": 0, "ncon": 1}, {"biz": "490-XX-X0834", "nm": "한결기획", "rgn": "충청남도 공주시", "rep": "", "nind": 0, "ncon": 1}, {"biz": "252-XX-X2087", "nm": "한결누수탐지", "rgn": "서울특별시 마포구", "rep": "", "nind": 0, "ncon": 1}, {"biz": "116-XX-X4158", "nm": "한결도서", "rgn": "경기도 평택시", "rep": "", "nind": 0, "ncon": 1}, {"biz": "152-XX-X0398", "nm": "한결유통", "rgn": "대구광역시 수성구", "rep": "", "nind": 0, "ncon": 1}, {"biz": "440-XX-X2736", "nm": "(주)하이퍼박대구대리점한결이에스지", "rgn": "대구광역시 북구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "137-XX-X6503", "nm": "(주)한결건축자재", "rgn": "경기도 김포시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "536-XX-X3664", "nm": "(주)한결에너지", "rgn": "경상북도 포항시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "566-XX-X3194", "nm": "(주)한결유천정보통신", "rgn": "충청북도 청주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "847-XX-X0182", "nm": "변산한결농장", "rgn": "전북특별자치도 부안군", "rep": "", "nind": 0, "ncon": 0}, {"biz": "734-XX-X0749", "nm": "사회적협동조합 한결", "rgn": "경기도 김포시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "111-XX-X3872", "nm": "연구소 한결", "rgn": "광주광역시 북구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "375-XX-X2745", "nm": "주식회사 한결건설중기", "rgn": "대전광역시 중구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "682-XX-X4210", "nm": "주식회사 한결디자인", "rgn": "경기도 평택시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "247-XX-X3871", "nm": "주식회사 한결로직스", "rgn": "부산광역시 사하구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "160-XX-X0266", "nm": "주식회사 한결석건", "rgn": "전라남도 나주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "686-XX-X4003", "nm": "주식회사 한결에프엠", "rgn": "경기도 고양시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "213-XX-X3924", "nm": "주식회사 한결종합관리", "rgn": "경기도 고양시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "750-XX-X3770", "nm": "주식회사 한결푸드서비스", "rgn": "서울특별시 송파구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "382-XX-X3402", "nm": "주식회사한결아이에이", "rgn": "대전광역시 대덕구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "372-XX-X1216", "nm": "한결", "rgn": "서울특별시 은평구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "598-XX-X3277", "nm": "한결", "rgn": "대구광역시 달서구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "537-XX-X0394", "nm": "한결 법률사무소", "rgn": "서울특별시 금천구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "315-XX-X0071", "nm": "한결감정평가사사무소", "rgn": "강원특별자치도 원주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "523-XX-X2904", "nm": "한결같이광고기획", "rgn": "경상남도 진주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "801-XX-X1220", "nm": "한결건설중기(신흥중기)", "rgn": "강원특별자치도 원주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "711-XX-X3044", "nm": "한결건축", "rgn": "경기도 의정부시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "126-XX-X0438", "nm": "한결상사(노루표페인트)", "rgn": "경기도 광주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "213-XX-X5603", "nm": "한결상하수도자재", "rgn": "경상남도 창원시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "503-XX-X9939", "nm": "한결유통", "rgn": "경상북도 고령군", "rep": "", "nind": 0, "ncon": 0}, {"biz": "798-XX-X0508", "nm": "한결유통", "rgn": "서울특별시 송파구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "815-XX-X3635", "nm": "한결이엔씨 주식회사", "rgn": "경상북도 청도군", "rep": "", "nind": 0, "ncon": 0}, {"biz": "606-XX-X3044", "nm": "한결장의사", "rgn": "부산광역시 북구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "574-XX-X0111", "nm": "한결정밀조각", "rgn": "경기도 시흥시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "197-XX-X3347", "nm": "한결종합개발주식회사", "rgn": "전라남도 목포시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "233-XX-X0323", "nm": "한결종합관리", "rgn": "경기도 김포시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "359-XX-X0853", "nm": "한결종합상사", "rgn": "전북특별자치도 전주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "373-XX-X1374", "nm": "한결종합환경", "rgn": "강원특별자치도 삼척시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "470-XX-X0402", "nm": "한결중기", "rgn": "경기도 파주시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "515-XX-X1078", "nm": "한결중기", "rgn": "서울특별시 영등포구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "649-XX-X0834", "nm": "한결축산ENG", "rgn": "대구광역시 달서구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "551-XX-X1793", "nm": "한결타일", "rgn": "경상북도 안동시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "323-XX-X1649", "nm": "한결테크", "rgn": "경기도 성남시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "490-XX-X1658", "nm": "한결파트너스(HANGYOLpartners)", "rgn": "충청북도 음성군", "rep": "", "nind": 0, "ncon": 0}, {"biz": "349-XX-X2130", "nm": "한결푸드", "rgn": "대구광역시 북구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "140-XX-X1139", "nm": "한결프레시", "rgn": "인천광역시 서구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "480-XX-X3672", "nm": "한결하이텍(주)", "rgn": "서울특별시 송파구", "rep": "", "nind": 0, "ncon": 0}, {"biz": "229-XX-X1435", "nm": "한결환경방역", "rgn": "충청남도 서산시", "rep": "", "nind": 0, "ncon": 0}], "다온엔지니어링": [{"biz": "484-XX-X4001", "nm": "다온엔지니어링 주식회사", "rgn": "경기도 화성시", "rep": "안전점검전문기관(건축 분야)", "nind": 1, "ncon": 34}, {"biz": "381-XX-X1805", "nm": "주식회사 다온엔지니어링", "rgn": "경기도 성남시", "rep": "설계업(전문설계1종)", "nind": 7, "ncon": 21}, {"biz": "506-XX-X4849", "nm": "주식회사 다온엔지니어링", "rgn": "강원특별자치도 평창군", "rep": "엔지니어링사업(토질, 지질)", "nind": 7, "ncon": 16}, {"biz": "563-XX-X3151", "nm": "주식회사 다온엔지니어링", "rgn": "충청남도 당진시", "rep": "산림기술용역업(산림생태,공학)", "nind": 2, "ncon": 11}, {"biz": "565-XX-X0412", "nm": "다온엔지니어링", "rgn": "경상북도 영주시", "rep": "엔지니어링사업(농림)", "nind": 2, "ncon": 6}, {"biz": "271-XX-X3476", "nm": "주식회사 다온엔지니어링", "rgn": "경기도 포천시", "rep": "엔지니어링사업(도로, 공항)", "nind": 4, "ncon": 5}, {"biz": "119-XX-X3750", "nm": "주식회사 다온엔지니어링", "rgn": "전남광주통합특별시 여수시", "rep": "도장ㆍ습식ㆍ방수ㆍ석공사업", "nind": 1, "ncon": 4}, {"biz": "609-XX-X4308", "nm": "주식회사 다온엔지니어링", "rgn": "경상남도 창원시", "rep": "엔지니어링사업(도로, 공항)", "nind": 4, "ncon": 3}], "신성건설": [{"biz": "313-XX-X3943", "nm": "(주)신성건설", "rgn": "충청남도 서천군", "rep": "", "nind": 6, "ncon": 17}, {"biz": "308-XX-X1700", "nm": "주식회사 신성건설", "rgn": "충청남도 부여군", "rep": "", "nind": 0, "ncon": 15}, {"biz": "303-XX-X1685", "nm": "주식회사 신성건설", "rgn": "강원특별자치도 삼척시", "rep": "", "nind": 9, "ncon": 11}, {"biz": "418-XX-X0256", "nm": "주식회사 신성건설", "rgn": "전북특별자치도 전주시", "rep": "토목건축공사업", "nind": 9, "ncon": 10}, {"biz": "483-XX-X3119", "nm": "주식회사 신성건설", "rgn": "충청남도 논산시", "rep": "철근ㆍ콘크리트공사업", "nind": 1, "ncon": 10}, {"biz": "128-XX-X1482", "nm": "(주)신성건설", "rgn": "경기도 고양시", "rep": "", "nind": 10, "ncon": 8}, {"biz": "303-XX-X1744", "nm": "(자)신성건설", "rgn": "충청북도 음성군", "rep": "", "nind": 6, "ncon": 7}, {"biz": "302-XX-X3322", "nm": "신성건설(주)", "rgn": "충청북도 옥천군", "rep": "", "nind": 4, "ncon": 7}, {"biz": "305-XX-X0510", "nm": "신성건설(주)", "rgn": "충청남도 금산군", "rep": "", "nind": 0, "ncon": 7}, {"biz": "403-XX-X4043", "nm": "유한회사 신성건설", "rgn": "인천광역시 동구", "rep": "토목공사업", "nind": 5, "ncon": 6}, {"biz": "304-XX-X8602", "nm": "신성건설(주)", "rgn": "충청북도 제천시", "rep": "", "nind": 8, "ncon": 5}, {"biz": "306-XX-X3539", "nm": "주식회사 신성건설", "rgn": "충청남도 청양군", "rep": "철근ㆍ콘크리트공사업", "nind": 2, "ncon": 5}, {"biz": "128-XX-X0116", "nm": "(주)신성건설", "rgn": "경기도 파주시", "rep": "", "nind": 14, "ncon": 4}, {"biz": "315-XX-X2062", "nm": "주식회사 신성건설", "rgn": "충청북도 괴산군", "rep": "", "nind": 6, "ncon": 3}, {"biz": "409-XX-X4677", "nm": "주식회사 신성건설", "rgn": "전남광주통합특별시 나주시", "rep": "토목공사업", "nind": 1, "ncon": 3}, {"biz": "409-XX-X1610", "nm": "신성건설(주)", "rgn": "전남광주통합특별시 보성군", "rep": "", "nind": 0, "ncon": 2}, {"biz": "118-XX-X6508", "nm": "(주)신길신성건설", "rgn": "서울특별시 영등포구", "rep": "도장ㆍ습식ㆍ방수ㆍ석공사업", "nind": 7, "ncon": 1}, {"biz": "137-XX-X0908", "nm": "주식회사 신성건설", "rgn": "경기도 김포시", "rep": "전기공사업", "nind": 6, "ncon": 1}, {"biz": "514-XX-X1281", "nm": "신성건설주식회사", "rgn": "전남광주통합특별시 장흥군", "rep": "", "nind": 0, "ncon": 1}, {"biz": "312-XX-X5138", "nm": "신성건설기계", "rgn": "충청남도 천안시", "rep": "", "nind": 0, "ncon": 0}, {"biz": "876-XX-X0015", "nm": "신성건설기계", "rgn": "충청남도 천안시", "rep": "", "nind": 0, "ncon": 0}]}, "counts": {"감리": 61, "주차": 4, "MIS": 0, "ADATA": 0, "태양광": 18, "설계감리": 10, "시각화": 0}, "active": 9374, "ret": [{"biz": "124-XX-X7731", "nm": "한종산업개발 주식회사", "rgn": "경상남도 창원시", "rep": "기타자유업종", "nind": 15, "ncon": 7}, {"biz": "306-XX-X2489", "nm": "대신네트웍스 주식회사", "rgn": "대전광역시 서구", "rep": "정보통신공사업", "nind": 11, "ncon": 15}], "typing": "대신네트웍스"}</script><script>
+/* Engine(C, cv, L, T): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl) */
+function Engine(C, cv, L, T){
+const {W, H, CY, XS, HH, CNT, FAN_X, FAN_SP, CONV, PRESS} = C;
+const NW = XS.length - 1, S = NW + 1, N = CNT[0];   // 벽 수 / 구간 수(=코호트 수) / 선 수
+const ctx = cv.getContext('2d');
+
+/* ---- 선 기하: 한 번만 계산한다 ---------------------------------------- */
+function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// 살아남는 선은 씨앗 고정으로 고른다 — 그림이 매번 같아야 비교가 된다.
+// 뒤섞은 뒤 앞에서 831 / 385 / 12 를 잘라 쓰면 자동으로 부분집합이 된다.
+const rnd = rng(7), idx = new Int32Array(N);
+for (let i=0;i<N;i++) idx[i]=i;
+for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+
+const fate = new Uint8Array(N).fill(1);          // 1=1번 벽에서 막힘 … S=끝까지 통과
+const alive = [];
+for (let s=1;s<=NW;s++){
+  const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
+  for (const i of a) fate[i] = s+1;
+  alive.push(a);
+}
+
+// Y[i*S+s] = s 구간에서의 y. 각 구간마다 생존자를 통로 전체에 고르게 다시 편다 —
+// 간격이 벌어지는 것이 곧 '몇 개가 남았나'이다.
+// 간격이 1px 아래로 내려가면 '고르게 배치'가 장치 픽셀 격자와 맞물려 굵은 무아레 띠를 만든다.
+// 0.45px 지터로 위상을 흩는다 — 공고가 실제로 고른 간격일 리도 없다.
+const Y = new Float32Array(N*S);
+const jit = p => p < 1.2 ? (rnd()*2-1)*0.45 : 0;
+const pitch = s => 2*HH[s] / (CNT[s]-1);
+for (let i=0;i<N;i++) Y[i*S] = CY + (i/(N-1)*2-1)*HH[0] + jit(pitch(0));
+for (let s=1;s<=NW;s++){
+  const a = alive[s-1], m = a.length, pj = pitch(s);
+  for (let r=0;r<m;r++) Y[a[r]*S+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
+}
+
+// 코호트별 Path2D. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
+const P = Array.from({length: S}, () => new Path2D());
+for (let i=0;i<N;i++){
+  const f = fate[i], p = P[f-1];
+  let y = Y[i*S];
+  p.moveTo(0, y);
+  for (let s=1;s<f;s++){                          // 통과한 벽마다 통로 폭으로 모인다
+    const g = XS[s], ny = Y[i*S+s];
+    p.lineTo(g-CONV, y);
+    p.bezierCurveTo(g-20, y, g-16, ny, g, ny);
+    y = ny;
+  }
+  if (f < S) p.lineTo(XS[f], y);                  // 벽까지 가서 멈춘다 (아래로 새지 않는다)
+  else {
+    p.lineTo(FAN_X, y);
+    const row = CY + (y-CY)/HH[NW]*FAN_SP;
+    p.bezierCurveTo(FAN_X+70, y, W-70, row, W, row);
+  }
+}
+
+/* ---- 그리기 ------------------------------------------------------------ */
+// 막힌 코호트는 '벽 앞에서 눌렸다 벽면에서 흩어진다'. 벽면에서 0 이 아니라 옅게 남겨야
+// 잉크가 벽에 닿아 '막혔다'로 읽힌다 — 벽 앞에서 끊기면 그냥 사라진 것이 된다.
+function fade(c, x1, a, pressed, tail){
+  const g = c.createLinearGradient(0,0,x1,0);
+  g.addColorStop(0, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-PRESS)/x1, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-6)/x1, `rgba(20,20,20,${pressed})`);
+  g.addColorStop(1, `rgba(20,20,20,${tail})`);
+  return g;
+}
+// 벽 1·2·3 에서 막히는 코호트의 (불투명도, 눌림, 꼬리, 굵기). 남은 선이 적을수록 진하게 — 385개가 하나씩 보여야 한다.
+// (알려진 결함: 이 차이가 덩어리 안에 가로 얼룩을 만든다 — README '머리 장면' 참조)
+const PEN = [[.055, .16, .03, .30], [.30, .60, .08, .35], [.34, .65, .09, .35]];
+// 9,285개를 매 프레임 다시 래스터화하면 소프트웨어 래스터라이저에서 70ms 가 넘는다.
+// 그림 자체는 움직이지 않고 '어디까지 보이나'만 움직이므로, 한 번 그려서 오프스크린에
+// 넣어두고 매 프레임은 왼쪽 일부만 blit 한다 — 선은 하나도 줄이지 않는다.
+let off = null, sx = 1, ms = 0;
+
+function render(){
+  const g = off.getContext('2d'), dpr = devicePixelRatio || 1;
+  g.setTransform(sx*dpr, 0, 0, dpr, 0, 0);        // 설계 좌표 그대로 쓰고 레티나는 dpr 로
+  g.clearRect(0, 0, W, H);
+  g.lineCap = 'butt';
+  const last = g.createLinearGradient(0,0,W,0);   // 마지막 12개만 인주
+  last.addColorStop(0, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]-20)/W, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]+30)/W, 'rgba(232,67,27,.9)');
+  last.addColorStop(1, 'rgba(232,67,27,.9)');
+  const pen = PEN.slice(0, NW).map((a, c) => [fade(g, XS[c+1], a[0], a[1], a[2]), a[3]]);
+  pen.push([last, .9]);
+  for (let c=0;c<S;c++){ g.strokeStyle = pen[c][0]; g.lineWidth = pen[c][1]; g.stroke(P[c]); }
+  g.strokeStyle = '#141414';
+  for (let k=1;k<=NW;k++){
+    const x = XS[k];
+    for (const sg of [-1, 1]){
+      g.lineWidth = 2.5; g.beginPath();            // 벽은 화면 끝까지, 통로만 뚫려 있다
+      g.moveTo(x, sg<0 ? 0 : CY+HH[k]); g.lineTo(x, sg<0 ? CY-HH[k] : H); g.stroke();
+      g.lineWidth = 1.5; g.beginPath();            // 통로 입술 — 구멍임을 분명히
+      g.moveTo(x-7, CY+sg*HH[k]); g.lineTo(x+7, CY+sg*HH[k]); g.stroke();
+    }
+  }
+}
+
+function setup(){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  sx = r.width / W;
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(H*dpr);
+  off = Object.assign(document.createElement('canvas'), {width: cv.width, height: cv.height});
+  ctx.setTransform(1, 0, 0, 1, 0, 0);              // blit 는 장치 픽셀로
+  render();
+}
+
+// front 왼쪽은 체(off), 오른쪽은 behind(있으면 — entry-flow 의 멈춘 덩어리) 아니면 빈 캔버스.
+function draw(front, behind){
+  const t0 = performance.now();
+  const fw = Math.max(1, Math.round(front * sx * (devicePixelRatio || 1)));
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(off, 0, 0, fw, cv.height, 0, 0, fw, cv.height);
+  if (behind && fw < cv.width) ctx.drawImage(behind, fw, 0, cv.width-fw, cv.height, fw, 0, cv.width-fw, cv.height);
+  ms = ms ? ms*.85 + (performance.now()-t0)*.15 : performance.now()-t0;
+  window.__ms = ms;
+}
+
+function paint(x, settled, behind){
+  draw(x, behind);
+  T.forEach(t => t.classList.toggle('on', x >= +t.dataset.x));
+  L.forEach(g => {
+    g.classList.toggle('on', x >= +g.dataset.x);
+    const span = g.querySelector('.cnt'), to = +span.dataset.to;
+    const p = Math.min(1, Math.max(0, (x - g.dataset.x) / 150));
+    span.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString('ko-KR');
+  });
+  document.body.classList.toggle('done', settled);
+}
+
+return {setup, draw, paint, Y, N, S, NW, get sx(){ return sx; }, get off(){ return off; }, get ms(){ return ms; }};
+}
+
+/* ---- 입구 = 첫 장면. 덩어리는 처음부터 흐르고, 회사가 열쇠다. ------------------------------------
+   52%: 최근 7일 사용자 검색 395건 중 205건이 회사로 풀리지 않았다(gen_entry.py 머리말) — 키워드 행은 회사 행과 같은 무게로 목록에 선다. */
+const J = id => JSON.parse(document.getElementById(id).textContent);
+const CFG = { co: J('cfg'), kw: J('cfgkw') }, MASS = J('mass');
+const W = CFG.co.W, H = CFG.co.H;
+const cv = document.getElementById('cv'), drift = document.getElementById('drift');
+const has2d = !location.search.includes('nocanvas') && !!(cv.getContext && cv.getContext('2d'));   // ?nocanvas — 캔버스 없는 경로 점검
+const manual = location.search.includes('manual');                                                   // ?manual — 단계 이벤트를 밖에서 stageDone(k) 로 준다
+const ENG = {};                      // 모드별 엔진: 벽 셋(회사) / 둘(키워드). 선 기하·오프스크린은 gen_flow 의 Engine 그대로.
+let E = null, mode = 'co', phase = 'idle', front = 0, target = 0, raf = 0, timers = [], still = null;
+
+function engine(m){
+  if (!ENG[m]) ENG[m] = Engine(CFG[m], cv, [...document.querySelectorAll(`.set.${m}-only .lab`)], m === 'co' ? [...document.querySelectorAll('.ttl')] : []);
+  return ENG[m];
+}
+const sx0 = () => cv.getBoundingClientRect().width / W;
+
+// 덩어리: 9,117개 전부, 불투명도 하나 — 아직 코호트가 없다(README 결함: 코호트 불투명도 차이가 가로 얼룩을 만든다. 여기엔 없다).
+// wavy 면 LAM 만큼 더 넓은 띠에 sin 결을 넣는다 — CSS 가 한 파장 밀면 이음새 없이 돈다. 아니면 멈춘 덩어리(체 오른쪽에 깔린다).
+function mass(E, c, wavy, sx){
+  const dpr = devicePixelRatio || 1, ww = wavy ? W + MASS.LAM : W;
+  c.width = Math.round(ww*sx*dpr); c.height = Math.round(H*dpr);
+  const g = c.getContext('2d'); g.setTransform(sx*dpr, 0, 0, dpr, 0, 0);
+  g.lineCap = 'butt'; g.lineWidth = .3; g.strokeStyle = 'rgba(20,20,20,.075)';
+  const p = new Path2D(), step = MASS.LAM/16, k = 2*Math.PI/MASS.LAM;
+  for (let i=0;i<E.N;i++){
+    const y = E.Y[i*E.S];
+    if (!wavy){ p.moveTo(0, y); p.lineTo(W, y); continue; }
+    const ph = i/E.N*2*Math.PI*MASS.TURNS, f = x => y + MASS.AMP*Math.sin(k*x + ph);
+    p.moveTo(0, f(0));                                      // 꺾이는 x 를 선마다 어긋나게(황금비) — 같은 x 에서 9천 개가 꺾이면 세로 이음이 보인다
+    for (let x=((i*0.6180339887)%1)*step; x<ww; x+=step) p.lineTo(x, f(x));
+    p.lineTo(ww, f(ww));
+  }
+  g.stroke(p); return c;
+}
+function ready(){ if (!E.off){ E.setup(); } if (!still) still = mass(E, document.createElement('canvas'), false, E.sx); }
+
+
+const D = JSON.parse(document.getElementById('data').textContent);
+const ROWS = Object.values(D.groups).flat();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const inp = $('#q'), ls = $('#ls'), live = $('#live'), hint = $('#hint');
+let items = [], act = -1, picked = null;
+const num = n => n.toLocaleString('ko-KR');
+const hi = (s, q) => { const i = s.toLowerCase().indexOf(q.toLowerCase()); return i < 0 ? s : s.slice(0,i) + '<mark>' + s.slice(i, i+q.length) + '</mark>' + s.slice(i+q.length); };
+const isBiz = q => q.replace(/\D/g,'').length === 10;
+
+/* ---- 최근 회사: 브라우저만 기억한다. 로그인 없음. -------------------------------- */
+const KEY = 'jf.recent';
+const recent = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
+const remember = r => { try { localStorage.setItem(KEY, JSON.stringify([r, ...recent().filter(x => x.biz !== r.biz)].slice(0, 3))); } catch {} };
+
+/* ---- 목록 만들기 ------------------------------------------------------------- */
+function query(q) {
+  q = q.trim();
+  if (q.length < 2) return { rows: [], total: 0, q };
+  // 사업자번호: 시안의 행은 가린 번호뿐이라 앞 3·뒤 4자리로만 맞춘다
+  if (isBiz(q)) { const d = q.replace(/\D/g,''); return { rows: ROWS.filter(r => r.biz.slice(0,3) === d.slice(0,3) && r.biz.slice(-4) === d.slice(-4)), total: 0, q, biz: true }; }
+  const rows = ROWS.filter(r => r.nm.toLowerCase().includes(q.toLowerCase()));
+  const total = D.counts[q] ?? rows.length;      // 로그 낱말이면 DB 전체의 실제 수, 아니면 묶음 안의 수
+  return { rows, total, q };
+}
+
+function row(r, i) {
+  return `<li role="option" id="o${i}" data-i="${i}"><span class="nm">${hi(r.nm, inp.value.trim())}</span><span class="rg">${r.rgn || '<span class="none">지역 없음</span>'}</span>`
+       + `<span class="rp ${r.rep ? '' : 'none'}">${r.rep ? r.rep + (r.nind > 1 ? ` 외 ${r.nind-1}` : '') : '등록업종 없음'}</span>`
+       + `<span class="nc ${r.ncon ? '' : 'none'}">${r.ncon ? `수주 ${r.ncon}건` : '수주 없음'}</span><span class="bz">${r.biz}</span></li>`;
+}
+function kwrow(q, i, lead) {
+  return `<li role="option" class="kw" id="o${i}" data-i="${i}"><span class="nm">이 말로 공고 찾기</span><span class="rg">"${q}"<small>${lead ? '회사 없이 — 이 일을 하는 공고만' : '회사가 아니라 하는 일이라면'}</small></span></li>`;
+}
+
+function render() {
+  const { rows, total, q, biz } = query(inp.value);
+  items = []; act = -1;
+  if (!q || q.length < 2) { ls.innerHTML = ''; ls.hidden = true; inp.setAttribute('aria-expanded', 'false'); live.textContent = ''; return; }
+  // total 은 DB 의 실제 회사 수. 30곳을 넘으면 낱말로는 못 고르는 것이라 키워드 행이 앞선다("감리" 61곳).
+  const shown = rows.slice(0, 8), generic = total > 30, miss = total === 0;
+  let h = '';
+  const kwFirst = (generic || miss) && !biz;
+  if (kwFirst) { h += `<div class="hd first"><span>하는 일로</span></div>` + kwrow(q, items.length, true); items.push({ kw: q }); }
+  if (miss) {
+    h += `<div class="miss">${biz ? `<b>${q}</b> 번호로 등록된 회사가 없습니다.` : `<b>${q}</b> 이름의 회사를 나라장터 등록에서 찾지 못했습니다.`}<br>`
+       + `사업자번호 10자리로 다시 찾거나, 회사가 없어도(예비창업·해외·개인) 위 행으로 공고를 볼 수 있습니다.</div>`;
+  } else {
+    h += `<div class="hd ${kwFirst ? '' : 'first'}"><span>회사 <b>${num(total)}</b>곳${generic ? ' — 회사명을 더 치면 좁혀집니다' : ''}</span><span>지역 · 대표업종 · 수주</span></div>`;
+    for (const r of (generic ? shown.slice(0, 3) : shown)) { h += row(r, items.length); items.push({ co: r }); }
+    if (!rows.length) h += `<div class="miss">시안에는 이 낱말의 회사 행을 싣지 않았다 — 실제 화면에선 ${num(total)}곳 중 수주 많은 순 3곳.</div>`;
+    if (total > items.length - (kwFirst ? 1 : 0)) h += `<div class="more">비슷한 이름 ${num(total - (items.length - (kwFirst ? 1 : 0)))}곳 더 — 지역이나 글자를 더 치면 좁혀집니다</div>`;
+  }
+  if (!kwFirst && !biz) { h += `<div class="hd"><span>하는 일로</span></div>` + kwrow(q, items.length, false); items.push({ kw: q }); }
+  ls.innerHTML = h; ls.hidden = false; inp.setAttribute('aria-expanded', 'true');
+  live.textContent = miss ? `회사 없음. 키워드로 찾기 1개` : `회사 ${items.filter(x => x.co).length}곳, 키워드로 찾기 1개. 화살표로 고르고 Enter`;
+}
+
+function setAct(i) {
+  act = i;
+  [...ls.querySelectorAll('[role=option]')].forEach((o, k) => o.setAttribute('aria-selected', k === i ? 'true' : 'false'));
+  const o = ls.querySelector(`#o${i}`);
+  inp.setAttribute('aria-activedescendant', o ? o.id : '');
+  o && o.scrollIntoView({ block: 'nearest' });
+}
+
+inp.addEventListener('input', render);
+inp.addEventListener('keydown', e => {
+  if (ls.hidden) { if (e.key === 'Enter' && inp.value.trim().length >= 2) { render(); } return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); setAct((act + 1) % items.length); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); setAct((act - 1 + items.length) % items.length); }
+  else if (e.key === 'Escape') { ls.hidden = true; inp.setAttribute('aria-expanded', 'false'); act = -1; }
+  else if (e.key === 'Enter') { e.preventDefault(); choose(act >= 0 ? act : (items.findIndex(x => x.co) >= 0 && items.filter(x => x.co).length === 1 ? items.findIndex(x => x.co) : items.findIndex(x => x.kw))); }
+});
+ls.addEventListener('mousedown', e => { const o = e.target.closest('[role=option]'); if (o) { e.preventDefault(); choose(+o.dataset.i); } });
+
+/* ---- 고르기 → 넘김. confirm 안은 window.onPick 이 가로채 확인 카드로 보낸다. ----- */
+function choose(i) {
+  const it = items[i]; if (!it) return;
+  if (window.onPick && window.onPick(it)) return;
+  go(it);
+}
+
+function flip(el, from) {
+  if (reduce || !from) return;
+  const to = el.getBoundingClientRect();
+  el.animate([{ transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.height / to.height})`, transformOrigin: '0 0' }, { transform: 'none' }],
+             { duration: 520, easing: 'cubic-bezier(.3,.7,.2,1)' });
+}
+
+function go(it, fromEl) {
+  picked = it;
+  const src = fromEl || inp, a = src.getBoundingClientRect();
+  const pn = $('#pn'), b = pn.getBoundingClientRect();
+  if (it.co) { remember(it.co); $('#hq').innerHTML = `<b>${it.co.nm}</b>${it.co.rgn} · ${it.co.rep ? '등록업종 ' + it.co.nind : '등록업종 없음'} · ${it.co.ncon ? '수주 ' + it.co.ncon + '건' : '수주 이력 없음'}<span class="back" id="back">다시 입력</span>`;
+    $('#hl').innerHTML = lab('지금 입찰 가능 · 마감 90일 이내', D.active) + lab('업종이 맞는 공고', null) + lab('자격이 되는 공고 · 면허·지역', null) + lab('검토할 공고', null, true); }
+  else { $('#hq').innerHTML = `<b>"${it.kw}"</b>회사 없이 · 이 말과 가까운 공고<span class="back" id="back">다시 입력</span>`;
+    $('#hl').innerHTML = lab('지금 입찰 가능 · 마감 90일 이내', D.active) + lab('이 말과 가까운 공고', null) + lab('검토할 공고', null, true); }
+  const entry = $('.entry'); entry.style.height = entry.offsetHeight + 'px';
+  const head = $('.head2'); head.style.height = 'auto'; const hh = head.offsetHeight; head.style.height = '0px';
+  requestAnimationFrame(() => { entry.style.height = '0px'; head.style.height = hh + 'px'; document.body.classList.add('go');
+    flip($('#hq b'), a); flip($('#hl .n'), b); });
+  $('#back').onclick = reset;
+  ls.hidden = true; inp.setAttribute('aria-expanded', 'false');
+}
+function lab(k, v, last) { return `<div class="lab ${last ? 'last' : ''}"><span class="k">${k}</span><div class="n ${v == null ? 'wait' : ''}">${v == null ? '…' : num(v)}<small>건</small></div></div>`; }
+function reset() { document.body.classList.remove('go'); $('.entry').style.height = ''; $('.head2').style.height = '0px'; picked = null; window.onReset && window.onReset(); inp.focus(); }
+
+/* ---- 상태 알약 — 입력란에 값을 넣고 같은 render 를 돌린다. 꾸민 화면이 아니라 같은 경로. ---- */
+const STATES = { empty: '', typing: D.typing, miss: 'ADATA', return: '' };
+function state(s) {
+  document.querySelectorAll('.ctl span').forEach(x => x.classList.toggle('on', x.dataset.s === s));
+  reset();
+  if (s === 'return') { try { localStorage.setItem(KEY, JSON.stringify(D.ret)); } catch {} } else if (s === 'empty') { try { localStorage.removeItem(KEY); } catch {} }
+  inp.value = STATES[s]; render(); window.onState && window.onState(s); paintRecent();
+  if (s !== 'return') inp.focus();
+}
+function paintRecent() {
+  const r = recent(), el = $('#rc'); if (!el) return;
+  el.innerHTML = r.length ? `<span>최근</span>` + r.map((c, i) => `<a data-i="${i}">${c.nm}<small>${c.rgn}${c.ncon ? ' · 수주 ' + c.ncon + '건' : ''}</small></a>`).join('') : '';
+  el.querySelectorAll('a').forEach(a => a.onclick = () => go({ co: r[+a.dataset.i] }, a));
+  window.onRecent && window.onRecent(r);
+}
+document.querySelectorAll('.ctl span').forEach(x => x.onclick = () => state(x.dataset.s));
+document.addEventListener('click', e => { if (!e.target.closest('.in') && !e.target.closest('#ls') && !e.target.closest('.ctl')) { ls.hidden = true; inp.setAttribute('aria-expanded', 'false'); } });
+state(recent().length ? 'return' : 'empty');
+
+/* ---- 열쇠가 돈다: gen_entry 의 go/reset 을 덮어쓴다(목록·Enter·최근 칩이 전부 여기로 온다) ---- */
+function go(it, fromEl){
+  if (phase !== 'idle' || !it) return;
+  picked = it; mode = it.co ? 'co' : 'kw';
+  if (it.co) remember(it.co);
+  const a = (fromEl || inp).getBoundingClientRect();
+  $('#hq').innerHTML = (it.co
+    ? `<b>${it.co.nm}</b>${it.co.rgn} · ${it.co.rep ? '등록업종 ' + it.co.nind : '등록업종 없음'} · ${it.co.ncon ? '수주 ' + it.co.ncon + '건' : '수주 이력 없음'}`
+    : `<b>"${it.kw}"</b>회사 없이 · 이 말과 가까운 공고`) + `<span class="back" id="back" tabindex="0" role="button">다시 입력</span>`;
+  const back = $('#back'); back.onclick = reset; back.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reset(); } };
+  ls.hidden = true; inp.setAttribute('aria-expanded', 'false'); inp.blur();
+  document.body.classList.toggle('kw', mode === 'kw'); document.body.classList.add('go'); phase = 'go';
+  flip($('#hq b'), a);                                   // 회사명이 입력 자리에서 머리 자리로 난다 (gen_entry.flip)
+  live.textContent = it.co ? `${it.co.nm} 확인. 공고를 거르는 중` : `"${it.kw}" 로 공고를 찾는 중`;
+  back.focus({ preventScroll: true });                   // 초점은 캔버스에 가지 않는다 — 캔버스는 aria-hidden
+  if (has2d){ E = engine(mode); ready(); }
+  if (reduce || !has2d){ settle(); return; }             // 움직임 줄이기 / 캔버스 없음: 바로 표
+  front = 0; target = 0; E.paint(0, false, still);       // 물이 멎는다: #drift → #cv 크로스페이드는 CSS
+  // 벽은 고정 타임라인이 아니라 단계 완료가 세운다 — 시안은 타이머로 흉내낸다. 재방문 칩(fromEl)은 캐시 경로라 짧게.
+  if (!manual) (fromEl ? MASS.FAST : MASS.FULL).slice(0, E.NW).forEach((ms, k) => timers.push(setTimeout(() => stageDone(k + 1), ms)));
+}
+// 파이프라인 k 단계 끝 → k 번째 벽이 선다. 전진선은 벽을 지나 150px(라벨 카운트업 거리) 더 가서 다음 단계를 기다린다. 마지막이면 끝까지(부채).
+function stageDone(k){
+  if (phase !== 'go' || !E) return;
+  target = k >= E.NW ? W : CFG[mode].XS[k] + 150;
+  if (!raf){ last = 0; raf = requestAnimationFrame(tick); }
+}
+let last = 0;
+function tick(now){
+  const dt = last ? Math.min(100, now - last) : 16.7; last = now;   // 시간 기준 — 120Hz 폰에서 두 배로 빨라지거나 느린 탭에서 멈추지 않게
+  front += (target - front) * (1 - Math.pow(.84, dt / 16.7));      // 지수 완화 — 벽이 내려앉는 데 0.6초쯤
+  if (Math.abs(target - front) < .6) front = target;
+  E.paint(front, false, still);
+  if (front !== target){ raf = requestAnimationFrame(tick); return; }
+  raf = 0;
+  if (target === W) timers.push(setTimeout(settle, 480));
+}
+function settle(){                                       // 건너뛰기(스테이지 클릭·Esc)와 정상 종료가 같은 곳으로 온다
+  if (phase !== 'go') return;
+  cancelAnimationFrame(raf); raf = 0; timers.forEach(clearTimeout); timers = [];
+  phase = 'done';
+  if (E) E.paint(W, true); else document.body.classList.add('done');
+  live.textContent = `${CFG[mode].CNT.at(-1)}건 남음`;
+}
+function reset(){
+  cancelAnimationFrame(raf); raf = 0; timers.forEach(clearTimeout); timers = [];
+  phase = 'idle'; picked = null; front = target = 0;
+  document.body.classList.remove('go', 'done', 'kw');
+  $('#hq').innerHTML = ''; document.querySelectorAll('.lab, .ttl').forEach(l => l.classList.remove('on'));
+  if (has2d) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  inp.focus();
+}
+// 건너뛰기. 판(.plate) 안에서 난 클릭은 제외 — 목록 행·최근 칩을 누른 그 클릭이 .stage 로 올라와 방금 돈 열쇠를 바로 건너뛰게 한다.
+document.querySelector('.stage').addEventListener('click', e => { if (phase === 'go' && !e.target.closest('.plate')) settle(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && phase === 'go') settle(); });
+/* ---- 도착: 기하만 만들고(≈수십 ms) 결 있는 띠를 그린다. 체(오프스크린)는 한 박자 뒤 — 도착 화면엔 벽이 없다. ---- */
+if (has2d){
+  E = engine('co'); mass(E, drift, true, sx0());
+  setTimeout(ready, 80);
+  let rz = 0;
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => {
+    mass(E, drift, true, sx0()); still = null; E.off && (E.setup(), ready());
+    if (phase === 'go') E.paint(front, false, still); else if (phase === 'done') E.paint(W, true);
+  }, 150); });
+}
+</script></body></html>

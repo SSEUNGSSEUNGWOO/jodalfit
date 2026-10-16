@@ -78,13 +78,14 @@ CSS = SHEET_CSS + r"""
 @media (prefers-reduced-motion: reduce) { .field, .field canvas, .labs, .lab, .ttl, .chain, .res { transition:none !important } }
 """
 
-JS = r"""
-const C = JSON.parse(document.getElementById('cfg').textContent);
+# 엔진 — 선 기하·오프스크린 렌더·blit·라벨 칠하기. flow.html 과 entry-flow.html(gen_entry_flow.py)이 같이 쓴다.
+# 벽 수는 cfg 의 XS 길이에서 온다(flow 3, 키워드 모드 2). 3벽이면 쪼개기 전과 같은 그림.
+ENGINE_JS = r"""
+/* Engine(C, cv, L, T): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl) */
+function Engine(C, cv, L, T){
 const {W, H, CY, XS, HH, CNT, FAN_X, FAN_SP, CONV, PRESS} = C;
-const N = CNT[0];
-const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-const L = [...document.querySelectorAll('.lab')], T = [...document.querySelectorAll('.ttl')];
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NW = XS.length - 1, S = NW + 1, N = CNT[0];   // 벽 수 / 구간 수(=코호트 수) / 선 수
+const ctx = cv.getContext('2d');
 
 /* ---- 선 기하: 한 번만 계산한다 ---------------------------------------- */
 function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
@@ -96,43 +97,43 @@ const rnd = rng(7), idx = new Int32Array(N);
 for (let i=0;i<N;i++) idx[i]=i;
 for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
 
-const fate = new Uint8Array(N).fill(1);          // 1=1번 벽에서 막힘 … 4=끝까지 통과
+const fate = new Uint8Array(N).fill(1);          // 1=1번 벽에서 막힘 … S=끝까지 통과
 const alive = [];
-for (let s=1;s<=3;s++){
+for (let s=1;s<=NW;s++){
   const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
   for (const i of a) fate[i] = s+1;
   alive.push(a);
 }
 
-// y[i*4+s] = s 구간에서의 y. 각 구간마다 생존자를 통로 전체에 고르게 다시 편다 —
+// Y[i*S+s] = s 구간에서의 y. 각 구간마다 생존자를 통로 전체에 고르게 다시 편다 —
 // 간격이 벌어지는 것이 곧 '몇 개가 남았나'이다.
 // 간격이 1px 아래로 내려가면 '고르게 배치'가 장치 픽셀 격자와 맞물려 굵은 무아레 띠를 만든다.
 // 0.45px 지터로 위상을 흩는다 — 공고가 실제로 고른 간격일 리도 없다.
-const Y = new Float32Array(N*4);
+const Y = new Float32Array(N*S);
 const jit = p => p < 1.2 ? (rnd()*2-1)*0.45 : 0;
 const pitch = s => 2*HH[s] / (CNT[s]-1);
-for (let i=0;i<N;i++) Y[i*4] = CY + (i/(N-1)*2-1)*HH[0] + jit(pitch(0));
-for (let s=1;s<=3;s++){
+for (let i=0;i<N;i++) Y[i*S] = CY + (i/(N-1)*2-1)*HH[0] + jit(pitch(0));
+for (let s=1;s<=NW;s++){
   const a = alive[s-1], m = a.length, pj = pitch(s);
-  for (let r=0;r<m;r++) Y[a[r]*4+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
+  for (let r=0;r<m;r++) Y[a[r]*S+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
 }
 
-// 코호트별 Path2D 4개. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
-const P = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+// 코호트별 Path2D. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
+const P = Array.from({length: S}, () => new Path2D());
 for (let i=0;i<N;i++){
   const f = fate[i], p = P[f-1];
-  let y = Y[i*4];
+  let y = Y[i*S];
   p.moveTo(0, y);
   for (let s=1;s<f;s++){                          // 통과한 벽마다 통로 폭으로 모인다
-    const g = XS[s], ny = Y[i*4+s];
+    const g = XS[s], ny = Y[i*S+s];
     p.lineTo(g-CONV, y);
     p.bezierCurveTo(g-20, y, g-16, ny, g, ny);
     y = ny;
   }
-  if (f < 4) p.lineTo(XS[f], y);                  // 벽까지 가서 멈춘다 (아래로 새지 않는다)
+  if (f < S) p.lineTo(XS[f], y);                  // 벽까지 가서 멈춘다 (아래로 새지 않는다)
   else {
     p.lineTo(FAN_X, y);
-    const row = CY + (y-CY)/HH[3]*FAN_SP;
+    const row = CY + (y-CY)/HH[NW]*FAN_SP;
     p.bezierCurveTo(FAN_X+70, y, W-70, row, W, row);
   }
 }
@@ -148,6 +149,9 @@ function fade(c, x1, a, pressed, tail){
   g.addColorStop(1, `rgba(20,20,20,${tail})`);
   return g;
 }
+// 벽 1·2·3 에서 막히는 코호트의 (불투명도, 눌림, 꼬리, 굵기). 남은 선이 적을수록 진하게 — 385개가 하나씩 보여야 한다.
+// (알려진 결함: 이 차이가 덩어리 안에 가로 얼룩을 만든다 — README '머리 장면' 참조)
+const PEN = [[.055, .16, .03, .30], [.30, .60, .08, .35], [.34, .65, .09, .35]];
 // 9,285개를 매 프레임 다시 래스터화하면 소프트웨어 래스터라이저에서 70ms 가 넘는다.
 // 그림 자체는 움직이지 않고 '어디까지 보이나'만 움직이므로, 한 번 그려서 오프스크린에
 // 넣어두고 매 프레임은 왼쪽 일부만 blit 한다 — 선은 하나도 줄이지 않는다.
@@ -160,14 +164,14 @@ function render(){
   g.lineCap = 'butt';
   const last = g.createLinearGradient(0,0,W,0);   // 마지막 12개만 인주
   last.addColorStop(0, 'rgba(20,20,20,.8)');
-  last.addColorStop((XS[3]-20)/W, 'rgba(20,20,20,.8)');
-  last.addColorStop((XS[3]+30)/W, 'rgba(232,67,27,.9)');
+  last.addColorStop((XS[NW]-20)/W, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]+30)/W, 'rgba(232,67,27,.9)');
   last.addColorStop(1, 'rgba(232,67,27,.9)');
-  const pen = [[fade(g, XS[1], .055, .16, .03), .30], [fade(g, XS[2], .30, .60, .08), .35],
-               [fade(g, XS[3], .34, .65, .09), .35], [last, .9]];
-  for (let c=0;c<4;c++){ g.strokeStyle = pen[c][0]; g.lineWidth = pen[c][1]; g.stroke(P[c]); }
+  const pen = PEN.slice(0, NW).map((a, c) => [fade(g, XS[c+1], a[0], a[1], a[2]), a[3]]);
+  pen.push([last, .9]);
+  for (let c=0;c<S;c++){ g.strokeStyle = pen[c][0]; g.lineWidth = pen[c][1]; g.stroke(P[c]); }
   g.strokeStyle = '#141414';
-  for (let k=1;k<=3;k++){
+  for (let k=1;k<=NW;k++){
     const x = XS[k];
     for (const sg of [-1, 1]){
       g.lineWidth = 2.5; g.beginPath();            // 벽은 화면 끝까지, 통로만 뚫려 있다
@@ -187,19 +191,19 @@ function setup(){
   render();
 }
 
-function draw(front){
+// front 왼쪽은 체(off), 오른쪽은 behind(있으면 — entry-flow 의 멈춘 덩어리) 아니면 빈 캔버스.
+function draw(front, behind){
   const t0 = performance.now();
   const fw = Math.max(1, Math.round(front * sx * (devicePixelRatio || 1)));
   ctx.clearRect(0, 0, cv.width, cv.height);
   ctx.drawImage(off, 0, 0, fw, cv.height, 0, 0, fw, cv.height);
+  if (behind && fw < cv.width) ctx.drawImage(behind, fw, 0, cv.width-fw, cv.height, fw, 0, cv.width-fw, cv.height);
   ms = ms ? ms*.85 + (performance.now()-t0)*.15 : performance.now()-t0;
   window.__ms = ms;
 }
 
-/* ---- 진행 -------------------------------------------------------------- */
-let raf = 0;
-function paint(x, settled){
-  draw(x);
+function paint(x, settled, behind){
+  draw(x, behind);
   T.forEach(t => t.classList.toggle('on', x >= +t.dataset.x));
   L.forEach(g => {
     g.classList.toggle('on', x >= +g.dataset.x);
@@ -210,14 +214,28 @@ function paint(x, settled){
   document.body.classList.toggle('done', settled);
 }
 
+return {setup, draw, paint, Y, N, S, NW, get sx(){ return sx; }, get off(){ return off; }, get ms(){ return ms; }};
+}
+"""
+
+# flow.html 전용 실행부 — 고정 타임라인(처음 방문 3.6초 / 재방문 1.1초 / 정지).
+RUN_JS = r"""
+const C = JSON.parse(document.getElementById('cfg').textContent), W = C.W;
+const cv = document.getElementById('cv');
+const L = [...document.querySelectorAll('.lab')], T = [...document.querySelectorAll('.ttl')];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const E = Engine(C, cv, L, T);
+
+/* ---- 진행 -------------------------------------------------------------- */
+let raf = 0;
 function run(mode){
   cancelAnimationFrame(raf);
   document.querySelectorAll('.ctl span').forEach(s => s.classList.toggle('on', s.dataset.run === mode));
-  if (mode === 'still') { paint(W, true); return; }
+  if (mode === 'still') { E.paint(W, true); return; }
   const dur = mode === 'fast' ? 1100 : 3600, t0 = performance.now();
   const tick = now => {
     const p = Math.min(1, (now - t0) / dur);
-    paint(W * (1 - Math.pow(1 - p, 2.2)), false);
+    E.paint(W * (1 - Math.pow(1 - p, 2.2)), false);
     if (p < 1) raf = requestAnimationFrame(tick);
     else setTimeout(() => document.body.classList.add('done'), mode === 'fast' ? 150 : 480);
   };
@@ -229,16 +247,17 @@ function run(mode){
 function settle(){
   if (document.body.classList.contains('done')) return;
   cancelAnimationFrame(raf);
-  paint(W, true);
+  E.paint(W, true);
 }
 
-setup();
+E.setup();
 document.querySelector('.stage').onclick = settle;
 addEventListener('keydown', settle);
 document.querySelectorAll('.ctl span').forEach(s => s.onclick = () => run(s.dataset.run));
-addEventListener('resize', () => { setup(); paint(W, document.body.classList.contains('done')); });
+addEventListener('resize', () => { E.setup(); E.paint(W, document.body.classList.contains('done')); });
 run(reduce ? 'still' : 'full');
 """
+JS = ENGINE_JS + RUN_JS
 
 
 def labels(f, n):
@@ -334,6 +353,10 @@ def demo():
 if __name__ == "__main__":
     if sys.argv[1:2] == ["--demo"]:
         demo(); sys.exit()
+    if sys.argv[1:2] == ["--rejs"]:   # 원천 JSON 없이 기존 flow.html 의 JS 만 교체 (데이터는 그대로)
+        p = sys.argv[2]; h = open(p, encoding="utf-8").read()
+        i = h.rindex("<script>") + len("<script>"); j = h.rindex("</script>")
+        open(p, "w", encoding="utf-8", newline="\n").write(h[:i] + JS + h[j:]); print("rejs", p); sys.exit()
     src, fsrc, tsrc, out = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
     d = json.load(open(src, encoding="utf-8"))
     fn = json.load(open(fsrc))
