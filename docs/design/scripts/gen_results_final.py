@@ -28,6 +28,17 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 .chain b { font-size:20px; line-height:1.15 } .chain b.acc { color:#f97316 } .chain .l { font-size:11.5px; color:#737370; margin-top:3px; line-height:1.3 }
 .chain i { font-size:16px; padding-top:2px } .chain .nl { display:flex; align-items:baseline } .chain .un { font-size:11.5px; color:#6b6b67; margin-left:4px }
 .st-zero .tabs { display:none }   /* 0건이면 종류 탭·마감 요약은 거짓말이 된다(결과 12건 기준 계산) */
+/* 가독성(2026-10-16 승우님 "가독성 좋게") — 글자 한 단계 ↑, 행 간격 ↑, 회색 대비 ↑. 한글 라벨에 자간·대문자 처리는 의미 없어 뺀다 */
+.k { font-size:12px; letter-spacing:0; text-transform:none; color:#6b6b67 } .mute { color:#7a7a76 }
+.head .meta { font-size:14px } .chain b { font-size:22px } .chain .l { font-size:12.5px } .tabs { font-size:14px }
+.side { font-size:14px } .side li { padding:4px 0 } .side .txt { font-size:14px; line-height:1.7 } .side .sec { padding-top:16px }
+.mh .k b { font-size:14px }
+.tr { padding:16px 0 } .tr .t { font-size:16px; font-weight:600 } .tr .sub { font-size:13.5px; color:#4a4a46; margin-top:4px } .tr .sub .why { color:#6b6b67 }
+.tr .d, .tr .r { font-size:15px } .tr .d small { font-size:12.5px }
+.x { padding:20px 0 24px 40px; gap:32px } .x .k { margin-bottom:8px } .x li { font-size:14px; line-height:1.7; padding:4px 0 }
+.gateline { font-size:14.5px; padding:24px 0 } .gateline .dim { font-size:13.5px }
+.zero b { font-size:18px } .zero .dim { font-size:14px } .okline { font-size:14px }
+@media screen and (max-width:720px){ .tr .t { font-size:15px } .tr .sub { font-size:13px } .side { font-size:13.5px } }
 .done .chain { height:auto; padding-top:16px }
 .tabs em { font-style:normal; color:#141414; font-weight:650; border-bottom:1px solid #141414; padding-bottom:1px } .tabs em + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
 /* 본문은 두 단. 0건이면 오른쪽 단만 비고 왼쪽은 그대로 — 기준이 곧 이유 */
