@@ -38,6 +38,8 @@ export interface BidNotice {
   bf_spec_rgst_no: string | null;
   /** 입찰참가자격 등록 마감 (0047) — 입찰 마감보다 먼저 닫히는 데드라인 */
   bid_qlfct_rgst_dt: string | null;
+  /** 발주계획 통합번호 (0051) — 있으면 order_plans 를 이걸로 직접 잇는다 */
+  order_plan_unty_no: string | null;
   has_embedding: boolean;
 }
 
@@ -112,8 +114,8 @@ export interface NoticeLifecycle {
 
 /** 벡터 컬럼은 공간에 따라 다르다 — select 리터럴을 분기해야 supabase-js 타입 추론이 산다. */
 const BID_NOTICE_COLUMNS = IS_KURE
-  ? "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,embedding:embedding_k"
-  : "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,embedding";
+  ? "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,order_plan_unty_no,embedding:embedding_k"
+  : "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,order_plan_unty_no,embedding";
 
 export async function fetchBidNotice(
   bidNtceNo: string
@@ -136,6 +138,8 @@ export async function fetchBidNotice(
 
 const PRE_SPEC_COLS =
   "bf_spec_rgst_no,prdct_clsfc_no_nm,bsns_div_nm,sw_biz_obj_yn,asign_bdgt_amt,rcpt_dt,rgst_dt,opnin_rgst_clse_dt,order_instt_nm,rl_dminstt_nm,spec_doc_file_url_1";
+const ORDER_PLAN_COLS =
+  "order_plan_unty_no,biz_nm,bsns_div_nm,bsns_ty_nm,order_year,order_mnth,cntrct_mthd_nm,order_instt_nm,sum_order_amt,ntice_dt";
 
 export async function fetchLifecycle(
   bidNtceNo: string
@@ -179,15 +183,20 @@ export async function fetchLifecycle(
             .order("rgst_dt", { ascending: false, nullsFirst: false })
             .order("bf_spec_rgst_no")
             .limit(5),
-      c
-        .from("order_plans")
-        .select(
-          "order_plan_unty_no,biz_nm,bsns_div_nm,bsns_ty_nm,order_year,order_mnth,cntrct_mthd_nm,order_instt_nm,sum_order_amt,ntice_dt"
-        )
-        .ilike("bid_ntce_no_list", `%${bidNtceNo}%`)
-        .order("ntice_dt", { ascending: false, nullsFirst: false })
-        .order("order_plan_unty_no")
-        .limit(5),
+      // 발주계획도 같은 구조(0051 order_plan_unty_no) — 직접 잇고, 없을 때만 공고번호 목록으로 추측.
+      notice.order_plan_unty_no
+        ? c
+            .from("order_plans")
+            .select(ORDER_PLAN_COLS)
+            .eq("order_plan_unty_no", notice.order_plan_unty_no)
+            .limit(1)
+        : c
+            .from("order_plans")
+            .select(ORDER_PLAN_COLS)
+            .ilike("bid_ntce_no_list", `%${bidNtceNo}%`)
+            .order("ntice_dt", { ascending: false, nullsFirst: false })
+            .order("order_plan_unty_no")
+            .limit(5),
       c
         .from("award_results")
         .select(

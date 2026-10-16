@@ -6,9 +6,9 @@
 
 bid_notices에 upsert (`ignore_duplicates=True`)로 기존 데이터 보존.
 
---fill: 상세 API 에만 오는 필드 4개(0047: 물품분류번호 배열·사전규격 번호·참가자격 등록 마감·공동수급 방식)를
-기존 행에도 채운다. 1차 패스가 새 행을 통째로 넣고(PostgREST, 있는 행은 건드리지 않음), 2차 패스가
-psycopg 직결로 그 4개 컬럼만 UPDATE 한다. DATABASE_URL 필요.
+--fill: 상세 API 에만 오는 필드 5개(0047: 물품분류번호 배열·사전규격 번호·참가자격 등록 마감·공동수급 방식,
+0051: 발주계획 번호)를 기존 행에도 채운다. 1차 패스가 새 행을 통째로 넣고(PostgREST, 있는 행은 건드리지 않음),
+2차 패스가 psycopg 직결로 그 5개 컬럼만 UPDATE 한다. DATABASE_URL 필요.
 
 실행:
     cd backend
@@ -68,7 +68,7 @@ def _to_ts(s: str | None) -> str | None:
 
 
 def detail_fields(it: dict) -> dict[str, Any]:
-    """상세 API 에만 오는 4개(0047). 표준 API 응답에는 키 자체가 없어 전부 None 이 된다."""
+    """상세 API 에만 오는 5개(0047 네 개 + 0051 발주계획 번호). 표준 API 응답에는 키 자체가 없어 전부 None 이 된다."""
     codes = _PRDCT_CODE.findall(str(it.get("purchsObjPrdctList") or ""))
     if not codes and it.get("dtilPrdctClsfcNo"):
         codes = [str(it["dtilPrdctClsfcNo"])]
@@ -77,6 +77,7 @@ def detail_fields(it: dict) -> dict[str, Any]:
         "bf_spec_rgst_no": (it.get("bfSpecRgstNo") or "").strip() or None,
         "bid_qlfct_rgst_dt": _to_ts(it.get("bidQlfctRgstDt")),
         "cmmn_spldmd_methd_nm": (it.get("cmmnSpldmdMethdNm") or "").strip() or None,
+        "order_plan_unty_no": (it.get("orderPlanUntyNo") or "").strip() or None,
     }
 
 
@@ -137,13 +138,16 @@ def windows(
     return out
 
 
-_DETAIL_KEYS = ("prdct_clsfc_nos", "bf_spec_rgst_no", "bid_qlfct_rgst_dt", "cmmn_spldmd_methd_nm")
+_DETAIL_KEYS = (
+    "prdct_clsfc_nos", "bf_spec_rgst_no", "bid_qlfct_rgst_dt", "cmmn_spldmd_methd_nm", "order_plan_unty_no",
+)
 
 
 _FILL_SQL = """
 update bid_notices set
   prdct_clsfc_nos = %(prdct_clsfc_nos)s, bf_spec_rgst_no = %(bf_spec_rgst_no)s,
-  bid_qlfct_rgst_dt = %(bid_qlfct_rgst_dt)s, cmmn_spldmd_methd_nm = %(cmmn_spldmd_methd_nm)s
+  bid_qlfct_rgst_dt = %(bid_qlfct_rgst_dt)s, cmmn_spldmd_methd_nm = %(cmmn_spldmd_methd_nm)s,
+  order_plan_unty_no = %(order_plan_unty_no)s
 where bid_ntce_no = %(bid_ntce_no)s and bid_ntce_ord = %(bid_ntce_ord)s
 """
 
@@ -153,7 +157,7 @@ def _flush(batch: list[dict], conn) -> None:
     upsert_rows("bid_notices", batch, on_conflict="bid_ntce_no,bid_ntce_ord", ignore_duplicates=True)
     if conn is None:
         return
-    # 2차: 진짜 UPDATE. upsert 로 키+4개만 보내면 Postgres 가 충돌 판정보다 NOT NULL(bid_ntce_nm) 검사를
+    # 2차: 진짜 UPDATE. upsert 로 키+5개만 보내면 Postgres 가 충돌 판정보다 NOT NULL(bid_ntce_nm) 검사를
     # 먼저 해서 거절한다 — 그래서 PostgREST merge 가 아니라 psycopg 직결(backfill_companies_basic 과 같은 길).
     rows = [
         {k: r[k] for k in ("bid_ntce_no", "bid_ntce_ord", *_DETAIL_KEYS)}
