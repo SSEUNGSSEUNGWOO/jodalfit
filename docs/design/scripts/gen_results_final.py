@@ -16,7 +16,7 @@ sys.path.insert(0, __file__.rsplit("\\", 1)[0] if "\\" in __file__ else __file__
 from gen_results import TODAY, esc, dleft  # noqa: E402
 from gen_results_v3 import FONT  # noqa: E402
 from gen_flow import CSS as FLOW_CSS, JS, labels, field, cfg, nav, ZERO, ERR  # noqa: E402
-from gen_split import SPLIT_CSS, side, trow, gate  # noqa: E402
+from gen_split import SPLIT_CSS, side, trow, gate, rgn_base  # noqa: E402
 from gen_report import LABELS  # noqa: E402
 
 CSS = FLOW_CSS + SPLIT_CSS + r"""
@@ -95,7 +95,7 @@ def page(d, prof, f, titles):
     n_ind = len(prof["industries"][0] + prof["industries"][1])
     body = (f'<div class="wrap">{nav()}'
             f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small></h1>'
-            f'<div class="meta"><span>{esc(co["rgn_nm"])}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div></div>'
+            f'<div class="meta"><span>{esc(rgn_base(co["rgn_nm"]))}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div></div>'
             f'<div class="stage">{labels(f, len(res))}{field(titles)}{chain(f, d, res)}</div>{ERR}'
             f'<div class="res"><div class="cols">{side(co, prof)}{main_col(res, prof)}</div></div>'
             f'<div class="foot">결과 페이지 최종 시안 — flow 의 머리 장면(계산 대기 가림막)·네 상태 + split 의 두 단 표형. 화면은 표, 메일·인쇄는 블록(report.html). '

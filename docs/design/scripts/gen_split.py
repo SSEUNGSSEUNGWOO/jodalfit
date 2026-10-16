@@ -98,6 +98,12 @@ if (matchMedia('(max-width:720px)').matches) document.querySelector('details.sid
 """
 
 
+def rgn_base(rgn):
+    """표시용 지역 — 기초자치단체까지(시·도 + 시·군·구). 일반구(마산합포구·분당구)·동은 지역 제한 단위가 아니라 뺀다.
+    제한 공고의 42% 가 시·군·구 단위라 시·도만으론 모자라고, 그 아래는 소음(2026-10-16 실측)."""
+    return " ".join((rgn or "").split()[:2])
+
+
 def side(co, prof):
     rep, rest = prof["industries"]
     names = {x.split("(")[0] for x in rep}
@@ -110,7 +116,7 @@ def side(co, prof):
     return (f'<details class="side" open><summary><span class="k">회사 정보 <span class="h o">펼치기</span><span class="h c">접기</span></span></summary>'
             f'<div class="sec"><span class="k">등록업종 {len(rep) + len(rest)}</span><ul>{inds}</ul></div>'
             f'<div class="sec"><span class="k">공급물품</span><div class="txt"><span class="dim">등록 없음</span> — 물품 공고 추천에는 등록 필요</div></div>'
-            f'<div class="sec"><span class="k">지역</span><div class="txt">본사 <b>{esc(co["rgn_nm"])}</b><br><span class="dim">지역 제한 공고 판정 기준</span></div></div>'
+            f'<div class="sec"><span class="k">지역</span><div class="txt">본사 <b>{esc(rgn_base(co["rgn_nm"]))}</b><br><span class="dim">제한 공고가 적은 단위(시·도 또는 시·군·구)까지 판정</span></div></div>'
             f'<div class="sec"><span class="k">면허</span><div class="txt">공고 요구 면허 그룹마다 등록업종 중 하나 포함 시 통과</div></div>'
             f'<div class="sec"><span class="k">규모</span><div class="txt"><span class="dim">미입력</span> — 소기업·중소기업 제한 공고 판정 기준</div></div>'
             f'<div class="sec"><span class="k">사업자 상태</span><div class="txt">계속사업자 · 제재 없음</div></div>'
@@ -161,7 +167,7 @@ def page(d, prof, f):
             f'<div class="due">이번 주 마감 {wk}건 · 가장 빠른 마감 <span class="d {"hot" if n0 <= 7 else ""}">D-{n0}</span> ({d0.month}.{d0.day:02d})</div></div>')
     body = (f'<div class="wrap">{nav()}'
             f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small></h1>'
-            f'<div class="meta"><span>{esc(co["rgn_nm"])}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div>'
+            f'<div class="meta"><span>{esc(rgn_base(co["rgn_nm"]))}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div>'
             f'<div class="sum"><div class="chain"><span class="k">걸러낸 경로</span>{chain}</div>{tabs}</div></div>'
             f'<div class="cols">{side(co, prof)}<div class="main">'
             f'<div class="mh"><span class="k"><b>검토할 공고 {len(res)}건</b>적합 순</span><div class="sw"><span class="on" data-v="block">블록</span><span data-v="table">표</span></div></div>'
