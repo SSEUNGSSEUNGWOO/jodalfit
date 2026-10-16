@@ -37,7 +37,7 @@ if sys.stdout.encoding != "utf-8":
 
 # 스케줄(hourly-sync.yml / daily-sync.yml)에 있는 잡. 워크플로를 바꾸면 여기도 맞춘다.
 SCHEDULED = (
-    # hourly-sync
+    # hourly-sync (첨부 수집·추출·요약은 2026-10-16 부터 documents-sync, 2시간 주기)
     "register_searched_companies",
     "ingest_bid_notices",
     "ingest_bid_notices_full",

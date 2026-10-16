@@ -3,6 +3,10 @@ name: Hourly Bid Sync
 # 매시 05분 (UTC/KST 동일 분). 2026-10-15 까지 다른 PC 의 작업 스케줄러(jodalfit-hourly-sync)가 돌리던 사이클을
 # 그대로 옮긴 것 — 켜둔 컴퓨터 없이 돌게. 기존 lunch-sync(12:30 KST) 는 이 워크플로가 대체.
 # GH Actions 스케줄은 혼잡 시 5~30분 늦을 수 있다. 각 스텝은 멱등(upsert)이라 겹쳐도 안전.
+#
+# 2026-10-16 첨부 수집·추출·요약은 documents-sync.yml(2시간 주기)로 분리. 한 회차가 28~42분이라 다음 정각 예약이
+# 유실됐다(10-15 하루 24번 중 6번만 실행). 여기 남은 건 등록·공고 수집·상세 필드·임베딩 — 약 10분. 새 공고가
+# 추천에 잡히는 지연은 그대로 1시간.
 on:
   schedule:
     - cron: "5 * * * *"
@@ -15,7 +19,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: backend
@@ -69,20 +73,6 @@ jobs:
       # 연결이 물품에만 작동했다 — 네 구분 전부로. 2일 창: 정정 차수가 늦게 붙는 경우를 덮는다. 2차 패스가 UPDATE 라 멱등.
       - name: 공고 상세 필드 — 물품·용역·공사·외자 (분류번호·사전규격·자격등록 마감·발주계획 번호, 최근 2일)
         run: uv run python -m jobs.ingest_bid_notices_full --since "$(date -u -d '2 days ago' +%F)" --fill
-        continue-on-error: true
-
-      - name: 첨부 목록 수집 (최근 24h)
-        run: uv run python -m jobs.ingest_bid_attachments --days-back 1
-        continue-on-error: true
-
-      # 150: 공고당 첨부 3.5개·파일당 ~2초라 한도까지 차도 ~17분. 300 이면 백로그가 있을 때 35~38분이 걸려
-      # 다음 정각 예약이 밀린다(2026-10-15 19:00·22:07 실측, 그 사이 예약 3번 유실). 정상 유입 ~1천 공고/일 ≪ 150×24.
-      - name: 첨부 추출 (150건)
-        run: uv run python -m jobs.extract_bid_documents --limit 150
-        continue-on-error: true
-
-      - name: 공고 조건 요약 — 수거 + 제출 (100건)
-        run: uv run python -m jobs.summarize_bid_documents --limit 100
         continue-on-error: true
 
       # 한도 500 은 '그 시간에 새로 들어온 공고'만 처리하기 위한 것이다. 5000 이던 때는 백로그가
