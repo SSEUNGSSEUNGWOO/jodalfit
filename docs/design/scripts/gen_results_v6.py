@@ -100,7 +100,7 @@ CRIT_CSS = r"""
 .crit .k { display:block; margin-bottom:6px } .crit .txt { font-size:13px; line-height:1.7; color:#333 } .crit .txt b { font-weight:600 } .crit .txt .dim { color:#737370 }
 .crit .k + .k { margin-top:10px }
 .crit .act { display:flex; flex-direction:column; gap:8px; align-items:flex-end } .crit .act .mute { font-size:11.5px }
-@media (max-width:900px){ .crit { grid-template-columns:1fr 1fr; gap:18px } .crit .act { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-start } }
+@media screen and (max-width:900px){ .crit { grid-template-columns:1fr 1fr; gap:18px } .crit .act { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-start } }
 """
 
 
