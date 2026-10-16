@@ -277,7 +277,7 @@ def page(d, fb):
     active, cnt = d["active"], fb["cnt"]
     f = dict(total=active, industry=cnt[1], qualified=cnt[2])
     labs_co = gen_flow.labels(f, cnt[3])[len('<div class="labs">'):-len("</div>")]
-    titles = {"drop_ind": fb["titles"][:6] + [""] * 3, "drop_rgn": [""] * 6 + fb["titles"][6:]}
+    titles = {"drop_ind": fb["titles"][:6], "drop_rgn": fb["titles"][6:]}  # gen_flow.field 가 출처별로 0부터 센다
     field = gen_flow.field(titles).replace('<canvas id="cv"', '<canvas id="drift" aria-hidden="true"></canvas><canvas id="cv"', 1)
     assert 'id="drift"' in field
     plate = (f'<div class="plate"><div class="rc" id="rc"></div>{gen_entry.combobox("회사명 · 사업자번호 · 하는 일")}'

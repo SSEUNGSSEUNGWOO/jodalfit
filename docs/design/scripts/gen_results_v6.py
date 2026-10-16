@@ -34,12 +34,6 @@ CSS = r"""
 .fun .step.open { background:#faf9f6; border-radius:6px 6px 0 0 }
 .fun .arw { position:absolute; right:8px; bottom:22px; color:#c9c9c4; font-size:13px }
 .rib { height:26px; margin-top:0 } .rib svg { width:100%; height:100%; display:block } .rib path { fill:none; stroke:#141414; stroke-width:1; opacity:.25 } .rib path.acc { stroke:#e8431b; opacity:1; stroke-width:1.5 }
-/* 걸러낸 기준은 눌러야 보이면 아무도 안 본다 — 제품의 주장이므로 항상 펼쳐 둔다(2026-10-15 승우님). */
-.crit { display:grid; border-top:1px solid #141414; border-bottom:1px solid #e6e4df; padding:16px 0 14px; grid-template-columns:1.35fr 1fr 1fr auto; gap:26px; align-items:start }
-.crit .k { display:block; margin-bottom:6px } .crit .txt { font-size:13px; line-height:1.7; color:#333 } .crit .txt b { font-weight:600 } .crit .txt .dim { color:#737370 }
-.crit .k + .k { margin-top:10px }
-.crit .act { display:flex; flex-direction:column; gap:8px; align-items:flex-end } .crit .act .mute { font-size:11.5px }
-@media (max-width:900px){ .crit { grid-template-columns:1fr 1fr; gap:18px } .crit .act { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-start } }
 .count { padding:20px 0 10px } .count .f { font-size:13px; color:#6b6b67 } .count .f b { color:#141414; font-weight:600; border-bottom:1px solid #141414; padding-bottom:2px } .count .f span + span { margin-left:16px }
 /* 게이트 B — 분량은 보이고 가치는 가림 */
 .lead { border-top:1px solid #141414; padding:0 }
@@ -94,19 +88,34 @@ def head(co, prof, f, n_res, login):
         f'<span class="k">{lab}</span><div class="n"><span class="cnt" data-to="{v}" data-d="{i * 0.22:.2f}">0</span><small>건</small></div>'
         f'<div class="why">{w}</div>{"" if i == 3 else "<span class=arw>→</span>"}</div>'
         for i, (lab, v, w, k) in enumerate(steps))
-    ind_txt = ", ".join(esc(x.split("(")[0]) for x in inds[:10]) + (f' <span class="dim">외 {len(inds) - 10}</span>' if len(inds) > 10 else "")
-    # 눌러야 보이던 두 패널을 하나로 합쳐 항상 띄운다 — 걸러낸 기준이 곧 제품의 주장이다.
-    crit = (f'<div class="crit"><div><span class="k">등록업종 {len(inds)} · 대표 {esc(rep[0].split("(")[0]) if rep else "-"}</span><div class="txt">{ind_txt}</div>'
-            f'<span class="k">공급물품</span><div class="txt"><span class="dim">등록 없음</span> — 물품 공고를 받으려면 추가가 필요합니다</div></div>'
-            f'<div><span class="k">지역</span><div class="txt">본사 <b>{esc(co["rgn_nm"])}</b> · 지역 제한 공고는 이 기준으로 판정</div>'
-            f'<span class="k">면허</span><div class="txt">공고가 요구하는 면허 그룹마다 등록업종 중 하나가 들어가면 통과</div></div>'
-            f'<div><span class="k">규모</span><div class="txt"><span class="dim">미입력</span> — 소기업·중소기업 제한 공고 판정에 쓰입니다</div>'
-            f'<span class="k">사업자 상태</span><div class="txt">계속사업자 · 제재 없음</div></div>'
-            f'<div class="act"><a class="bt dark" href="#">맞아요</a><a class="bt txt" href="#"><u>수정 요청</u></a><span class="mute">나라장터 업체정보 · 10.14 갱신</span></div></div>')
     co_line = (f'<div class="co reveal"><b>{esc(co["corp_nm"])}</b><span>{esc(co["rgn_nm"])}</span>'
-               + (f'<span class="sp"></span><span class="new">어제 이후 새로 3건</span><span>검토함 3</span>' if login
-                  else '<span class="sp"></span><span class="dim">처음 오셨나요? 걸러낸 기준이 맞는지 한 번만 확인해 주세요</span>') + '</div>')
-    return f'<div class="fh">{co_line}<div class="fun">{cells}</div>{ribbon([f["total"], f["industry"], f["qualified"], n_res])}{crit}</div>'
+               + (f'<span class="sp"></span><span class="new">어제 이후 신규 3건</span><span>검토함 3</span>' if login
+                  else '<span class="sp"></span><span class="dim">걸러낸 기준 확인 필요</span>') + '</div>')
+    return f'<div class="fh">{co_line}<div class="fun">{cells}</div>{ribbon([f["total"], f["industry"], f["qualified"], n_res])}{crit(co, prof)}</div>'
+
+
+# 걸러낸 기준은 눌러야 보이면 아무도 안 본다 — 제품의 주장이므로 항상 펼쳐 둔다(2026-10-15 승우님). flow.html(gen_flow.py)도 같이 쓴다.
+CRIT_CSS = r"""
+.crit { display:grid; border-top:1px solid #141414; border-bottom:1px solid #e6e4df; padding:16px 0 14px; grid-template-columns:1.35fr 1fr 1fr auto; gap:26px; align-items:start }
+.crit .k { display:block; margin-bottom:6px } .crit .txt { font-size:13px; line-height:1.7; color:#333 } .crit .txt b { font-weight:600 } .crit .txt .dim { color:#737370 }
+.crit .k + .k { margin-top:10px }
+.crit .act { display:flex; flex-direction:column; gap:8px; align-items:flex-end } .crit .act .mute { font-size:11.5px }
+@media (max-width:900px){ .crit { grid-template-columns:1fr 1fr; gap:18px } .crit .act { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-start } }
+"""
+
+
+def crit(co, prof):
+    """걸러낸 기준 띠 — 등록업종·공급물품 / 지역·면허 / 규모·상태 / 확인·수정 요청. 공문 톤(2026-10-16)."""
+    inds = prof["industries"][0] + prof["industries"][1]
+    rep = prof["industries"][0]
+    ind_txt = ", ".join(esc(x.split("(")[0]) for x in inds[:10]) + (f' <span class="dim">외 {len(inds) - 10}</span>' if len(inds) > 10 else "")
+    return (f'<div class="crit"><div><span class="k">등록업종 {len(inds)} · 대표 {esc(rep[0].split("(")[0]) if rep else "-"}</span><div class="txt">{ind_txt}</div>'
+            f'<span class="k">공급물품</span><div class="txt"><span class="dim">등록 없음</span> — 물품 공고 추천에는 등록 필요</div></div>'
+            f'<div><span class="k">지역</span><div class="txt">본사 <b>{esc(co["rgn_nm"])}</b> · 지역 제한 공고 판정 기준</div>'
+            f'<span class="k">면허</span><div class="txt">공고 요구 면허 그룹마다 등록업종 중 하나 포함 시 통과</div></div>'
+            f'<div><span class="k">규모</span><div class="txt"><span class="dim">미입력</span> — 소기업·중소기업 제한 공고 판정 기준</div>'
+            f'<span class="k">사업자 상태</span><div class="txt">계속사업자 · 제재 없음</div></div>'
+            f'<div class="act"><a class="bt dark" href="#">확인</a><a class="bt txt" href="#"><u>수정 요청</u></a><span class="mute">나라장터 업체정보 · 10.14 갱신</span></div></div>')
 
 
 def row(i, r, locked=False):
@@ -150,7 +159,7 @@ def page(d, prof, f):
         vs += (f'<div class="vs {"on" if not login else ""}" data-s="{state}">{head(co, prof, f, len(res), login)}{count}{body_table(res, prof, login)}</div>')
     body = (f'<div class="wrap">{nav()}{vs}<div class="foot">게이트 B — 분량은 전부 보이고 순서·근거·마감만 가립니다. 숫자·공고명은 2026-10-15 실제 추천 결과.</div></div>'
             f'<div class="sw"><span class="on" data-ss="guest">비로그인</span><span data-ss="login">로그인</span></div>')
-    return f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 결과 — 게이트 B</title>{FONT}<style>{SHEET_CSS}{CSS}</style></head><body>{body}<script>{JS}</script></body></html>'
+    return f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 결과 — 게이트 B</title>{FONT}<style>{SHEET_CSS}{CSS}{CRIT_CSS}</style></head><body>{body}<script>{JS}</script></body></html>'
 
 
 if __name__ == "__main__":

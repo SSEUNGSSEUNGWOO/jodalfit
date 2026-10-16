@@ -1,0 +1,1556 @@
+{
+ "company": {
+  "bizrno": "124-81-77731",
+  "corp_nm": "한종산업개발 주식회사",
+  "rgn_nm": "경상남도 창원시 마산합포구",
+  "corp_bsns_div_nm": "일반용역,용역,공사"
+ },
+ "mode": "company",
+ "algorithm": "v2",
+ "keywords": null,
+ "results": [
+  {
+   "bid_ntce_no": "R26BK01773124",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "송탄정수장 공업용수공급 시설공사(1공구)",
+   "bsns_div_nm": "공사",
+   "bid_ntce_date": "2026-10-15",
+   "bid_clse_date": "2026-10-29",
+   "openg_date": "2026-10-29",
+   "presmpt_prce": 5025454546,
+   "ntce_instt_nm": "조달청 인천지방조달청",
+   "dmnd_instt_nm": "경기도 평택시 상하수도사업소",
+   "bidprc_psbl_indstryty_nm": "토목공사업",
+   "rgn_lmt_yn": "Y",
+   "prtcpt_psbl_rgn_nm": "경기도",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01773124&bidPbancOrd=000",
+   "similarity": 0.729268,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 제한 없음",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 86.9,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 73%",
+     "points": 72.9
+    },
+    {
+     "key": "institution",
+     "label": "재출현 기관",
+     "points": 12,
+     "instt": "경기도 평택시 상하수도사업소"
+    },
+    {
+     "key": "budget",
+     "label": "예산대 매칭",
+     "points": 2,
+     "ratio": 1.08
+    }
+   ],
+   "base_similarity": 0.729268,
+   "score": 0.43450000000000005,
+   "insight": {
+    "summary": null,
+    "scope": null,
+    "requirements": null,
+    "evaluation": null,
+    "schedule": null,
+    "keywords": null
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01771325",
+   "bid_ntce_ord": "001",
+   "bid_ntce_nm": "중랑물재생센터 제1처리장 관리대행",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-15",
+   "bid_clse_date": "2026-11-25",
+   "openg_date": "2026-11-25",
+   "presmpt_prce": 6106074545,
+   "ntce_instt_nm": "서울특별시",
+   "dmnd_instt_nm": "서울특별시 물재생센터 중랑물재생센터",
+   "bidprc_psbl_indstryty_nm": "공공하수도 관리대행업(공공하수도-10,000㎥/일 이상)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01771325&bidPbancOrd=001",
+   "similarity": 0.74083,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 제한 없음",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 85.1,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 74%",
+     "points": 74.1
+    },
+    {
+     "key": "budget",
+     "label": "예산대 매칭",
+     "points": 2,
+     "ratio": 1.31
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 9,
+     "matched": [
+      "000㎥",
+      "10",
+      "공공하수도",
+      "관리대행업(공공하수도",
+      "이상)"
+     ]
+    }
+   ],
+   "base_similarity": 0.74083,
+   "score": 0.4255
+  },
+  {
+   "bid_ntce_no": "R26BK01772889",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "송탄정수장 공업용수공급 시설공사(2공구)",
+   "bsns_div_nm": "공사",
+   "bid_ntce_date": "2026-10-15",
+   "bid_clse_date": "2026-10-29",
+   "openg_date": "2026-10-29",
+   "presmpt_prce": 7690000000,
+   "ntce_instt_nm": "조달청 인천지방조달청",
+   "dmnd_instt_nm": "경기도 평택시 상하수도사업소",
+   "bidprc_psbl_indstryty_nm": "토목공사업",
+   "rgn_lmt_yn": "Y",
+   "prtcpt_psbl_rgn_nm": "경기도",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01772889&bidPbancOrd=000",
+   "similarity": 0.748314,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 제한 없음",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 86.8,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 75%",
+     "points": 74.8
+    },
+    {
+     "key": "institution",
+     "label": "재출현 기관",
+     "points": 12,
+     "instt": "경기도 평택시 상하수도사업소"
+    }
+   ],
+   "base_similarity": 0.748314,
+   "score": 0.434,
+   "insight": {
+    "summary": "경기도 평택시 송탄정수장의 공업용수 공급을 위한 상수관로(D600mm, 1.7km) 토목공사. 착공일로부터 308일간 진행되는 신설공사로, 흙막이 지보공 등을 포함하는 종합공사.",
+    "scope": [
+     "상수관로 매설(D600㎜, L=1.7㎞) 토목공사",
+     "흙막이 지보공(최대 깊이 6.7m)",
+     "도급자 관급자재(상수관로) 설치",
+     "관련 토목구조물 시공",
+     "안전관리 및 품질관리"
+    ],
+    "requirements": [
+     {
+      "kind": "license",
+      "text": "건설산업기본법령에 따른 토목공사업 또는 토목건축공사업 등록",
+      "mandatory": true
+     },
+     {
+      "kind": "region",
+      "text": "본점/사업장 소재지가 계속해서 경기도에 소재할 것(입찰공고일 전일부터 계약체결일까지)",
+      "mandatory": true
+     },
+     {
+      "kind": "certification",
+      "text": "조달청 입찰참가자격등록 완료",
+      "mandatory": true
+     },
+     {
+      "kind": "certification",
+      "text": "나라장터 전자입찰 이용자 등록 완료",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "신용평가등급 등록(신용평가 대상인 경우 입찰서제출 마감일 전일까지 나라장터에 등록)",
+      "mandatory": false
+     },
+     {
+      "kind": "other",
+      "text": "조세포탈 등으로 유죄판결 확정 후 2년 이상 경과",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "개인인증수단(공동인증서 제외) 이용 신원확인 입찰",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": "건설업등록기준 입찰자격 사실조사(서류·현장) 실시, 미충족시 -15점 감점",
+     "method": "적격심사대상공사(지방자치단체 입찰시 낙찰자 결정기준 제2장 적용, 행정안전부 승인 기준 일부 별도 적용)",
+     "price_pct": null,
+     "presentation": false,
+     "technical_pct": null
+    },
+    "schedule": {
+     "end": null,
+     "start": "착공일로부터",
+     "duration": "308일",
+     "delivery_deadline": null
+    },
+    "keywords": [
+     "상수관로",
+     "토목공사",
+     "흙막이 지보공",
+     "정수장",
+     "공업용수",
+     "D600mm 관로",
+     "신설공사"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01751505",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국가소유(여수 4단계) 공공폐수처리시설 관리대행",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-01",
+   "bid_clse_date": "2026-11-11",
+   "openg_date": "2026-11-11",
+   "presmpt_prce": 4119721818,
+   "ntce_instt_nm": "조달청 인천지방조달청",
+   "dmnd_instt_nm": "한국환경공단",
+   "bidprc_psbl_indstryty_nm": "공공하수도 관리대행업(공공하수도-10,000㎥/일 이상)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01751505&bidPbancOrd=000",
+   "similarity": 0.739206,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 84.9,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 74%",
+     "points": 73.9
+    },
+    {
+     "key": "budget",
+     "label": "예산대 매칭",
+     "points": 2,
+     "ratio": 0.88
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 9,
+     "matched": [
+      "000㎥",
+      "10",
+      "공공하수도",
+      "관리대행업(공공하수도",
+      "이상)"
+     ]
+    }
+   ],
+   "base_similarity": 0.739206,
+   "score": 0.42450000000000004,
+   "insight": {
+    "summary": "여수 4단계 공공폐수처리시설의 관리대행을 위한 용역을 수행하는 사업으로, 수요기관은 한국환경공단이다. 본 사업은 총액계약으로 진행되며, 납품기한은 2028년 6월 22일이다.",
+    "scope": [
+     "공공폐수처리시설 관리",
+     "기타사업지원서비스",
+     "총액계약",
+     "전자문서 관리",
+     "공동이행 방식"
+    ],
+    "requirements": [
+     {
+      "kind": "license",
+      "text": "공공하수도 관리대행업 등록",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "입찰참가자격 등록증 제출",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "서약서 제출",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": "차등점수제 적용(3점)",
+     "method": "협상에 의한 계약",
+     "price_pct": 10,
+     "presentation": false,
+     "technical_pct": 90
+    },
+    "schedule": {
+     "end": "2028. 06. 22.",
+     "start": "계약체결일",
+     "duration": "12개월",
+     "delivery_deadline": "2028/06/22"
+    },
+    "keywords": [
+     "폐수처리",
+     "공공하수도",
+     "관리대행",
+     "환경서비스",
+     "전자입찰",
+     "공동수급체"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01771347",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "중랑물재생센터 총인처리시설 관리대행",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-14",
+   "bid_clse_date": "2026-11-26",
+   "openg_date": "2026-11-26",
+   "presmpt_prce": 3680179091,
+   "ntce_instt_nm": "서울특별시",
+   "dmnd_instt_nm": "서울특별시 물재생센터 중랑물재생센터",
+   "bidprc_psbl_indstryty_nm": "공공하수도 관리대행업(공공하수도-10,000㎥/일 이상)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01771347&bidPbancOrd=000",
+   "similarity": 0.736632,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 84.7,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 74%",
+     "points": 73.7
+    },
+    {
+     "key": "budget",
+     "label": "예산대 매칭",
+     "points": 2,
+     "ratio": 0.79
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 9,
+     "matched": [
+      "000㎥",
+      "10",
+      "공공하수도",
+      "관리대행업(공공하수도",
+      "이상)"
+     ]
+    }
+   ],
+   "base_similarity": 0.736632,
+   "score": 0.4235,
+   "insight": {
+    "summary": "서울 중랑물재생센터의 총인처리시설(412,000㎥/일)에 대한 3년간의 운영·관리 대행업무를 수행할 업체를 선정하는 사업. 하수처리, 수질관리, 시설점검, 안전관리, 환경정비 등 종합적인 운영관리 업무 대행.",
+    "scope": [
+     "하수처리 및 총인처리시설 운영관리",
+     "수질검사 및 자동감시 체제 운영",
+     "기전설비·급배수설비 유지관리",
+     "일상점검·정기점검 및 예방보전",
+     "안전관리·환경정비·제설작업",
+     "응급처치·사고보고 및 긴급대응"
+    ],
+    "requirements": [
+     {
+      "kind": "license",
+      "text": "공공하수도 관리대행업 등록 또는 신고(10,000㎥/일 이상)",
+      "mandatory": true
+     },
+     {
+      "kind": "certification",
+      "text": "입찰참가 자격 증빙서류",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "현장대리인 선임 및 인력배치(특급·고급·중급·초급·숙련 기술자 기준인원 충족)",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "안전·보건 의무조치 이행능력(중대재해 처벌법 준수)",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "예비조사 및 인수인계 시 전 종업원 교육훈련 실시",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": "협상에 의한 낙찰자 결정(구체적 배점 미상세 기재), 기초금액 협상 후 일부 조정 가능",
+     "method": "대면심사(발표·질의응답 기반)",
+     "price_pct": null,
+     "presentation": true,
+     "technical_pct": null
+    },
+    "schedule": {
+     "end": "2029년 12월 31일",
+     "start": "2027년 1월 1일",
+     "duration": "3년",
+     "delivery_deadline": "계약 후 인수인계 시 정상가동"
+    },
+    "keywords": [
+     "하수처리",
+     "총인처리",
+     "수질관리",
+     "기전설비",
+     "공공하수도",
+     "운영관리대행",
+     "SCADA",
+     "환경설비"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01771266",
+   "bid_ntce_ord": "001",
+   "bid_ntce_nm": "중랑물재생센터 일부시설물 관리대행",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-15",
+   "bid_clse_date": "2026-11-24",
+   "openg_date": "2026-11-24",
+   "presmpt_prce": 19974684545,
+   "ntce_instt_nm": "서울특별시",
+   "dmnd_instt_nm": "서울특별시 물재생센터 중랑물재생센터",
+   "bidprc_psbl_indstryty_nm": "공공하수도 관리대행업(공공하수도-10,000㎥/일 이상)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01771266&bidPbancOrd=001",
+   "similarity": 0.745712,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 제한 없음",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 83.6,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 75%",
+     "points": 74.6
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 9,
+     "matched": [
+      "000㎥",
+      "10",
+      "공공하수도",
+      "관리대행업(공공하수도",
+      "이상)"
+     ]
+    }
+   ],
+   "base_similarity": 0.745712,
+   "score": 0.418
+  },
+  {
+   "bid_ntce_no": "R26BK01769297",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "양산하수처리장 악취저감사업 실시설계용역",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-14",
+   "bid_clse_date": "2026-10-20",
+   "openg_date": "2026-10-20",
+   "presmpt_prce": 58081818,
+   "ntce_instt_nm": "경상남도 양산시 상하수도사업소",
+   "dmnd_instt_nm": "경상남도 양산시 상하수도사업소",
+   "bidprc_psbl_indstryty_nm": "엔지니어링사업(일반산업기계),기술사사무소(일반산업기계),기술사사무소(일반산업기계),기술사사무소(일반산업기계),건설엔지니어링업(설계,사업관리-설계등용역-일반),건설엔지니어링업(설계,사업관리-설계등용역-일반),건설엔지니어링업(설계,사업관리-일반),건설엔지니어링업(설계,사업관리-일반),건설엔지니어링업(종합),건설엔지니어링업(종합),엔지니어링사업(일반산업기계),엔지니어링사업(일반산업기계)",
+   "rgn_lmt_yn": "Y",
+   "prtcpt_psbl_rgn_nm": "경상남도 양산시",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01769297&bidPbancOrd=000",
+   "similarity": 0.676543,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 자격 충족"
+    ],
+    "failures": []
+   },
+   "score_raw": 80.7,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 68%",
+     "points": 67.7
+    },
+    {
+     "key": "instt_closed",
+     "label": "고정 거래처 경향",
+     "points": -3,
+     "repeat_ratio": 0.5
+    },
+    {
+     "key": "region",
+     "label": "지역 매칭",
+     "points": 9,
+     "rgn": "경상남도"
+    },
+    {
+     "key": "budget_mismatch",
+     "label": "예산대 괴리",
+     "points": -2,
+     "ratio": 0.01
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 9,
+     "matched": [
+      "건설엔지니어링업(설계",
+      "사업관리",
+      "설계등용역",
+      "일반)"
+     ]
+    }
+   ],
+   "base_similarity": 0.676543,
+   "score": 0.4035
+  },
+  {
+   "bid_ntce_no": "R26BK01772155",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "안양시 광역공공하수처리시설 관리대행 용역(2027년~2029년)",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-15",
+   "bid_clse_date": "2026-11-18",
+   "openg_date": "2026-11-18",
+   "presmpt_prce": 65070833636,
+   "ntce_instt_nm": "경기도 안양시",
+   "dmnd_instt_nm": "경기도 안양시",
+   "bidprc_psbl_indstryty_nm": "공공하수도 관리대행업(공공하수도-10,000㎥/일 이상),공공하수도 관리대행업(하수관로)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01772155&bidPbancOrd=000",
+   "similarity": 0.735279,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 제한 없음",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 80.5,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 74%",
+     "points": 73.5
+    },
+    {
+     "key": "budget_mismatch",
+     "label": "예산대 괴리",
+     "points": -2,
+     "ratio": 13.92
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 9,
+     "matched": [
+      "000㎥",
+      "10",
+      "공공하수도",
+      "관리대행업(공공하수도",
+      "관리대행업(하수관로)"
+     ]
+    }
+   ],
+   "base_similarity": 0.735279,
+   "score": 0.4025,
+   "insight": {
+    "summary": "안양시 공공하수처리시설(안양·석수) 2개소의 3년간 운영·관리를 민간에 위탁. 하수처리, 슬러지처리, 시설유지관리, 수질분석 등을 전담하며 방류수 수질기준 준수 필수.",
+    "scope": [
+     "하수처리시설 운영관리(안양 250,000㎥/일, 석수 300,000㎥/일)",
+     "슬러지 탈수·건조·처분 운영",
+     "차집관거(70.6km) 점검·유지관리",
+     "중앙감시, 설비점검, 소모품교환",
+     "수질분석·공정관리·환경정비",
+     "안전관리 및 직원교육"
+    ],
+    "requirements": [
+     {
+      "kind": "license",
+      "text": "공공하수도 관리대행업(10,000㎥/일 이상, 하수관로 포함) 등록·신고",
+      "mandatory": true
+     },
+     {
+      "kind": "performance",
+      "text": "최근 5년 이내 시설용량 150,000㎥/일 이상 공공하·폐수처리시설 + 40톤/일 이상 슬러지 건조시설 1년 이상 운영 또는 운영 중 또는 3개월 이상 전체 시운전 실적",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "조세포탈 유죄판결 2년 이내 경과자 제외",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": "사업수행능력평가 50점, 사업수행계획평가 40점, 가격평가 10점, 합산 70점 이상만 협상대상자. 동점 시 기술점 우선, 재동점 시 추첨",
+     "method": "협상에 의한 계약(제안서 평가 후 협상적격자 선정)",
+     "price_pct": 10,
+     "presentation": false,
+     "technical_pct": 50
+    },
+    "schedule": {
+     "end": "2029. 12. 31.",
+     "start": "2027. 01. 01.",
+     "duration": "3년(차수별: 1차 2027.1~12, 2차 2028.1~12, 3차 2029.1~12)",
+     "delivery_deadline": null
+    },
+    "keywords": [
+     "공공하수처리시설",
+     "CSBR",
+     "MLE",
+     "슬러지처리",
+     "수질분석",
+     "중앙감시시스템",
+     "차집관거",
+     "차수별계약"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01752112",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "신길동 일원 하수관로 정비공사(1단계) 건설사업관리용역",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-01",
+   "bid_clse_date": "2026-10-28",
+   "openg_date": "2026-10-28",
+   "presmpt_prce": 1349786364,
+   "ntce_instt_nm": "조달청",
+   "dmnd_instt_nm": "경기도 안산시 상하수도사업소",
+   "bidprc_psbl_indstryty_nm": "건설엔지니어링업(설계,사업관리-건설사업관리)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01752112&bidPbancOrd=000",
+   "similarity": 0.720142,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 78.0,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 72%",
+     "points": 72.0
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 6,
+     "matched": [
+      "건설엔지니어링업(설계",
+      "사업관리"
+     ]
+    }
+   ],
+   "base_similarity": 0.720142,
+   "score": 0.39,
+   "insight": {
+    "summary": "신길동 일원 하수관로 정비사업(1단계) 건설사업관리용역은 하수관로 개량 및 구조물 개량을 위한 건설사업관리 업무를 수행하는 사업이다. 본 과업은 품질관리, 공정관리, 안전보건 관리 및 환경관리를 통해 효율적인 공사 시행을 목표로 한다.",
+    "scope": [
+     "하수관로 개량",
+     "관로교체 및 신설",
+     "기존 하수관로 폐쇄",
+     "맨홀 교체 및 신설",
+     "안전보건 관리"
+    ],
+    "requirements": [
+     {
+      "kind": "performance",
+      "text": "최근 3년 유사실적 5억 이상",
+      "mandatory": true
+     },
+     {
+      "kind": "certification",
+      "text": "건설사업관리업무 수행능력",
+      "mandatory": true
+     },
+     {
+      "kind": "company_size",
+      "text": "중소기업 확인서",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": null,
+     "method": "최저가 낙찰제",
+     "price_pct": 100,
+     "presentation": false,
+     "technical_pct": null
+    },
+    "schedule": {
+     "end": null,
+     "start": "계약체결일",
+     "duration": "16개월",
+     "delivery_deadline": "시설공사 준공시까지"
+    },
+    "keywords": [
+     "하수관로",
+     "건설사업관리",
+     "품질관리",
+     "안전관리",
+     "환경관리"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01740690",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국가 핵심광물 전용 비축기지 구축사업 건설사업관리용역(감독권한대행)",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-09-22",
+   "bid_clse_date": "2026-11-05",
+   "openg_date": "2026-11-24",
+   "presmpt_prce": 6249090909,
+   "ntce_instt_nm": "조달청",
+   "dmnd_instt_nm": "한국광해광업공단",
+   "bidprc_psbl_indstryty_nm": "기술사사무소(정보통신),건설엔지니어링업(설계,사업관리-건설사업관리),건설엔지니어링업(설계,사업관리-건설사업관리),엔지니어링사업(정보통신),전문소방공사감리업,전문소방공사감리업",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01740690&bidPbancOrd=000",
+   "similarity": 0.689187,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 76.9,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 69%",
+     "points": 68.9
+    },
+    {
+     "key": "budget",
+     "label": "예산대 매칭",
+     "points": 2,
+     "ratio": 1.34
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 6,
+     "matched": [
+      "건설엔지니어링업(설계",
+      "사업관리"
+     ]
+    }
+   ],
+   "base_similarity": 0.689187,
+   "score": 0.3845,
+   "insight": {
+    "summary": "국가 핵심광물 전용 비축기지 구축사업의 건설사업관리용역을 수행하여 품질, 공사, 안전관리를 최적화하는 사업이다. 감독권한대행을 포함한 통합건설사업관리 업무를 진행한다.",
+    "scope": [
+     "건설사업관리 공통 업무",
+     "구매조달단계 업무",
+     "시공단계 감독권한대행 업무",
+     "시공후 단계 업무",
+     "행정지원업무"
+    ],
+    "requirements": [
+     {
+      "kind": "certification",
+      "text": "건설사업관리용역업자 등록",
+      "mandatory": true
+     },
+     {
+      "kind": "performance",
+      "text": "최근 3년 유사실적 5억 이상",
+      "mandatory": true
+     },
+     {
+      "kind": "other",
+      "text": "발주청 승인 받은 기술자 배치",
+      "mandatory": true
+     },
+     {
+      "kind": "company_size",
+      "text": "중소기업 확인서",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": "기술제안서 평가 후 낙찰자 결정",
+     "method": "종합심사낙찰제",
+     "price_pct": 20,
+     "presentation": true,
+     "technical_pct": 80
+    },
+    "schedule": {
+     "end": "2028. 3. 31.",
+     "start": "계약체결일",
+     "duration": "22.5개월",
+     "delivery_deadline": "2028. 3. 31."
+    },
+    "keywords": [
+     "건설사업관리",
+     "감독권한대행",
+     "품질관리",
+     "안전관리",
+     "공사관리",
+     "행정지원"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01751860",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "상활 소규모 공공하수처리시설 설치공사 외 3개소 통합 건설사업관리용역",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-10-01",
+   "bid_clse_date": "2026-10-28",
+   "openg_date": "2026-10-28",
+   "presmpt_prce": 2650350909,
+   "ntce_instt_nm": "조달청",
+   "dmnd_instt_nm": "경기도 여주시 하수사업소",
+   "bidprc_psbl_indstryty_nm": "건설엔지니어링업(설계,사업관리-건설사업관리)",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01751860&bidPbancOrd=000",
+   "similarity": 0.707228,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 76.7,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 71%",
+     "points": 70.7
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 6,
+     "matched": [
+      "건설엔지니어링업(설계",
+      "사업관리"
+     ]
+    }
+   ],
+   "base_similarity": 0.707228,
+   "score": 0.3835,
+   "insight": {
+    "summary": "상활 소규모 공공하수처리시설 설치사업 외 3개소에 대한 통합 건설사업관리 용역을 수행한다. 본 과업은 품질관리, 공정관리, 안전관리 및 환경관리를 통해 효율적인 공사 시행을 목표로 한다.",
+    "scope": [
+     "건설사업관리업무 수행",
+     "품질관리 및 안전관리",
+     "설계도서 검토 및 관리",
+     "공정관리 및 예산 집행",
+     "기술지원 및 현장 점검"
+    ],
+    "requirements": [
+     {
+      "kind": "certification",
+      "text": "건설사업관리업무 수행능력",
+      "mandatory": true
+     },
+     {
+      "kind": "performance",
+      "text": "최근 3년 유사실적 5억 이상",
+      "mandatory": true
+     },
+     {
+      "kind": "company_size",
+      "text": "중소기업 확인서",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": null,
+     "method": "최저가 낙찰제",
+     "price_pct": 100,
+     "presentation": false,
+     "technical_pct": null
+    },
+    "schedule": {
+     "end": null,
+     "start": "계약체결일",
+     "duration": "26개월",
+     "delivery_deadline": "시설공사 준공시까지"
+    },
+    "keywords": [
+     "하수처리시설",
+     "건설사업관리",
+     "품질관리",
+     "안전관리",
+     "환경관리"
+    ]
+   }
+  },
+  {
+   "bid_ntce_no": "R26BK01718563",
+   "bid_ntce_ord": "001",
+   "bid_ntce_nm": "성남낙생 A-2BL 아파트 건설공사 시공단계 감독권한대행 등 건설사업관리용역",
+   "bsns_div_nm": "용역",
+   "bid_ntce_date": "2026-09-11",
+   "bid_clse_date": "2026-10-27",
+   "openg_date": "2026-11-10",
+   "presmpt_prce": 14400923000,
+   "ntce_instt_nm": "조달청",
+   "dmnd_instt_nm": "한국토지주택공사",
+   "bidprc_psbl_indstryty_nm": "기술사사무소(정보통신),건설엔지니어링업(설계,사업관리-건설사업관리),엔지니어링사업(정보통신),전문소방공사감리업,전문소방공사감리업",
+   "rgn_lmt_yn": "N",
+   "prtcpt_psbl_rgn_nm": "",
+   "indstryty_lmt_yn": "Y",
+   "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01718563&bidPbancOrd=001",
+   "similarity": 0.701836,
+   "stage": "notice",
+   "qualification": {
+    "passed": true,
+    "unverified": false,
+    "reasons": [
+     "면허 충족",
+     "지역 제한 없음"
+    ],
+    "failures": []
+   },
+   "score_raw": 76.2,
+   "score_breakdown": [
+    {
+     "key": "vector",
+     "label": "유사도 70%",
+     "points": 70.2
+    },
+    {
+     "key": "industry_tokens",
+     "label": "업종·물품 일치",
+     "points": 6,
+     "matched": [
+      "건설엔지니어링업(설계",
+      "사업관리"
+     ]
+    }
+   ],
+   "base_similarity": 0.701836,
+   "score": 0.381,
+   "insight": {
+    "summary": "성남낙생 A-2BL 아파트 건설공사에 대한 시공단계 감독권한대행 및 건설사업관리용역을 수행하는 사업입니다. 이 용역은 건설 현장의 안전 및 품질 관리를 포함하여 전반적인 사업 관리를 목표로 합니다.",
+    "scope": [
+     "시공단계 감독",
+     "건설사업관리",
+     "안전 관리",
+     "품질 관리",
+     "기술 지원"
+    ],
+    "requirements": [
+     {
+      "kind": "certification",
+      "text": "소방 PQ",
+      "mandatory": true
+     },
+     {
+      "kind": "performance",
+      "text": "최근 3년 유사실적 5억 이상",
+      "mandatory": true
+     },
+     {
+      "kind": "license",
+      "text": "건설사업관리업 등록",
+      "mandatory": true
+     },
+     {
+      "kind": "company_size",
+      "text": "중소기업 확인서",
+      "mandatory": true
+     }
+    ],
+    "evaluation": {
+     "note": "기술제안서 심사 후 개찰 진행",
+     "method": "종합평가",
+     "price_pct": 20,
+     "presentation": true,
+     "technical_pct": 80
+    },
+    "schedule": {
+     "end": null,
+     "start": "계약체결일",
+     "duration": "12개월",
+     "delivery_deadline": "2027. 10. 27."
+    },
+    "keywords": [
+     "건설사업관리",
+     "감독권한대행",
+     "아파트 건설",
+     "소방 PQ",
+     "기술제안서"
+    ]
+   }
+  }
+ ],
+ "pre_spec_results": [
+  {
+   "bf_spec_rgst_no": "R26BD00284600",
+   "bid_ntce_no_list": null,
+   "prdct_clsfc_no_nm": "2027년 수원시 상수도사업소 정보시스템 통합유지관리",
+   "bsns_div_nm": "일반용역",
+   "sw_biz_obj_yn": "Y",
+   "asign_bdgt_amt": 311284930,
+   "rgst_dt": "2026-10-14T02:19:35+00:00",
+   "opnin_rgst_clse_dt": "2026-10-19T14:59:00+00:00",
+   "order_instt_nm": "조달청 인천지방조달청",
+   "rl_dminstt_nm": "경기도 수원시 상수도사업소",
+   "prdct_dtl_list": "[1^8111189901^정보시스템유지관리서비스]",
+   "ref_no": "맑은물정책과-13786",
+   "similarity": 0.667023,
+   "stage": "pre_spec",
+   "base_similarity": 0.667023,
+   "score": 0.667023
+  },
+  {
+   "bf_spec_rgst_no": "R26BD00283579",
+   "bid_ntce_no_list": null,
+   "prdct_clsfc_no_nm": "2027년 평택시 통합 홈페이지 유지관리 용역",
+   "bsns_div_nm": "일반용역",
+   "sw_biz_obj_yn": "Y",
+   "asign_bdgt_amt": 238283700,
+   "rgst_dt": "2026-10-12T07:06:30+00:00",
+   "opnin_rgst_clse_dt": "2026-10-19T14:59:00+00:00",
+   "order_instt_nm": "조달청 인천지방조달청",
+   "rl_dminstt_nm": "경기도 평택시",
+   "prdct_dtl_list": "[1^8111189901^정보시스템유지관리서비스]",
+   "ref_no": "회계과-45186호",
+   "similarity": 0.665536,
+   "stage": "pre_spec",
+   "base_similarity": 0.665536,
+   "score": 0.665536
+  },
+  {
+   "bf_spec_rgst_no": "R26BD00284804",
+   "bid_ntce_no_list": null,
+   "prdct_clsfc_no_nm": "2027년  평택시 정보보안시스템 통합 유지보수 용역 ",
+   "bsns_div_nm": "일반용역",
+   "sw_biz_obj_yn": "Y",
+   "asign_bdgt_amt": 233728600,
+   "rgst_dt": "2026-10-14T06:31:10+00:00",
+   "opnin_rgst_clse_dt": "2026-10-20T14:59:00+00:00",
+   "order_instt_nm": "조달청 인천지방조달청",
+   "rl_dminstt_nm": "경기도 평택시",
+   "prdct_dtl_list": "[1^8111189901^정보시스템유지관리서비스]",
+   "ref_no": "정보통신과-16127호",
+   "similarity": 0.664663,
+   "stage": "pre_spec",
+   "base_similarity": 0.664663,
+   "score": 0.664663
+  },
+  {
+   "bf_spec_rgst_no": "R26BD00284782",
+   "bid_ntce_no_list": null,
+   "prdct_clsfc_no_nm": "IT인프라 및 AI시스템 운영‧유지관리 용역",
+   "bsns_div_nm": "일반용역",
+   "sw_biz_obj_yn": "Y",
+   "asign_bdgt_amt": 16151562000,
+   "rgst_dt": "2026-10-14T06:16:20+00:00",
+   "opnin_rgst_clse_dt": "2026-10-19T14:59:00+00:00",
+   "order_instt_nm": "서울주택도시개발공사",
+   "rl_dminstt_nm": "서울주택도시개발공사",
+   "prdct_dtl_list": "",
+   "ref_no": "SH 전자공고 제2026-0387호",
+   "similarity": 0.664127,
+   "stage": "pre_spec",
+   "base_similarity": 0.664127,
+   "score": 0.664127
+  }
+ ],
+ "order_plan_results": [
+  {
+   "order_plan_unty_no": "R26DD20790776",
+   "biz_nm": "토지매수 관련 기록물 순차이관 용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "06",
+   "cntrct_mthd_nm": "제한경쟁",
+   "order_instt_nm": "한강수계관리위원회",
+   "totlmng_instt_nm": "한강수계관리위원회",
+   "sum_order_amt": 60000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-06-14T05:00:40+00:00",
+   "similarity": 0.654913,
+   "stage": "order_plan",
+   "base_similarity": 0.654913,
+   "score": 0.654913
+  },
+  {
+   "order_plan_unty_no": "R26DD20790770",
+   "biz_nm": "2여과지 전동밸브 및 과산화수소 주입설비 자동제어 연계 용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "06",
+   "cntrct_mthd_nm": "수의계약",
+   "order_instt_nm": "서울특별시 서울아리수본부 뚝도아리수정수센터",
+   "totlmng_instt_nm": "서울특별시",
+   "sum_order_amt": 43000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-06-14T04:29:23+00:00",
+   "similarity": 0.643822,
+   "stage": "order_plan",
+   "base_similarity": 0.643822,
+   "score": 0.643822
+  },
+  {
+   "order_plan_unty_no": "R26DD20769933",
+   "biz_nm": "일반용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "제한경쟁",
+   "order_instt_nm": "해병 제9691부대",
+   "totlmng_instt_nm": "국방부",
+   "sum_order_amt": 10000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T10:06:37+00:00",
+   "similarity": 0.623911,
+   "stage": "order_plan",
+   "base_similarity": 0.623911,
+   "score": 0.623911
+  },
+  {
+   "order_plan_unty_no": "R26DD20790729",
+   "biz_nm": "영양읍(북세천~동부천)노후 위험 수로구조물 개체공사 건설폐기물처리용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "06",
+   "cntrct_mthd_nm": "제한경쟁",
+   "order_instt_nm": "경상북도 영양군",
+   "totlmng_instt_nm": "경상북도",
+   "sum_order_amt": 200920000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-06-14T01:33:29+00:00",
+   "similarity": 0.61689,
+   "stage": "order_plan",
+   "base_similarity": 0.61689,
+   "score": 0.61689
+  },
+  {
+   "order_plan_unty_no": "R26DD20769924",
+   "biz_nm": "2026년 남해군 음식물류폐기물 위탁처리 용역(긴급)",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "제한경쟁",
+   "order_instt_nm": "경상남도 남해군",
+   "totlmng_instt_nm": "경상남도",
+   "sum_order_amt": 356000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T06:59:07+00:00",
+   "similarity": 0.613978,
+   "stage": "order_plan",
+   "base_similarity": 0.613978,
+   "score": 0.613978
+  },
+  {
+   "order_plan_unty_no": "R26DD20769919",
+   "biz_nm": "2026년 북부공원여가센터 물놀이형 수경시설 청소 용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "수의계약",
+   "order_instt_nm": "서울특별시 북부공원여가센터",
+   "totlmng_instt_nm": "서울특별시",
+   "sum_order_amt": 54980000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T05:53:33+00:00",
+   "similarity": 0.611584,
+   "stage": "order_plan",
+   "base_similarity": 0.611584,
+   "score": 0.611584
+  },
+  {
+   "order_plan_unty_no": "R26DD20790736",
+   "biz_nm": "세종여고 외부환경개선공사 폐기물처리용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "06",
+   "cntrct_mthd_nm": "수의계약",
+   "order_instt_nm": "세종특별자치시교육청 세종특별자치시교육청학교지원본부",
+   "totlmng_instt_nm": "세종특별자치시교육청",
+   "sum_order_amt": 14234000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-06-14T02:32:55+00:00",
+   "similarity": 0.609125,
+   "stage": "order_plan",
+   "base_similarity": 0.609125,
+   "score": 0.609125
+  },
+  {
+   "order_plan_unty_no": "R26DD20769927",
+   "biz_nm": "「생태산업개발순환형 네트워크 설비 및 사업화 지원」컨설팅",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "일반경쟁",
+   "order_instt_nm": "유한회사 그린바이오",
+   "totlmng_instt_nm": "유한회사 그린바이오",
+   "sum_order_amt": 55000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T07:57:31+00:00",
+   "similarity": 0.603496,
+   "stage": "order_plan",
+   "base_similarity": 0.603496,
+   "score": 0.603496
+  },
+  {
+   "order_plan_unty_no": "R26DD20769926",
+   "biz_nm": "「생태산업개발순환형 네트워크 설비 및 사업화 지원」컨설팅",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "일반경쟁",
+   "order_instt_nm": "유한회사 그린바이오",
+   "totlmng_instt_nm": "유한회사 그린바이오",
+   "sum_order_amt": 55000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T07:40:06+00:00",
+   "similarity": 0.603496,
+   "stage": "order_plan",
+   "base_similarity": 0.603496,
+   "score": 0.603496
+  },
+  {
+   "order_plan_unty_no": "R26DD20769931",
+   "biz_nm": "내남면 기초생활거점조성사업(2단계) 지역역량강화(S/W) 기본계획수립 용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "수의계약",
+   "order_instt_nm": "경상북도 경주시",
+   "totlmng_instt_nm": "경상북도",
+   "sum_order_amt": 71380000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T08:46:38+00:00",
+   "similarity": 0.597593,
+   "stage": "order_plan",
+   "base_similarity": 0.597593,
+   "score": 0.597593
+  },
+  {
+   "order_plan_unty_no": "R26DD20790700",
+   "biz_nm": "오례천 재해복구사업 문화재시굴조사 용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "06",
+   "cntrct_mthd_nm": "수의계약",
+   "order_instt_nm": "전라남도",
+   "totlmng_instt_nm": "전라남도",
+   "sum_order_amt": 22000000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-06-13T12:36:50+00:00",
+   "similarity": 0.578191,
+   "stage": "order_plan",
+   "base_similarity": 0.578191,
+   "score": 0.578191
+  },
+  {
+   "order_plan_unty_no": "R26DD20769888",
+   "biz_nm": "2026년 정기 교통량 및 속도 조사 용역",
+   "bsns_div_nm": "용역",
+   "bsns_ty_nm": "신규",
+   "order_year": "2026",
+   "order_mnth": "05",
+   "cntrct_mthd_nm": "제한경쟁",
+   "order_instt_nm": "울산광역시",
+   "totlmng_instt_nm": "울산광역시",
+   "sum_order_amt": 98060000,
+   "prdct_clsfc_no_nm": null,
+   "usg_cntnts": null,
+   "spec_cntnts": null,
+   "ntice_dt": "2026-05-23T01:07:57+00:00",
+   "similarity": 0.576538,
+   "stage": "order_plan",
+   "base_similarity": 0.576538,
+   "score": 0.576538
+  }
+ ],
+ "viz": {
+  "anchors": [
+   {
+    "key": "it",
+    "label": "IT·시스템",
+    "x": 6.123233995736766e-17,
+    "y": -1.0
+   },
+   {
+    "key": "ai",
+    "label": "AI·데이터",
+    "x": 0.4999999999999999,
+    "y": -0.8660254037844387
+   },
+   {
+    "key": "content",
+    "label": "콘텐츠",
+    "x": 0.8660254037844386,
+    "y": -0.5
+   },
+   {
+    "key": "design",
+    "label": "디자인",
+    "x": 1.0,
+    "y": 0.0
+   },
+   {
+    "key": "event",
+    "label": "행사",
+    "x": 0.8660254037844387,
+    "y": 0.49999999999999983
+   },
+   {
+    "key": "hrd",
+    "label": "HRD·연수",
+    "x": 0.4999999999999999,
+    "y": 0.8660254037844387
+   },
+   {
+    "key": "education",
+    "label": "교육",
+    "x": 6.123233995736766e-17,
+    "y": 1.0
+   },
+   {
+    "key": "consulting",
+    "label": "컨설팅",
+    "x": -0.4999999999999998,
+    "y": 0.8660254037844387
+   },
+   {
+    "key": "medical",
+    "label": "의료",
+    "x": -0.8660254037844385,
+    "y": 0.5000000000000003
+   },
+   {
+    "key": "facility",
+    "label": "시설·청소",
+    "x": -1.0,
+    "y": 1.2246467991473532e-16
+   },
+   {
+    "key": "construction",
+    "label": "건설",
+    "x": -0.8660254037844386,
+    "y": -0.5000000000000001
+   },
+   {
+    "key": "supplies",
+    "label": "물품·자재",
+    "x": -0.5000000000000004,
+    "y": -0.8660254037844385
+   }
+  ],
+  "company": {
+   "x": -0.2961494028568268,
+   "y": -0.04069690406322479
+  },
+  "results": [
+   {
+    "bid_ntce_no": "R26BK01773124",
+    "bid_ntce_ord": "000",
+    "x": -0.31539711356163025,
+    "y": -0.06962242722511292,
+    "score": 0.43450000000000005,
+    "bid_ntce_nm": "송탄정수장 공업용수공급 시설공사(1공구)"
+   },
+   {
+    "bid_ntce_no": "R26BK01771325",
+    "bid_ntce_ord": "001",
+    "x": -0.28661271929740906,
+    "y": 0.003317173570394516,
+    "score": 0.4255,
+    "bid_ntce_nm": "중랑물재생센터 제1처리장 관리대행"
+   },
+   {
+    "bid_ntce_no": "R26BK01772889",
+    "bid_ntce_ord": "000",
+    "x": -0.3100627064704895,
+    "y": -0.07822630554437637,
+    "score": 0.434,
+    "bid_ntce_nm": "송탄정수장 공업용수공급 시설공사(2공구)"
+   },
+   {
+    "bid_ntce_no": "R26BK01751505",
+    "bid_ntce_ord": "000",
+    "x": -0.24765199422836304,
+    "y": -0.035146862268447876,
+    "score": 0.42450000000000004,
+    "bid_ntce_nm": "국가소유(여수 4단계) 공공폐수처리시설 관리대행"
+   },
+   {
+    "bid_ntce_no": "R26BK01771347",
+    "bid_ntce_ord": "000",
+    "x": -0.3122199773788452,
+    "y": -0.011370345950126648,
+    "score": 0.4235,
+    "bid_ntce_nm": "중랑물재생센터 총인처리시설 관리대행"
+   },
+   {
+    "bid_ntce_no": "R26BK01771266",
+    "bid_ntce_ord": "001",
+    "x": -0.3182215988636017,
+    "y": -0.0183272622525692,
+    "score": 0.418,
+    "bid_ntce_nm": "중랑물재생센터 일부시설물 관리대행"
+   },
+   {
+    "bid_ntce_no": "R26BK01769297",
+    "bid_ntce_ord": "000",
+    "x": -0.21456600725650787,
+    "y": -0.048977043479681015,
+    "score": 0.4035,
+    "bid_ntce_nm": "양산하수처리장 악취저감사업 실시설계용역"
+   },
+   {
+    "bid_ntce_no": "R26BK01772155",
+    "bid_ntce_ord": "000",
+    "x": -0.2319897711277008,
+    "y": -0.008929930627346039,
+    "score": 0.4025,
+    "bid_ntce_nm": "안양시 광역공공하수처리시설 관리대행 용역(2027년~2029년)"
+   },
+   {
+    "bid_ntce_no": "R26BK01752112",
+    "bid_ntce_ord": "000",
+    "x": -0.37173789739608765,
+    "y": -0.08700412511825562,
+    "score": 0.39,
+    "bid_ntce_nm": "신길동 일원 하수관로 정비공사(1단계) 건설사업관리용역"
+   },
+   {
+    "bid_ntce_no": "R26BK01740690",
+    "bid_ntce_ord": "000",
+    "x": -0.250051885843277,
+    "y": -0.063587486743927,
+    "score": 0.3845,
+    "bid_ntce_nm": "국가 핵심광물 전용 비축기지 구축사업 건설사업관리용역(감독권한대행)"
+   }
+  ]
+ }
+}

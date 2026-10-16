@@ -10,7 +10,7 @@ import json
 import sys
 from datetime import date
 
-TODAY = date(2026, 10, 15)
+TODAY = date(2026, 10, 16)  # data/sample.json 생성일 — D-day 기준
 ACCOUNT = "jansseung@gmail.com"
 
 
