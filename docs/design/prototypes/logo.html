@@ -1,0 +1,152 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 로고 후보</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+* { box-sizing:border-box }
+body { margin:0; background:#faf9f7; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; --acc:#f97316 }
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.dim { color:#6b6b67 } .mute { color:#8f8f8b }
+.k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+h1 { margin:0; font-size:26px; letter-spacing:-0.03em; font-weight:650 } h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head { padding:34px 0 20px; border-bottom:1px solid #141414 } .head p { margin:8px 0 0; font-size:13.5px; color:#55554f; line-height:1.6 }
+.head .sw { display:inline-block; width:10px; height:10px; vertical-align:-1px; margin:0 4px 0 10px; border:1px solid #e3e1dc }
+
+/* 16px 줄 — 파비콘 */
+.fav { padding:18px 0; border-bottom:1px solid #ececea; display:grid; grid-template-columns:120px 1fr; gap:10px 24px; align-items:center } .fav > div:first-child { grid-row:1 / span 2 }
+.fav .strip { display:flex; align-items:center; gap:30px; height:40px; padding:0 16px; border:1px solid #ececea } .fav .strip.white { background:#fff }
+.fav .strip span { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#8f8f8b } .fav .strip svg { display:block; color:#141414 }
+.mono { --acc:currentColor }
+
+/* 후보 */
+.c { padding:26px 0 30px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:220px 1fr; gap:0 32px }
+.c h2 { margin:0; font-size:17px; font-weight:650; letter-spacing:-0.02em } .c h2 b { display:inline-block; width:22px; color:var(--acc); font-weight:700 }
+.c .note { margin-top:8px; font-size:12.5px; line-height:1.6; color:#55554f } .c .note em { font-style:normal; color:#8f8f8b } .c .note i { font-style:normal; color:#141414; font-weight:600 }
+.c .fail { margin-top:6px; font-size:12px; color:#b45309 } .c .fail::before { content:"16px: "; font-weight:600 }
+.c .ok16 { margin-top:6px; font-size:12px; color:#6b6b67 } .c .ok16::before { content:"16px: "; font-weight:600 }
+.sizes { display:flex; align-items:flex-end; gap:36px } .sizes .g { display:flex; align-items:flex-end; gap:18px; padding:14px 18px; border:1px solid #ececea; background:#fff }
+.sizes .g.paper { background:#faf9f7 } .sizes .g > div { display:flex; flex-direction:column; align-items:center; gap:8px } .sizes .g svg { display:block } .sizes .g small { font-size:10.5px; color:#8f8f8b }
+.lock { margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:14px }
+.lk { display:flex; align-items:center; gap:8px; height:52px; padding:0 18px; border:1px solid #ececea; font-weight:700; font-size:14.5px; letter-spacing:-0.02em } .lk.white { background:#fff } .lk svg { display:block }
+.lk .lat { margin-left:auto; font-size:12px; font-weight:500; letter-spacing:0; color:#55554f }
+
+/* 실제 nav 복제 — gen_results_v3.BASE 의 .nav/.brand + v4 padding:22px 0 */
+.navbox { margin-top:14px; background:#fff; border:1px solid #ececea; padding:0 24px }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:700; font-size:14.5px } .brand i { width:7px; height:7px; border-radius:50%; background:var(--acc); display:inline-block }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+.brand svg { display:block }
+
+/* 워드마크 */
+.wm { padding:26px 0 30px; border-bottom:1px solid #ececea } .wm h2 { margin:0 0 14px; font-size:17px; font-weight:650; letter-spacing:-0.02em }
+.wm .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px } .wm .cell { background:#fff; border:1px solid #ececea; padding:16px 18px 12px } .wm .cell .k { display:block; margin-bottom:10px }
+.wm .t { font-size:34px; line-height:1; letter-spacing:-0.02em } .wm .t.w800 { font-weight:800 } .wm .t.w700 { font-weight:700 }
+.wm .t .pit { border-bottom:2px solid var(--acc); padding-bottom:2px }
+.wm .lat { font-size:14px; font-weight:500; color:#141414; letter-spacing:0 }
+.wm .cell .cmp { display:flex; align-items:center; gap:8px; font-weight:700; font-size:14.5px; letter-spacing:-0.02em; margin-top:8px }
+.foot { margin-top:28px; font-size:12px; color:#737370; line-height:1.7 }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- A 체: 왼쪽 가는 선 5 → 세로 막대 → 한 줄만 통과 -->
+  <symbol id="mA" viewBox="0 0 16 16"><rect x="0" y="1" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="6" height="1" fill="currentColor"/><rect x="0" y="7" width="6" height="1" fill="currentColor"/><rect x="0" y="10" width="6" height="1" fill="currentColor"/><rect x="0" y="13" width="6" height="1" fill="currentColor"/><rect x="7" y="0" width="2" height="16" fill="currentColor"/><rect x="9" y="7" width="7" height="1" fill="var(--acc)"/></symbol>
+  <!-- B 수렴: 사선 셋이 한 점으로 -->
+  <symbol id="mB" viewBox="0 0 16 16"><path d="M0 1.5 L12 8 M0 8 H12 M0 14.5 L12 8" fill="none" stroke="currentColor" stroke-width="1.25"/><circle cx="12.5" cy="8" r="2.5" fill="var(--acc)"/></symbol>
+  <!-- C 핏: 모서리 빠진 네모 + 정확히 맞는 조각, 사이는 종이 1px -->
+  <symbol id="mC" viewBox="0 0 16 16"><path d="M2 2 H9 V7 H14 V14 H2 Z" fill="currentColor"/><rect x="10" y="2" width="4" height="4" fill="var(--acc)"/></symbol>
+  <!-- D 점: 먹 눈금 넷 뒤에 통과한 점 하나 -->
+  <symbol id="mD" viewBox="0 0 16 16"><rect x="0" y="4" width="1" height="8" fill="currentColor"/><rect x="3" y="4" width="1" height="8" fill="currentColor"/><rect x="6" y="4" width="1" height="8" fill="currentColor"/><rect x="9" y="4" width="1" height="8" fill="currentColor"/><circle cx="13.5" cy="8" r="2.5" fill="var(--acc)"/></symbol>
+  <!-- E ㅈ: 가로획 + 두 다리, 오른 다리가 주황 (갈림길에서 남긴 쪽) -->
+  <symbol id="mE" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="2" fill="currentColor"/><path d="M8 4 L3.5 14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 4 L12.5 14" fill="none" stroke="var(--acc)" stroke-width="2"/></symbol>
+  <!-- F 깔때기: 결과 페이지 .fun 막대를 옆으로 — 쐐기 + 나온 선 -->
+  <symbol id="mF" viewBox="0 0 16 16"><path d="M0 1 V15 L10 9 V7 Z" fill="currentColor"/><rect x="11" y="7" width="5" height="2" fill="var(--acc)"/></symbol>
+</svg>
+
+<div class="wrap">
+<div class="head"><h1>조달핏 로고 후보<small>마크 6안 × 워드마크 · 2026-10-16</small></h1>
+<p>주황 <span class="sw" style="background:#f97316"></span><code>#f97316</code>은 선·점으로만, 먹 <span class="sw" style="background:#141414"></span><code>#141414</code>, 종이 <span class="sw" style="background:#faf9f7"></span><code>#faf9f7</code>. 마크는 전부 16칸 격자(1칸 = 16px 에서 1px)에 정수 좌표로 그려 파비콘에서 흐려지지 않게 했다. 오른쪽 묶음은 먹 한 색 — 한 색으로 못 서면 탈락. 지금 로고는 7px 주황 점 + 조달핏(700).</p></div>
+
+<div class="fav"><div><span class="k">16px 전부</span><div class="dim" style="font-size:12px;margin-top:4px">파비콘·탭 크기. 2× 캡처 대상</div></div>
+<div class="strip" id="row16">
+  <span>A<svg width="16" height="16"><use href="#mA"/></svg></span><span>B<svg width="16" height="16"><use href="#mB"/></svg></span><span>C<svg width="16" height="16"><use href="#mC"/></svg></span><span>D<svg width="16" height="16"><use href="#mD"/></svg></span><span>E<svg width="16" height="16"><use href="#mE"/></svg></span><span>F<svg width="16" height="16"><use href="#mF"/></svg></span>
+  <span class="mono" style="margin-left:auto">A<svg width="16" height="16"><use href="#mA"/></svg></span><span class="mono">B<svg width="16" height="16"><use href="#mB"/></svg></span><span class="mono">C<svg width="16" height="16"><use href="#mC"/></svg></span><span class="mono">D<svg width="16" height="16"><use href="#mD"/></svg></span><span class="mono">E<svg width="16" height="16"><use href="#mE"/></svg></span><span class="mono">F<svg width="16" height="16"><use href="#mF"/></svg></span>
+</div>
+<div class="strip white">
+  <span>A<svg width="16" height="16"><use href="#mA"/></svg></span><span>B<svg width="16" height="16"><use href="#mB"/></svg></span><span>C<svg width="16" height="16"><use href="#mC"/></svg></span><span>D<svg width="16" height="16"><use href="#mD"/></svg></span><span>E<svg width="16" height="16"><use href="#mE"/></svg></span><span>F<svg width="16" height="16"><use href="#mF"/></svg></span>
+  <span class="mono" style="margin-left:auto">A<svg width="16" height="16"><use href="#mA"/></svg></span><span class="mono">B<svg width="16" height="16"><use href="#mB"/></svg></span><span class="mono">C<svg width="16" height="16"><use href="#mC"/></svg></span><span class="mono">D<svg width="16" height="16"><use href="#mD"/></svg></span><span class="mono">E<svg width="16" height="16"><use href="#mE"/></svg></span><span class="mono">F<svg width="16" height="16"><use href="#mF"/></svg></span>
+</div></div>
+
+<!-- ===== A ===== -->
+<section class="c"><div><h2><b>A</b>체 — 관문</h2>
+<div class="note">가는 선 다섯이 세로 막대에 막히고 한 줄만 지난다. 결과 페이지 머리 장면(9,285 → 12)을 그대로 줄인 것. 주황은 통과한 그 한 줄.</div>
+<div class="ok16">선 1px·막대 2px, 정수 격자라 또렷. 다만 주황 선이 1px 이라 작은 화면에서 희미하다 — 파비콘은 먹 단색이 낫다.</div></div>
+<div><div class="sizes"><div class="g paper"><div><svg width="64" height="64"><use href="#mA"/></svg><small>64</small></div><div><svg width="24" height="24"><use href="#mA"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mA"/></svg><small>16</small></div></div>
+<div class="g mono"><div><svg width="64" height="64"><use href="#mA"/></svg><small>64 먹</small></div><div><svg width="24" height="24"><use href="#mA"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mA"/></svg><small>16</small></div></div></div>
+<div class="lock"><div class="lk"><svg width="20" height="20"><use href="#mA"/></svg>조달핏<span class="lat">jodalfit</span></div><div class="lk white"><svg width="20" height="20"><use href="#mA"/></svg>조달핏<span class="lat">jodalfit</span></div></div>
+<div class="navbox"><div class="nav"><div class="brand"><svg width="20" height="20"><use href="#mA"/></svg>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div></div></section>
+
+<!-- ===== B ===== -->
+<section class="c"><div><h2><b>B</b>수렴 — 많음에서 하나로</h2>
+<div class="note">사선 셋이 한 점으로 모인다. 점이 결과, 선이 후보. 움직임이 있어 64px 이상에서 가장 보기 좋다.</div>
+<div class="fail">사선이 안티에일리어싱으로 번져 1.25px 선이 회색 안개가 된다. 점만 남고 선은 "뭔가 있다" 수준 — 파비콘 단독으로는 약함.</div></div>
+<div><div class="sizes"><div class="g paper"><div><svg width="64" height="64"><use href="#mB"/></svg><small>64</small></div><div><svg width="24" height="24"><use href="#mB"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mB"/></svg><small>16</small></div></div>
+<div class="g mono"><div><svg width="64" height="64"><use href="#mB"/></svg><small>64 먹</small></div><div><svg width="24" height="24"><use href="#mB"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mB"/></svg><small>16</small></div></div></div>
+<div class="lock"><div class="lk"><svg width="20" height="20"><use href="#mB"/></svg>조달핏<span class="lat">jodalfit</span></div><div class="lk white"><svg width="20" height="20"><use href="#mB"/></svg>조달핏<span class="lat">jodalfit</span></div></div>
+<div class="navbox"><div class="nav"><div class="brand"><svg width="20" height="20"><use href="#mB"/></svg>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div></div></section>
+
+<!-- ===== C ===== -->
+<section class="c"><div><h2><b>C</b>핏 — 모서리와 조각</h2>
+<div class="note">모서리가 빠진 먹 네모와 그 자리에 정확히 맞는 주황 조각. 사이에 종이 1px. 윤곽은 온전한 정사각형 — "맞는다"를 그 자체로. 제품 그림(체)과는 무관한 추상.</div>
+<div class="ok16">12px 네모 + 4px 조각, 틈 1px 까지 보인다. 먹 단색이면 틈만 남아 "ㄱ자 금 간 네모" — 단색 버전이 제일 약한 안.</div></div>
+<div><div class="sizes"><div class="g paper"><div><svg width="64" height="64"><use href="#mC"/></svg><small>64</small></div><div><svg width="24" height="24"><use href="#mC"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mC"/></svg><small>16</small></div></div>
+<div class="g mono"><div><svg width="64" height="64"><use href="#mC"/></svg><small>64 먹</small></div><div><svg width="24" height="24"><use href="#mC"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mC"/></svg><small>16</small></div></div></div>
+<div class="lock"><div class="lk"><svg width="20" height="20"><use href="#mC"/></svg>조달핏<span class="lat">jodalfit</span></div><div class="lk white"><svg width="20" height="20"><use href="#mC"/></svg>조달핏<span class="lat">jodalfit</span></div></div>
+<div class="navbox"><div class="nav"><div class="brand"><svg width="20" height="20"><use href="#mC"/></svg>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div></div></section>
+
+<!-- ===== D ===== -->
+<section class="c"><div><h2><b>D</b>점 — 지금 점에 구조를</h2>
+<div class="note">지금 쓰는 주황 점을 그대로 두고, 앞에 먹 눈금 넷을 세운다. 눈금은 걸러진 것, 점은 남은 하나. 현행과 가장 연속적이라 바꾼 티가 적다.</div>
+<div class="fail">또렷하긴 한데 "| | | | ●" 이 페이지 넘김 표시나 로딩 표시로 읽힐 수 있다. 점만 떼면 지금과 같다.</div></div>
+<div><div class="sizes"><div class="g paper"><div><svg width="64" height="64"><use href="#mD"/></svg><small>64</small></div><div><svg width="24" height="24"><use href="#mD"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mD"/></svg><small>16</small></div></div>
+<div class="g mono"><div><svg width="64" height="64"><use href="#mD"/></svg><small>64 먹</small></div><div><svg width="24" height="24"><use href="#mD"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mD"/></svg><small>16</small></div></div></div>
+<div class="lock"><div class="lk"><svg width="20" height="20"><use href="#mD"/></svg>조달핏<span class="lat">jodalfit</span></div><div class="lk white"><svg width="20" height="20"><use href="#mD"/></svg>조달핏<span class="lat">jodalfit</span></div></div>
+<div class="navbox"><div class="nav"><div class="brand"><svg width="20" height="20"><use href="#mD"/></svg>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div></div></section>
+
+<!-- ===== E ===== -->
+<section class="c"><div><h2><b>E</b>ㅈ — 첫 자음</h2>
+<div class="note">조달핏의 ㅈ을 가로획 + 두 다리로 세운 기하. 갈림길에서 오른 다리(주황)가 남긴 쪽. 글자라서 뜻이 가장 빨리 전해지지만 그만큼 "ㅈ 아이콘"으로 끝날 위험.</div>
+<div class="fail">두 다리가 만나는 꼭짓점이 뭉개져 "ㅅ 위에 막대"로 보인다. 2px 사선이 번져 획이 고르지 않음. 24px 부터 괜찮다.</div></div>
+<div><div class="sizes"><div class="g paper"><div><svg width="64" height="64"><use href="#mE"/></svg><small>64</small></div><div><svg width="24" height="24"><use href="#mE"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mE"/></svg><small>16</small></div></div>
+<div class="g mono"><div><svg width="64" height="64"><use href="#mE"/></svg><small>64 먹</small></div><div><svg width="24" height="24"><use href="#mE"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mE"/></svg><small>16</small></div></div></div>
+<div class="lock"><div class="lk"><svg width="20" height="20"><use href="#mE"/></svg>조달핏<span class="lat">jodalfit</span></div><div class="lk white"><svg width="20" height="20"><use href="#mE"/></svg>조달핏<span class="lat">jodalfit</span></div></div>
+<div class="navbox"><div class="nav"><div class="brand"><svg width="20" height="20"><use href="#mE"/></svg>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div></div></section>
+
+<!-- ===== F ===== -->
+<section class="c"><div><h2><b>F</b>깔때기 — 쐐기와 나온 선</h2>
+<div class="note">결과 페이지 머리의 깔때기 막대를 옆으로 눕힌 것. 먹 쐐기가 전체, 끝에서 나온 주황 선이 남은 공고. 가장 무겁고 가장 튼튼하다.</div>
+<div class="ok16">면이라 어디서나 산다. 대신 오른쪽 삼각형이라 <i>재생 버튼</i>으로 읽힐 위험이 있고, 여섯 중 가장 "아이콘"답다 — 조용한 nav 에선 눈에 띄게 무겁다.</div></div>
+<div><div class="sizes"><div class="g paper"><div><svg width="64" height="64"><use href="#mF"/></svg><small>64</small></div><div><svg width="24" height="24"><use href="#mF"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mF"/></svg><small>16</small></div></div>
+<div class="g mono"><div><svg width="64" height="64"><use href="#mF"/></svg><small>64 먹</small></div><div><svg width="24" height="24"><use href="#mF"/></svg><small>24</small></div><div><svg width="16" height="16"><use href="#mF"/></svg><small>16</small></div></div></div>
+<div class="lock"><div class="lk"><svg width="20" height="20"><use href="#mF"/></svg>조달핏<span class="lat">jodalfit</span></div><div class="lk white"><svg width="20" height="20"><use href="#mF"/></svg>조달핏<span class="lat">jodalfit</span></div></div>
+<div class="navbox"><div class="nav"><div class="brand"><svg width="20" height="20"><use href="#mF"/></svg>조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div></div></section>
+
+<!-- ===== 워드마크 ===== -->
+<section class="wm"><h2>워드마크 — Pretendard, 자간·굵기</h2>
+<div class="grid">
+  <div class="cell"><span class="k">700 · −0.02em</span><div class="t w700" style="letter-spacing:-0.02em">조달핏</div></div>
+  <div class="cell"><span class="k">700 · −0.035em</span><div class="t w700" style="letter-spacing:-0.035em">조달핏</div></div>
+  <div class="cell"><span class="k">700 · −0.05em</span><div class="t w700" style="letter-spacing:-0.05em">조달핏</div></div>
+  <div class="cell"><span class="k">핏 밑줄 (700 · −0.035em)</span><div class="t w700" style="letter-spacing:-0.035em">조달<span class="pit">핏</span></div></div>
+  <div class="cell"><span class="k">800 · −0.02em</span><div class="t w800" style="letter-spacing:-0.02em">조달핏</div></div>
+  <div class="cell"><span class="k">800 · −0.035em</span><div class="t w800" style="letter-spacing:-0.035em">조달핏</div></div>
+  <div class="cell"><span class="k">800 · −0.05em</span><div class="t w800" style="letter-spacing:-0.05em">조달핏</div></div>
+  <div class="cell"><span class="k">라틴 보조 · 500</span><div class="lat" style="font-size:34px;line-height:1">jodalfit</div></div>
+</div>
+<div class="grid" style="margin-top:12px">
+  <div class="cell"><span class="k">현행 — 점 7px + 700</span><div class="cmp"><i style="width:7px;height:7px;border-radius:50%;background:var(--acc);display:inline-block"></i>조달핏</div></div>
+  <div class="cell"><span class="k">마크 A 를 핏에 붙임</span><div class="cmp">조달핏<svg width="18" height="18" style="margin-left:-2px"><use href="#mA"/></svg></div></div>
+  <div class="cell"><span class="k">핏 밑줄만, 마크 없음</span><div class="cmp">조달<span class="pit" style="border-bottom:2px solid var(--acc)">핏</span></div></div>
+  <div class="cell"><span class="k">라틴 nav · 500</span><div class="cmp" style="font-weight:500;letter-spacing:0"><svg width="20" height="20"><use href="#mA"/></svg>jodalfit</div></div>
+</div>
+<div class="foot">자간은 −0.035em 이 Pretendard 한글에 맞는 선 — −0.05 는 "달"의 ㄹ 과 "핏"의 ㅍ 이 붙기 시작한다. 800 은 nav 14.5px 에서 700 과 구분이 안 되고 34px 이상에서만 티가 난다. 핏 밑줄은 주황이 선이라는 원칙에 맞지만 링크 밑줄과 헷갈려 nav 에서는 쓰지 않는 게 안전하다. 마크를 핏 뒤에 붙이는 건 읽는 방향(왼→오)과 맞아 "조달 → 핏"으로 읽히는 장점이 있으나 왼쪽 정렬 nav 에서 마크가 떠 보인다.</div></section>
+
+<div class="foot">이 시트는 고르기용. 마크는 전부 <code>&lt;symbol viewBox="0 0 16 16"&gt;</code> 하나로 그리고 <code>&lt;use&gt;</code> 로 크기만 바꿨다 — 고른 뒤 SVG 를 그대로 파비콘·컴포넌트에 쓸 수 있다. 먹 = <code>currentColor</code>, 주황 = <code>--acc</code>(단색은 <code>--acc:currentColor</code>). nav 안 마크는 20px — 14.5px 글자 옆에 24px 은 커 보여 20 으로 두었다(위 크기 줄의 24 는 기준 확인용).</div>
+</div>
+</body></html>
