@@ -1,0 +1,124 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 로고 4차 후보</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+* { box-sizing:border-box }
+body { margin:0; background:#faf9f7; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.dim { color:#6b6b67 } .k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+h1 { margin:0; font-size:26px; letter-spacing:-0.03em; font-weight:650 } h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head { padding:34px 0 20px; border-bottom:1px solid #141414 } .head p { margin:8px 0 0; font-size:13.5px; color:#55554f; line-height:1.6; max-width:960px } .head p b { font-weight:650 }
+.rule { margin-top:10px; padding:10px 14px; border-left:2px solid #f97316; background:#fff; font-size:13px; line-height:1.6; max-width:960px }
+
+/* 타일 색 체계 */
+.o { --tile:#f97316; --sym:#fff; --tb:none } .kk { --tile:#141414; --sym:#fff; --tb:none } .w { --tile:#fff; --sym:#f97316; --tb:#e3e1dc }
+.tile { display:inline-block; line-height:0 } .tile svg { overflow:visible; display:block }
+
+/* 16·20 줄 */
+.small { padding:18px 0; border-bottom:1px solid #ececea; display:grid; gap:10px } .small > div:first-child { display:flex; gap:14px; align-items:baseline }
+.strip { display:flex; align-items:center; gap:12px; height:44px; padding:0 16px; border:1px solid #ececea } .strip.white { background:#fff }
+.strip span.g { display:inline-flex; align-items:center; gap:3px; font-size:10px; color:#8f8f8b } .strip { gap:8px }
+
+/* 후보 */
+.c { padding:26px 0 30px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:220px 1fr; gap:0 32px }
+.c h2 { margin:0; font-size:17px; font-weight:650; letter-spacing:-0.02em } .c h2 b { display:inline-block; width:22px; color:#f97316; font-weight:700 }
+.c .note { margin-top:8px; font-size:12.5px; line-height:1.6; color:#55554f } .c .v16 { margin-top:6px; font-size:12px; color:#6b6b67 } .c .v16::before { content:"16px: "; font-weight:600 } .c .v16.bad { color:#b45309 }
+.sizes { display:flex; gap:14px } .sizes .g { display:flex; align-items:flex-end; gap:14px; padding:14px 16px; border:1px solid #ececea; background:#fff } .sizes .g.paper { background:#faf9f7 }
+.sizes .g > div { display:flex; flex-direction:column; align-items:center; gap:7px } .sizes small { font-size:10.5px; color:#8f8f8b; white-space:nowrap }
+.row2 { margin-top:14px; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:14px }
+.box { border:1px solid #ececea; background:#fff; padding:14px 18px } .box.paper { background:#faf9f7 } .box .k { display:block; margin-bottom:10px }
+.hero { display:flex; align-items:center; gap:14px; font-size:36px; font-weight:800; letter-spacing:-0.035em; line-height:1 }
+.icons { display:flex; align-items:flex-end; gap:16px } .icons > div { display:flex; flex-direction:column; align-items:center; gap:6px }
+.circ { border-radius:50%; overflow:hidden; width:64px; height:64px } .circ svg { display:block }
+
+/* 실제 nav 복제 — gen_results_v3.BASE 의 .nav/.brand + v4 padding:22px 0. brand 글자만 14.5 → 16px 로 (타일 22px 에 맞춤) */
+.navbox { margin-top:14px; background:#fff; border:1px solid #ececea; padding:0 24px }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:800; font-size:16px; letter-spacing:-0.035em }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+
+/* 워드마크 */
+.wm { padding:26px 0 30px; border-bottom:1px solid #ececea } .wm h2 { margin:0 0 14px; font-size:17px; font-weight:650; letter-spacing:-0.02em }
+.wm .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px } .wm .cell { background:#fff; border:1px solid #ececea; padding:14px 16px 12px } .wm .cell .k { display:block; margin-bottom:10px }
+.wm .lk { display:flex; align-items:center; gap:8px; font-size:16px; line-height:1 }
+.foot { margin-top:22px; font-size:12px; color:#737370; line-height:1.7; max-width:960px }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- 1 도킹: 홈 파인 굵은 막대 + 홈에 꼭 들어앉은 공. 홈은 타일색으로 판다 -->
+  <symbol id="m1" viewBox="0 0 64 64"><rect x="10" y="28" width="44" height="16" rx="8" fill="var(--sym)"/><circle cx="32" cy="28" r="9" fill="var(--tile)"/><circle cx="32" cy="28" r="6" fill="var(--sym)"/></symbol>
+  <symbol id="m1s" viewBox="0 0 16 16"><rect x="2" y="7" width="12" height="5" rx="2.5" fill="var(--sym)"/><circle cx="8" cy="7" r="3" fill="var(--tile)"/><circle cx="8" cy="7" r="1.75" fill="var(--sym)"/></symbol>
+  <!-- 2 열쇠구멍 -->
+  <symbol id="m2" viewBox="0 0 64 64"><circle cx="32" cy="25" r="11" fill="var(--sym)"/><path d="M26 30 L22 50 a4 4 0 0 0 4 4 H38 a4 4 0 0 0 4 -4 L38 30 Z" fill="var(--sym)"/></symbol>
+  <symbol id="m2s" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="3" fill="var(--sym)"/><path d="M6.5 7 L5.5 13 H10.5 L9.5 7 Z" fill="var(--sym)"/></symbol>
+  <!-- 3 도장: 한 군데 트인 굵은 네모 고리 + 안에 짧은 막대 -->
+  <symbol id="m3" viewBox="0 0 64 64"><path d="M20 10 H44 a10 10 0 0 1 10 10 V22 M54 36 V44 a10 10 0 0 1 -10 10 H20 a10 10 0 0 1 -10 -10 V20 a10 10 0 0 1 10 -10" fill="none" stroke="var(--sym)" stroke-width="9" stroke-linecap="round"/><rect x="23" y="28" width="18" height="8" rx="4" fill="var(--sym)"/></symbol>
+  <symbol id="m3s" viewBox="0 0 16 16"><path d="M5 2.5 H11 a2.5 2.5 0 0 1 2.5 2.5 V5.5 M13.5 10.5 V11 a2.5 2.5 0 0 1 -2.5 2.5 H5 a2.5 2.5 0 0 1 -2.5 -2.5 V5 a2.5 2.5 0 0 1 2.5 -2.5" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round"/><rect x="6" y="7" width="4" height="2" rx="1" fill="var(--sym)"/></symbol>
+  <!-- 4 깔때기 굵게: 살진 쐐기 + 나온 짧은 막대 -->
+  <symbol id="m4" viewBox="0 0 64 64"><path d="M11 17 V47 L33 37 V27 Z" fill="var(--sym)" stroke="var(--sym)" stroke-width="6" stroke-linejoin="round"/><rect x="39" y="26" width="16" height="12" rx="6" fill="var(--sym)"/></symbol>
+  <symbol id="m4s" viewBox="0 0 16 16"><path d="M2 3 V13 L8 9.5 V6.5 Z" fill="var(--sym)"/><rect x="10" y="7" width="4" height="2" rx="1" fill="var(--sym)"/></symbol>
+  <!-- 5 ㅈ 굵게: 가로 + 두 다리 -->
+  <symbol id="m5" viewBox="0 0 64 64"><path d="M13 16 H51 M32 23 L19 50 M32 23 L45 50" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="m5s" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="3" fill="var(--sym)"/><path d="M8 5.5 L4.5 13.5 M8 5.5 L11.5 13.5" fill="none" stroke="var(--sym)" stroke-width="3" stroke-linecap="round"/></symbol>
+  <!-- 6 ㅈ+ㅍ 합자: 한 가로에 왼쪽은 ㅈ 다리, 오른쪽은 ㅍ 기둥 -->
+  <symbol id="m6" viewBox="0 0 64 64"><path d="M8 16 H56 M19 21 L11 46 M19 21 L27 46 M40 21 V46 M53 21 V46" fill="none" stroke="var(--sym)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="m6s" viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="2" fill="var(--sym)"/><path d="M4.5 4.5 L2.5 12.5 M4.5 4.5 L6.5 12.5" fill="none" stroke="var(--sym)" stroke-width="2" stroke-linecap="round"/><rect x="9" y="4" width="2" height="9" fill="var(--sym)"/><rect x="13" y="4" width="2" height="9" fill="var(--sym)"/></symbol>
+  <!-- 7 점 셋, 하나가 앉는다: 고리 둘 + 찬 점 하나가 받침에 -->
+  <symbol id="m7" viewBox="0 0 64 64"><circle cx="14" cy="30" r="5.5" fill="none" stroke="var(--sym)" stroke-width="5"/><circle cx="31" cy="30" r="5.5" fill="none" stroke="var(--sym)" stroke-width="5"/><circle cx="50" cy="30" r="8" fill="var(--sym)"/><path d="M38 34 a12 12 0 0 0 24 0" fill="none" stroke="var(--sym)" stroke-width="6" stroke-linecap="round"/></symbol>
+  <symbol id="m7s" viewBox="0 0 16 16"><circle cx="3.5" cy="7" r="1.5" fill="var(--sym)"/><circle cx="8" cy="7" r="1.5" fill="var(--sym)"/><circle cx="12.5" cy="6.5" r="2.5" fill="var(--sym)"/><path d="M9.5 8.5 a3 3 0 0 0 6 0" fill="none" stroke="var(--sym)" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <!-- 8 괄호 한 쌍: [ — ] 를 한 덩어리로 -->
+  <symbol id="m8" viewBox="0 0 64 64"><path d="M24 14 H15 V50 H24 M40 14 H49 V50 H40 M27 32 H37" fill="none" stroke="var(--sym)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="m8s" viewBox="0 0 16 16"><path d="M2 2 h4 v2.5 h-4 z M2 2 h2.5 v12 h-2.5 z M2 11.5 h4 v2.5 h-4 z M10 2 h4 v2.5 h-4 z M11.5 2 h2.5 v12 h-2.5 z M10 11.5 h4 v2.5 h-4 z M6.5 7 h3 v2 h-3 z" fill="var(--sym)"/></symbol>
+  <!-- 9 (제안) ㄱㄴ 맞물림: 갈고리 둘이 모서리로 맞물려 네모를 이룬다 -->
+  <symbol id="m9" viewBox="0 0 64 64"><path d="M26 16 H48 V38 M16 26 V48 H38" fill="none" stroke="var(--sym)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="m9s" viewBox="0 0 16 16"><path d="M6.5 4 H12 V9.5 M4 6.5 V12 H9.5" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- 10 (제안) 어긋난 원: 반원 둘이 비켜 포개진다 — 밀어 넣으면 원 -->
+  <symbol id="m10" viewBox="0 0 64 64"><path d="M14 30 a14 14 0 0 1 28 0 Z M50 34 a14 14 0 0 1 -28 0 Z" fill="var(--sym)"/></symbol>
+  <symbol id="m10s" viewBox="0 0 16 16"><path d="M3.5 7.5 a3.5 3.5 0 0 1 7 0 Z M12.5 8.5 a3.5 3.5 0 0 1 -7 0 Z" fill="var(--sym)"/></symbol>
+</svg>
+
+<div class="wrap">
+<div class="head"><h1>조달핏 로고 — 4차, 체크 없이<small>8안 + 제안 2 · 2026-10-16 · 타일 체계는 logo2 와 같음</small></h1>
+<p><b>승우님(logo3):</b> "체크 너무 무난해. 체크 바리에이션 말고 다양하게." 그래서 체크 없음. 토스의 마크처럼 — 원과 막대가 <b>맞물리는 기하</b>, 도식이 아니라 장난기. 모두 둥근 끝의 굵은 덩어리 하나. 타일·크기·세 색·nav·파비콘·원형 크롭은 전과 같고, 가장 센 둘은 맨 아래에 <b>타일 없는 버전</b>(흰 바탕에 주황 덩어리, Attio 식)도 둔다.</p>
+<div class="rule"><b>규칙 예외 하나.</b> 주황 면 + 흰 기호는 <b>로고 타일에서만</b> 허용. 그 밖 어디에도 없다.</div></div>
+
+<div class="small"><div><span class="k">16 · 20px 전부</span><div class="dim" style="font-size:12px">파비콘·탭·nav 크기. 16 은 정수 격자 전용 기호. 2× 캡처 대상</div></div>
+<div class="strip" id="row16"></div><div class="strip white" id="row16k"></div><div class="strip white" id="row16w"></div></div>
+
+<div id="cands"></div>
+
+<section class="wm"><h2>타일 없이 — 흰 바탕에 주황 덩어리 (가장 센 둘)</h2>
+<div class="grid" id="nt"></div>
+<div class="foot">타일을 벗으면 기호 자체가 브랜드를 들어야 한다. 주황 면이 되므로 README 규칙상 로고 예외 안에서만 쓴다(nav·파비콘은 타일 그대로, 이건 문서 머리·메일 서명·OG 이미지용).</div></section>
+
+<div class="foot">만드는 법은 logo2 와 같다. 1 도킹의 홈은 <code>fill="var(--tile)"</code> 로 파서 세 색 전부에서 따라온다(타일 없는 버전은 <code>--tile:#fff</code>). 나머지는 전부 한 색 <code>var(--sym)</code> 경로.</div>
+</div>
+
+<script>
+const C = [
+  { id:"m1", n:"1 도킹", mean:"홈 파인 막대에 공이 꼭 들어앉는다 — 맞물리는 두 꼴. 토스 식 장난기가 가장 가깝다.", risk:"전원 버튼·토글·눈(目)으로 읽힐 수 있다.", v16:"고리가 1px 로 남아 간신히 \"막대 위 공\". 20 부터 또렷.", bad:true },
+  { id:"m2", n:"2 열쇠구멍", mean:"맞는 하나만 들어간다 — 핏을 가장 오래된 비유로.", risk:"보안·잠금·비밀번호 아이콘. 자물쇠 계열 SaaS 와 겹친다.", v16:"산다. 실루엣이 커서 어디서나 읽힌다.", bad:false },
+  { id:"m3", n:"3 도장", mean:"한 군데 트인 네모 인장 + 안의 짧은 획. 조달·공문·날인 — 여섯 중 가장 \"조달\".", risk:"정지 버튼·프레임·\"기록 중\" 표시. 트임이 닫히면 그냥 네모 고리.", v16:"트임이 캡에 먹혀 거의 닫힌다 — 네모 고리 안 점. 20 에서 트임이 보인다.", bad:true },
+  { id:"m4", n:"4 깔때기 굵게", mean:"살진 쐐기에서 짧은 막대 하나가 나온다 — 9,285 → 12 를 덩어리로.", risk:"재생 버튼 + 대시. 미디어 아이콘.", v16:"산다. 면이라 흔들림 없음.", bad:false },
+  { id:"m5", n:"5 ㅈ 굵게", mean:"조의 ㅈ — 가로 하나, 다리 둘, Attio 의 A 처럼 획이 포개진다. logo1 의 가는 ㅈ은 16 에서 죽었고 이건 굵다.", risk:"텐트·人·삼각대. 한글을 모르는 눈엔 글자가 아니라 지붕.", v16:"산다. 3px 다리가 V 로 갈려 ㅈ 이 보인다.", bad:false },
+  { id:"m6", n:"6 ㅈ+ㅍ 합자", mean:"한 가로획 아래 왼쪽은 ㅈ 다리, 오른쪽은 ㅍ 기둥 — 조달·핏 두 머리글자를 한 글자로.", risk:"획 다섯이라 글리프가 아니라 울타리·악보 기호. 단순하지 않다.", v16:"죽는다. 다리와 기둥이 붙어 창살.", bad:true },
+  { id:"m7", n:"7 점 셋, 하나가 앉는다", mean:"빈 고리 둘 지나 찬 점 하나가 받침에 앉는다 — 맞는 하나.", risk:"더보기(…)·로딩·캐러셀 점. 받침이 웃는 입으로 보인다.", v16:"죽는다. 고리가 점이 되어 \"점 세 개\".", bad:true },
+  { id:"m8", n:"8 괄호 한 쌍", mean:"[ — ] 를 한 덩어리로 — 사이에 맞아 들어간다.", risk:"마이너스 상자·접기·배터리·코드 블록.", v16:"산다. 다만 뜻보다 \"[-]\" 가 먼저.", bad:false },
+  { id:"m9", n:"9 ㄱㄴ 맞물림 (제안)", mean:"갈고리 둘(ㄱ·ㄴ)이 모서리로 맞물려 네모를 이룬다 — 한글 자모 둘로 \"들어맞음\"을 꼴 자체로. 획 둘뿐이라 토스 수준으로 단순하고, 도식이 아니다.", risk:"자르기(crop) 도구 아이콘과 같은 두 ㄱ·ㄴ 구성 — 다만 crop 은 겹치고 이건 맞물린다.", v16:"산다. 2.5px 갈고리 둘, 사이 틈까지 보인다.", bad:false },
+  { id:"m10", n:"10 어긋난 원 (제안)", mean:"원을 둘로 갈라 비껴 놓았다 — 밀어 넣으면 원이 된다. \"아직 안 맞은 것\"과 \"맞출 수 있는 것\"을 한 꼴로.", risk:"토글·S·음양·햄버거 두 장. 원이 되는 순간이 보이지 않으면 그냥 반원 둘.", v16:"산다. 반원 둘이 면이라 또렷.", bad:false }
+];
+const tileOf = vb => `<rect width="${vb}" height="${vb}" rx="${(vb * 0.22).toFixed(2)}" fill="var(--tile)" stroke="var(--tb)" vector-effect="non-scaling-stroke"/>`;
+const T = (c, px, cls, bare) => { const vb = px === 16 ? 16 : 64; return `<span class="tile ${cls}"><svg width="${px}" height="${px}" viewBox="0 0 ${vb} ${vb}">${bare ? "" : tileOf(vb)}<use href="#${c.id}${vb === 16 ? "s" : ""}"/></svg></span>`; };
+const T16raw = (c, cls) => `<span class="tile ${cls}"><svg width="16" height="16" viewBox="0 0 64 64">${tileOf(64)}<use href="#${c.id}"/></svg></span>`;
+const sizes = (c, cls, label) => `<div class="g ${cls === "o" ? "paper" : ""}"><div>${T(c, 64, cls)}<small>64${label ? " " + label : ""}</small></div><div>${T(c, 32, cls)}<small>32</small></div><div>${T(c, 20, cls)}<small>20</small></div><div>${T(c, 16, cls)}<small>16 격자</small></div><div>${T16raw(c, cls)}<small>16 축소</small></div></div>`;
+const nav = c => `<div class="navbox"><div class="nav"><div class="brand">${T(c, 22, "o")}조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div>`;
+document.getElementById("cands").innerHTML = C.map(c => `<section class="c"><div><h2>${c.n}</h2><div class="note"><b>뜻</b> ${c.mean}</div><div class="note"><b>위험</b> ${c.risk}</div><div class="v16 ${c.bad ? "bad" : ""}">${c.v16}</div></div><div>
+<div class="sizes">${sizes(c, "o", "주황")}${sizes(c, "kk", "먹")}${sizes(c, "w", "흰")}</div>
+<div class="row2"><div class="box paper"><span class="k">히어로 lockup · 타일 48 · 800</span><div class="hero">${T(c, 48, "o")}조달핏</div></div>
+<div class="box"><span class="k">파비콘 · 앱 아이콘 16 / 32 / 180</span><div class="icons"><div>${T(c, 16, "o")}<small>16</small></div><div>${T(c, 32, "o")}<small>32</small></div><div>${T(c, 180, "o")}<small>180</small></div></div></div>
+<div class="box"><span class="k">SNS 아바타 원형 크롭 64</span><div class="icons"><div class="circ">${T(c, 64, "o")}</div><div class="circ">${T(c, 64, "kk")}</div><div class="circ">${T(c, 64, "w")}</div></div></div></div>
+${nav(c)}</div></section>`).join("");
+const strip = cls => C.map(c => `<span class="g">${c.n.split(" ")[0]}${T(c, 16, cls)}${T(c, 20, cls)}</span>`).join("");
+document.getElementById("row16").innerHTML = `<span class="g">주황</span>` + strip("o"); document.getElementById("row16k").innerHTML = `<span class="g">먹</span>` + strip("kk"); document.getElementById("row16w").innerHTML = `<span class="g">흰</span>` + strip("w");
+const NT = [C[0], C[8]];
+document.getElementById("nt").innerHTML = NT.map(c => `<div class="cell" style="grid-column:span 2"><span class="k">${c.n} · 타일 없음 64 / 32 / 20 + lockup</span><div class="icons" style="align-items:center;gap:22px"><span class="nt" style="--tile:#fff;--sym:#f97316">${T(c, 64, "", true)}</span><span style="--tile:#fff;--sym:#f97316">${T(c, 32, "", true)}</span><span style="--tile:#fff;--sym:#f97316">${T(c, 20, "", true)}</span><span class="lk" style="font-weight:800;letter-spacing:-0.035em;--tile:#fff;--sym:#f97316;margin-left:10px">${T(c, 22, "", true)}조달핏</span><span class="lk" style="font-weight:800;letter-spacing:-0.035em;--tile:#fff;--sym:#141414">${T(c, 22, "", true)}조달핏</span></div></div>`).join("") + `<div class="cell"><span class="k">현행 — 점 7px + 700</span><div class="lk" style="font-weight:700;letter-spacing:-0.02em;font-size:14.5px"><i style="width:7px;height:7px;border-radius:50%;background:#f97316;display:inline-block"></i>조달핏</div></div>`;
+</script>
+</body></html>
