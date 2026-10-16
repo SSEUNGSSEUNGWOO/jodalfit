@@ -19,7 +19,7 @@ from gen_results_v2 import strongest  # noqa: E402
 from gen_flow import ORANGE, nav, why_lines, qual_lines  # noqa: E402
 from gen_report import qual_line, LABELS  # noqa: E402
 
-CSS = SHEET_CSS.replace("#e8431b", ORANGE) + r"""
+SPLIT_CSS = r"""
 .wrap { width:auto; max-width:1120px; margin:0 auto; padding:0 20px 120px }
 .brand { font-weight:800; font-size:16px; letter-spacing:-0.035em; gap:8px } .brand svg { display:block }
 .ok::after { color:#141414 }
@@ -82,6 +82,7 @@ CSS = SHEET_CSS.replace("#e8431b", ORANGE) + r"""
   .gateline .in { width:100%; flex-wrap:wrap } .gateline .in span:first-child { flex:1; width:auto }
 }
 """
+CSS = SHEET_CSS.replace("#e8431b", ORANGE) + SPLIT_CSS
 
 JS = r"""
 document.querySelectorAll('.sw span').forEach(s => s.onclick = () => { document.body.dataset.v = s.dataset.v;
@@ -130,7 +131,7 @@ def trow(i, r, prof, open_=False):
     n, dd = dleft(r["bid_clse_date"])
     ql = "".join(f'<li class="{c}">{t}</li>' for c, t in qual_lines(r, prof)); wl = "".join(f"<li>{w}</li>" for w in why_lines(r, org))
     s = strongest(r); why = f'<span class="why">{esc(s["label"])}</span>' if s else ""
-    return (f'<div class="tr"><span class="no">{i:02d}</span><span><span class="t">{esc(r["bid_ntce_nm"])}</span><span class="sub">{esc(org)}{why}</span></span>'
+    return (f'<div class="tr" data-no="{esc(r["bid_ntce_no"])}"><span class="no">{i:02d}</span><span><span class="t">{esc(r["bid_ntce_nm"])}</span><span class="sub">{esc(org)}{why}</span></span>'
             f'<span class="r d {"hot" if n <= 7 else ""}">D-{n}<small>{dd.month}.{dd.day:02d}</small></span><span class="r">{won(r.get("presmpt_prce"))}</span></div>'
             f'<div class="x {"on" if open_ else ""}"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
             f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div>')
