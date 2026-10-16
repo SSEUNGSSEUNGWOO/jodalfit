@@ -83,7 +83,7 @@ jobs:
         continue-on-error: true
 
       - name: 입찰공고 임베딩 (신규)
-        run: uv run python -m jobs.embed_bid_notices --limit 5000 --batch 50
+        run: uv run python -m jobs.embed_bid_notices --limit 500 --batch 50  # 매시간 잡이 주 담당. 5000 이면 러너 CPU 로 24분+ → sync 잡 50분 제한에 잘려 company-vectors 까지 skip(2026-10-15 22:46)
         continue-on-error: true
 
       - name: 사전규격 임베딩 (신규)
