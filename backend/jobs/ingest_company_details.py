@@ -8,10 +8,15 @@
 - getPrcrmntCorpSplyPrdctInfo02 (필수: bizno)
 
 전략:
-- contracts에 등장한 active 회사만 대상
+- 대상 = contracts에 등장한 active 회사 ∪ 물품 공고에 참가했는데 공급물품이 없는 회사
 - 우선순위: ① 유저가 검색한 회사 (search_logs, 최근 검색 순)
-           ② 최근 계약 체결 회사 (cntrct_cncls_date desc)
-           ③ 나머지 active 회사
+           ② 물품 공고 참가 이력이 있는데 공급물품(company_supply_products)이 없는 회사
+              — 후보 검색 물품 채널(0048)이 공고 물품분류번호 ∩ 회사 공급물품 코드로 맞추는데,
+              9/1 시점 놓친 물품 낙찰 43건 중 33건이 회사 쪽 공급물품 부재였다 (2026-10-15).
+              업종이 이미 있어도 대상 (공급물품 API 장애 구간에 업종만 받은 회사 재조회, SUPPLY_OUTAGE_*).
+              award_results ⋈ bid_notices 조인이라 DATABASE_URL 로 직접 읽는다 (없으면 이 단계만 생략).
+           ③ 최근 계약 체결 회사 (cntrct_cncls_date desc)
+           ④ 나머지 active 회사
 - 이미 enriched된 회사는 skip
 - 회사당 2개 API 호출
 - 일일 한도 각 10k → 한 잡 실행에 4500 회사 처리 (안전 마진)
@@ -30,6 +35,7 @@ import sys
 from typing import Any
 
 import httpx
+import psycopg
 from dotenv import load_dotenv
 
 from app.services.supabase_client import get_admin_client, upsert_rows
@@ -40,6 +46,7 @@ if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
 API_KEY = os.getenv("NARAJANGTEO_API_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
 BASE = "https://apis.data.go.kr/1230000/ao/UsrInfoService02"
 JOB_NAME = "ingest_company_details"
 
@@ -104,6 +111,9 @@ def fetch_supply(bizrno_norm: str) -> list[dict[str, Any]]:
         "pageNo": "1",
         "numOfRows": "100",
         "bizno": bizrno_norm,
+        # 2026-09-10 부터 이 파라미터가 없으면 HTTP_ERROR(returnReasonCode 04)를 돌려주고, 아래 except 가
+        # 빈 목록으로 삼켜 5주간 공급물품이 0건이었다 (업종은 계속 들어와 '풍부화 완료'로 처리됨). 2026-10-16 발견.
+        "inqryDiv": "1",
     }
     try:
         resp = httpx.get(
@@ -119,16 +129,64 @@ def fetch_supply(bizrno_norm: str) -> list[dict[str, Any]]:
         return []
 
 
-def fetch_priority_ranks(client) -> dict[str, tuple[int, int]]:
+# 공급물품 API 가 inqryDiv 누락으로 죽어 있던 구간 — 이 사이에 업종만 채워진 회사(2.1만)는 공급물품이 "없는" 게
+# 아니라 "못 받은" 것이라 다시 조회한다. 구간 밖(정상이던 때)에 조회됐는데 공급물품이 없는 회사는 정말 없는 것.
+SUPPLY_OUTAGE_BEGIN = "2026-09-10"
+SUPPLY_OUTAGE_END = "2026-10-16T11:00:00+09:00"
+
+GOODS_NO_SUPPLY_SQL = f"""
+with goods_participants as (
+    select distinct a.bizrno_norm
+    from award_results a
+    join bid_notices b on b.bid_ntce_no = a.bid_ntce_no and b.bid_ntce_ord = a.bid_ntce_ord
+    where b.bsns_div_nm = '물품' and a.bizrno_norm <> ''
+),
+supplied as (
+    select distinct c.bizrno_norm from company_supply_products s
+    join companies c on c.bizrno = s.bizrno
+),
+fetched_while_api_ok as (
+    select distinct c.bizrno_norm from company_industries i
+    join companies c on c.bizrno = i.bizrno
+    where i.created_at < '{SUPPLY_OUTAGE_BEGIN}' or i.created_at >= '{SUPPLY_OUTAGE_END}'
+)
+select g.bizrno_norm
+from goods_participants g
+where g.bizrno_norm not in (select bizrno_norm from supplied)
+  and g.bizrno_norm not in (select bizrno_norm from fetched_while_api_ok)
+"""
+
+
+def fetch_goods_participants_without_supply() -> set[str]:
+    """물품 공고에 참가(award_results)한 적 있는데 공급물품이 한 건도 없는 회사의 bizrno_norm.
+
+    공급물품 API 정상 구간에 조회된 회사는 제외 (정말 공급물품이 없는 회사를 매일 다시 부르지 않게).
+    award_results(47만) ⋈ bid_notices 조인이라 PostgREST 로는 못 하고 psycopg 직결 (~40s).
+    DATABASE_URL 이 없거나 쿼리가 실패하면 이 단계만 비우고 나머지 우선순위로 계속 간다.
+    """
+    if not DATABASE_URL:
+        print("  ↳ DATABASE_URL 없음 — 물품참가·공급물품없음 단계 생략")
+        return set()
+    try:
+        with psycopg.connect(DATABASE_URL, connect_timeout=20, autocommit=True) as conn:
+            conn.execute("set statement_timeout = 300000")
+            return {r[0] for r in conn.execute(GOODS_NO_SUPPLY_SQL).fetchall()}
+    except Exception as e:  # noqa: BLE001 — 이 단계는 보너스, 잡 자체를 죽이지 않는다
+        print(f"  ↳ 물품참가·공급물품없음 단계 실패 ({e}) — 생략")
+        return set()
+
+
+def fetch_priority_ranks(client, goods_no_supply: set[str]) -> dict[str, tuple[int, int]]:
     """bizrno_norm → (tier, rank) 우선순위 맵.
 
     tier 0 = 유저가 검색한 회사 (최근 검색 순)
-    tier 1 = 최근 계약 체결 회사 (계약일 desc, 상위 ~10k행)
-    맵에 없으면 tier 2 (나머지 active).
+    tier 1 = 물품 공고 참가 이력이 있는데 공급물품이 없는 회사 (사업자번호 순)
+    tier 2 = 최근 계약 체결 회사 (계약일 desc, 상위 ~10k행)
+    맵에 없으면 tier 3 (나머지 active).
     """
     ranks: dict[str, tuple[int, int]] = {}
 
-    # tier 1: 최근 계약 체결 순 (상위 10k행 — 대략 최근 1~2주 분량이면 충분)
+    # tier 2: 최근 계약 체결 순 (상위 10k행 — 대략 최근 1~2주 분량이면 충분)
     print("  ↳ 최근 계약 회사 순위 수집 중...")
     offset = 0
     idx = 0
@@ -147,13 +205,17 @@ def fetch_priority_ranks(client) -> dict[str, tuple[int, int]]:
         for row in r:
             v = row.get("rprsnt_corp_bizrno_norm")
             if v and v not in ranks:
-                ranks[v] = (1, idx)
+                ranks[v] = (2, idx)
                 idx += 1
         if len(r) < 1000:
             break
         offset += 1000
 
-    # tier 0: 유저가 검색한 회사 (최근 검색 순) — tier 1보다 우선하므로 덮어씀
+    # tier 1: 물품 참가 이력 + 공급물품 없음 — 최근 계약보다 우선하므로 덮어씀
+    for idx, norm in enumerate(sorted(goods_no_supply)):
+        ranks[norm] = (1, idx)
+
+    # tier 0: 유저가 검색한 회사 (최근 검색 순) — 나머지 전부보다 우선하므로 덮어씀
     print("  ↳ 검색된 회사 순위 수집 중...")
     offset = 0
     idx = 0
@@ -179,27 +241,36 @@ def fetch_priority_ranks(client) -> dict[str, tuple[int, int]]:
             break
         offset += 1000
 
-    searched = sum(1 for t, _ in ranks.values() if t == 0)
-    print(f"  ↳ priority: 검색된 회사 {searched:,} / 최근 수주 {len(ranks) - searched:,}")
+    tier_n = [sum(1 for t, _ in ranks.values() if t == k) for k in range(3)]
+    print(
+        f"  ↳ priority: 검색된 회사 {tier_n[0]:,} / 물품참가·공급물품없음 {tier_n[1]:,} / "
+        f"최근 수주 {tier_n[2]:,}"
+    )
     return ranks
 
 
 def fetch_candidate_companies(client, limit: int) -> list[dict]:
-    """active 회사 중 아직 업종 풍부화 안 된 회사를 우선순위 순으로 가져옴."""
+    """대상 회사 중 아직 업종 풍부화 안 된 회사를 우선순위 순으로 가져옴."""
     # 1. active bizrno_norm set (contracts에서)
     print("  ↳ active bizrnos 수집 중...")
     active = collect_keyset(client, "contracts", "rprsnt_corp_bizrno_norm")
     print(f"  ↳ active = {len(active):,}")
+
+    # 1-b. 물품 공고 참가 이력 + 공급물품 없음 — 낙찰 없이 참가만 한 회사는 active 에 없으므로 대상에 합친다
+    print("  ↳ 물품참가·공급물품없음 회사 수집 중...")
+    goods_no_supply = fetch_goods_participants_without_supply()
+    print(f"  ↳ 물품참가·공급물품없음 = {len(goods_no_supply):,}")
 
     # 2. 이미 풍부화된 bizrno set (company_industries에 row 있는 회사)
     print("  ↳ 이미 풍부화된 회사 수집 중...")
     enriched = collect_keyset(client, "company_industries", "bizrno")
     print(f"  ↳ enriched = {len(enriched):,}")
 
-    # 3. 우선순위 맵 (검색된 회사 / 최근 수주 회사)
-    ranks = fetch_priority_ranks(client)
+    # 3. 우선순위 맵 (검색된 회사 / 물품참가 / 최근 수주 회사)
+    ranks = fetch_priority_ranks(client, goods_no_supply)
 
-    # 4. companies 전체 순회 — bizrno_norm in active AND bizrno not in enriched
+    # 4. companies 전체 순회 — (active AND 아직 풍부화 안 됨) OR 물품참가·공급물품없음
+    #    물품참가 단계는 업종이 이미 있어도 다시 부른다 — 공급물품만 빠진 회사가 대상이라서.
     #    (우선순위 정렬을 위해 limit에서 멈추지 않고 전부 모은 뒤 sort)
     #    bizrno 가 PK 라 keyset 이 행을 빠뜨리지 않는다. offset 이면 매 페이지가 Seq Scan
     #    (17.6만 행, 블록 18,203개 읽기)이라 176 페이지가 버퍼 256MB 를 통째로 쓸어냈다.
@@ -220,24 +291,24 @@ def fetch_candidate_companies(client, limit: int) -> list[dict]:
         if not r:
             break
         for row in r:
-            if (
-                row["bizrno_norm"] in active
-                and row["bizrno"] not in enriched
+            if row["bizrno_norm"] in goods_no_supply or (
+                row["bizrno_norm"] in active and row["bizrno"] not in enriched
             ):
                 candidates.append(row)
         last = r[-1]["bizrno"]
         if len(r) < PAGE:
             break
 
-    fallback = (2, 0)
+    fallback = (3, 0)
     candidates.sort(key=lambda row: ranks.get(row["bizrno_norm"], fallback))
     picked = candidates[:limit]
-    tier_counts = [0, 0, 0]
+    tier_counts = [0, 0, 0, 0]
     for row in picked:
         tier_counts[ranks.get(row["bizrno_norm"], fallback)[0]] += 1
     print(
         f"  ↳ 선정 {len(picked):,} / 후보 {len(candidates):,}"
-        f"  (검색됨 {tier_counts[0]:,} / 최근수주 {tier_counts[1]:,} / 기타 {tier_counts[2]:,})"
+        f"  (검색됨 {tier_counts[0]:,} / 물품참가·공급물품없음 {tier_counts[1]:,} / "
+        f"최근수주 {tier_counts[2]:,} / 기타 {tier_counts[3]:,})"
     )
     return picked
 
