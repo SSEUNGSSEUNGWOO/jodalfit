@@ -71,7 +71,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 주의사항 (gotchas)
 - **Next.js 16**: 학습 데이터와 다른 breaking change 있음. 코드 작성 전 `frontend/node_modules/next/dist/docs/`의 해당 가이드 확인 (frontend/AGENTS.md 지침).
 - **shadcn base-nova preset (@base-ui/react 기반)**: `Button`이 `asChild` 미지원 — 링크는 `<a>`에 직접 스타일.
-- 브랜드 컬러는 **에메랄드 `#047857`** (2026-08 리브랜딩; README §13의 `#166534`은 구버전). 토큰은 `src/app/globals.css`.
+- 브랜드 컬러는 **에메랄드 `#047857`** (2026-08 리브랜딩; README §13의 `#166534`은 구버전). 토큰은 `src/app/globals.css`. **2026-10 디자인 리뉴얼은 주황 `#f97316`(docs/design/README.md) — 리뉴얼 배포 때 한꺼번에 교체, 그 전엔 운영 색 그대로.**
 - 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음.
 - `backend/.env`의 `SUPABASE_SERVICE_ROLE_KEY`는 RLS 우회 admin 키 — frontend/git 노출 금지. 환경변수 전체 목록은 README.md §9.
 - `data/`는 gitignored 임시 수집 데이터.
