@@ -71,7 +71,7 @@ SHEET_CSS = BASE + r"""
 .tr .no { font-size:12px; color:#8f8f8b } .tr .t { font-weight:550; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em }
 .tr .org, .tr .why { font-size:13px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .why { color:#6b6b67 }
 .tr .r { text-align:right } .tr .d { font-weight:600 } .tr .d.hot { color:#e8431b } .tr .d small { color:#737370; font-weight:450; margin-left:6px }
-.tr .fit { font-weight:600 } .tr .fit i { display:inline-block; width:26px; height:3px; background:#e6e4df; margin-right:8px; vertical-align:middle; position:relative } .tr .fit i b { position:absolute; left:0; top:0; height:100%; background:#141414 }
+.tr .fit { font-weight:600 } .tr .fit i { display:inline-block; width:56px; height:4px; background:#dedbd4; margin-right:8px; vertical-align:middle; position:relative } .tr .fit i b { position:absolute; left:0; top:0; height:100%; background:#141414 }
 .x { padding:22px 0 26px 52px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:1.1fr 1.2fr .8fr; gap:40px }
 .x .k { display:block; margin-bottom:10px } .x ul { margin:0; padding:0; list-style:none } .x li { font-size:13.5px; line-height:1.65; padding:4px 0; color:#333 } .x li.todo { color:#737370 }
 .x .life { display:flex; gap:0; margin-top:4px } .x .life span { flex:1; font-size:11.5px; color:#8f8f8b; padding-top:8px; border-top:2px solid #ececea } .x .life span.on { color:#141414; border-top-color:#141414 }

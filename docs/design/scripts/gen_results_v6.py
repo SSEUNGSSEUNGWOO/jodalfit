@@ -108,7 +108,7 @@ def crit(co, prof):
     """걸러낸 기준 띠 — 등록업종·공급물품 / 지역·면허 / 규모·상태 / 확인·수정 요청. 공문 톤(2026-10-16)."""
     inds = prof["industries"][0] + prof["industries"][1]
     rep = prof["industries"][0]
-    ind_txt = ", ".join(esc(x.split("(")[0]) for x in inds[:10]) + (f' <span class="dim">외 {len(inds) - 10}</span>' if len(inds) > 10 else "")
+    ind_txt = ", ".join(esc(x.split("(")[0]) for x in inds[:5]) + (f' <span class="dim">외 {len(inds) - 5}</span>' if len(inds) > 5 else "")
     return (f'<div class="crit"><div><span class="k">등록업종 {len(inds)} · 대표 {esc(rep[0].split("(")[0]) if rep else "-"}</span><div class="txt">{ind_txt}</div>'
             f'<span class="k">공급물품</span><div class="txt"><span class="dim">등록 없음</span> — 물품 공고 추천에는 등록 필요</div></div>'
             f'<div><span class="k">지역</span><div class="txt">본사 <b>{esc(co["rgn_nm"])}</b> · 지역 제한 공고 판정 기준</div>'
