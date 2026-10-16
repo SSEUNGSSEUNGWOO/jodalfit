@@ -71,7 +71,7 @@ def qual_line(r, prof):
     out = []
     for c, t in qual_lines(r, prof):
         if c == "todo": out.append("규모 미입력")
-        else: out.append(t.replace(" — ", " ") + (" ✓" if c == "ok" else " !"))
+        else: out.append(t.replace(" — ", " ") + {"ok": " ✓", "warn": " !"}.get(c, ""))   # 제한 없음(none)은 표식 없음 — 충족만 ✓
     return " · ".join(out)
 
 

@@ -43,6 +43,18 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 .tr::before { content:""; position:absolute; left:-16px; top:0; bottom:0; width:2px; background:#f97316; transform:scaleY(0); transform-origin:top; transition:transform .3s cubic-bezier(.3,.7,.2,1) }
 .tr.rvd::before { transform:scaleY(1) }
 @media (prefers-reduced-motion: reduce) { .res, .chain, .tr::before { transition:none !important } }
+/* 참가 자격 — 충족(먹 600 + ✓) > 제한 없음(회색, 표식 없음). 같은 ✓ 두 개로 보이던 것을 가른다 */
+.x li.ok { font-weight:600 } .x li.none { color:#737370 }
+/* 다른 회사 — 회사 이름이 곧 검색창(입구 결정 "검색창 하나"를 결과 페이지에서도). 누르면 머리가 입구 상자로 바뀌고 결과는 흐려진다 */
+.sw-co { font-size:13px; font-weight:500; color:#55554f; margin-left:14px; letter-spacing:0; border-bottom:1px solid #d8d6d0; vertical-align:middle; transition:border-color .15s } .sw-co:hover { border-bottom-color:#f97316 }
+.search { display:none; padding:2px 0 4px } .st-search .search { display:block } .st-search .head h1, .st-search .head .meta { display:none }
+.box { display:flex; align-items:stretch; border:2px solid #f97316; border-radius:6px; background:#fff; max-width:720px; transition:box-shadow .15s } .box:focus-within { box-shadow:0 0 0 4px rgba(249,115,22,.18) }
+.box input { flex:1; min-width:0; border:0; background:transparent; padding:14px 18px; font:inherit; font-size:20px; letter-spacing:-0.02em; font-weight:500; color:#141414; outline:none } .box input::placeholder { color:#8f8f8b; font-weight:450 }
+.box .go { border:0; border-left:1px solid #ececea; background:#fff; color:#141414; font:inherit; font-size:15px; font-weight:650; padding:0 20px; cursor:pointer; border-radius:0 4px 4px 0 } .box .go .t { border-bottom:2px solid #f97316; padding-bottom:1px }
+.search .rc { display:flex; gap:14px; align-items:center; margin-top:10px; font-size:13px; color:#55554f; max-width:720px } .rc a { color:#141414; border-bottom:1px solid #d8d6d0 } .rc .esc { margin-left:auto; color:#737370; border:0 }
+.st-search .stage, .st-search .err, .st-search .res, .st-search.done .res { opacity:.22; filter:blur(1px); pointer-events:none }
+.stage, .err { transition:opacity .3s ease, filter .3s ease }
+@media screen and (max-width:720px){ .sw-co { display:inline-block; margin:6px 0 0 } .box input { font-size:17px; padding:12px 14px } .box .go { padding:0 14px } }
 /* 판(승우님 "밋밋하다") — 장식이 아니라 바닥과 크기. 따뜻한 회색 바닥 위에 머리·캔버스, 결과는 흰 판 하나. 먹 괘선은 머리 아래 하나만. 회사 이름 32 / 경로 숫자 28 / 마지막 12 는 34 */
 .v-panel, .v-panel body { background:#faf9f7 }
 .v-panel .head h1 { font-size:32px; letter-spacing:-0.035em } .v-panel .chain b { font-size:28px } .v-panel .chain b.acc { font-size:34px } .v-panel .chain .l { font-size:12.5px }
@@ -75,6 +87,12 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 JS_EXTRA = r"""
 document.querySelectorAll('.sheet .tr').forEach(t => t.addEventListener('click', () => t.nextElementSibling.classList.toggle('on')));
 if (matchMedia('(max-width:720px)').matches) document.querySelector('details.side').open = false;
+const hd = document.querySelector('.head');
+function openSearch(){ document.body.classList.add('st-search'); const i = hd.querySelector('.box input'); i.value = ''; i.focus(); }
+function closeSearch(){ document.body.classList.remove('st-search'); }
+hd.querySelector('.sw-co').onclick = e => { e.preventDefault(); openSearch(); };
+hd.querySelector('.rc .esc').onclick = e => { e.preventDefault(); closeSearch(); };
+addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
 document.querySelectorAll('.ctl [data-skin]').forEach(s => s.onclick = () => { document.documentElement.classList.toggle('v-panel', s.dataset.skin === 'panel');
   document.querySelectorAll('.ctl [data-skin]').forEach(x => x.classList.toggle('on', x === s)); });
 """
@@ -104,8 +122,10 @@ def page(d, prof, f, titles):
     c = dict(cfg(), CNT=[f["total"], f["industry"], f["qualified"], len(res)])
     n_ind = len(prof["industries"][0] + prof["industries"][1])
     body = (f'<div class="wrap">{nav()}'
-            f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small></h1>'
-            f'<div class="meta"><span>{esc(rgn_base(co["rgn_nm"]))}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div></div>'
+            f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small><a class="sw-co" href="#">다른 회사</a></h1>'
+            f'<div class="meta"><span>{esc(rgn_base(co["rgn_nm"]))}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div>'
+            f'<div class="search"><div class="box"><input type="text" autocomplete="off" spellcheck="false" placeholder="회사명 · 사업자등록번호 · 업종 또는 품목"><button class="go" type="button"><span class="t">찾기</span></button></div>'
+            f'<div class="rc"><span class="k">최근 조회</span><a href="#">{esc(co["corp_nm"])}</a><a class="esc" href="#">취소 · Esc</a></div></div></div>'
             f'<div class="stage">{labels(f, len(res))}{field(titles)}{chain(f, d, res)}</div>{ERR}'
             f'<div class="res"><div class="cols">{side(co, prof)}{main_col(res, prof)}</div></div>'
             f'<div class="foot">결과 페이지 최종 시안 — flow 의 머리 장면(계산 대기 가림막)·네 상태 + split 의 두 단 표형. 화면은 표, 메일·인쇄는 블록(report.html). '
@@ -136,6 +156,16 @@ def check(path):
             acc: cs(document.querySelector('.chain b.acc')).color, res: cs(document.querySelector('.res')).opacity } }""")
         assert s["done"] and s["tr"] == 12 and s["sticky"] == "sticky" and s["labs"] == 4 and s["nums"] == ["9,374", "835", "372", "12"] and s["acc"] == "rgb(249, 115, 22)" and s["res"] == "1", s
         pg.screenshot(path=str(out / "_shot_final_default.png"), full_page=True)
+        q = pg.evaluate("""() => ({ ok: document.querySelectorAll('.x.on li.ok').length, none: document.querySelectorAll('.x.on li.none').length,
+            okw: getComputedStyle(document.querySelector('.x.on li.ok, .x.on li.none')).fontWeight })""")
+        assert q["ok"] + q["none"] == 2, q   # 면허·지역 두 줄이 충족/제한 없음 중 하나로 갈린다
+        pg.click(".sw-co"); pg.wait_for_timeout(900)   # .res 전환 .5s + .2s 지연
+        sr = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { st: document.body.classList.contains('st-search'), box: cs(document.querySelector('.search')).display,
+            h1: cs(document.querySelector('.head h1')).display, res: cs(document.querySelector('.res')).opacity, focus: document.activeElement === document.querySelector('.box input') } }""")
+        assert sr["st"] and sr["box"] == "block" and sr["h1"] == "none" and float(sr["res"]) < 0.3 and sr["focus"], sr
+        pg.screenshot(path=str(out / "_shot_final_search.png"), full_page=False)
+        pg.keyboard.press("Escape"); pg.wait_for_timeout(900)
+        assert not pg.evaluate("document.body.classList.contains('st-search')") and pg.evaluate("getComputedStyle(document.querySelector('.res')).opacity") == "1"
         k = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { bg: cs(document.body).backgroundColor, panel: cs(document.querySelector('.res .cols')).backgroundColor, r: cs(document.querySelector('.res .cols')).borderRadius } }""")
         assert k["bg"] == "rgb(250, 249, 247)" and k["panel"] == "rgb(255, 255, 255)" and k["r"] == "14px", k
         pg.click('.ctl [data-skin="flat"]'); pg.wait_for_timeout(200)

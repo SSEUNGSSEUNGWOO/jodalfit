@@ -430,7 +430,8 @@ def qual_lines(r, prof):
     (v3 helper 는 그렇게 해서 '지역 제한 없음' 판정에 '!' 를 붙였다)."""
     q = r.get("qualification") or {}
     fails = set(q.get("failures") or [])
-    out = [("warn" if t in fails else "ok", esc(t.replace("면허 ", "면허 — ", 1).replace("지역 ", "지역 — ", 1))) for t in (q.get("reasons") or [])]
+    # 충족(회사가 제한을 실제로 넘었다) > 제한 없음(아무도 안 걸린다) — 시그널 크기가 다르니 클래스를 가른다(승우님 2026-10-16). none 은 ✓ 없이 회색.
+    out = [("warn" if t in fails else ("none" if "제한 없음" in t else "ok"), esc(t.replace("면허 ", "면허 — ", 1).replace("지역 ", "지역 — ", 1))) for t in (q.get("reasons") or [])]
     return out + [("todo", "규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력")]
 
 
