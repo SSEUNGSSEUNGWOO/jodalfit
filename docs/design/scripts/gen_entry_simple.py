@@ -25,7 +25,8 @@ def fetch_today(conn):
         n = conn.execute(f"select count(*) from bid_notices where bid_ntce_date = {day}").fetchone()[0]
         if n >= 50 or label == "어제":
             rows = conn.execute(f"""select distinct on (bid_ntce_no) bid_ntce_no, bid_ntce_nm, ntce_instt_nm, bid_clse_date, presmpt_prce
-                from bid_notices where bid_ntce_date = {day} order by bid_ntce_no, bid_ntce_ord desc""").fetchall()
+                from bid_notices where bid_ntce_date = {day} and bid_clse_date <= current_date + 90  -- 추천과 같은 지평선: 2037 마감 단가계약(종합쇼핑몰)은 뺀다
+                order by bid_ntce_no, bid_ntce_ord desc""").fetchall()
             rows.sort(key=lambda r: -(r[4] or 0))
             return dict(label=label, n=n, rows=[dict(no=a, nm=b, org=c, clse=d, prc=e) for a, b, c, d, e in rows[:5]])
 
@@ -75,7 +76,7 @@ CSS = SHEET_CSS + r"""
 .ls .miss { padding:16px 0 4px; font-size:13.5px; color:#55554f; line-height:1.6 } .ls .miss b { color:#141414; font-weight:600 }
 /* 오늘 올라온 공고 — 상자보다 조용해야 한다. 주황 없음, 헤어라인 행, 먹 제목 13.5px, 회색 메타 12.5px. */
 .today { margin-top:48px } .today .k { display:block; margin-bottom:6px }
-.today a.row { display:grid; grid-template-columns:minmax(0,1fr) 150px 64px 128px; gap:0 14px; align-items:baseline; padding:10px 0; border-top:1px solid #ececea; font-size:13.5px }
+.today a.row { display:grid; grid-template-columns:minmax(0,1fr) 150px 76px 128px; gap:0 14px; align-items:baseline; padding:10px 0; border-top:1px solid #ececea; font-size:13.5px }
 .today a.row:last-of-type { border-bottom:1px solid #ececea }
 .today .t { color:#141414; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .today a.row:hover .t { text-decoration:underline; text-underline-offset:3px }
 .today .o, .today .d { font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .today .d { text-align:right; font-variant-numeric:tabular-nums }
