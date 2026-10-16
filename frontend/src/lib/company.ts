@@ -428,7 +428,12 @@ export async function fetchBrowseCompanies(
 
   const byBiz: Record<string, { amt: number; sectors: Set<string>; cnt: number }> =
     {};
-  for (const r of (contracts as any[]) ?? []) {
+  type ContractRow = {
+    rprsnt_corp_bizrno_norm: string | null;
+    cntrct_amt: number | null;
+    bsns_div_nm: string | null;
+  };
+  for (const r of (contracts as ContractRow[] | null) ?? []) {
     const k = r.rprsnt_corp_bizrno_norm;
     if (!k) continue;
     if (!byBiz[k]) byBiz[k] = { amt: 0, sectors: new Set(), cnt: 0 };

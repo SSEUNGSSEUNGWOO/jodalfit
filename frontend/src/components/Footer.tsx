@@ -30,9 +30,9 @@ export function Footer({ className }: { className?: string }) {
           <span className="text-[13px] font-bold text-ink">서비스</span>
           <ul className="mt-3 space-y-2 text-[13.5px] text-ink-3">
             <li>
-              <a href="/notices" className="hover:text-ink transition-colors">
+              <Link href="/notices" className="hover:text-ink transition-colors">
                 공고 둘러보기
-              </a>
+              </Link>
             </li>
             <li>
               <Link href="/companies/browse/all/1" className="hover:text-ink transition-colors">

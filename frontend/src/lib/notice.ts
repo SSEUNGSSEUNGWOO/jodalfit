@@ -440,14 +440,25 @@ const PRICE_RANGES: Record<NonNullable<NoticeFilters["priceBucket"]>, [number, n
   gt50: [5_000_000_000, null],
 };
 
-function applyFilters<T>(
+/** Supabase 빌더에서 쓰는 메서드만 — 구체 타입(PostgrestFilterBuilder 의 7개 제네릭)에 묶이지 않게. */
+interface FilterChain<T> {
+  gte(column: string, value: unknown): T;
+  lte(column: string, value: unknown): T;
+  lt(column: string, value: unknown): T;
+  eq(column: string, value: unknown): T;
+  ilike(column: string, pattern: string): T;
+}
+
+interface OrderChain<T> {
+  order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }): T;
+}
+
+function applyFilters<T extends FilterChain<T>>(
   q: T,
   today: string,
   f: NoticeFilters
 ): T {
-  // chainable에 cast가 어려워 any 사용 (Supabase builder)
-  let qq = q as any;
-  qq = qq.gte("bid_clse_date", today);
+  let qq = q.gte("bid_clse_date", today);
   if (f.bsnsDiv) qq = qq.eq("bsns_div_nm", f.bsnsDiv);
   if (f.dday) {
     const max = new Date();
@@ -464,20 +475,19 @@ function applyFilters<T>(
     // 시·도 키워드 부분 일치 (예: "서울" → "서울특별시 …")
     qq = qq.ilike("prtcpt_psbl_rgn_nm", `%${f.rgn}%`);
   }
-  return qq as T;
+  return qq;
 }
 
-function orderClause<T>(q: T, sort: NoticeFilters["sort"]): T {
-  const qq = q as any;
+function orderClause<T extends OrderChain<T>>(q: T, sort: NoticeFilters["sort"]): T {
   switch (sort) {
     case "price_desc":
-      return qq.order("presmpt_prce", { ascending: false, nullsFirst: false }) as T;
+      return q.order("presmpt_prce", { ascending: false, nullsFirst: false });
     case "close":
-      return qq.order("bid_clse_date") as T;
+      return q.order("bid_clse_date");
     // 기본 신규순 — 마감 임박순이 기본이면 첫 화면이 D-1 일색이라 "늦은 공고만 있다" 인상을 줌
     case "ntce_desc":
     default:
-      return qq.order("bid_ntce_date", { ascending: false, nullsFirst: false }) as T;
+      return q.order("bid_ntce_date", { ascending: false, nullsFirst: false });
   }
 }
 
