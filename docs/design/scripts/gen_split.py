@@ -64,8 +64,14 @@ SPLIT_CSS = r"""
 .tr { padding:12px 0; align-items:start } .tr .no { padding-top:3px } .tr .t { font-size:14.5px; display:block }
 .tr .sub { display:block; margin-top:3px; font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .sub .why { color:#6b6b67 } .tr .sub .why::before { content:"·"; margin:0 6px; color:#c9c9c4 }
 .tr .d, .tr .r { padding-top:2px }
-.x { padding:16px 0 20px 40px; border-bottom:1px solid #ececea; grid-template-columns:1fr 1.2fr; gap:28px; display:none } .x.on { display:grid }
+/* 펼침 — display 토글 대신 grid-template-rows 0fr → 1fr. 높이를 모르는 내용을 부드럽게 여는 유일한 CSS 방법 */
+.x { display:grid; grid-template-rows:0fr; grid-template-columns:1fr; gap:0; padding:0 0 0 40px; border-bottom:0; opacity:0;
+     transition:grid-template-rows .4s cubic-bezier(.3,.7,.2,1), padding .4s cubic-bezier(.3,.7,.2,1), opacity .3s ease }
+.x.on { grid-template-rows:1fr; padding:16px 0 20px 40px; border-bottom:1px solid #ececea; opacity:1; transition-delay:0s, 0s, .1s }
+.x > .xi { min-height:0; overflow:hidden; display:grid; grid-template-columns:1fr 1.2fr; gap:28px }
 .x li { font-size:13px; line-height:1.6; padding:3px 0 } .x .acts { grid-column:1/-1; margin-top:0 }
+.tr .t { transition:color .15s ease } .bt { transition:background .15s ease, border-color .15s ease, color .15s ease }
+@media (prefers-reduced-motion: reduce) { .x, .tr .t, .bt { transition:none !important } }
 .fade .bk { opacity:.32; filter:blur(1.5px); pointer-events:none }
 .gateline { font-size:13.5px; flex-wrap:wrap } .gateline .in span:first-child { width:220px }
 .foot { margin-top:28px; font-size:12px; color:#737370; line-height:1.6; max-width:880px }
@@ -133,8 +139,8 @@ def trow(i, r, prof, open_=False):
     s = strongest(r); why = f'<span class="why">{esc(s["label"])}</span>' if s else ""
     return (f'<div class="tr" data-no="{esc(r["bid_ntce_no"])}"><span class="no">{i:02d}</span><span><span class="t">{esc(r["bid_ntce_nm"])}</span><span class="sub">{esc(org)}{why}</span></span>'
             f'<span class="r d {"hot" if n <= 7 else ""}">D-{n}<small>{dd.month}.{dd.day:02d}</small></span><span class="r">{won(r.get("presmpt_prce"))}</span></div>'
-            f'<div class="x {"on" if open_ else ""}"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
-            f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div>')
+            f'<div class="x {"on" if open_ else ""}"><div class="xi"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
+            f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div>')
 
 
 def gate(n):

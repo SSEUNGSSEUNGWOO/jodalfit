@@ -35,7 +35,14 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 .mh .k b { font-size:14px }
 .tr { padding:16px 0 } .tr .t { font-size:16px; font-weight:600 } .tr .sub { font-size:13.5px; color:#4a4a46; margin-top:4px } .tr .sub .why { color:#6b6b67 }
 .tr .d, .tr .r { font-size:15px } .tr .d small { font-size:12.5px }
-.x { padding:20px 0 24px 40px; gap:32px } .x .k { margin-bottom:8px } .x li { font-size:14px; line-height:1.7; padding:4px 0 }
+.x.on { padding:20px 0 24px 40px } .x > .xi { gap:32px } .x .k { margin-bottom:8px } .x li { font-size:14px; line-height:1.7; padding:4px 0 }
+/* 이펙트(승우님 "부드럽게") — 한 곡선(.3,.7,.2,1)으로. 본문은 투명도만이 아니라 10px 떠오르고, 경로 줄은 height:auto 점프 대신 grid 행 0fr → 1fr, 검토 괘선은 위에서 아래로 그어진다 */
+.res { transform:translateY(10px); transition:opacity .5s ease .2s, transform .55s cubic-bezier(.3,.7,.2,1) .2s } .done .res { transform:none }
+.chain { display:grid; grid-template-columns:1fr auto; grid-template-rows:0fr; align-items:start; transition:grid-template-rows .45s cubic-bezier(.3,.7,.2,1), opacity .4s ease .15s, padding .45s cubic-bezier(.3,.7,.2,1) }
+.chain > * { min-height:0 } .done .chain { grid-template-rows:1fr; height:auto }
+.tr::before { content:""; position:absolute; left:-16px; top:0; bottom:0; width:2px; background:#f97316; transform:scaleY(0); transform-origin:top; transition:transform .3s cubic-bezier(.3,.7,.2,1) }
+.tr.rvd::before { transform:scaleY(1) }
+@media (prefers-reduced-motion: reduce) { .res, .chain, .tr::before { transition:none !important } }
 .gateline { font-size:14.5px; padding:24px 0 } .gateline .dim { font-size:13.5px }
 .zero b { font-size:18px } .zero .dim { font-size:14px } .okline { font-size:14px }
 @media screen and (max-width:720px){ .tr .t { font-size:15px } .tr .sub { font-size:13px } .side { font-size:13.5px } }
@@ -47,12 +54,12 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 .okline { padding:13px 0 } .st-email .fade .tr { cursor:pointer }
 .rvn { padding-left:40px } .tr.rvd::before { left:-16px }
 @media screen and (max-width:720px){
-  .head h1 { font-size:20px } .chain { flex-direction:column; gap:10px } .chain .k { display:none } .chain b { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
+  .head h1 { font-size:20px } .chain { grid-template-columns:1fr; grid-template-rows:0fr 0fr; gap:10px 0 } .done .chain { grid-template-rows:1fr 1fr } .chain .k { display:none } .chain b { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
   /* flow 의 390 표 규칙(.org/.why 열)은 두 줄 표에 안 맞는다 — 제목 묶음 + 마감만 */
   .tr { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:none; gap:0 12px; padding:12px 0 } .tr .no, .tr .r:not(.d) { display:none } .tr .t { white-space:normal; font-size:14px }
   .tr .d { grid-area:auto }                 /* flow 의 grid-area:d 는 areas 가 없으면 새 줄로 밀린다 */
   .tr .sub { white-space:normal } .tr .sub .why { display:inline }   /* flow 의 .tr .why{display:none} 은 열용 — 둘째 줄 칩은 보인다 */
-  .x { padding-left:0 } .rvn { padding-left:0 } .tr.rvd::before { left:-16px }
+  .x, .x.on { padding-left:0 } .rvn { padding-left:0 } .tr.rvd::before { left:-16px }
 }
 """
 
