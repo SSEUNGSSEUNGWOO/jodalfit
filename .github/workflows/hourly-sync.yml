@@ -64,10 +64,11 @@ jobs:
         run: uv run python -m jobs.ingest_bid_notices --days-back 1
         continue-on-error: true
 
-      # 물품 통로(0047/0048) 재료 — 표준 API 에는 물품분류번호가 없어 상세 API 로 물품 공고만 한 번 더 긁는다.
-      # 2일 창: 정정 차수가 늦게 붙는 경우를 덮는다. 2차 패스가 UPDATE 라 멱등.
-      - name: 물품 공고 상세 필드 (분류번호·사전규격 번호·자격등록 마감, 최근 2일)
-        run: uv run python -m jobs.ingest_bid_notices_full --since "$(date -u -d '2 days ago' +%F)" --div 물품 --fill
+      # 상세 API 에만 오는 필드(0047/0051: 물품분류번호·사전규격 번호·자격등록 마감·공동수급·발주계획 번호)를
+      # 표준 API 로 들어온 행에 채운다. 2026-10-16 까지 물품만 긁어 0049(자격등록 마감 제외)와 사전규격·발주계획
+      # 연결이 물품에만 작동했다 — 네 구분 전부로. 2일 창: 정정 차수가 늦게 붙는 경우를 덮는다. 2차 패스가 UPDATE 라 멱등.
+      - name: 공고 상세 필드 — 물품·용역·공사·외자 (분류번호·사전규격·자격등록 마감·발주계획 번호, 최근 2일)
+        run: uv run python -m jobs.ingest_bid_notices_full --since "$(date -u -d '2 days ago' +%F)" --fill
         continue-on-error: true
 
       - name: 첨부 목록 수집 (최근 24h)
