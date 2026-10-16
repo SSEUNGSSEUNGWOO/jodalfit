@@ -15,8 +15,9 @@ from pathlib import Path
 sys.path.insert(0, __file__.rsplit("\\", 1)[0] if "\\" in __file__ else __file__.rsplit("/", 1)[0])
 from gen_results import TODAY, esc, won, dleft  # noqa: E402
 from gen_results_v3 import FONT, SHEET_CSS  # noqa: E402
+from gen_results_v2 import strongest  # noqa: E402
 from gen_flow import ORANGE, nav, why_lines, qual_lines  # noqa: E402
-from gen_report import qual_line  # noqa: E402
+from gen_report import qual_line, LABELS  # noqa: E402
 
 CSS = SHEET_CSS.replace("#e8431b", ORANGE) + r"""
 .wrap { width:auto; max-width:1120px; margin:0 auto; padding:0 20px 120px }
@@ -24,12 +25,16 @@ CSS = SHEET_CSS.replace("#e8431b", ORANGE) + r"""
 .ok::after { color:#141414 }
 /* 머리 — 회사 이름 + 한 줄 + 걸러낸 경로. 전체 폭 */
 .head { padding:26px 0 18px; border-bottom:1px solid #141414 }
-.head h1 { margin:0; font-size:24px; letter-spacing:-0.03em; font-weight:650; line-height:1.2 }
+.head h1 { margin:0; font-size:24px; letter-spacing:-0.03em; font-weight:650; line-height:1.2 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
 .head .meta { margin-top:6px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
-.chain { display:flex; align-items:baseline; flex-wrap:wrap; gap:10px; padding:14px 0 0; font-size:13px; color:#737370 }
-.chain b { font-size:17px; font-weight:650; color:#141414; letter-spacing:-0.02em } .chain b.acc { color:#f97316 } .chain i { font-style:normal; color:#c9c9c4 }
+.sum { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-top:16px }
+.chain { display:flex; align-items:flex-start; gap:12px; font-size:13px; color:#737370 } .chain .k { padding-top:3px; margin-right:4px }
+.chain .n { font-size:20px; font-weight:650; color:#141414; letter-spacing:-0.02em; line-height:1.15 } .chain .n.acc { color:#f97316 } .chain .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:4px }
+.chain .l { font-size:11.5px; color:#737370; margin-top:3px; line-height:1.3 } .chain i { font-style:normal; color:#c9c9c4; font-size:16px; padding-top:2px }
+.tabs { text-align:right; font-size:13px; color:#55554f; line-height:1.9 } .tabs b { color:#141414; font-weight:650; border-bottom:1px solid #141414; padding-bottom:1px } .tabs span + span::before, .tabs b + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.tabs .due .d { font-weight:650; color:#141414 } .tabs .due .d.hot { color:#f97316 }
 /* 두 단 */
-.cols { display:grid; grid-template-columns:280px minmax(0,1fr); gap:0 48px; align-items:start }
+.cols { display:grid; grid-template-columns:240px minmax(0,1fr); gap:0 44px; align-items:start }
 .side { position:sticky; top:0; padding:22px 0 20px; font-size:13px }
 .side summary { list-style:none; cursor:default } .side summary::-webkit-details-marker { display:none }
 .side summary .k { display:block } .side summary .h { display:none }
@@ -54,10 +59,12 @@ CSS = SHEET_CSS.replace("#e8431b", ORANGE) + r"""
 .bk .q b, .bk .w b { font-weight:650; font-size:12.5px; color:#141414 }
 .bk .acts { display:flex; gap:14px; align-items:center; margin-top:10px; font-size:12.5px } .bk .acts a.u { color:#55554f; border-bottom:1px solid #d8d6d0 }
 .bt.rv { border-color:#f97316; height:30px; padding:0 12px; font-size:12.5px }
-/* 표 — 번호·공고·기관·마감·추정가 다섯 열. 근거·적합은 펼침으로 */
-.th, .tr { grid-template-columns:28px minmax(0,1fr) 170px 84px 72px; gap:0 12px }
-.tr { padding:13px 0 } .tr .t { font-size:14.5px } .tr .org { font-size:12.5px }
-.x { padding:16px 0 20px 40px; grid-template-columns:1fr 1.2fr; gap:28px; display:none } .x.on { display:grid }
+/* 표 — 번호·공고(2줄: 제목 / 기관 · 근거)·마감·추정가. 근거는 열이 아니라 제목 아래 둘째 줄 — 폭을 안 쓰고 늘 보인다 */
+.th, .tr { grid-template-columns:28px minmax(0,1fr) 84px 72px; gap:0 12px }
+.tr { padding:12px 0; align-items:start } .tr .no { padding-top:3px } .tr .t { font-size:14.5px; display:block }
+.tr .sub { display:block; margin-top:3px; font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .sub .why { color:#6b6b67 } .tr .sub .why::before { content:"·"; margin:0 6px; color:#c9c9c4 }
+.tr .d, .tr .r { padding-top:2px }
+.x { padding:16px 0 20px 40px; border-bottom:1px solid #ececea; grid-template-columns:1fr 1.2fr; gap:28px; display:none } .x.on { display:grid }
 .x li { font-size:13px; line-height:1.6; padding:3px 0 } .x .acts { grid-column:1/-1; margin-top:0 }
 .fade .bk { opacity:.32; filter:blur(1.5px); pointer-events:none }
 .gateline { font-size:13.5px; flex-wrap:wrap } .gateline .in span:first-child { width:220px }
@@ -65,7 +72,8 @@ CSS = SHEET_CSS.replace("#e8431b", ORANGE) + r"""
 /* 390 — 한 단. 회사 정보는 접힌 한 줄, 공고는 블록만 */
 @media screen and (max-width:720px){
   .wrap { padding:0 16px 90px } .nav .links span:not(.cta) { display:none }
-  .head h1 { font-size:20px } .chain { font-size:12px; gap:7px } .chain b { font-size:15px }
+  .head h1 { font-size:20px } .head h1 small { display:block; margin:4px 0 0 } .sum { flex-direction:column; align-items:flex-start; gap:10px }
+  .chain { gap:8px } .chain .k { display:none } .chain .n { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
   .cols { grid-template-columns:1fr } .side { position:static; padding:14px 0; border-bottom:1px solid #ececea }
   .side summary { cursor:pointer; display:flex; justify-content:space-between; align-items:center } .side summary .h { display:inline; font-size:12.5px; color:#55554f; border-bottom:1px solid #d8d6d0 }
   .side[open] summary .h.o, .side:not([open]) summary .h.c { display:none }
@@ -121,7 +129,8 @@ def trow(i, r, prof, open_=False):
     org = r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or ""
     n, dd = dleft(r["bid_clse_date"])
     ql = "".join(f'<li class="{c}">{t}</li>' for c, t in qual_lines(r, prof)); wl = "".join(f"<li>{w}</li>" for w in why_lines(r, org))
-    return (f'<div class="tr"><span class="no">{i:02d}</span><span class="t">{esc(r["bid_ntce_nm"])}</span><span class="org">{esc(org)}</span>'
+    s = strongest(r); why = f'<span class="why">{esc(s["label"])}</span>' if s else ""
+    return (f'<div class="tr"><span class="no">{i:02d}</span><span><span class="t">{esc(r["bid_ntce_nm"])}</span><span class="sub">{esc(org)}{why}</span></span>'
             f'<span class="r d {"hot" if n <= 7 else ""}">D-{n}<small>{dd.month}.{dd.day:02d}</small></span><span class="r">{won(r.get("presmpt_prce"))}</span></div>'
             f'<div class="x {"on" if open_ else ""}"><div><span class="k">참가 자격</span><ul>{ql}</ul></div><div><span class="k">추천 근거</span><ul>{wl}</ul></div>'
             f'<div class="acts"><a class="bt dark" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div>')
@@ -137,13 +146,20 @@ def page(d, prof, f):
     n_ind = len(prof["industries"][0] + prof["industries"][1])
     bks = [block(i, r, prof) for i, r in enumerate(res, 1)]
     trs = [trow(i, r, prof, i == 1) for i, r in enumerate(res, 1)]
+    vals = [f'{f["total"]:,}', str(f["industry"]), str(f["qualified"]), str(len(res))]
+    chain = "".join(f'<div><div class="n {"acc" if k == 3 else ""}">{v}{"<small>건</small>" if k == 3 else ""}</div><div class="l">{l}</div></div>' + ("<i>→</i>" if k < 3 else "")
+                    for k, (v, l) in enumerate(zip(vals, LABELS)))
+    dues = sorted(dleft(r["bid_clse_date"]) for r in res); wk = sum(1 for n, _ in dues if n <= 7); n0, d0 = dues[0]
+    tabs = (f'<div class="tabs"><div><b>공고 {len(res)}</b><span>사전규격 {len(d["pre_spec_results"])}</span><span>발주계획 {len(d["order_plan_results"])}</span></div>'
+            f'<div class="due">이번 주 마감 {wk}건 · 가장 빠른 마감 <span class="d {"hot" if n0 <= 7 else ""}">D-{n0}</span> ({d0.month}.{d0.day:02d})</div></div>')
     body = (f'<div class="wrap">{nav()}'
-            f'<div class="head"><h1>{esc(co["corp_nm"])}</h1><div class="meta"><span>{esc(co["rgn_nm"])}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div>'
-            f'<div class="chain"><span class="k">걸러낸 경로</span><b>{f["total"]:,}</b><i>→</i><b>{f["industry"]}</b><i>→</i><b>{f["qualified"]}</b><i>→</i><b class="acc">{len(res)}</b><span>건</span></div></div>'
+            f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small></h1>'
+            f'<div class="meta"><span>{esc(co["rgn_nm"])}</span><span>등록업종 {n_ind}</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div>'
+            f'<div class="sum"><div class="chain"><span class="k">걸러낸 경로</span>{chain}</div>{tabs}</div></div>'
             f'<div class="cols">{side(co, prof)}<div class="main">'
             f'<div class="mh"><span class="k"><b>검토할 공고 {len(res)}건</b>적합 순</span><div class="sw"><span class="on" data-v="block">블록</span><span data-v="table">표</span></div></div>'
             f'<div class="v-block">{"".join(bks[:5])}{gate(len(res))}<div class="fade">{"".join(bks[5:])}</div></div>'
-            f'<div class="v-table"><div class="th"><span>#</span><span>공고</span><span>발주기관</span><span class="r">마감</span><span class="r">추정가</span></div>'
+            f'<div class="v-table"><div class="th"><span>#</span><span>공고 · 발주기관 · 근거</span><span class="r">마감</span><span class="r">추정가</span></div>'
             f'{"".join(trs[:5])}{gate(len(res))}<div class="fade">{"".join(trs[5:])}</div></div>'
             f'</div></div>'
             f'<div class="foot">두 단 시안 — 왼쪽 회사 정보(기준 띠를 세로로, 스크롤해도 고정) / 오른쪽 공고. 게이트는 5건 바로 뒤, 흐린 7건은 그 아래(flow 는 흐림 뒤에 게이트 — 블록은 흐림이 1,000px 라 순서를 바꿨다). 스위치로 블록(자격·근거 상시) / 표(1줄, 행 클릭 펼침)를 비교. '
@@ -162,9 +178,9 @@ def check(path):
         b = pw.chromium.launch(executable_path=str(exe) if exe else None)
         pg = b.new_page(viewport={"width": 1280, "height": 900}); pg.goto(p.as_uri()); pg.wait_for_load_state("networkidle")
         s = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { bk: document.querySelectorAll('.bk').length, tr: document.querySelectorAll('.v-table .tr').length,
-            sticky: cs(document.querySelector('.side')).position, tbl: cs(document.querySelector('.v-table')).display, acc: cs(document.querySelector('.chain .acc')).color,
+            sticky: cs(document.querySelector('.side')).position, tbl: cs(document.querySelector('.v-table')).display, acc: cs(document.querySelector('.chain .n.acc')).color, labs: document.querySelectorAll('.chain .l').length, subs: document.querySelectorAll('.v-table .tr .sub .why').length,
             sideW: document.querySelector('.side').getBoundingClientRect().width, mainW: document.querySelector('.main').getBoundingClientRect().width } }""")
-        assert s["bk"] == 12 and s["tr"] == 12 and s["sticky"] == "sticky" and s["tbl"] == "none" and s["acc"] == "rgb(249, 115, 22)", s
+        assert s["bk"] == 12 and s["tr"] == 12 and s["sticky"] == "sticky" and s["tbl"] == "none" and s["acc"] == "rgb(249, 115, 22)" and s["labs"] == 4 and s["subs"] >= 10, s
         pg.screenshot(path=str(out / "_shot_split_block.png"), full_page=True)
         pg.click('.sw [data-v="table"]'); pg.wait_for_timeout(100)
         t = pg.evaluate("""() => ({ blk: getComputedStyle(document.querySelector('.v-block')).display, open: document.querySelectorAll('.x.on').length })""")
