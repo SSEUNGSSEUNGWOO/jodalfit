@@ -9,14 +9,32 @@
 """
 import json
 import sys
+from datetime import date
 
 sys.path.insert(0, __file__.rsplit("\\", 1)[0] if "\\" in __file__ else __file__.rsplit("/", 1)[0])
 from gen_entry import COLLISIONS, ctl, fetch, foot  # noqa: E402
+from gen_results import esc  # noqa: E402
 from gen_results_v3 import FONT, SHEET_CSS  # noqa: E402
 from gen_results_v4 import nav  # noqa: E402
 from jobs.evaluate_recommender import connect  # noqa: E402
 
-# 주황이 쓰이는 곳(전부 선): 로고 점 · 상자 테두리 · 포커스 링(18%) · 찾기 글씨 · 일치 글자 밑줄 · 키워드 행 점 · 고른 행 왼쪽 괘선 · 최근 칩 hover 테두리 · 390px 화살표
+
+def fetch_today(conn):
+    """오늘 올라온 공고 중 추정가 큰 5건. 오전 이른 시간엔 오늘 수집분이 얇아(수집 05:00·12:30) 50건 미만이면 어제로 간다."""
+    for label, day in (("오늘", "current_date"), ("어제", "current_date - 1")):
+        n = conn.execute(f"select count(*) from bid_notices where bid_ntce_date = {day}").fetchone()[0]
+        if n >= 50 or label == "어제":
+            rows = conn.execute(f"""select distinct on (bid_ntce_no) bid_ntce_no, bid_ntce_nm, ntce_instt_nm, bid_clse_date, presmpt_prce
+                from bid_notices where bid_ntce_date = {day} order by bid_ntce_no, bid_ntce_ord desc""").fetchall()
+            rows.sort(key=lambda r: -(r[4] or 0))
+            return dict(label=label, n=n, rows=[dict(no=a, nm=b, org=c, clse=d, prc=e) for a, b, c, d, e in rows[:5]])
+
+# ponytail: 둘째 블록 "이번 주 가장 많은 회사에 추천된 공고"는 만들지 않는다 —
+#   notice_events(source='user', 7d) impressions 를 bid_ntce_no 로 묶어 count(distinct target_bizrno) 가 '인기' 신호인데,
+#   오늘 사용자 클릭이 7일 139건이라 너무 얇다. 일일 사용자가 수백이 되면 그때 켠다.
+
+
+# 주황이 쓰이는 곳(전부 선): 로고 점 · 상자 테두리 · 포커스 링(18%) · 찾기 밑줄 2px · 일치 글자 밑줄 · 키워드 행 점 · 고른 행 왼쪽 괘선 · 최근 칩 hover 테두리 · 390px 화살표
 CSS = SHEET_CSS + r"""
 .brand i { background:#f97316 } .acc { color:#f97316 }
 .wrap { min-height:100vh; display:flex; flex-direction:column }
@@ -30,8 +48,10 @@ CSS = SHEET_CSS + r"""
 .box:focus-within { box-shadow:0 0 0 4px rgba(249,115,22,.18) }
 .box input { flex:1; min-width:0; border:0; background:transparent; padding:16px 18px; font:inherit; font-size:20px; letter-spacing:-0.02em; font-weight:500; color:#141414; outline:none }
 .box input::placeholder { color:#8f8f8b; font-weight:450 }
-.box .go { border:0; border-left:1px solid #ececea; background:#fff; color:#f97316; font:inherit; font-size:15px; font-weight:650; padding:0 20px; cursor:pointer; border-radius:0 4px 4px 0 }
-.box .go:hover .t, .box .go:focus-visible .t { text-decoration:underline; text-underline-offset:3px }
+/* 찾기 — 글자는 먹(주황/흰 2.8:1 이라 글자로는 못 쓴다), 주황은 밑줄 2px. hover/focus 는 밑줄이 3px 로. */
+.box .go { border:0; border-left:1px solid #ececea; background:#fff; color:#141414; font:inherit; font-size:15px; font-weight:650; padding:0 20px; cursor:pointer; border-radius:0 4px 4px 0 }
+.box .go .t, .box .go .ar { border-bottom:2px solid #f97316; padding-bottom:1px }
+.box .go:hover .t, .box .go:focus-visible .t, .box .go:hover .ar, .box .go:focus-visible .ar { border-bottom-width:3px; padding-bottom:0 }
 .box .go:focus-visible { outline:2px solid #f97316; outline-offset:-2px }
 .box .go .ar { display:none }
 .pr { margin:12px 0 0; font-size:13.5px; color:#55554f; line-height:1.6 } .pr b { font-weight:600; font-variant-numeric:tabular-nums }
@@ -53,6 +73,14 @@ CSS = SHEET_CSS + r"""
 .ls .hd.first { padding-top:6px }
 .ls .more { padding:10px 0 0; font-size:12.5px; color:#6b6b67 }
 .ls .miss { padding:16px 0 4px; font-size:13.5px; color:#55554f; line-height:1.6 } .ls .miss b { color:#141414; font-weight:600 }
+/* 오늘 올라온 공고 — 상자보다 조용해야 한다. 주황 없음, 헤어라인 행, 먹 제목 13.5px, 회색 메타 12.5px. */
+.today { margin-top:48px } .today .k { display:block; margin-bottom:6px }
+.today a.row { display:grid; grid-template-columns:minmax(0,1fr) 150px 64px 128px; gap:0 14px; align-items:baseline; padding:10px 0; border-top:1px solid #ececea; font-size:13.5px }
+.today a.row:last-of-type { border-bottom:1px solid #ececea }
+.today .t { color:#141414; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .today a.row:hover .t { text-decoration:underline; text-underline-offset:3px }
+.today .o, .today .d { font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .today .d { text-align:right; font-variant-numeric:tabular-nums }
+.today .w { font-size:12.5px; color:#55554f; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap } .today .w.none { color:#8f8f8b }
+.today .all { display:inline-block; margin-top:10px; font-size:13px; color:#141414 } .today .all:hover, .today .all:focus-visible { text-decoration:underline; text-underline-offset:3px }
 .sent { margin-top:14px; font-size:13px; color:#55554f } .sent:empty { display:none }
 .foot { margin-top:auto; padding:40px 0 70px; font-size:12.5px; color:#6b6b67; line-height:1.7; max-width:880px } .foot b { color:#141414; font-weight:600 }
 @media (max-width:640px) {
@@ -62,6 +90,7 @@ CSS = SHEET_CSS + r"""
   .ls li { grid-template-columns:minmax(0,1fr) 96px; grid-template-areas:"nm nc" "rg rg" "rp bz"; gap:3px 10px; padding:11px 8px } .ls li .bz { white-space:nowrap }
   .ls li .nm { grid-area:nm } .ls li .rg { grid-area:rg } .ls li .rp { grid-area:rp } .ls li .nc { grid-area:nc } .ls li .bz { grid-area:bz }
   .ls li.kw .rg { grid-column:auto } .ls li.kw .bz, .ls li.kw .rp, .ls li.kw .nc { display:none }
+  .today a.row { grid-template-columns:minmax(0,1fr) 64px; grid-template-areas:"t t" "o d"; gap:3px 10px } .today .t { grid-area:t } .today .o { grid-area:o } .today .d { grid-area:d } .today .w { display:none }
 }
 @media (prefers-reduced-motion: reduce) { .box, .rc a { transition:none } }
 """
@@ -175,6 +204,18 @@ state(recent().length ? 'return' : 'empty');
 """
 
 
+def clse(d):
+    """올해면 M.DD, 아니면 YYYY.M.DD — 2037 마감 같은 장기 단가계약이 실제로 있다."""
+    return f"{d.month}.{d.day:02d}" if d.year == date.today().year else f"{d.year}.{d.month}.{d.day:02d}"
+
+
+def today(t):
+    rows = "".join(f'<a class="row" href="/notices/{esc(r["no"])}"><span class="t">{esc(r["nm"])}</span><span class="o">{esc(r["org"])}</span>'
+                   f'<span class="d">마감 {clse(r["clse"])}</span>'
+                   f'<span class="w {"" if r["prc"] else "none"}">{f"{int(r["prc"]):,}원" if r["prc"] else "추정가 없음"}</span></a>' for r in t["rows"])
+    return f'<div class="today"><span class="k">{t["label"]} 올라온 공고 {t["n"]:,}건</span>{rows}<a class="all" href="/notices">전체 보기 →</a></div>'
+
+
 def page(d):
     data = dict(groups=d["groups"], counts=d["counts"], active=d["active"], ret=d["ret"], typing=COLLISIONS[0])
     body = (f'<div class="entry"><div class="box"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="회사명 · 사업자번호 · 하는 일" '
@@ -182,7 +223,7 @@ def page(d):
             f'<button type="button" class="go" id="go" aria-label="찾기"><span class="t">찾기</span><span class="ar" aria-hidden="true">→</span></button></div>'
             f'<ul id="ls" role="listbox" class="ls" hidden aria-label="회사 또는 키워드"></ul><div id="live" class="sr" aria-live="polite"></div>'
             f'<p class="pr">지금 입찰 가능한 공고 <b>{d["active"]:,}</b>건 · 회사명이나 하는 일을 넣으면 낼 수 있는 것만 남습니다</p>'
-            f'<div class="rc" id="rc"></div><div class="sent" id="sent"></div></div>')
+            f'<div class="rc" id="rc"></div><div class="sent" id="sent"></div>{today(d["today"])}</div>')
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>조달핏 입구 — 검색창 하나</title>{FONT}<style>{CSS}</style></head><body>'
             f'<div class="wrap">{nav()}{body}{foot(d)}</div>{ctl()}'
@@ -191,8 +232,9 @@ def page(d):
 
 if __name__ == "__main__":
     out = sys.argv[1].rstrip("/\\")
-    d = fetch(connect())
+    conn = connect()
+    d = fetch(conn); d["today"] = fetch_today(conn)
     with open(f"{out}/entry-simple.html", "w", encoding="utf-8") as f:
         f.write(page(d))
     lg = d["log"]
-    print(f'active={d["active"]:,}  7d user searches={lg["tot"]} unresolved={lg["miss"]} ({lg["miss"] / lg["tot"] * 100:.1f}%)')
+    print(f'active={d["active"]:,}  7d user searches={lg["tot"]} unresolved={lg["miss"]} ({lg["miss"] / lg["tot"] * 100:.1f}%)  {d["today"]["label"]} {d["today"]["n"]} rows={len(d["today"]["rows"])}')
