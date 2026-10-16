@@ -7,6 +7,28 @@ v1의 소프트 감점(-0.30)과 달리 미충족 공고는 후보에서 제외�
 
 from __future__ import annotations
 
+# 행정구역 개편 전 이름이 양쪽(companies.rgn_nm, bid_rgn_limits)에 섞여 있다 — 비교 전에 현재 이름으로
+_SIDO_ALIAS = {
+    "전라남도": "전남광주통합특별시",
+    "광주광역시": "전남광주통합특별시",
+    "전라북도": "전북특별자치도",
+    "강원도": "강원특별자치도",
+}
+
+
+def _rgn_tokens(s: str) -> list[str]:
+    t = s.split()
+    if t:
+        t[0] = _SIDO_ALIAS.get(t[0], t[0])
+    return t
+
+
+def region_allows(allowed: str, company_rgn: str) -> bool:
+    """제한 지역이 적은 단위까지만 비교한다 — '경상남도' 는 시·도, '경상남도 창원시' 는 시·군, '부산광역시 중구' 는 자치구.
+    진행 중 지역 제한 공고의 42% 가 시·도보다 좁다(2026-10-16 실측). 옛 코드는 시·도만 비교해 김해 회사가 창원시 제한을 통과했다."""
+    a, c = _rgn_tokens(allowed), _rgn_tokens(company_rgn)
+    return bool(a) and c[: len(a)] == a
+
 
 def check_qualifications(
     company_industry_names: set[str],
@@ -58,7 +80,6 @@ def check_qualifications(
         unverified = True
         reasons.append("지역 확인불가")
     else:
-        company_sido = company_rgn.split()[0]
         allowed = [
             (lim.get("prtcpt_psbl_rgn_nm") or "").strip()
             for lim in regions
@@ -66,7 +87,7 @@ def check_qualifications(
         ]
         if not allowed:
             reasons.append("지역 제한 없음")
-        elif any(a.split()[0] == company_sido or company_sido in a for a in allowed):
+        elif any(region_allows(a, company_rgn) for a in allowed):
             reasons.append("지역 자격 충족")
         else:
             failures.append(f"지역 미충족({allowed[0]}{' 외' if len(allowed) > 1 else ''})")
@@ -77,3 +98,17 @@ def check_qualifications(
         "reasons": reasons,
         "failures": failures,
     }
+
+
+if __name__ == "__main__":   # uv run python -m app.recommender.qualifications
+    assert region_allows("경상남도", "경상남도 김해시 삼정동")
+    assert region_allows("경상남도 창원시", "경상남도 창원시 마산합포구")
+    assert not region_allows("경상남도 창원시", "경상남도 김해시 삼정동")          # 옛 코드가 통과시키던 것
+    assert region_allows("부산광역시 중구", "부산광역시 중구 중앙동") and not region_allows("부산광역시 중구", "부산광역시 동구 초량동")
+    assert region_allows("전남광주통합특별시 목포시", "전라남도 목포시 산정동")     # 개편 전 이름
+    assert region_allows("광주광역시", "전남광주통합특별시 동구") and not region_allows("", "경기도")
+    r = check_qualifications({"x"}, "경상남도 김해시", [], [{"prtcpt_psbl_rgn_nm": "경상남도 창원시"}, {"prtcpt_psbl_rgn_nm": "경상남도 김해시"}])
+    assert r["passed"] and r["reasons"] == ["면허 제한 없음", "지역 자격 충족"], r
+    r = check_qualifications({"x"}, "경상남도 김해시", [], [{"prtcpt_psbl_rgn_nm": "경상남도 창원시"}])
+    assert not r["passed"] and r["failures"] == ["지역 미충족(경상남도 창원시)"], r
+    print("ok")
