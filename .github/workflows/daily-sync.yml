@@ -107,6 +107,11 @@ jobs:
         run: uv run python -m jobs.purge_expired_documents
         continue-on-error: true
 
+      # continue-on-error 없음 — 위 스텝들이 전부 초록인 이유가 continue-on-error 다. 조용히 0건·1초 만에 끝난
+      # 잡(2026-10 두 번)은 여기서 빨간색이 된다. 규칙은 jobs/check_ingest_health.py 머리에.
+      - name: 수집 잡 건강 점검 (실패·성공인데 0건·너무 빨리 끝남·48시간 누락)
+        run: uv run python -m jobs.check_ingest_health
+
   enrich-companies:
     # 매일 회사 마스터 풍부화 — 1,500개/일 (UsrInfoService02 엔드포인트별 일 10k 한도 내)
     # 주의: 기존 주 1회 조건(schedule == '0 20 * * 0')은 등록 cron이 '0 20 * * *'뿐이라

@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Iterator
 
 import httpx
@@ -200,7 +200,9 @@ def log_ingest_finish(
     client.table("ingest_runs").update(
         {
             "status": status,
-            "finished_at": datetime.now().isoformat(),
+            # UTC 로 명시 — naive now() 는 러너(UTC)에선 맞지만 로컬 PC 에선 KST 를 UTC 로 적어
+            # 소요 시간이 9시간 길게 남았다(check_ingest_health 가 소요 시간을 본다, 2026-10-16).
+            "finished_at": datetime.now(timezone.utc).isoformat(),
             "rows_inserted": rows_inserted,
             "rows_updated": rows_updated,
             "rows_failed": rows_failed,
