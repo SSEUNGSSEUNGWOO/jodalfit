@@ -43,6 +43,14 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 .tr::before { content:""; position:absolute; left:-16px; top:0; bottom:0; width:2px; background:#f97316; transform:scaleY(0); transform-origin:top; transition:transform .3s cubic-bezier(.3,.7,.2,1) }
 .tr.rvd::before { transform:scaleY(1) }
 @media (prefers-reduced-motion: reduce) { .res, .chain, .tr::before { transition:none !important } }
+/* 판(승우님 "밋밋하다") — 장식이 아니라 바닥과 크기. 따뜻한 회색 바닥 위에 머리·캔버스, 결과는 흰 판 하나. 먹 괘선은 머리 아래 하나만. 회사 이름 32 / 경로 숫자 28 / 마지막 12 는 34 */
+.v-panel, .v-panel body { background:#faf9f7 }
+.v-panel .head h1 { font-size:32px; letter-spacing:-0.035em } .v-panel .chain b { font-size:28px } .v-panel .chain b.acc { font-size:34px } .v-panel .chain .l { font-size:12.5px }
+.v-panel .ttl { background:#faf9f7 }
+.v-panel .res .cols { background:#fff; border:1px solid #e6e4df; border-radius:14px; padding:6px 28px 28px; margin-top:22px }
+.v-panel .side { top:0 } .v-panel .mh, .v-panel .th, .v-panel .gateline, .v-panel .side .act { border-color:#e6e4df }
+.v-panel .err { border-top-color:#e6e4df } .v-panel .ctl { background:#fff }
+@media screen and (max-width:720px){ .v-panel .head h1 { font-size:24px } .v-panel .chain b { font-size:20px } .v-panel .chain b.acc { font-size:24px } .v-panel .res .cols { padding:0 16px 20px; border-radius:12px } .v-panel .tr.rvd::before, .v-panel .tr::before { left:-10px } }
 .gateline { font-size:14.5px; padding:24px 0 } .gateline .dim { font-size:13.5px }
 .zero b { font-size:18px } .zero .dim { font-size:14px } .okline { font-size:14px }
 @media screen and (max-width:720px){ .tr .t { font-size:15px } .tr .sub { font-size:13px } .side { font-size:13.5px } }
@@ -67,6 +75,8 @@ CSS = FLOW_CSS + SPLIT_CSS + r"""
 JS_EXTRA = r"""
 document.querySelectorAll('.sheet .tr').forEach(t => t.addEventListener('click', () => t.nextElementSibling.classList.toggle('on')));
 if (matchMedia('(max-width:720px)').matches) document.querySelector('details.side').open = false;
+document.querySelectorAll('.ctl [data-skin]').forEach(s => s.onclick = () => { document.documentElement.classList.toggle('v-panel', s.dataset.skin === 'panel');
+  document.querySelectorAll('.ctl [data-skin]').forEach(x => x.classList.toggle('on', x === s)); });
 """
 
 
@@ -101,9 +111,9 @@ def page(d, prof, f, titles):
             f'<div class="foot">결과 페이지 최종 시안 — flow 의 머리 장면(계산 대기 가림막)·네 상태 + split 의 두 단 표형. 화면은 표, 메일·인쇄는 블록(report.html). '
             f'게이트는 5건 바로 뒤. 0건은 오른쪽 단만 비고 왼쪽 회사 정보가 이유. 숫자·공고명은 {TODAY.isoformat()} 실제 추천 결과(data/).</div></div>'
             f'<div class="ctl"><span data-run="full">처음 방문</span><span data-run="fast">재방문</span><span data-run="still">움직임 줄이기</span><i></i>'
-            f'<span data-st="zero">0건</span><span data-st="err">오류·지연</span><span data-st="email">이메일 뒤</span><span data-st="reviewed">검토 뒤</span></div>'
+            f'<span data-st="zero">0건</span><span data-st="err">오류·지연</span><span data-st="email">이메일 뒤</span><span data-st="reviewed">검토 뒤</span><i></i><span data-skin="panel" class="on">판</span><span data-skin="flat">평면</span></div>'
             f'<script type="application/json" id="cfg">{json.dumps(c)}</script>')
-    return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>조달핏 결과</title>{FONT}'
+    return (f'<!doctype html><html lang="ko" class="v-panel"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>조달핏 결과</title>{FONT}'
             f'<style>{CSS}</style></head><body>{body}<script>{JS}{JS_EXTRA}</script></body></html>')
 
 
@@ -126,6 +136,12 @@ def check(path):
             acc: cs(document.querySelector('.chain b.acc')).color, res: cs(document.querySelector('.res')).opacity } }""")
         assert s["done"] and s["tr"] == 12 and s["sticky"] == "sticky" and s["labs"] == 4 and s["nums"] == ["9,374", "835", "372", "12"] and s["acc"] == "rgb(249, 115, 22)" and s["res"] == "1", s
         pg.screenshot(path=str(out / "_shot_final_default.png"), full_page=True)
+        k = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { bg: cs(document.body).backgroundColor, panel: cs(document.querySelector('.res .cols')).backgroundColor, r: cs(document.querySelector('.res .cols')).borderRadius } }""")
+        assert k["bg"] == "rgb(250, 249, 247)" and k["panel"] == "rgb(255, 255, 255)" and k["r"] == "14px", k
+        pg.click('.ctl [data-skin="flat"]'); pg.wait_for_timeout(200)
+        assert pg.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(255, 255, 255)"
+        pg.screenshot(path=str(out / "_shot_final_flat.png"), full_page=True)
+        pg.click('.ctl [data-skin="panel"]'); pg.wait_for_timeout(200)
         for st in ["zero", "err", "email", "reviewed"]:
             pg.click(f'.ctl [data-st="{st}"]'); pg.wait_for_timeout(300)
             if st == "zero": pg.click(".stage"); pg.wait_for_timeout(700)      # 건너뛰기 → done
