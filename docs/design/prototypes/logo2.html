@@ -1,0 +1,100 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 로고 타일 후보</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+* { box-sizing:border-box }
+body { margin:0; background:#faf9f7; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.dim { color:#6b6b67 } .k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+h1 { margin:0; font-size:26px; letter-spacing:-0.03em; font-weight:650 } h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head { padding:34px 0 20px; border-bottom:1px solid #141414 } .head p { margin:8px 0 0; font-size:13.5px; color:#55554f; line-height:1.6; max-width:960px } .head p b { font-weight:650 }
+.rule { margin-top:10px; padding:10px 14px; border-left:2px solid #f97316; background:#fff; font-size:13px; line-height:1.6; max-width:960px }
+
+/* 타일 색 체계 */
+.o { --tile:#f97316; --sym:#fff; --tb:none } .kk { --tile:#141414; --sym:#fff; --tb:none } .w { --tile:#fff; --sym:#f97316; --tb:#e3e1dc }
+.tile { display:inline-block; line-height:0 } .tile svg { overflow:visible; display:block }
+
+/* 16·20 줄 */
+.small { padding:18px 0; border-bottom:1px solid #ececea; display:grid; grid-template-columns:120px 1fr; gap:10px 24px; align-items:center } .small > div:first-child { grid-row:1 / span 2 }
+.strip { display:flex; align-items:center; gap:22px; height:44px; padding:0 16px; border:1px solid #ececea } .strip.white { background:#fff }
+.strip span.g { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#8f8f8b }
+
+/* 후보 */
+.c { padding:26px 0 30px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:220px 1fr; gap:0 32px }
+.c h2 { margin:0; font-size:17px; font-weight:650; letter-spacing:-0.02em } .c h2 b { display:inline-block; width:22px; color:#f97316; font-weight:700 }
+.c .note { margin-top:8px; font-size:12.5px; line-height:1.6; color:#55554f } .c .v16 { margin-top:6px; font-size:12px; color:#6b6b67 } .c .v16::before { content:"16px: "; font-weight:600 } .c .v16.bad { color:#b45309 }
+.sizes { display:flex; gap:14px } .sizes .g { display:flex; align-items:flex-end; gap:14px; padding:14px 16px; border:1px solid #ececea; background:#fff } .sizes .g.paper { background:#faf9f7 }
+.sizes .g > div { display:flex; flex-direction:column; align-items:center; gap:7px } .sizes small { font-size:10.5px; color:#8f8f8b; white-space:nowrap }
+.row2 { margin-top:14px; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:14px }
+.box { border:1px solid #ececea; background:#fff; padding:14px 18px } .box.paper { background:#faf9f7 } .box .k { display:block; margin-bottom:10px }
+.hero { display:flex; align-items:center; gap:14px; font-size:36px; font-weight:800; letter-spacing:-0.035em; line-height:1 }
+.icons { display:flex; align-items:flex-end; gap:16px } .icons > div { display:flex; flex-direction:column; align-items:center; gap:6px }
+.circ { border-radius:50%; overflow:hidden; width:64px; height:64px } .circ svg { display:block }
+
+/* 실제 nav 복제 — gen_results_v3.BASE 의 .nav/.brand + v4 padding:22px 0. brand 글자만 14.5 → 16px 로 (타일 22px 에 맞춤) */
+.navbox { margin-top:14px; background:#fff; border:1px solid #ececea; padding:0 24px }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:800; font-size:16px; letter-spacing:-0.035em }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+
+/* 워드마크 */
+.wm { padding:26px 0 30px; border-bottom:1px solid #ececea } .wm h2 { margin:0 0 14px; font-size:17px; font-weight:650; letter-spacing:-0.02em }
+.wm .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px } .wm .cell { background:#fff; border:1px solid #ececea; padding:14px 16px 12px } .wm .cell .k { display:block; margin-bottom:10px }
+.wm .lk { display:flex; align-items:center; gap:8px; font-size:16px; line-height:1 }
+.foot { margin-top:22px; font-size:12px; color:#737370; line-height:1.7; max-width:960px }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- 1 ㅍ 관문: 세로 둘 + 가로 하나가 뚫고 지남. 획 12 = 타일 64 의 1/5 -->
+  <symbol id="sP" viewBox="0 0 64 64"><path d="M22 16 V48 M42 16 V48 M10 32 H54" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round"/></symbol>
+  <symbol id="sP16" viewBox="0 0 16 16"><path d="M4 3 h3 v10 h-3 z M9 3 h3 v10 h-3 z M2 7 h12 v3 h-12 z" fill="var(--sym)"/></symbol>
+  <!-- 2 j 모노그램: 굵은 j, 점은 축에서 오른쪽으로 비켜 -->
+  <symbol id="sJ" viewBox="0 0 64 64"><path d="M37 24 V38 a11 11 0 0 1 -22 0 v-3" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round"/><circle cx="46" cy="14" r="6.5" fill="var(--sym)"/></symbol>
+  <symbol id="sJ16" viewBox="0 0 16 16"><path d="M8 5 h3 v8 h-7 v-3 h4 z M11 1 h3 v3 h-3 z" fill="var(--sym)"/></symbol>
+  <!-- 3 막대 + 하나: 왼쪽 짧은 셋, 오른쪽 긴 하나가 타일 밖으로 -->
+  <symbol id="sB" viewBox="0 0 64 64"><path d="M14 20 H26 M14 32 H26 M14 44 H26 M38 32 H72" fill="none" stroke="var(--sym)" stroke-width="10" stroke-linecap="round"/></symbol>
+  <symbol id="sB16" viewBox="0 0 16 16"><path d="M3 4 h4 v2 h-4 z M3 7 h4 v2 h-4 z M3 10 h4 v2 h-4 z M9 7 h7 v2 h-7 z" fill="var(--sym)"/></symbol>
+  <!-- 4 관문 속 체크: 기둥 둘 사이로 ✓ 꼬리가 지나고 긴 획이 오른 기둥 위로 -->
+  <symbol id="sC" viewBox="0 0 64 64"><path d="M14 42 V50 M50 42 V50" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round"/><path d="M18 28 L30 42 L52 12" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="sC16" viewBox="0 0 16 16"><path d="M2 11 h3 v3 h-3 z M11 11 h3 v3 h-3 z" fill="var(--sym)"/><path d="M4.5 7 L8 10.5 L13 3" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="wrap">
+<div class="head"><h1>조달핏 로고 — 타일 체계<small>4안 · 2026-10-16 · 1차 시트(logo.html)는 "가는 UI 아이콘"으로 판정, 토스·Attio 방향으로 다시</small></h1>
+<p><b>타일 하나가 브랜드를 든다.</b> 주황 <code>#f97316</code> 정사각 타일, 모서리 반지름 = 변의 22%, 안에 흰 기호 하나. 획 굵기는 변의 1/5(64 중 12), 끝은 둥글게, 헤어라인 없음, 설명 없음. 옆에 조달핏 Pretendard 800, 자간 −0.035em, 글자 높이는 타일의 55~60%. 대안 둘: 먹 타일 + 흰 기호(단색 인쇄·흑백), 흰 타일 + 주황 기호 + 헤어라인 테두리(큰 주황 면이 시끄러운 자리).</p>
+<div class="rule"><b>규칙 예외 하나.</b> "주황은 선이지 면이 아니다"(README §방향)의 유일한 예외가 <b>로고 타일</b>이다. 로고는 글자 대비 규칙의 대상이 아니므로 주황 면 위 흰 기호를 허용한다. 그 밖 어디에도 주황 면 + 흰 글자는 없다 — 버튼·배지·칩 전부 종전대로.</div></div>
+
+<div class="small"><div><span class="k">16 · 20px 전부</span><div class="dim" style="font-size:12px;margin-top:4px">파비콘·탭·nav 크기. 16 은 정수 격자 전용 기호. 2× 캡처 대상</div></div>
+<div class="strip" id="row16"></div><div class="strip white" id="row16w"></div></div>
+
+<div id="cands"></div>
+
+<section class="wm"><h2>워드마크 — nav 크기(16px), 타일 22px 옆</h2>
+<div class="grid" id="wm"></div>
+<div class="foot">800 은 nav 16px 에서 700 보다 분명히 굵게 읽히고 타일의 획 굵기와 균형이 맞는다 — 700 은 타일 옆에서 가늘어 보인다. 자간 −0.04 는 "달"의 ㄹ과 "핏"의 ㅍ이 닿기 직전이라 −0.035 가 상한. 라틴 jodalfit 은 600 — 파비콘·앱 이름·메일 발신자 등 한글이 못 들어가는 자리용.</div></section>
+
+<div class="foot">만드는 법: 기호는 전부 <code>&lt;symbol viewBox="0 0 64 64"&gt;</code> 하나(획은 <code>var(--sym)</code>), 타일은 <code>rect rx=22%</code>, 색은 <code>.o/.kk/.w</code> 가 <code>--tile/--sym/--tb</code> 로 바꾼다. 16px 은 같은 이름에 <code>16</code> 을 붙인 정수 격자 기호를 따로 둔다(3px 획, 모서리 반지름 3.5). 고르면 그 둘을 그대로 <code>icon.svg</code>·<code>favicon-16.png</code>·<code>apple-touch-icon</code> 으로 뽑는다. 원형 크롭은 CSS <code>border-radius:50%</code> — SNS 아바타가 그렇게 자른다.</div>
+</div>
+
+<script>
+const C = [
+  { id:"sP", n:"ㅍ 관문", note:"핏의 ㅍ. 세로 기둥 둘 사이를 가로 획 하나가 뚫고 지난다 — 관문을 지나는 한 줄. 한글이되 글자로 읽히지 않을 만큼 추상 — 대신 가로 획이 하나라 H·# 으로도 읽힌다. 토스처럼 \"기호 하나\"로 끝난다.", v16:"3px 획 정수 격자. 또렷하고 64 와 같은 모양.", bad:false },
+  { id:"sJ", n:"j 모노그램", note:"jodalfit 의 j. 굵은 둥근 갈고리에 점은 축에서 오른쪽으로 비켜 — Attio 식 획 둘 겹침. 라틴이라 \"조달\"과 끊기고, 외국 SaaS 처럼 보일 수 있다.", v16:"갈고리가 ㄴ 자로 뭉개져 \"j\" 보다 \"ɟ·L+점\" 으로 읽힌다. 점이 살아 있어 식별은 된다.", bad:true },
+  { id:"sB", n:"막대 + 하나", note:"왼쪽 짧은 막대 셋(걸러진 것), 오른쪽 긴 막대 하나가 타일 밖으로 나간다(통과한 것). 제품 그림을 가장 직접 말한다. 메뉴·목록 아이콘과 닮은 것이 약점.", v16:"또렷. 다만 ≡ 과 — 로 보여 햄버거 메뉴 옆 화살표 같다.", bad:false },
+  { id:"sC", n:"관문 속 체크", note:"기둥 둘 사이로 ✓ 꼬리가 지나고 긴 획이 오른 기둥 위로 솟는다 — 맞음 + 통과. 뜻은 가장 바로 전해지나 ✓ 는 세상 모든 앱이 쓰고, 1차 그림(기둥이 길 때)은 M 으로 읽혀 기둥을 발 두 개로 줄였다.", v16:"체크는 살고 기둥 둘이 ✓ 밑 받침으로 뭉친다 — \"체크\" 아이콘 이상이 안 된다.", bad:true }
+];
+const T = (id, px, cls) => { const vb = px === 16 ? 16 : 64; return `<span class="tile ${cls}"><svg width="${px}" height="${px}" viewBox="0 0 ${vb} ${vb}"><rect width="${vb}" height="${vb}" rx="${(vb * 0.22).toFixed(2)}" fill="var(--tile)" stroke="var(--tb)" vector-effect="non-scaling-stroke"/><use href="#${id}${vb === 16 ? "16" : ""}"/></svg></span>`; };
+const T16raw = (id, cls) => `<span class="tile ${cls}"><svg width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="14.08" fill="var(--tile)" stroke="var(--tb)" vector-effect="non-scaling-stroke"/><use href="#${id}"/></svg></span>`;
+const sizes = (id, cls, label) => `<div class="g ${cls === "o" ? "paper" : ""}"><div>${T(id, 64, cls)}<small>64${label ? " " + label : ""}</small></div><div>${T(id, 32, cls)}<small>32</small></div><div>${T(id, 20, cls)}<small>20</small></div><div>${T(id, 16, cls)}<small>16 격자</small></div><div>${T16raw(id, cls)}<small>16 축소</small></div></div>`;
+const NAV = ["추천", "검토함", "개선 기록"];
+const nav = id => `<div class="navbox"><div class="nav"><div class="brand">${T(id, 22, "o")}조달핏</div><div class="links"><b>${NAV[0]}</b><span>${NAV[1]}</span><span>${NAV[2]}</span><span class="cta">이메일로 전부 보기</span></div></div></div>`;
+document.getElementById("cands").innerHTML = C.map((c, i) => `<section class="c"><div><h2><b>${i + 1}</b>${c.n}</h2><div class="note">${c.note}</div><div class="v16 ${c.bad ? "bad" : ""}">${c.v16}</div></div><div>
+<div class="sizes">${sizes(c.id, "o", "주황")}${sizes(c.id, "kk", "먹")}${sizes(c.id, "w", "흰")}</div>
+<div class="row2"><div class="box paper"><span class="k">히어로 lockup · 타일 48 · 800</span><div class="hero">${T(c.id, 48, "o")}조달핏</div></div>
+<div class="box"><span class="k">파비콘 · 앱 아이콘 16 / 32 / 180</span><div class="icons"><div>${T(c.id, 16, "o")}<small>16</small></div><div>${T(c.id, 32, "o")}<small>32</small></div><div>${T(c.id, 180, "o")}<small>180</small></div></div></div>
+<div class="box"><span class="k">SNS 아바타 원형 크롭 64</span><div class="icons"><div class="circ">${T(c.id, 64, "o")}</div><div class="circ">${T(c.id, 64, "kk")}</div><div class="circ">${T(c.id, 64, "w")}</div></div></div></div>
+${nav(c.id)}</div></section>`).join("");
+const strip = cls => C.map((c, i) => `<span class="g">${i + 1}${T(c.id, 16, cls)}${T(c.id, 20, cls)}</span>`).join("");
+document.getElementById("row16").innerHTML = strip("o") + `<span class="g" style="margin-left:auto">먹</span>` + strip("kk") + `<span class="g" style="margin-left:14px">흰</span>` + strip("w");
+document.getElementById("row16w").innerHTML = strip("o") + `<span class="g" style="margin-left:auto">먹</span>` + strip("kk") + `<span class="g" style="margin-left:14px">흰</span>` + strip("w");
+document.getElementById("wm").innerHTML = [["800 · −0.03em", 800, -0.03], ["800 · −0.04em", 800, -0.04], ["700 · −0.03em", 700, -0.03], ["700 · −0.04em", 700, -0.04]].map(([k, w, t]) => `<div class="cell"><span class="k">${k}</span><div class="lk" style="font-weight:${w};letter-spacing:${t}em">${T("sP", 22, "o")}조달핏</div></div>`).join("") + `<div class="cell"><span class="k">라틴 보조 · 600</span><div class="lk" style="font-weight:600;letter-spacing:-0.01em">${T("sP", 22, "o")}jodalfit</div></div>`;
+</script>
+</body></html>
