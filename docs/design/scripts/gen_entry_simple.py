@@ -44,7 +44,7 @@ def fetch_today(conn):
 CSS = SHEET_CSS + r"""
 .brand i { background:#f97316 } .acc { color:#f97316 }
 .wrap { min-height:100vh; display:flex; flex-direction:column }
-@media (max-width:1140px) { .wrap { width:auto; padding-left:20px; padding-right:20px } }
+@media screen and (max-width:1140px) { .wrap { width:auto; padding-left:20px; padding-right:20px } }
 .ctl { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:2px; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; z-index:9; white-space:nowrap }
 .ctl span { padding:6px 13px; border-radius:999px; color:#55554f; cursor:pointer } .ctl span.on { background:#141414; color:#fff }
 .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
@@ -93,7 +93,7 @@ CSS = SHEET_CSS + r"""
 .today .all { display:inline-block; margin-top:10px; font-size:13px; color:#141414 } .today .all:hover, .today .all:focus-visible { text-decoration:underline; text-underline-offset:3px }
 .sent { margin-top:14px; font-size:13px; color:#55554f } .sent:empty { display:none }
 .foot { margin-top:auto; padding:40px 0 70px; font-size:12.5px; color:#6b6b67; line-height:1.7; max-width:880px } .foot b { color:#141414; font-weight:600 }
-@media (max-width:640px) {
+@media screen and (max-width:640px) {
   .entry { padding-top:28px } .ctl { font-size:11.5px } .ctl span { padding:6px 9px }
   .box input { font-size:17px; padding:14px 14px; text-overflow:ellipsis } .box .go { padding:0 14px } .box .go .t { display:none } .box .go .ar { display:inline; font-size:20px; line-height:1 }
   #ls { max-height:calc(100dvh - 230px); overflow:auto } .ls li.kw { position:sticky; bottom:0; background:#fff } /* 목록이 스크롤돼도 키워드 행은 보인다 */

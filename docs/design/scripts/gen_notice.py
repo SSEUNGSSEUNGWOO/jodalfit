@@ -502,8 +502,8 @@ table.aw tr.win td { font-weight:600 } table.aw i { font-style:normal; margin-le
 .sw .g { display:flex; gap:3px } .sw span[data-n], .sw span[data-s] { padding:5px 10px; border-radius:999px; cursor:pointer; white-space:nowrap }
 .sw .on { background:#fff; color:#141414; font-weight:600 } .sw .sep { width:1px; height:16px; background:#3a3a37 }
 .foot { margin-top:40px; padding-top:18px; border-top:1px solid #e6e4df; font-size:12px; color:#737370; line-height:1.7 }
-@media (max-width:1140px) { .wrap, .wrap2 { width:auto !important; padding-left:20px; padding-right:20px } }
-@media (max-width:820px) {
+@media screen and (max-width:1140px) { .wrap, .wrap2 { width:auto !important; padding-left:20px; padding-right:20px } }
+@media screen and (max-width:820px) {
   .qr { grid-template-columns:minmax(0,1fr); gap:4px } .qr .qb { padding-left:16px }
   .stages { grid-template-columns:repeat(2,1fr) } h1.t { font-size:24px } .nums { flex-wrap:wrap }
 }
@@ -544,7 +544,7 @@ L3_CSS = r"""
 .rail .rin { margin-top:10px } .rail .rin span:first-child { display:flex; align-items:center; height:34px; border:1px solid #e3e1dc; border-radius:8px; background:#fff; padding:0 11px; color:#737370; font-size:12.5px; margin-bottom:6px }
 .cols .sec:first-child { border-top:0; margin-top:0; padding-top:0 }
 /* 좁은 화면에선 고정할 자리가 없다 — 레일을 본문 위로 올려 한 번은 보이게 한다(고정은 포기) */
-@media (max-width:980px) {
+@media screen and (max-width:980px) {
   .cols { grid-template-columns:minmax(0,1fr); gap:30px } .rail { position:static; order:-1 }
   .rail .rdd { font-size:34px } .rail .racts { flex-direction:row } .rail .racts .bt { flex:1 }
 }

@@ -107,7 +107,7 @@ CSS = SHEET_CSS.replace("#e8431b", ORANGE) + CRIT_CSS + r"""
 .foot { max-width:880px; line-height:1.6 }
 @media (prefers-reduced-motion: reduce) { .field, .field canvas, .labs, .lab, .ttl, .chain, .res { transition:none !important } }
 /* 390 — 번호·근거·추정가·적합 열 생략, 제목 / 기관·마감 두 줄. 머리는 220px */
-@media (max-width:520px){
+@media screen and (max-width:520px){
   .wrap { padding:0 16px 90px } .nav .links { gap:14px } .nav .links span:not(.cta) { display:none }
   .q { font-size:12.5px } .q b { font-size:15px; display:block; margin-bottom:2px }
   .labs { height:auto; display:grid; grid-template-columns:repeat(4,1fr); gap:0 10px; padding:10px 0 8px } .lab { position:static; border-left:0; padding-left:0 }
