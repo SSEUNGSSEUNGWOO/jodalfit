@@ -51,55 +51,67 @@ jobs:
 
       - name: 입찰공고 수집 (어제 신규)
         run: uv run python -m jobs.ingest_bid_notices --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 계약 수집
         run: uv run python -m jobs.ingest_contracts --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 낙찰자 수집 (회사 투찰율 신호)
         run: uv run python -m jobs.ingest_scsbid_winners --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 참가업체 수집 (회사 참가 시그널)
         # 낙찰자 수집 직후 실행 — 같은 공고의 rank 2+ 참가업체를 공고별 호출로 채움
         run: uv run python -m jobs.ingest_bid_participants --days-back 2 --limit 2000
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 사전규격 수집 (물품·용역·공사·외자)
         run: uv run python -m jobs.ingest_pre_specs --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 사전규격 의견 수집
         run: uv run python -m jobs.ingest_pre_spec_opinions --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       # 공고 라이프사이클 첫 칸(0051 order_plan_unty_no 로 연결). API 가 구분당 한 해 400건 안팎이라 가볍다.
       # 발주계획은 미래 일정이라 months-back 은 '등록 월' 기준 — 과거 2개월 + 앞 6개월(잡 내부)을 매일 다시 받는다(멱등).
       - name: 발주계획 수집 (물품·용역·공사·외자)
         run: uv run python -m jobs.ingest_order_plans --months-back 2
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 면허제한 수집 (자격 필터용)
         run: uv run python -m jobs.ingest_license_limit --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 참가지역 수집 (자격 필터용)
         run: uv run python -m jobs.ingest_rgn_limit --days-back 1
+        timeout-minutes: 8
         continue-on-error: true
 
       - name: 입찰공고 임베딩 (신규)
         run: uv run python -m jobs.embed_bid_notices --limit 500 --batch 50  # 매시간 잡이 주 담당. 5000 이면 러너 CPU 로 24분+ → sync 잡 50분 제한에 잘려 company-vectors 까지 skip(2026-10-15 22:46)
+        timeout-minutes: 15
         continue-on-error: true
 
       - name: 사전규격 임베딩 (신규)
         run: uv run python -m jobs.embed_pre_specs --limit 1000 --batch 50
+        timeout-minutes: 15
         continue-on-error: true
 
       - name: sitemap warm-up (Google이 신선한 sitemap 보도록 강제 히트)
         # generateSitemaps로 쪼갠 뒤 /sitemap.xml은 404다. 세그먼트를 각각 쳐야 한다.
         # 세그먼트 수는 frontend/src/lib/sitemap-segments.ts의 TOTAL_SEGMENTS와 맞출 것.
         # 하나라도 200이 아니면 실패로 처리 — 조용히 no-op이 되면 2026-07 동결이 재발한다.
+        timeout-minutes: 3
         run: |
           fail=0
           for i in $(seq 0 8); do
@@ -111,11 +123,16 @@ jobs:
 
       - name: 마감 지난 공고 문서 텍스트 비우기 (저장 증가 차단)
         run: uv run python -m jobs.purge_expired_documents
+        timeout-minutes: 10
         continue-on-error: true
 
       # continue-on-error 없음 — 위 스텝들이 전부 초록인 이유가 continue-on-error 다. 조용히 0건·1초 만에 끝난
       # 잡(2026-10 두 번)은 여기서 빨간색이 된다. 규칙은 jobs/check_ingest_health.py 머리에.
+      # if: always() — 잡이 timeout 으로 통째로 잘려도(2026-10-16 05시, 임베딩 24분) 이 점검은 돈다. 위 스텝들의
+      # timeout-minutes 는 한 스텝이 잡 전체를 먹지 않게 하는 상한(평소 수집은 2~4분, API 장애면 3분 만에 실패).
       - name: 수집 잡 건강 점검 (실패·성공인데 0건·너무 빨리 끝남·48시간 누락)
+        if: always()
+        timeout-minutes: 3
         run: uv run python -m jobs.check_ingest_health
 
   enrich-companies:
