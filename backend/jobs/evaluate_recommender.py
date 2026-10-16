@@ -122,13 +122,15 @@ def load_emb_store(path: str) -> dict:
 
 
 def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.ndarray]:
-    """t 에 활성이고 임베딩 있는 공고 전부(운영 RPC 조건과 동일) + 임베딩 행렬(정규화)."""
+    """t 에 활성이고 임베딩 있는 공고 전부(운영 RPC 조건과 동일) + 임베딩 행렬(정규화).
+    입찰참가자격 등록 마감(bid_qlfct_rgst_dt)이 t 이전이면 제외 — 운영 RPC(0049)의 now() 조건을 t 로 옮긴 것."""
     rows = conn.execute(
         f"""select bid_ntce_no, bid_ntce_ord, bid_ntce_nm, bsns_div_nm, bid_clse_date, presmpt_prce,
                   ntce_instt_nm, dmnd_instt_nm, bidprc_psbl_indstryty_nm, prtcpt_psbl_rgn_nm, {EMB_COL}::text, prdct_clsfc_nos
            from bid_notices where {EMB_COL} is not null and bid_ntce_date < %s and bid_clse_date >= %s and bid_clse_date <= %s
+             and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > %s)
            order by bid_ntce_no, bid_ntce_ord""",
-        (t, t, horizon),
+        (t, t, horizon, t),
     ).fetchall()
     if not rows:
         sys.exit(f"t={t} 활성 공고 0건 — --as-of 날짜를 확인하세요")

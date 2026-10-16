@@ -52,12 +52,16 @@ _PRDCT_CODE = re.compile(r"\^(\d{10})\^")  # purchsObjPrdctList: '[1^4227171301^
 
 
 def _to_ts(s: str | None) -> str | None:
-    """'2026-02-03 18:00' → ISO. 빈 값·이상값은 None."""
+    """'2026-02-03 18:00' → ISO(+09:00). 빈 값·이상값은 None.
+
+    나라장터 시각은 KST 벽시계다. 오프셋 없이 넣으면 timestamptz 가 UTC 로 해석해 9시간 미래로 저장된다 —
+    2026-10-16 까지 그렇게 들어간 bid_qlfct_rgst_dt 5.9만 행은 -9h 로 일괄 보정했다 (_common.to_timestamptz 와 같은 규칙).
+    """
     if not s or not str(s).strip():
         return None
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
         try:
-            return datetime.strptime(str(s).strip(), fmt).isoformat()
+            return datetime.strptime(str(s).strip(), fmt).isoformat() + "+09:00"
         except ValueError:
             continue
     return None

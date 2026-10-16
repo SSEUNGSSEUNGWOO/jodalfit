@@ -87,6 +87,8 @@ export default async function NoticePage({ params }: Props) {
   if (!lifecycle) notFound();
 
   const { notice, insight, amendments, preSpecs, opinions, orderPlans, awards, contracts } = lifecycle;
+  // 입찰참가자격 등록 마감 — 입찰 마감보다 먼저 닫힌다. "10.14 18:00" 처럼 월.일 시:분(KST)만.
+  const qlfctLabel = formatQlfctDeadline(notice.bid_qlfct_rgst_dt);
   const mandatoryReqs = (insight?.requirements ?? []).filter((r) => r.mandatory);
   const optionalReqs = (insight?.requirements ?? []).filter((r) => !r.mandatory);
   const evalParts: string[] = [];
@@ -174,6 +176,12 @@ export default async function NoticePage({ params }: Props) {
                 <>
                   <Dot />
                   <span>지역 {notice.prtcpt_psbl_rgn_nm}</span>
+                </>
+              )}
+              {qlfctLabel && (
+                <>
+                  <Dot />
+                  <span>참가자격 등록 마감 {qlfctLabel}</span>
                 </>
               )}
             </div>
@@ -683,4 +691,20 @@ function DetailSection({
 
 function Dot() {
   return <span aria-hidden className="text-muted-foreground/50">·</span>;
+}
+
+function formatQlfctDeadline(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("month")}.${get("day")} ${get("hour")}:${get("minute")}`;
 }
