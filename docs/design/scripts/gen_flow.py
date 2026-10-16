@@ -81,10 +81,13 @@ CSS = SHEET_CSS + r"""
 # 엔진 — 선 기하·오프스크린 렌더·blit·라벨 칠하기. flow.html 과 entry-flow.html(gen_entry_flow.py)이 같이 쓴다.
 # 벽 수는 cfg 의 XS 길이에서 온다(flow 3, 키워드 모드 2). 3벽이면 쪼개기 전과 같은 그림.
 ENGINE_JS = r"""
-/* Engine(C, cv, L, T): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl) */
-function Engine(C, cv, L, T){
+/* Engine(C, cv, L, T, mat): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl)
+   mat(선택) = { nb: 불투명도 버킷 수, of(i): 선 i 의 버킷, pen(g, c, b, dflt): 코호트 c·버킷 b 의 [strokeStyle, lineWidth] }
+   — entry-flow 가 상태 0 의 재료(선마다 다른 불투명도)를 체에도 그대로 쓰기 위한 것. 없으면 flow.html 과 같은 그림. */
+function Engine(C, cv, L, T, mat){
 const {W, H, CY, XS, HH, CNT, FAN_X, FAN_SP, CONV, PRESS} = C;
 const NW = XS.length - 1, S = NW + 1, N = CNT[0];   // 벽 수 / 구간 수(=코호트 수) / 선 수
+const NB = mat && mat.nb || 1, bucketOf = mat && mat.of || (() => 0);
 const ctx = cv.getContext('2d');
 
 /* ---- 선 기하: 한 번만 계산한다 ---------------------------------------- */
@@ -118,23 +121,28 @@ for (let s=1;s<=NW;s++){
   for (let r=0;r<m;r++) Y[a[r]*S+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
 }
 
-// 코호트별 Path2D. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
-const P = Array.from({length: S}, () => new Path2D());
+// 코호트(×버킷)별 Path2D. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
+// mat.wander(i, x) 가 있으면 직선 구간이 결 있는 폴리라인이 된다(entry-flow — 체 안의 선이 자유 구간과 같은 재료여야 이음새가 없다).
+const wand = mat && mat.wander, STEP = 22.5;
+function run(p, i, x0, x1, y){
+  if (!wand){ p.lineTo(x1, y); return y; }
+  for (let x = x0 + STEP*((i*0.618034)%1); x < x1; x += STEP) p.lineTo(x, y + wand(i, x));   // 꺾이는 x 를 선마다 어긋나게
+  const ye = y + wand(i, x1); p.lineTo(x1, ye); return ye;
+}
+const P = Array.from({length: S}, () => Array.from({length: NB}, () => new Path2D()));
 for (let i=0;i<N;i++){
-  const f = fate[i], p = P[f-1];
-  let y = Y[i*S];
-  p.moveTo(0, y);
+  const f = fate[i], p = P[f-1][bucketOf(i)];
+  let y = Y[i*S], x = 0;
+  p.moveTo(0, y + (wand ? wand(i, 0) : 0));
   for (let s=1;s<f;s++){                          // 통과한 벽마다 통로 폭으로 모인다
-    const g = XS[s], ny = Y[i*S+s];
-    p.lineTo(g-CONV, y);
-    p.bezierCurveTo(g-20, y, g-16, ny, g, ny);
-    y = ny;
+    const g = XS[s], ny = Y[i*S+s], ye = run(p, i, x, g-CONV, y);
+    p.bezierCurveTo(g-20, ye, g-16, ny, g, ny);
+    y = ny; x = g;
   }
-  if (f < S) p.lineTo(XS[f], y);                  // 벽까지 가서 멈춘다 (아래로 새지 않는다)
+  if (f < S) run(p, i, x, XS[f], y);              // 벽까지 가서 멈춘다 (아래로 새지 않는다)
   else {
-    p.lineTo(FAN_X, y);
-    const row = CY + (y-CY)/HH[NW]*FAN_SP;
-    p.bezierCurveTo(FAN_X+70, y, W-70, row, W, row);
+    const ye = run(p, i, x, FAN_X, y), row = CY + (y-CY)/HH[NW]*FAN_SP;
+    p.bezierCurveTo(FAN_X+70, ye, W-70, row, W, row);
   }
 }
 
@@ -157,29 +165,37 @@ const PEN = [[.055, .16, .03, .30], [.30, .60, .08, .35], [.34, .65, .09, .35]];
 // 넣어두고 매 프레임은 왼쪽 일부만 blit 한다 — 선은 하나도 줄이지 않는다.
 let off = null, sx = 1, ms = 0;
 
-function render(){
-  const g = off.getContext('2d'), dpr = devicePixelRatio || 1;
-  g.setTransform(sx*dpr, 0, 0, dpr, 0, 0);        // 설계 좌표 그대로 쓰고 레티나는 dpr 로
-  g.clearRect(0, 0, W, H);
-  g.lineCap = 'butt';
+function defaultPen(g, c){
+  if (c < NW){ const a = PEN[c]; return [fade(g, XS[c+1], a[0], a[1], a[2]), a[3]]; }
   const last = g.createLinearGradient(0,0,W,0);   // 마지막 12개만 인주
   last.addColorStop(0, 'rgba(20,20,20,.8)');
   last.addColorStop((XS[NW]-20)/W, 'rgba(20,20,20,.8)');
   last.addColorStop((XS[NW]+30)/W, 'rgba(232,67,27,.9)');
   last.addColorStop(1, 'rgba(232,67,27,.9)');
-  const pen = PEN.slice(0, NW).map((a, c) => [fade(g, XS[c+1], a[0], a[1], a[2]), a[3]]);
-  pen.push([last, .9]);
-  for (let c=0;c<S;c++){ g.strokeStyle = pen[c][0]; g.lineWidth = pen[c][1]; g.stroke(P[c]); }
+  return [last, .9];
+}
+// 벽 k. dy 만큼 위에서 내려오는 중일 수 있다(entry-flow 의 '벽이 떨어진다').
+function wall(g, k, dy){
+  const x = XS[k]; dy = dy || 0;
   g.strokeStyle = '#141414';
-  for (let k=1;k<=NW;k++){
-    const x = XS[k];
-    for (const sg of [-1, 1]){
-      g.lineWidth = 2.5; g.beginPath();            // 벽은 화면 끝까지, 통로만 뚫려 있다
-      g.moveTo(x, sg<0 ? 0 : CY+HH[k]); g.lineTo(x, sg<0 ? CY-HH[k] : H); g.stroke();
-      g.lineWidth = 1.5; g.beginPath();            // 통로 입술 — 구멍임을 분명히
-      g.moveTo(x-7, CY+sg*HH[k]); g.lineTo(x+7, CY+sg*HH[k]); g.stroke();
-    }
+  for (const sg of [-1, 1]){
+    g.lineWidth = 2.5; g.beginPath();              // 벽은 화면 끝까지, 통로만 뚫려 있다
+    g.moveTo(x, (sg<0 ? 0 : CY+HH[k]) + dy); g.lineTo(x, (sg<0 ? CY-HH[k] : H) + dy); g.stroke();
+    g.lineWidth = 1.5; g.beginPath();              // 통로 입술 — 구멍임을 분명히
+    g.moveTo(x-7, CY+sg*HH[k]+dy); g.lineTo(x+7, CY+sg*HH[k]+dy); g.stroke();
   }
+}
+
+function render(){
+  const g = off.getContext('2d'), dpr = devicePixelRatio || 1;
+  g.setTransform(sx*dpr, 0, 0, dpr, 0, 0);        // 설계 좌표 그대로 쓰고 레티나는 dpr 로
+  g.clearRect(0, 0, W, H);
+  g.lineCap = 'butt';
+  for (let c=0;c<S;c++) for (let b=0;b<NB;b++){
+    const d = defaultPen(g, c), pen = mat && mat.pen ? mat.pen(g, c, b, d) : d;
+    g.strokeStyle = pen[0]; g.lineWidth = pen[1]; g.stroke(P[c][b]);
+  }
+  for (let k=1;k<=NW;k++) wall(g, k, 0);
 }
 
 function setup(){
@@ -202,8 +218,8 @@ function draw(front, behind){
   window.__ms = ms;
 }
 
-function paint(x, settled, behind){
-  draw(x, behind);
+// 전진선 x 기준 라벨·글자: 벽을 지나 150px 동안 카운트업, 글자는 제 폭을 다 지나야 뜬다.
+function labels(x){
   T.forEach(t => t.classList.toggle('on', x >= +t.dataset.x));
   L.forEach(g => {
     g.classList.toggle('on', x >= +g.dataset.x);
@@ -211,10 +227,14 @@ function paint(x, settled, behind){
     const p = Math.min(1, Math.max(0, (x - g.dataset.x) / 150));
     span.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString('ko-KR');
   });
+}
+function paint(x, settled, behind){
+  draw(x, behind);
+  labels(x);
   document.body.classList.toggle('done', settled);
 }
 
-return {setup, draw, paint, Y, N, S, NW, get sx(){ return sx; }, get off(){ return off; }, get ms(){ return ms; }};
+return {setup, draw, paint, labels, wall, Y, alive, N, S, NW, get sx(){ return sx; }, get off(){ return off; }, get ms(){ return ms; }};
 }
 """
 
