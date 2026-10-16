@@ -481,6 +481,77 @@ function orderClause<T>(q: T, sort: NoticeFilters["sort"]): T {
   }
 }
 
+/** 조건 검색(0050 search_bid_notices) — 키워드·발주기관·업종·물품코드까지. 페이지는 아직 fetchBrowsePage 를 쓴다. */
+export interface SearchFilters {
+  /** 키워드 — 제목 우선, 3글자 이상이면 첨부 요약·키워드도. 2글자는 제목만 */
+  q?: string;
+  bsnsDiv?: string;
+  /** 참가가능지역 부분 일치 — NoticeFilters.rgn 과 같은 뜻(지역 제한 없는 공고는 안 잡힘) */
+  rgn?: string;
+  /** 발주기관 — 수요기관·공고기관 부분 일치 */
+  instt?: string;
+  /** 추정가 [min, max) 원 */
+  prcMin?: number;
+  prcMax?: number;
+  /** 마감일 구간 (YYYY-MM-DD). clseFrom 없으면 오늘부터 */
+  clseFrom?: string;
+  clseTo?: string;
+  /** 입찰참가가능업종명 부분 일치 (회사 통로 0044 와 같은 규칙) */
+  industry?: string;
+  /** 물품분류번호 10자리 (0047 prdct_clsfc_nos 포함) */
+  prdctCode?: string;
+  sort?: "close" | "price_desc" | "ntce_desc";
+  limit?: number;
+  offset?: number;
+}
+
+/** search_bid_notices 응답 행 — match_bid_notices 와 같은 컬럼 + title_hit·total_count */
+export interface SearchedNotice {
+  bid_ntce_no: string;
+  bid_ntce_ord: string;
+  bid_ntce_nm: string;
+  bsns_div_nm: string | null;
+  bid_ntce_date: string | null;
+  bid_clse_date: string | null;
+  openg_date: string | null;
+  presmpt_prce: number | null;
+  ntce_instt_nm: string | null;
+  dmnd_instt_nm: string | null;
+  bidprc_psbl_indstryty_nm: string | null;
+  rgn_lmt_yn: string | null;
+  prtcpt_psbl_rgn_nm: string | null;
+  indstryty_lmt_yn: string | null;
+  bid_ntce_url: string | null;
+  /** 키워드가 제목에 걸렸으면 true, 요약·키워드에만 걸렸으면 false. 키워드 없으면 false */
+  title_hit: boolean;
+  /** 필터에 맞는 전체 건수 (모든 행에 같은 값) */
+  total_count: number;
+}
+
+export async function searchNotices(
+  filters: SearchFilters = {}
+): Promise<{ rows: SearchedNotice[]; totalCount: number }> {
+  const c = getServerSupabase();
+  const { data, error } = await c.rpc("search_bid_notices", {
+    q: filters.q ?? null,
+    bsns_div: filters.bsnsDiv ?? null,
+    rgn: filters.rgn ?? null,
+    instt: filters.instt ?? null,
+    prc_min: filters.prcMin ?? null,
+    prc_max: filters.prcMax ?? null,
+    clse_from: filters.clseFrom ?? null,
+    clse_to: filters.clseTo ?? null,
+    industry: filters.industry ?? null,
+    prdct_code: filters.prdctCode ?? null,
+    lim: filters.limit ?? 50,
+    off: filters.offset ?? 0,
+    sort: filters.sort ?? "close",
+  });
+  if (error) throw new Error(`search_bid_notices: ${error.message}`);
+  const rows = (data as SearchedNotice[] | null) ?? [];
+  return { rows, totalCount: rows[0]?.total_count ?? 0 };
+}
+
 /** /about 데이터 규모 — 큰 테이블은 estimated(pg_class.reltuples)로, 1시간 캐시. */
 export interface AboutStats {
   activeNotices: number;
