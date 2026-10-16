@@ -74,6 +74,12 @@ jobs:
         run: uv run python -m jobs.ingest_pre_spec_opinions --days-back 1
         continue-on-error: true
 
+      # 공고 라이프사이클 첫 칸(0051 order_plan_unty_no 로 연결). API 가 구분당 한 해 400건 안팎이라 가볍다.
+      # 발주계획은 미래 일정이라 months-back 은 '등록 월' 기준 — 과거 2개월 + 앞 6개월(잡 내부)을 매일 다시 받는다(멱등).
+      - name: 발주계획 수집 (물품·용역·공사·외자)
+        run: uv run python -m jobs.ingest_order_plans --months-back 2
+        continue-on-error: true
+
       - name: 면허제한 수집 (자격 필터용)
         run: uv run python -m jobs.ingest_license_limit --days-back 1
         continue-on-error: true

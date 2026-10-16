@@ -51,6 +51,7 @@ SCHEDULED = (
     "ingest_bid_participants",
     "ingest_pre_specs",
     "ingest_pre_spec_opinions",
+    "ingest_order_plans",
     "ingest_license_limit",
     "ingest_rgn_limit",
     "embed_pre_specs",

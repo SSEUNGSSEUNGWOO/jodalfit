@@ -1,7 +1,9 @@
 """발주계획 수집 잡 (선행지표).
 
-소스: OrderPlanSttusService/getOrderPlanSttusListServcPPSSrch
+소스: OrderPlanSttusService/getOrderPlanSttusList{Thng,Servc,Cnstwk,Frgcpt}PPSSrch — 물품·용역·공사·외자.
+2026-10-16 까지 용역 하나만 받았다(사전규격과 같은 실수). API 는 구분당 한 해 400건 안팎만 돌려준다.
 조회조건: orderPlanBgnYearMonth + orderPlanEndYearMonth (YYYYMM 형식)
+공고 쪽 bid_notices.order_plan_unty_no(0051) 와 order_plan_unty_no 로 잇는다.
 
 실행:
     cd backend
@@ -23,15 +25,21 @@ from jobs._common import (
     to_timestamptz,
 )
 
-URL = "https://apis.data.go.kr/1230000/ao/OrderPlanSttusService/getOrderPlanSttusListServcPPSSrch"
+BASE = "https://apis.data.go.kr/1230000/ao/OrderPlanSttusService"
+ENDPOINTS = {
+    "물품": f"{BASE}/getOrderPlanSttusListThngPPSSrch",
+    "용역": f"{BASE}/getOrderPlanSttusListServcPPSSrch",
+    "공사": f"{BASE}/getOrderPlanSttusListCnstwkPPSSrch",
+    "외자": f"{BASE}/getOrderPlanSttusListFrgcptPPSSrch",
+}
 JOB_NAME = "ingest_order_plans"
 
 
-def map_item(it: dict) -> dict:
+def map_item(it: dict, bsns_div: str) -> dict:
     return {
         "order_plan_unty_no": it.get("orderPlanUntyNo"),
         "biz_nm": it.get("bizNm"),
-        "bsns_div_nm": it.get("bsnsDivNm"),
+        "bsns_div_nm": it.get("bsnsDivNm") or bsns_div,
         "bsns_ty_cd": it.get("bsnsTyCd"),
         "bsns_ty_nm": it.get("bsnsTyNm"),
         "order_year": it.get("orderYear"),
@@ -67,20 +75,24 @@ def run(months_back: int = 6, batch_size: int = 500) -> None:
     print(f"[{JOB_NAME}] {begin_yymm} ~ {end_yymm}")
 
     total = 0
-    batch: list[dict] = []
     try:
-        for it in iter_all_items(URL, extra):
-            row = map_item(it)
-            if not row["order_plan_unty_no"]:
-                continue
-            batch.append(row)
-            if len(batch) >= batch_size:
+        for label, url in ENDPOINTS.items():
+            n = 0
+            batch: list[dict] = []
+            for it in iter_all_items(url, extra):
+                row = map_item(it, label)
+                if not row["order_plan_unty_no"]:
+                    continue
+                batch.append(row)
+                if len(batch) >= batch_size:
+                    upsert_rows("order_plans", batch, on_conflict="order_plan_unty_no")
+                    n += len(batch)
+                    batch.clear()
+            if batch:
                 upsert_rows("order_plans", batch, on_conflict="order_plan_unty_no")
-                total += len(batch)
-                batch.clear()
-        if batch:
-            upsert_rows("order_plans", batch, on_conflict="order_plan_unty_no")
-            total += len(batch)
+                n += len(batch)
+            print(f"  {label}: +{n:,}")
+            total += n
         log_ingest_finish(run_id, "success", rows_inserted=total)
         print(f"[{JOB_NAME}] done. {total} rows upserted")
     except Exception as e:
