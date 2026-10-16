@@ -121,7 +121,7 @@ def block(i, r, prof):
     _, meta = _meta(r)
     return (f'<div class="bk"><span class="no">{i:02d}</span><div><div class="t">{esc(r["bid_ntce_nm"])}</div><div class="m">{esc(org)} · {meta}</div>'
             f'<div class="q"><b>참가 자격</b><span>{qual_line(r, prof)}</span></div>'
-            f'<div class="w"><b>추천 근거</b><span>{" · ".join(why_lines(r, org)[:2])}</span></div>'
+            f'<div class="w"><b>추천 근거</b><span>{"<br>".join(why_lines(r, org))}</span></div>'   # 전부, 한 줄에 하나 — 2개로 자르면 근거가 빈약해 보인다(실제 2~3개, 최대 5)
             f'<div class="acts"><a class="u" href="{esc(r["bid_ntce_url"])}">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div>')
 
 
