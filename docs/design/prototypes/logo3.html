@@ -1,0 +1,117 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조달핏 로고 핏 체크 후보</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+* { box-sizing:border-box }
+body { margin:0; background:#faf9f7; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.dim { color:#6b6b67 } .k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+h1 { margin:0; font-size:26px; letter-spacing:-0.03em; font-weight:650 } h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head { padding:34px 0 20px; border-bottom:1px solid #141414 } .head p { margin:8px 0 0; font-size:13.5px; color:#55554f; line-height:1.6; max-width:960px } .head p b { font-weight:650 }
+.rule { margin-top:10px; padding:10px 14px; border-left:2px solid #f97316; background:#fff; font-size:13px; line-height:1.6; max-width:960px }
+
+/* 타일 색 체계 */
+.o { --tile:#f97316; --sym:#fff; --tb:none } .kk { --tile:#141414; --sym:#fff; --tb:none } .w { --tile:#fff; --sym:#f97316; --tb:#e3e1dc }
+.tile { display:inline-block; line-height:0 } .tile svg { overflow:visible; display:block }
+
+/* 16·20 줄 */
+.small { padding:18px 0; border-bottom:1px solid #ececea; display:grid; gap:10px } .small > div:first-child { display:flex; gap:14px; align-items:baseline }
+.strip { display:flex; align-items:center; gap:12px; height:44px; padding:0 16px; border:1px solid #ececea } .strip.white { background:#fff }
+.strip span.g { display:inline-flex; align-items:center; gap:3px; font-size:10px; color:#8f8f8b } .strip { gap:8px }
+
+/* 후보 */
+.c { padding:26px 0 30px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:220px 1fr; gap:0 32px }
+.c h2 { margin:0; font-size:17px; font-weight:650; letter-spacing:-0.02em } .c h2 b { display:inline-block; width:22px; color:#f97316; font-weight:700 }
+.c .note { margin-top:8px; font-size:12.5px; line-height:1.6; color:#55554f } .c .v16 { margin-top:6px; font-size:12px; color:#6b6b67 } .c .v16::before { content:"16px: "; font-weight:600 } .c .v16.bad { color:#b45309 }
+.sizes { display:flex; gap:14px } .sizes .g { display:flex; align-items:flex-end; gap:14px; padding:14px 16px; border:1px solid #ececea; background:#fff } .sizes .g.paper { background:#faf9f7 }
+.sizes .g > div { display:flex; flex-direction:column; align-items:center; gap:7px } .sizes small { font-size:10.5px; color:#8f8f8b; white-space:nowrap }
+.row2 { margin-top:14px; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:14px }
+.box { border:1px solid #ececea; background:#fff; padding:14px 18px } .box.paper { background:#faf9f7 } .box .k { display:block; margin-bottom:10px }
+.hero { display:flex; align-items:center; gap:14px; font-size:36px; font-weight:800; letter-spacing:-0.035em; line-height:1 }
+.icons { display:flex; align-items:flex-end; gap:16px } .icons > div { display:flex; flex-direction:column; align-items:center; gap:6px }
+.circ { border-radius:50%; overflow:hidden; width:64px; height:64px } .circ svg { display:block }
+
+/* 실제 nav 복제 — gen_results_v3.BASE 의 .nav/.brand + v4 padding:22px 0. brand 글자만 14.5 → 16px 로 (타일 22px 에 맞춤) */
+.navbox { margin-top:14px; background:#fff; border:1px solid #ececea; padding:0 24px }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:800; font-size:16px; letter-spacing:-0.035em }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+
+/* 워드마크 */
+.wm { padding:26px 0 30px; border-bottom:1px solid #ececea } .wm h2 { margin:0 0 14px; font-size:17px; font-weight:650; letter-spacing:-0.02em }
+.wm .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px } .wm .cell { background:#fff; border:1px solid #ececea; padding:14px 16px 12px } .wm .cell .k { display:block; margin-bottom:10px }
+.wm .lk { display:flex; align-items:center; gap:8px; font-size:16px; line-height:1 }
+.foot { margin-top:22px; font-size:12px; color:#737370; line-height:1.7; max-width:960px }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- K1a ㅍ 관문 (logo2 그대로) / K1b 가로 둘 = 진짜 ㅍ -->
+  <symbol id="sP" viewBox="0 0 64 64"><path d="M22 16 V48 M42 16 V48 M10 32 H54" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round"/></symbol>
+  <symbol id="sP16" viewBox="0 0 16 16"><path d="M4 3 h3 v10 h-3 z M9 3 h3 v10 h-3 z M2 7 h12 v3 h-12 z" fill="var(--sym)"/></symbol>
+  <symbol id="sP2" viewBox="0 0 64 64"><path d="M22 14 V50 M42 14 V50 M10 24 H54 M10 40 H54" fill="none" stroke="var(--sym)" stroke-width="11" stroke-linecap="round"/></symbol>
+  <symbol id="sP216" viewBox="0 0 16 16"><path d="M4 2 h3 v12 h-3 z M9 2 h3 v12 h-3 z M2 5 h12 v2 h-12 z M2 9 h12 v2 h-12 z" fill="var(--sym)"/></symbol>
+  <!-- K4 체크만: 짧은 팔 = 긴 팔의 0.41, 둥근 끝, 2 위로 띄움 -->
+  <symbol id="sK" viewBox="0 0 64 64"><path d="M15 32 L25 42 L49 18" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="sK16" viewBox="0 0 16 16"><path d="M3 8 L6 11 L13 4" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- F1 홈 맞춤: 타일 오른 위 모서리를 네모로 파고, 긴 팔 끝(둥근 캡)이 홈 안쪽 모서리 두 변에 접한다 -->
+  <symbol id="sF1" viewBox="0 0 64 64"><path d="M12 32 L22 42 L36 28" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="sF116" viewBox="0 0 16 16"><path d="M3 8 L5.5 10.5 L9 7" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- F2 틀 완성: 가는 마름모 틀의 한 변이 빠지고 그 자리가 체크의 긴 팔 -->
+  <symbol id="sF2" viewBox="0 0 64 64"><path d="M12 32 L32 12 L52 32 M12 32 L32 52" fill="none" stroke="var(--sym)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 40 L32 52 L52 32" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="sF216" viewBox="0 0 16 16"><path d="M3 8 L8 3 L13 8 M3 8 L8 13" fill="none" stroke="var(--sym)" stroke-width="1" stroke-linecap="round"/><path d="M5 10 L8 13 L13 8" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- F3 틈을 지난 체크: 오른쪽 기둥 하나, 긴 팔이 그 너머로 -->
+  <symbol id="sF3" viewBox="0 0 64 64"><path d="M46 16 V48" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round"/><path d="M12 36 L24 48 L57 15" fill="none" stroke="var(--sym)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="sF316" viewBox="0 0 16 16"><path d="M11 4 h3 v8 h-3 z" fill="var(--sym)"/><path d="M2.5 9 L6 12.5 L14.5 4" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- F4 ㅍ의 속획이 체크: 기둥 둘, 가로 대신 두 팔이 기둥에 닿는 ✓ -->
+  <symbol id="sF4" viewBox="0 0 64 64"><path d="M14 14 V50 M50 14 V50" fill="none" stroke="var(--sym)" stroke-width="11" stroke-linecap="round"/><path d="M18 30 L30 42 L46 20" fill="none" stroke="var(--sym)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="sF416" viewBox="0 0 16 16"><path d="M2 2 h3 v12 h-3 z M11 2 h3 v12 h-3 z" fill="var(--sym)"/><path d="M4.5 7.5 L7.5 10.5 L11.5 5" fill="none" stroke="var(--sym)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- F5 파낸 체크: 체크가 타일에서 빠진 자리 — 들어갈 자리 자체. 흰 타일에선 사라짐 -->
+  <mask id="mF5" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M15 32 L25 42 L49 18" fill="none" stroke="#000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></mask>
+  <mask id="mF5s" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16"><rect width="16" height="16" fill="#fff"/><path d="M3 8 L6 11 L13 4" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></mask>
+  <symbol id="sF5" viewBox="0 0 64 64"></symbol><symbol id="sF516" viewBox="0 0 16 16"></symbol>
+</svg>
+
+<div class="wrap">
+<div class="head"><h1>조달핏 로고 — 핏 체크<small>K1·K4 유지 + 새 안 5 · 2026-10-16 · 타일 체계는 logo2 와 같음</small></h1>
+<p><b>승우님 결정(logo2):</b> 1 ㅍ 관문 유지, 4 는 기둥을 빼고 <b>체크만</b>. 여기서 "핏 = 맞아 들어간다"를 체크로 말하는 안을 더 본다 — "끝났다(done)"가 아니라 "들어맞는다(fit)". 타일은 그대로: 주황 <code>#f97316</code>, 모서리 22%, 흰 기호, 획 = 변의 1/5, 둥근 끝. 워드마크 800 · −0.035em.</p>
+<div class="rule"><b>규칙 예외 하나.</b> 주황 면 + 흰 기호는 <b>로고 타일에서만</b> 허용. 그 밖 어디에도 없다.</div></div>
+
+<div class="small"><div><span class="k">16 · 20px 전부</span><div class="dim" style="font-size:12px;margin-top:4px">파비콘·탭·nav 크기. 16 은 정수 격자 전용 기호. 2× 캡처 대상</div></div>
+<div class="strip" id="row16"></div><div class="strip white" id="row16w"></div></div>
+
+<div id="cands"></div>
+
+<section class="wm"><h2>워드마크 — nav 크기(16px), 타일 22px 옆 (K4 로)</h2>
+<div class="grid" id="wm"></div></section>
+
+<div class="foot">만드는 법은 logo2 와 같다. 다른 점 둘: F1 은 타일 자체가 홈 파인 경로(<code>path</code>)이고, F5 는 타일 <code>rect</code> 에 <code>mask</code> 로 체크를 뚫었다 — 그래서 F5 흰 타일은 바탕과 같은 색이라 체크가 사라진다(흰 버전 사용 불가, 먹·주황만).</div>
+</div>
+
+<script>
+const NOTCH = { 64: "M14 0 H42 V22 H64 V50 a14 14 0 0 1 -14 14 H14 a14 14 0 0 1 -14 -14 V14 a14 14 0 0 1 14 -14 Z", 16: "M3.5 0 H10 V6 H16 V12.5 a3.5 3.5 0 0 1 -3.5 3.5 H3.5 a3.5 3.5 0 0 1 -3.5 -3.5 V3.5 a3.5 3.5 0 0 1 3.5 -3.5 Z" };
+const C = [
+  { id:"sP", n:"K1a ㅍ 관문 — 가로 하나", note:"logo2 의 1 그대로. 기둥 둘 사이를 가로 획 하나가 뚫고 지난다.", v16:"또렷. H·# 으로 읽히는 문제는 남음.", bad:false },
+  { id:"sP2", n:"K1b ㅍ 관문 — 가로 둘", note:"가로를 둘로 — 진짜 ㅍ. H·# 읽기는 죽지만 \"관문을 지나는 한 줄\"이라는 그림도 같이 죽고, 글자에 가까워진다.", v16:"3·2px 혼용이나 또렷. 다만 ㅍ 글자 그 자체로 보인다 — 타일 속 자모.", bad:false },
+  { id:"sK", n:"K4 체크만", note:"기둥을 뺀 ✓. 짧은 팔 = 긴 팔의 0.41, 양 끝 둥글게, 중심에서 2 위로 띄워 가라앉지 않게. iOS·Material 체크(짧은 팔 0.5~0.6, 좌우 대칭)와 비례로 갈라놓았다.", v16:"3px 획 ✓ — 어디서나 산다. 대신 체크는 세상 모든 앱이 쓴다.", bad:false },
+  { id:"sF1", n:"F1 홈 맞춤", note:"타일 오른 위 모서리를 네모로 파고(바탕이 비친다), ✓ 의 긴 팔 끝이 그 홈의 안쪽 모서리에 꼭 닿는다 — 체크가 빈자리에 맞아 들어가는 조각. 타일 윤곽 자체가 달라지는 유일한 안.", v16:"홈 6px 은 보이지만 ✓ 가 6px 로 작아져 체크인지 모른다. 20 부터 산다.", bad:true, tile:true },
+  { id:"sF2", n:"F2 틀 완성", note:"가는 흰 마름모 틀의 아래 오른 변이 빠지고, 굵은 ✓ 의 긴 팔이 그 변이다(짧은 팔은 왼 아래 변 위에 겹친다). 네모 틀로는 기하가 안 맞아(변은 직선, 체크는 사선) 45° 돌린 마름모로.", v16:"가는 틀이 1px 로 뭉개져 \"마름모 안 체크\"가 되고, 20 에서도 다이아몬드 배지로 읽힌다.", bad:true },
+  { id:"sF3", n:"F3 틈을 지난 체크", note:"오른쪽 기둥 하나(관문 하나), ✓ 의 긴 팔이 기둥을 뚫고 너머까지 — 통과한 획. logo2 의 4 보다 단순.", v16:"기둥과 긴 팔이 겹치는 자리가 덩어리져 \"✓ 에 꼬리\". 20 에서 겨우 갈린다.", bad:true },
+  { id:"sF4", n:"F4 ㅍ 의 속획이 체크", note:"기둥 둘은 ㅍ, 가로 대신 두 팔이 기둥에 닿는 ✓ — 체크가 ㅍ의 가운데. K1 과 K4 를 하나로.", v16:"기둥 사이 10px 에 ✓ 를 넣어 셋이 붙는다. 20px 에서도 ㅍ 도 ✓ 도 아닌 \"창살\". 64 기록용.", bad:true },
+  { id:"sF5", n:"F5 파낸 체크 (제안)", note:"✓ 를 그리지 않고 타일에서 파낸다 — 체크가 비어 있는 자리, 즉 들어갈 자리. \"fit\" 은 조각이 아니라 틈이 말한다. 그려 넣은 체크(K4)와 같은 비례라 둘을 바꿔 쓸 수 있고, 기호가 면에 묻혀 \"앱 체크 아이콘\" 기시감이 가장 적다.", v16:"K4 와 같은 3px — 산다. 단 흰 타일에선 바탕색이 비쳐 사라지므로 흰 버전이 없다(먹·주황만).", bad:false, mask:true }
+];
+const tileOf = (c, vb) => c.tile ? `<path d="${NOTCH[vb]}" fill="var(--tile)" stroke="var(--tb)" vector-effect="non-scaling-stroke"/>`
+  : `<rect width="${vb}" height="${vb}" rx="${(vb * 0.22).toFixed(2)}" fill="var(--tile)" stroke="var(--tb)" vector-effect="non-scaling-stroke"${c.mask ? ` mask="url(#${vb === 16 ? "mF5s" : "mF5"})"` : ""}/>`;
+const T = (c, px, cls) => { const vb = px === 16 ? 16 : 64; return `<span class="tile ${cls}"><svg width="${px}" height="${px}" viewBox="0 0 ${vb} ${vb}">${tileOf(c, vb)}<use href="#${c.id}${vb === 16 ? "16" : ""}"/></svg></span>`; };
+const T16raw = (c, cls) => `<span class="tile ${cls}"><svg width="16" height="16" viewBox="0 0 64 64">${tileOf(c, 64)}<use href="#${c.id}"/></svg></span>`;
+const sizes = (c, cls, label) => `<div class="g ${cls === "o" ? "paper" : ""}"><div>${T(c, 64, cls)}<small>64${label ? " " + label : ""}</small></div><div>${T(c, 32, cls)}<small>32</small></div><div>${T(c, 20, cls)}<small>20</small></div><div>${T(c, 16, cls)}<small>16 격자</small></div><div>${T16raw(c, cls)}<small>16 축소</small></div></div>`;
+const nav = c => `<div class="navbox"><div class="nav"><div class="brand">${T(c, 22, "o")}조달핏</div><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일로 전부 보기</span></div></div></div>`;
+document.getElementById("cands").innerHTML = C.map(c => `<section class="c"><div><h2>${c.n}</h2><div class="note">${c.note}</div><div class="v16 ${c.bad ? "bad" : ""}">${c.v16}</div></div><div>
+<div class="sizes">${sizes(c, "o", "주황")}${sizes(c, "kk", "먹")}${sizes(c, "w", "흰")}</div>
+<div class="row2"><div class="box paper"><span class="k">히어로 lockup · 타일 48 · 800</span><div class="hero">${T(c, 48, "o")}조달핏</div></div>
+<div class="box"><span class="k">파비콘 · 앱 아이콘 16 / 32 / 180</span><div class="icons"><div>${T(c, 16, "o")}<small>16</small></div><div>${T(c, 32, "o")}<small>32</small></div><div>${T(c, 180, "o")}<small>180</small></div></div></div>
+<div class="box"><span class="k">SNS 아바타 원형 크롭 64</span><div class="icons"><div class="circ">${T(c, 64, "o")}</div><div class="circ">${T(c, 64, "kk")}</div><div class="circ">${T(c, 64, "w")}</div></div></div></div>
+${nav(c)}</div></section>`).join("");
+const strip = cls => C.map(c => `<span class="g">${c.n.split(" ")[0]}${T(c, 16, cls)}${T(c, 20, cls)}</span>`).join("");
+document.getElementById("row16").innerHTML = strip("o") + `<span class="g" style="margin-left:auto">먹</span>` + strip("kk").replace(/<span class="g">/g, `<span class="g" style="margin-left:4px">`); document.getElementById("row16w").innerHTML = strip("o") + `<span class="g" style="margin-left:auto">흰</span>` + strip("w");
+const K4 = C[2];
+document.getElementById("wm").innerHTML = [["800 · −0.035em", 800, -0.035], ["800 · −0.03em", 800, -0.03], ["700 · −0.035em", 700, -0.035]].map(([k, w, t]) => `<div class="cell"><span class="k">${k}</span><div class="lk" style="font-weight:${w};letter-spacing:${t}em">${T(K4, 22, "o")}조달핏</div></div>`).join("") + `<div class="cell"><span class="k">먹 타일</span><div class="lk" style="font-weight:800;letter-spacing:-0.035em">${T(K4, 22, "kk")}조달핏</div></div><div class="cell"><span class="k">라틴 보조 · 600</span><div class="lk" style="font-weight:600;letter-spacing:-0.01em">${T(K4, 22, "o")}jodalfit</div></div>`;
+</script>
+</body></html>
