@@ -12,23 +12,28 @@ import sys
 from datetime import date
 
 sys.path.insert(0, __file__.rsplit("\\", 1)[0] if "\\" in __file__ else __file__.rsplit("/", 1)[0])
-from gen_entry import COLLISIONS, ctl, fetch, foot  # noqa: E402
-from gen_results import esc  # noqa: E402
+from gen_entry import COLLISIONS, TYPED, ctl, fetch  # noqa: E402
 from gen_results_v3 import FONT, SHEET_CSS  # noqa: E402
 from gen_results_v4 import nav  # noqa: E402
 from jobs.evaluate_recommender import connect  # noqa: E402
 
 
+def clse(d):
+    """올해면 M.DD, 아니면 YYYY.M.DD — 2037 마감 같은 장기 단가계약이 실제로 있다."""
+    return f"{d.month}.{d.day:02d}" if d.year == date.today().year else f"{d.year}.{d.month}.{d.day:02d}"
+
+
 def fetch_today(conn):
-    """오늘 올라온 공고 중 추정가 큰 5건. 오전 이른 시간엔 오늘 수집분이 얇아(수집 05:00·12:30) 50건 미만이면 어제로 간다."""
+    """오늘 등록된 공고 전부(90일 지평선 안), 최신순. 오전 이른 시간엔 오늘 수집분이 얇아(수집 05:00·12:30) 50건 미만이면 어제로 간다.
+    순서는 bid_ntce_date desc, bid_ntce_no desc — 게시 시각(시·분)이 없어 같은 날 안에서는 공고번호 순이 선후를 대신한다."""
     for label, day in (("오늘", "current_date"), ("어제", "current_date - 1")):
         n = conn.execute(f"select count(*) from bid_notices where bid_ntce_date = {day}").fetchone()[0]
         if n >= 50 or label == "어제":
             rows = conn.execute(f"""select distinct on (bid_ntce_no) bid_ntce_no, bid_ntce_nm, ntce_instt_nm, bid_clse_date, presmpt_prce
                 from bid_notices where bid_ntce_date = {day} and bid_clse_date <= current_date + 90  -- 추천과 같은 지평선: 2037 마감 단가계약(종합쇼핑몰)은 뺀다
                 order by bid_ntce_no, bid_ntce_ord desc""").fetchall()
-            rows.sort(key=lambda r: -(r[4] or 0))
-            return dict(label=label, n=n, rows=[dict(no=a, nm=b, org=c, clse=d, prc=e) for a, b, c, d, e in rows[:5]])
+            rows.sort(key=lambda r: r[0], reverse=True)
+            return dict(label=label, n=n, rows=[dict(no=a, nm=b, org=c, clse=clse(d), prc=int(e) if e else None) for a, b, c, d, e in rows])
 
 # ponytail: 둘째 블록 "이번 주 가장 많은 회사에 추천된 공고"는 만들지 않는다 —
 #   notice_events(source='user', 7d) impressions 를 bid_ntce_no 로 묶어 count(distinct target_bizrno) 가 '인기' 신호인데,
@@ -74,11 +79,15 @@ CSS = SHEET_CSS + r"""
 .ls .hd.first { padding-top:6px }
 .ls .more { padding:10px 0 0; font-size:12.5px; color:#6b6b67 }
 .ls .miss { padding:16px 0 4px; font-size:13.5px; color:#55554f; line-height:1.6 } .ls .miss b { color:#141414; font-weight:600 }
-/* 오늘 올라온 공고 — 상자보다 조용해야 한다. 주황 없음, 헤어라인 행, 먹 제목 13.5px, 회색 메타 12.5px. */
-.today { margin-top:48px } .today .k { display:block; margin-bottom:6px }
-.today a.row { display:grid; grid-template-columns:minmax(0,1fr) 150px 76px 128px; gap:0 14px; align-items:baseline; padding:10px 0; border-top:1px solid #ececea; font-size:13.5px }
-.today a.row:last-of-type { border-bottom:1px solid #ececea }
-.today .t { color:#141414; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .today a.row:hover .t { text-decoration:underline; text-underline-offset:3px }
+/* 오늘 등록된 공고 — 상자보다 조용해야 한다. 주황 없음, 헤어라인 행, 먹 제목 13.5px, 회색 메타 12.5px.
+   세로 틱: 바깥 .tk 는 5행 높이로 고정된 클립(JS 가 잰다), 안쪽 .tki 를 translateY(-행) → 0 으로 민다 — 레이아웃이 아니라 transform 이라 layout-shift 0.
+   새 행은 opacity 0→1 로 위에서 들어오고 맨 아래 행은 클립 밖으로 밀려나며 opacity 1→0. 들어온 행은 0.6초 동안 먹 650 이었다가 500 으로. */
+.today { margin-top:48px } .today .k { display:block; margin-bottom:6px } .today .tk { overflow:hidden }
+.today .tki { transition:transform var(--tk,320ms) cubic-bezier(.3,.7,.2,1) }
+.today a.row { display:grid; grid-template-columns:minmax(0,1fr) 150px 76px 128px; gap:0 14px; align-items:baseline; padding:10px 0; border-top:1px solid #ececea; font-size:13.5px; transition:opacity var(--tk,320ms) ease }
+.today a.row:last-of-type { border-bottom:1px solid #ececea } .today a.row.out { pointer-events:none }
+.today .t { color:#141414; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:font-weight .4s } .today a.row.new .t { font-weight:650 }
+.today a.row:hover .t { text-decoration:underline; text-underline-offset:3px }
 .today .o, .today .d { font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .today .d { text-align:right; font-variant-numeric:tabular-nums }
 .today .w { font-size:12.5px; color:#55554f; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap } .today .w.none { color:#8f8f8b }
 .today .all { display:inline-block; margin-top:10px; font-size:13px; color:#141414 } .today .all:hover, .today .all:focus-visible { text-decoration:underline; text-underline-offset:3px }
@@ -86,20 +95,21 @@ CSS = SHEET_CSS + r"""
 .foot { margin-top:auto; padding:40px 0 70px; font-size:12.5px; color:#6b6b67; line-height:1.7; max-width:880px } .foot b { color:#141414; font-weight:600 }
 @media (max-width:640px) {
   .entry { padding-top:28px } .ctl { font-size:11.5px } .ctl span { padding:6px 9px }
-  .box input { font-size:17px; padding:14px 14px } .box .go { padding:0 14px } .box .go .t { display:none } .box .go .ar { display:inline; font-size:20px; line-height:1 }
+  .box input { font-size:17px; padding:14px 14px; text-overflow:ellipsis } .box .go { padding:0 14px } .box .go .t { display:none } .box .go .ar { display:inline; font-size:20px; line-height:1 }
   #ls { max-height:calc(100dvh - 230px); overflow:auto } .ls li.kw { position:sticky; bottom:0; background:#fff } /* 목록이 스크롤돼도 키워드 행은 보인다 */
   .ls li { grid-template-columns:minmax(0,1fr) 96px; grid-template-areas:"nm nc" "rg rg" "rp bz"; gap:3px 10px; padding:11px 8px } .ls li .bz { white-space:nowrap }
   .ls li .nm { grid-area:nm } .ls li .rg { grid-area:rg } .ls li .rp { grid-area:rp } .ls li .nc { grid-area:nc } .ls li .bz { grid-area:bz }
   .ls li.kw .rg { grid-column:auto } .ls li.kw .bz, .ls li.kw .rp, .ls li.kw .nc { display:none }
   .today a.row { grid-template-columns:minmax(0,1fr) 64px; grid-template-areas:"t t" "o d"; gap:3px 10px } .today .t { grid-area:t } .today .o { grid-area:o } .today .d { grid-area:d } .today .w { display:none }
 }
-@media (prefers-reduced-motion: reduce) { .box, .rc a { transition:none } }
+@media (prefers-reduced-motion: reduce) { .box, .rc a, .today .tki, .today a.row, .today .t { transition:none } }
 """
 
 # 목록 기계는 gen_entry.JS 와 같다(query/render/setAct/키). 다른 것은 넘김뿐 — 전환 없음.
 JS = r"""
 const D = JSON.parse(document.getElementById('data').textContent);
 const ROWS = Object.values(D.groups).flat();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = s => document.querySelector(s);
 const inp = $('#q'), ls = $('#ls'), live = $('#live'), sent = $('#sent');
 let items = [], act = -1;
@@ -127,7 +137,7 @@ function row(r, i) {
        + `<span class="nc ${r.ncon ? '' : 'none'}">${r.ncon ? `수주 ${r.ncon}건` : '수주 없음'}</span><span class="bz">${r.biz}</span></li>`;
 }
 function kwrow(q, i, lead) {
-  return `<li role="option" class="kw" id="o${i}" data-i="${i}"><span class="nm">이 말로 공고 찾기</span><span class="rg">"${q}"<small>${lead ? '회사 없이 — 이 일을 하는 공고만' : '회사가 아니라 하는 일이라면'}</small></span></li>`;
+  return `<li role="option" class="kw" id="o${i}" data-i="${i}"><span class="nm">키워드로 공고 검색</span><span class="rg">"${q}"<small>${lead ? '회사 없이 — 업종·품목 기준' : '업종·품목 기준'}</small></span></li>`;
 }
 function close() { ls.hidden = true; inp.setAttribute('aria-expanded', 'false'); inp.setAttribute('aria-activedescendant', ''); act = -1; }
 function render() {
@@ -137,19 +147,19 @@ function render() {
   const shown = rows.slice(0, 8), generic = total > 30, miss = total === 0;
   let h = '';
   const kwFirst = (generic || miss) && !biz;
-  if (kwFirst) { h += `<div class="hd first"><span>하는 일로</span></div>` + kwrow(q, items.length, true); items.push({ kw: q }); }
+  if (kwFirst) { h += `<div class="hd first"><span>키워드</span></div>` + kwrow(q, items.length, true); items.push({ kw: q }); }
   if (miss) {
-    h += `<div class="miss">${biz ? `<b>${q}</b> 번호로 등록된 회사가 없습니다.` : `<b>${q}</b> 이름의 회사를 나라장터 등록에서 찾지 못했습니다.`}<br>`
-       + `사업자번호 10자리로 다시 찾거나, 회사가 없어도(예비창업·해외·개인) 위 행으로 공고를 볼 수 있습니다.</div>`;
+    h += `<div class="miss">${biz ? `<b>${q}</b> 번호로 등록된 회사 없음.` : `<b>${q}</b> 명칭의 회사가 나라장터 등록에 없음.`}<br>`
+       + `사업자등록번호 10자리로 재검색하거나, 회사 등록 없이(예비창업·해외·개인) 위 행에서 키워드로 검색합니다.</div>`;
   } else {
-    h += `<div class="hd ${kwFirst ? '' : 'first'}"><span>회사 <b>${num(total)}</b>곳${generic ? ' — 회사명을 더 치면 좁혀집니다' : ''}</span><span>지역 · 대표업종 · 수주</span></div>`;
+    h += `<div class="hd ${kwFirst ? '' : 'first'}"><span>회사 <b>${num(total)}</b>곳${generic ? ' — 추가 입력으로 좁혀집니다' : ''}</span><span>지역 · 대표업종 · 수주</span></div>`;
     for (const r of (generic ? shown.slice(0, 3) : shown)) { h += row(r, items.length); items.push({ co: r }); }
-    if (!rows.length) h += `<div class="miss">시안에는 이 낱말의 회사 행을 싣지 않았다 — 실제 화면에선 ${num(total)}곳 중 수주 많은 순 3곳.</div>`;
-    if (total > items.length - (kwFirst ? 1 : 0)) h += `<div class="more">비슷한 이름 ${num(total - (items.length - (kwFirst ? 1 : 0)))}곳 더 — 지역이나 글자를 더 치면 좁혀집니다</div>`;
+    if (!rows.length) h += `<div class="miss">시안에는 이 낱말의 회사 행을 싣지 않음 — 실제 화면에서는 ${num(total)}곳 중 수주 많은 순 3곳.</div>`;
+    if (total > items.length - (kwFirst ? 1 : 0)) h += `<div class="more">유사 명칭 ${num(total - (items.length - (kwFirst ? 1 : 0)))}곳 — 지역 또는 추가 입력으로 좁혀집니다</div>`;
   }
-  if (!kwFirst && !biz) { h += `<div class="hd"><span>하는 일로</span></div>` + kwrow(q, items.length, false); items.push({ kw: q }); }
+  if (!kwFirst && !biz) { h += `<div class="hd"><span>키워드</span></div>` + kwrow(q, items.length, false); items.push({ kw: q }); }
   ls.innerHTML = h; ls.hidden = false; inp.setAttribute('aria-expanded', 'true');
-  live.textContent = miss ? `회사 없음. 키워드로 찾기 1개` : `회사 ${items.filter(x => x.co).length}곳, 키워드로 찾기 1개. 화살표로 고르고 Enter`;
+  live.textContent = miss ? `회사 없음. 키워드 검색 1개` : `회사 ${items.filter(x => x.co).length}곳, 키워드 검색 1개. 화살표로 선택, Enter 로 확정`;
 }
 function setAct(i) {
   act = i;
@@ -182,11 +192,11 @@ function go(it) {
   if (it.co) remember(it.co);
   close();
   inp.value = it.co ? it.co.nm : it.kw;
-  sent.textContent = it.co ? `${it.co.nm} · ${it.co.rgn} — 결과 페이지로. 머리 장면(flow.html)이 이어받는다.` : `"${it.kw}" 로 회사 없이 — 결과 페이지로.`;
+  sent.textContent = it.co ? `${it.co.nm} · ${it.co.rgn} — 결과 페이지로 이동. 머리 장면(flow.html)이 이어받음.` : `"${it.kw}" 키워드 — 회사 없이 결과 페이지로 이동.`;
   paintRecent();
 }
 
-/* ---- 상태 알약 — 입력란에 값을 넣고 같은 render 를 돌린다. ---- */
+/* ---- 상태 알약 — 입력란에 값을 설정하고 같은 render 를 실행. ---- */
 const STATES = { empty: '', typing: D.typing, miss: 'ADATA', return: '' };
 function state(s) {
   document.querySelectorAll('.ctl span').forEach(x => x.classList.toggle('on', x.dataset.s === s));
@@ -196,34 +206,66 @@ function state(s) {
 }
 function paintRecent() {
   const r = recent(), el = $('#rc');
-  el.innerHTML = r.length ? `<span class="l">최근</span>` + r.map((c, i) => `<a data-i="${i}" tabindex="0" role="button">${c.nm}<small>${c.rgn}${c.ncon ? ' · 수주 ' + c.ncon + '건' : ''}</small></a>`).join('') : '';
+  el.innerHTML = r.length ? `<span class="l">최근 조회</span>` + r.map((c, i) => `<a data-i="${i}" tabindex="0" role="button">${c.nm}<small>${c.rgn}${c.ncon ? ' · 수주 ' + c.ncon + '건' : ''}</small></a>`).join('') : '';
   el.querySelectorAll('a').forEach(a => { const f = () => go({ co: r[+a.dataset.i] }); a.onclick = f; a.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
 }
+/* ---- 오늘 등록된 공고 — 세로 틱. 4.5초마다 맨 위에 한 행이 들어오고 맨 아래 행이 나간다. rAF 루프 없음, setTimeout 사슬 하나.
+   멈춤: hover · focus-within(링크를 Tab 으로 지나갈 수 있게) · 입력에 글자 · 목록 열림 · 탭 숨김. 움직임 줄이기면 아예 안 돌고 최신 5건 고정. ---- */
+const T = JSON.parse($('#tdata').textContent), td = $('#today'), tk = $('#tk'), ki = $('#tki');
+let ti = 0;
+function trow(r) {
+  const a = document.createElement('a'); a.className = 'row'; a.href = '/notices/' + r.no;
+  for (const [c, t] of [['t', r.nm], ['o', r.org], ['d', '마감 ' + r.clse], [r.prc ? 'w' : 'w none', r.prc ? r.prc.toLocaleString('ko-KR') + '원' : '추정가 없음']]) { const s = document.createElement('span'); s.className = c; s.textContent = t; a.appendChild(s); }
+  return a;
+}
+for (; ti < Math.min(5, T.length); ti++) ki.appendChild(trow(T[ti]));
+function fixH() { tk.style.height = ''; tk.style.height = tk.offsetHeight + 'px'; }   // 블록 높이 = 5행. 틱이 "전체 보기" 를 밀지 않는다
+fixH(); addEventListener('resize', fixH);
+const paused = () => document.hidden || td.matches(':hover, :focus-within') || inp.value.trim() !== '' || !ls.hidden;
+function doTick() {
+  if (T.length <= 5) return;
+  const a = trow(T[ti++ % T.length]), z = [...ki.querySelectorAll('a.row:not(.out)')].pop();
+  a.classList.add('new'); a.style.opacity = '0'; ki.prepend(a);
+  const h = a.offsetHeight, ms = parseFloat(getComputedStyle(ki).transitionDuration) * 1000;
+  ki.style.transition = 'none'; ki.style.transform = `translateY(-${h}px)`; ki.offsetHeight;   // 새 행만큼 올려 둔 채 reflow
+  ki.style.transition = ''; ki.style.transform = ''; a.style.opacity = '';                     // 0 으로 미끄러지며 새 행이 드러남
+  z.style.opacity = '0'; z.classList.add('out');                                              // 맨 아래 행은 클립 밖으로 밀려나며 사라짐
+  setTimeout(() => z.remove(), ms + 20);
+  setTimeout(() => a.classList.remove('new'), 600);
+}
+function tick() { setTimeout(() => { if (!paused()) doTick(); tick(); }, 4500); }
+if (!reduce) tick();
+
 document.querySelectorAll('.ctl span').forEach(x => x.onclick = () => state(x.dataset.s));
 document.addEventListener('click', e => { if (!e.target.closest('.box') && !e.target.closest('#ls') && !e.target.closest('.ctl')) close(); });
 state(recent().length ? 'return' : 'empty');
 """
 
 
-def clse(d):
-    """올해면 M.DD, 아니면 YYYY.M.DD — 2037 마감 같은 장기 단가계약이 실제로 있다."""
-    return f"{d.month}.{d.day:02d}" if d.year == date.today().year else f"{d.year}.{d.month}.{d.day:02d}"
-
-
 def today(t):
-    rows = "".join(f'<a class="row" href="/notices/{esc(r["no"])}"><span class="t">{esc(r["nm"])}</span><span class="o">{esc(r["org"])}</span>'
-                   f'<span class="d">마감 {clse(r["clse"])}</span>'
-                   f'<span class="w {"" if r["prc"] else "none"}">{f"{int(r["prc"]):,}원" if r["prc"] else "추정가 없음"}</span></a>' for r in t["rows"])
-    return f'<div class="today"><span class="k">{t["label"]} 올라온 공고 {t["n"]:,}건</span>{rows}<a class="all" href="/notices">전체 보기 →</a></div>'
+    # 행은 JS 가 그린다(처음 5건도) — 틱에서 들어오는 행과 같은 코드.
+    return (f'<div class="today" id="today"><span class="k">{t["label"]} 등록된 공고 {t["n"]:,}건</span><div class="tk" id="tk"><div class="tki" id="tki"></div></div><a class="all" href="/notices">전체 보기 →</a>'
+            f'<script type="application/json" id="tdata">{json.dumps(t["rows"], ensure_ascii=False)}</script></div>')
+
+
+def foot(d):
+    """gen_entry.foot 과 같은 내용을 공문 톤으로. 공통 함수는 옛 시안이 쓰므로 두고 여기서만 다시 쓴다."""
+    lg = d["log"]
+    return (f'<div class="foot"><b>키워드 검색이 회사 검색과 같은 무게인 이유.</b> 최근 7일 사용자 검색 {lg["tot"]}건 중 {lg["miss"]}건({lg["miss"] / lg["tot"] * 100:.0f}%)이 회사로 해석되지 않음 — '
+            f'{lg["kw"]}건은 처음부터 키워드 모드, {lg["nf"]}건은 회사 모드에서 "회사를 찾을 수 없습니다". 입력 문자열은 '
+            + " · ".join(f'"{w}"' for w in TYPED[:5]) + ' 등 업종·품목·브랜드. '
+            f'동명 회사 목록의 회사·지역·업종·수주는 실제 행이며 사업자등록번호는 가운데를 가림. 입찰 가능 {d["active"]:,}건은 {date.today()} 기준 마감 90일 이내 공고 수. '
+            f'목록은 ↑↓ Enter Esc, role=combobox/listbox, aria-activedescendant. 아래 알약은 입력란에 값을 설정하고 같은 코드를 실행 — 입력란에 직접 입력해도 동일 '
+            f'(동명 묶음: {", ".join(COLLISIONS)}).</div>')
 
 
 def page(d):
     data = dict(groups=d["groups"], counts=d["counts"], active=d["active"], ret=d["ret"], typing=COLLISIONS[0])
-    body = (f'<div class="entry"><div class="box"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="회사명 · 사업자번호 · 하는 일" '
-            f'role="combobox" aria-expanded="false" aria-controls="ls" aria-autocomplete="list" aria-label="회사명, 사업자번호, 또는 하는 일" enterkeyhint="search">'
+    body = (f'<div class="entry"><div class="box"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="회사명 · 사업자등록번호 · 업종 또는 품목" '
+            f'role="combobox" aria-expanded="false" aria-controls="ls" aria-autocomplete="list" aria-label="회사명, 사업자등록번호, 업종 또는 품목" enterkeyhint="search">'
             f'<button type="button" class="go" id="go" aria-label="찾기"><span class="t">찾기</span><span class="ar" aria-hidden="true">→</span></button></div>'
             f'<ul id="ls" role="listbox" class="ls" hidden aria-label="회사 또는 키워드"></ul><div id="live" class="sr" aria-live="polite"></div>'
-            f'<p class="pr">지금 입찰 가능한 공고 <b>{d["active"]:,}</b>건 · 회사명이나 하는 일을 넣으면 낼 수 있는 것만 남습니다</p>'
+            f'<p class="pr">입찰 가능 공고 <b>{d["active"]:,}</b>건 중 참가 자격이 있는 공고만 선별합니다</p>'
             f'<div class="rc" id="rc"></div><div class="sent" id="sent"></div>{today(d["today"])}</div>')
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>조달핏 입구 — 검색창 하나</title>{FONT}<style>{CSS}</style></head><body>'
