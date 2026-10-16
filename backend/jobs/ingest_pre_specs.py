@@ -1,11 +1,14 @@
-"""사전규격 수집 잡 (SW 사업만).
+"""사전규격 수집 잡 — 물품·용역·공사·외자 전부.
 
-소스: HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch
-필터: swBizObjYn=Y (SW사업 대상만)
+소스: HrcspSsstndrdInfoService/getPublicPrcureThngInfo{Thng,Servc,Cnstwk,Frgcpt}PPSSrch
+(업무구분별 엔드포인트가 따로다. 2026-10-16 까지는 용역(Servc)+swBizObjYn=Y 만 받아 2,521건이었고,
+bid_notices.bf_spec_rgst_no(0047)가 채워진 물품 공고 3.8만 건과 한 건도 안 이어졌다.)
+조회 범위 30일 초과 시 API 가 거부하므로 30일 창으로 나눠 받는다.
 
 실행:
     cd backend
     uv run python -m jobs.ingest_pre_specs --days-back 1
+    uv run python -m jobs.ingest_pre_specs --days-back 170   # 백필 (30일씩 6창)
 """
 
 from __future__ import annotations
@@ -24,8 +27,15 @@ from jobs._common import (
     to_yn,
 )
 
-URL = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
+BASE = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService"
+URLS = {
+    "물품": f"{BASE}/getPublicPrcureThngInfoThngPPSSrch",
+    "용역": f"{BASE}/getPublicPrcureThngInfoServcPPSSrch",
+    "공사": f"{BASE}/getPublicPrcureThngInfoCnstwkPPSSrch",
+    "외자": f"{BASE}/getPublicPrcureThngInfoFrgcptPPSSrch",
+}
 JOB_NAME = "ingest_pre_specs"
+WINDOW_DAYS = 30  # 나라장터 조회 범위 상한
 
 
 def map_item(it: dict) -> dict:
@@ -54,30 +64,48 @@ def map_item(it: dict) -> dict:
     }
 
 
+def windows(begin: datetime, end: datetime) -> list[tuple[datetime, datetime]]:
+    """[begin, end] 를 WINDOW_DAYS 이하 구간으로 나눈다 (경계는 1분 겹치지 않게)."""
+    out = []
+    cur = begin
+    while cur < end:
+        nxt = min(cur + timedelta(days=WINDOW_DAYS), end)
+        out.append((cur, nxt))
+        cur = nxt + timedelta(minutes=1)
+    return out
+
+
 def run(days_back: int = 1, batch_size: int = 500) -> None:
     end = datetime.now()
     begin = end - timedelta(days=days_back)
-    extra = {
-        "inqryDiv": "1",
-        "inqryBgnDt": begin.strftime(DATE_FMT),
-        "inqryEndDt": end.strftime(DATE_FMT),
-        "swBizObjYn": "Y",
-    }
-    run_id = log_ingest_start(JOB_NAME, {"days_back": days_back, **extra} | {"ServiceKey": "***"})
-    print(f"[{JOB_NAME}] SW사업 only, {extra['inqryBgnDt']} ~ {extra['inqryEndDt']}")
+    run_id = log_ingest_start(
+        JOB_NAME,
+        {"days_back": days_back, "inqryBgnDt": begin.strftime(DATE_FMT), "inqryEndDt": end.strftime(DATE_FMT)},
+    )
+    print(f"[{JOB_NAME}] {begin:%Y%m%d%H%M} ~ {end:%Y%m%d%H%M}, {len(URLS)} 업무구분 × {len(windows(begin, end))} 창")
 
     total = 0
     batch: list[dict] = []
     try:
-        for it in iter_all_items(URL, extra):
-            row = map_item(it)
-            if not row["bf_spec_rgst_no"]:
-                continue
-            batch.append(row)
-            if len(batch) >= batch_size:
-                upsert_rows("pre_specs", batch, on_conflict="bf_spec_rgst_no")
-                total += len(batch)
-                batch.clear()
+        for div, url in URLS.items():
+            n_div = 0
+            for w_begin, w_end in windows(begin, end):
+                extra = {
+                    "inqryDiv": "1",
+                    "inqryBgnDt": w_begin.strftime(DATE_FMT),
+                    "inqryEndDt": w_end.strftime(DATE_FMT),
+                }
+                for it in iter_all_items(url, extra):
+                    row = map_item(it)
+                    if not row["bf_spec_rgst_no"]:
+                        continue
+                    batch.append(row)
+                    n_div += 1
+                    if len(batch) >= batch_size:
+                        upsert_rows("pre_specs", batch, on_conflict="bf_spec_rgst_no")
+                        total += len(batch)
+                        batch.clear()
+            print(f"  {div}: {n_div} rows")
         if batch:
             upsert_rows("pre_specs", batch, on_conflict="bf_spec_rgst_no")
             total += len(batch)

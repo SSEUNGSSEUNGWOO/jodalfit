@@ -34,6 +34,8 @@ export interface BidNotice {
   prtcpt_psbl_rgn_nm: string | null;
   indstryty_lmt_yn: string | null;
   attachments: NoticeAttachment[] | null;
+  /** 사전규격 등록번호 (0047) — 있으면 pre_specs 를 이걸로 직접 잇는다 */
+  bf_spec_rgst_no: string | null;
   has_embedding: boolean;
 }
 
@@ -108,8 +110,8 @@ export interface NoticeLifecycle {
 
 /** 벡터 컬럼은 공간에 따라 다르다 — select 리터럴을 분기해야 supabase-js 타입 추론이 산다. */
 const BID_NOTICE_COLUMNS = IS_KURE
-  ? "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,embedding:embedding_k"
-  : "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,embedding";
+  ? "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,embedding:embedding_k"
+  : "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,embedding";
 
 export async function fetchBidNotice(
   bidNtceNo: string
@@ -129,6 +131,9 @@ export async function fetchBidNotice(
     has_embedding: !!embedding,
   };
 }
+
+const PRE_SPEC_COLS =
+  "bf_spec_rgst_no,prdct_clsfc_no_nm,bsns_div_nm,sw_biz_obj_yn,asign_bdgt_amt,rcpt_dt,rgst_dt,opnin_rgst_clse_dt,order_instt_nm,rl_dminstt_nm,spec_doc_file_url_1";
 
 export async function fetchLifecycle(
   bidNtceNo: string
@@ -157,15 +162,21 @@ export async function fetchLifecycle(
             .eq("bid_ntce_no", notice.bid_ntce_no)
             .order("bid_ntce_ord")
         : Promise.resolve({ data: null }),
-      c
-        .from("pre_specs")
-        .select(
-          "bf_spec_rgst_no,prdct_clsfc_no_nm,bsns_div_nm,sw_biz_obj_yn,asign_bdgt_amt,rcpt_dt,rgst_dt,opnin_rgst_clse_dt,order_instt_nm,rl_dminstt_nm,spec_doc_file_url_1"
-        )
-        .ilike("bid_ntce_no_list", `%${bidNtceNo}%`)
-        .order("rgst_dt", { ascending: false, nullsFirst: false })
-        .order("bf_spec_rgst_no")
-        .limit(5),
+      // 공고에 사전규격 등록번호(0047)가 있으면 그걸로 직접 잇는다. 없을 때만 예전 방식 —
+      // 사전규격 쪽 공고번호 목록(bid_ntce_no_list)에 들어 있는지로 추측 (187건뿐이던 연결).
+      notice.bf_spec_rgst_no
+        ? c
+            .from("pre_specs")
+            .select(PRE_SPEC_COLS)
+            .eq("bf_spec_rgst_no", notice.bf_spec_rgst_no)
+            .limit(1)
+        : c
+            .from("pre_specs")
+            .select(PRE_SPEC_COLS)
+            .ilike("bid_ntce_no_list", `%${bidNtceNo}%`)
+            .order("rgst_dt", { ascending: false, nullsFirst: false })
+            .order("bf_spec_rgst_no")
+            .limit(5),
       c
         .from("order_plans")
         .select(
