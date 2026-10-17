@@ -1,0 +1,1013 @@
+{
+ "date": "2026-09-20",
+ "domain": "jodalfit.co.kr",
+ "sources": {
+  "naver": "ok",
+  "gsc_search": "ok",
+  "gsc_sitemaps": "ok",
+  "gsc_inspect": "ok",
+  "supabase": "ok"
+ },
+ "naver": {
+  "data_date": "2026-09-20",
+  "clicks": 25,
+  "impressions": 1086,
+  "ctr": 2.3,
+  "top_date": "2026-09-20",
+  "top_queries": [
+   {
+    "query": "수건설안전지도사사무소",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "무성토건",
+    "clicks": 1,
+    "impressions": 3,
+    "position": 4
+   },
+   {
+    "query": "석암토건",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 2
+   },
+   {
+    "query": "사무엘건설",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 3
+   },
+   {
+    "query": "한주성 스튜디오",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 4
+   },
+   {
+    "query": "신원렌터카장신원",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 5
+   },
+   {
+    "query": "녹담이엔씨",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "유한회사 대명조선 낙찰",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "공공교통시설개발사업 타당성평가대행자 등록",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "가평 건륭건설 주식회사",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "화천 주식회사 태경 이인규",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "한울앤푸드",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 2
+   },
+   {
+    "query": "위양지 생태관광 힐링로드 쉼터 조성공사",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "한국장애인이워크협회 일자리사업장",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 11
+   },
+   {
+    "query": "4161524797",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "박석기 지니건설",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "서포전기통신.",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "용두천경관개선사업",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 6
+   },
+   {
+    "query": "한양아이앤씨 기동화",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "동서엔지니어링 정화",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "양주 ab studio",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 2
+   },
+   {
+    "query": "국도건설 이근철",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "우진산전 원격관제 시스템",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "지아이웍스 대구",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "나이스인프라 주식회사",
+    "clicks": 0,
+    "impressions": 19,
+    "position": 2
+   },
+   {
+    "query": "무주 덕유산 유스타운",
+    "clicks": 0,
+    "impressions": 18,
+    "position": 5
+   },
+   {
+    "query": "일광서점",
+    "clicks": 0,
+    "impressions": 13,
+    "position": 15
+   },
+   {
+    "query": "위본건설",
+    "clicks": 0,
+    "impressions": 11,
+    "position": 5
+   },
+   {
+    "query": "한라산업개발",
+    "clicks": 0,
+    "impressions": 10,
+    "position": 4
+   },
+   {
+    "query": "현대그린푸드 발주",
+    "clicks": 0,
+    "impressions": 10,
+    "position": 3
+   },
+   {
+    "query": "나주 일광서점",
+    "clicks": 0,
+    "impressions": 9,
+    "position": 14
+   },
+   {
+    "query": "태응약품",
+    "clicks": 0,
+    "impressions": 8,
+    "position": 2
+   },
+   {
+    "query": "서울고려관광",
+    "clicks": 0,
+    "impressions": 8,
+    "position": 1
+   },
+   {
+    "query": "나라장터 창호구매",
+    "clicks": 0,
+    "impressions": 8,
+    "position": 2.5
+   },
+   {
+    "query": "조우건설",
+    "clicks": 0,
+    "impressions": 7,
+    "position": 4
+   },
+   {
+    "query": "에스에스장터",
+    "clicks": 0,
+    "impressions": 6,
+    "position": 5.5
+   },
+   {
+    "query": "웍스피어 유한책임",
+    "clicks": 0,
+    "impressions": 6,
+    "position": 5
+   },
+   {
+    "query": "에이치이에이",
+    "clicks": 0,
+    "impressions": 6,
+    "position": 11
+   },
+   {
+    "query": "수비올 주식회사",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 4
+   },
+   {
+    "query": "하존이앤씨",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 5
+   },
+   {
+    "query": "아이티 나라",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 3
+   },
+   {
+    "query": "새론장터",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 6
+   },
+   {
+    "query": "삼화토건",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 7
+   },
+   {
+    "query": "다원건설 도색",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 1
+   },
+   {
+    "query": "수산의정석",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 2
+   },
+   {
+    "query": "발안수목원",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 4
+   },
+   {
+    "query": "대한엔지니어링김정완",
+    "clicks": 0,
+    "impressions": 5,
+    "position": 4
+   },
+   {
+    "query": "수주의정석",
+    "clicks": 0,
+    "impressions": 4,
+    "position": 8.5
+   },
+   {
+    "query": "청보건설",
+    "clicks": 0,
+    "impressions": 4,
+    "position": 5.5
+   },
+   {
+    "query": "동부엘시드",
+    "clicks": 0,
+    "impressions": 4,
+    "position": 2
+   }
+  ],
+  "top_queries_7d": [
+   {
+    "query": "수건설안전지도사사무소",
+    "clicks": 7,
+    "impressions": 14,
+    "position": 1.5
+   },
+   {
+    "query": "주식회사 클콩",
+    "clicks": 4,
+    "impressions": 3,
+    "position": 1
+   },
+   {
+    "query": "플랜엠",
+    "clicks": 3,
+    "impressions": 123,
+    "position": 9
+   },
+   {
+    "query": "조달핏",
+    "clicks": 3,
+    "impressions": 10,
+    "position": 1.5
+   },
+   {
+    "query": "한라산업개발 수주",
+    "clicks": 3,
+    "impressions": 4,
+    "position": 1
+   },
+   {
+    "query": "앞썬코퍼레이션",
+    "clicks": 2,
+    "impressions": 32,
+    "position": 2
+   },
+   {
+    "query": "두손조경자재",
+    "clicks": 2,
+    "impressions": 16,
+    "position": 4
+   },
+   {
+    "query": "현대장터 그린푸드",
+    "clicks": 2,
+    "impressions": 12,
+    "position": 1
+   },
+   {
+    "query": "대경공조기술 주식회사",
+    "clicks": 2,
+    "impressions": 10,
+    "position": 1
+   },
+   {
+    "query": "지호이엔씨",
+    "clicks": 2,
+    "impressions": 7,
+    "position": 4
+   },
+   {
+    "query": "디엠이엔씨 박균철",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 1
+   },
+   {
+    "query": "소각시설 가스가열기 번들교체 공사",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 1.5
+   },
+   {
+    "query": "현성토건",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 3
+   },
+   {
+    "query": "아임오퍼레이션",
+    "clicks": 2,
+    "impressions": 5,
+    "position": 3
+   },
+   {
+    "query": "피아이에스엔지니어링",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 1
+   },
+   {
+    "query": "지천인양배수문",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 2.5
+   },
+   {
+    "query": "예쓸디자인건축사사무소",
+    "clicks": 2,
+    "impressions": 3,
+    "position": 2
+   },
+   {
+    "query": "우삼호건설",
+    "clicks": 2,
+    "impressions": 3,
+    "position": 3
+   },
+   {
+    "query": "두레이앤씨",
+    "clicks": 2,
+    "impressions": 3,
+    "position": 6
+   },
+   {
+    "query": "동호건설낙찰",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "가포고 교복",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "한울앤푸드",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 2
+   },
+   {
+    "query": "위본건설 수주",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "이수건설 수주",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 7
+   },
+   {
+    "query": "동아항업 영상도화",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 7.5
+   },
+   {
+    "query": "채은산업",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "임실청소년수련원 나라장터 계약",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "새화건설",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "영도 감지2지구 연안정비사업 혜인이엔씨",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "문방천 생태하천",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 6
+   },
+   {
+    "query": "자람앤수엔지니어링 입찰",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "믹스미디어 정연승",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "석면조사 업체 오르비텍",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 13
+   },
+   {
+    "query": "청보건설 광주",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "서웅배 기술사",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "삼신문화재",
+    "clicks": 2,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "위본건설",
+    "clicks": 1,
+    "impressions": 121,
+    "position": 1
+   },
+   {
+    "query": "웍스피어 유한책임",
+    "clicks": 1,
+    "impressions": 36,
+    "position": 5
+   },
+   {
+    "query": "메트로컴넷",
+    "clicks": 1,
+    "impressions": 17,
+    "position": 1
+   },
+   {
+    "query": "삼국씨앤디",
+    "clicks": 1,
+    "impressions": 10,
+    "position": 3
+   },
+   {
+    "query": "무성토건",
+    "clicks": 1,
+    "impressions": 9,
+    "position": 1
+   },
+   {
+    "query": "명현건설",
+    "clicks": 1,
+    "impressions": 9,
+    "position": 3
+   },
+   {
+    "query": "다우종합건설",
+    "clicks": 1,
+    "impressions": 7,
+    "position": 4
+   },
+   {
+    "query": "삼중종합건설",
+    "clicks": 1,
+    "impressions": 6,
+    "position": 4
+   },
+   {
+    "query": "더드림조경",
+    "clicks": 1,
+    "impressions": 5,
+    "position": 3
+   },
+   {
+    "query": "청운구조안전연구원",
+    "clicks": 1,
+    "impressions": 5,
+    "position": 3
+   },
+   {
+    "query": "토석종합건설",
+    "clicks": 1,
+    "impressions": 5,
+    "position": 3
+   },
+   {
+    "query": "아이삭컴퍼니",
+    "clicks": 1,
+    "impressions": 5,
+    "position": 6
+   },
+   {
+    "query": "진사전기소방",
+    "clicks": 1,
+    "impressions": 4,
+    "position": 4
+   },
+   {
+    "query": "플랜엠 수주",
+    "clicks": 1,
+    "impressions": 4,
+    "position": 2
+   }
+  ],
+  "by_type_top": {
+   "company": {
+    "clicks": 24,
+    "impressions": 290
+   },
+   "industry": {
+    "clicks": 1,
+    "impressions": 2
+   }
+  },
+  "tracked": {
+   "조달핏": null,
+   "나라장터 입찰공고 추천": null,
+   "입찰공고 추천": null,
+   "나라장터 입찰정보 무료 검색": null,
+   "나라장터 입찰공고 검색": null,
+   "진행중인 용역 입찰공고": null,
+   "사전규격 의견제출 기한": null,
+   "사전규격 공개 조회": null,
+   "나라장터 낙찰 이력 조회": null,
+   "나라장터 개찰결과 조회": null,
+   "업체별 투찰률": null,
+   "조달청 등록업체 조회": null,
+   "공공조달 참여 기업 목록": null,
+   "구례 산우건설": null,
+   "구례 산우건설 계약": null,
+   "정원도시안전진단": null,
+   "신진건설산업": null,
+   "우영기술단건축사사무소 기본정보": null,
+   "삼우건설 입찰": null,
+   "정보통신공사업 등록업체": null,
+   "전기공사업 등록 업체": null,
+   "소프트웨어사업자 등록업체 목록": null,
+   "달 착륙선 구조 해석 용역": null,
+   "2026 와구리 페스타 행사 기획 및 운영 대행 용역": null,
+   "의료폐기물 위탁처리 용역 단가계약": null,
+   "잠실 mice 감리 개찰 결과": null,
+   "공공조달 입찰 절차": null,
+   "나라장터 입찰 처음 절차": null,
+   "발주계획 사전규격 입찰공고 순서": null,
+   "공공조달 주간 동향": null,
+   "나라장터 신규 공고 건수": null,
+   "이번주 공공입찰 공고": null,
+   "IT 공공입찰 공고": null,
+   "수건설안전지도사사무소": {
+    "position": 1.5,
+    "impressions": 2,
+    "clicks": 2
+   },
+   "주식회사 클콩": null,
+   "플랜엠": null,
+   "한라산업개발 수주": null,
+   "가포고 교복": null,
+   "대경공조기술 주식회사": null,
+   "동아항업 영상도화": null,
+   "동호건설낙찰": null,
+   "두레이앤씨": null,
+   "두손조경자재": null,
+   "디엠이엔씨 박균철": null,
+   "문방천 생태하천": null,
+   "믹스미디어 정연승": null,
+   "삼신문화재": null,
+   "새화건설": null,
+   "서웅배 기술사": null,
+   "석면조사 업체 오르비텍": null,
+   "소각시설 가스가열기 번들교체 공사": null,
+   "아임오퍼레이션": null,
+   "앞썬코퍼레이션": null,
+   "영도 감지2지구 연안정비사업 혜인이엔씨": null,
+   "예쓸디자인건축사사무소": null,
+   "우삼호건설": null,
+   "위본건설 수주": null,
+   "이수건설 수주": null,
+   "임실청소년수련원 나라장터 계약": null,
+   "자람앤수엔지니어링 입찰": null,
+   "지천인양배수문": null,
+   "지호이엔씨": null,
+   "채은산업": null,
+   "청보건설 광주": null,
+   "피아이에스엔지니어링": null,
+   "한울앤푸드": {
+    "position": 2,
+    "impressions": 1,
+    "clicks": 1
+   },
+   "현대장터 그린푸드": null,
+   "현성토건": null,
+   "웍스피어 유한책임": {
+    "position": 5,
+    "impressions": 6,
+    "clicks": 0
+   }
+  },
+  "crawl": {
+   "pages": 1744,
+   "errors": 0,
+   "server_errors": 0,
+   "not_found": 0
+  },
+  "index": {
+   "date": "2026-09-19",
+   "indexed": 7956,
+   "crawl_limited": 23,
+   "index_excluded": 42,
+   "seo": 0
+  }
+ },
+ "keywords": {
+  "manual": [
+   "조달핏",
+   "나라장터 입찰공고 추천",
+   "입찰공고 추천",
+   "나라장터 입찰정보 무료 검색",
+   "나라장터 입찰공고 검색",
+   "진행중인 용역 입찰공고",
+   "사전규격 의견제출 기한",
+   "사전규격 공개 조회",
+   "나라장터 낙찰 이력 조회",
+   "나라장터 개찰결과 조회",
+   "업체별 투찰률",
+   "조달청 등록업체 조회",
+   "공공조달 참여 기업 목록",
+   "구례 산우건설",
+   "구례 산우건설 계약",
+   "정원도시안전진단",
+   "신진건설산업",
+   "우영기술단건축사사무소 기본정보",
+   "삼우건설 입찰",
+   "정보통신공사업 등록업체",
+   "전기공사업 등록 업체",
+   "소프트웨어사업자 등록업체 목록",
+   "달 착륙선 구조 해석 용역",
+   "2026 와구리 페스타 행사 기획 및 운영 대행 용역",
+   "의료폐기물 위탁처리 용역 단가계약",
+   "잠실 mice 감리 개찰 결과",
+   "공공조달 입찰 절차",
+   "나라장터 입찰 처음 절차",
+   "발주계획 사전규격 입찰공고 순서",
+   "공공조달 주간 동향",
+   "나라장터 신규 공고 건수",
+   "이번주 공공입찰 공고",
+   "IT 공공입찰 공고"
+  ],
+  "auto": [
+   "수건설안전지도사사무소",
+   "주식회사 클콩",
+   "플랜엠",
+   "한라산업개발 수주",
+   "가포고 교복",
+   "대경공조기술 주식회사",
+   "동아항업 영상도화",
+   "동호건설낙찰",
+   "두레이앤씨",
+   "두손조경자재",
+   "디엠이엔씨 박균철",
+   "문방천 생태하천",
+   "믹스미디어 정연승",
+   "삼신문화재",
+   "새화건설",
+   "서웅배 기술사",
+   "석면조사 업체 오르비텍",
+   "소각시설 가스가열기 번들교체 공사",
+   "아임오퍼레이션",
+   "앞썬코퍼레이션",
+   "영도 감지2지구 연안정비사업 혜인이엔씨",
+   "예쓸디자인건축사사무소",
+   "우삼호건설",
+   "위본건설 수주",
+   "이수건설 수주",
+   "임실청소년수련원 나라장터 계약",
+   "자람앤수엔지니어링 입찰",
+   "지천인양배수문",
+   "지호이엔씨",
+   "채은산업",
+   "청보건설 광주",
+   "피아이에스엔지니어링",
+   "한울앤푸드",
+   "현대장터 그린푸드",
+   "현성토건",
+   "웍스피어 유한책임"
+  ],
+  "added": [
+   "수건설안전지도사사무소",
+   "한라산업개발 수주",
+   "가포고 교복",
+   "동아항업 영상도화",
+   "믹스미디어 정연승",
+   "소각시설 가스가열기 번들교체 공사",
+   "앞썬코퍼레이션",
+   "예쓸디자인건축사사무소",
+   "위본건설 수주",
+   "지천인양배수문",
+   "채은산업",
+   "피아이에스엔지니어링",
+   "한울앤푸드",
+   "웍스피어 유한책임"
+  ],
+  "dropped": [
+   "덕부건설산업",
+   "삼국씨앤디",
+   "석암토건",
+   "위본건설"
+  ]
+ },
+ "gsc": {
+  "search": {
+   "data_date": "2026-09-20",
+   "clicks": 0,
+   "impressions": 0,
+   "ctr": 0,
+   "position": 0,
+   "by_type": {},
+   "top_queries": [],
+   "tracked": {
+    "조달핏": null,
+    "나라장터 입찰공고 추천": null,
+    "입찰공고 추천": null,
+    "나라장터 입찰정보 무료 검색": null,
+    "나라장터 입찰공고 검색": null,
+    "진행중인 용역 입찰공고": null,
+    "사전규격 의견제출 기한": null,
+    "사전규격 공개 조회": null,
+    "나라장터 낙찰 이력 조회": null,
+    "나라장터 개찰결과 조회": null,
+    "업체별 투찰률": null,
+    "조달청 등록업체 조회": null,
+    "공공조달 참여 기업 목록": null,
+    "구례 산우건설": null,
+    "구례 산우건설 계약": null,
+    "정원도시안전진단": null,
+    "신진건설산업": null,
+    "우영기술단건축사사무소 기본정보": null,
+    "삼우건설 입찰": null,
+    "정보통신공사업 등록업체": null,
+    "전기공사업 등록 업체": null,
+    "소프트웨어사업자 등록업체 목록": null,
+    "달 착륙선 구조 해석 용역": null,
+    "2026 와구리 페스타 행사 기획 및 운영 대행 용역": null,
+    "의료폐기물 위탁처리 용역 단가계약": null,
+    "잠실 mice 감리 개찰 결과": null,
+    "공공조달 입찰 절차": null,
+    "나라장터 입찰 처음 절차": null,
+    "발주계획 사전규격 입찰공고 순서": null,
+    "공공조달 주간 동향": null,
+    "나라장터 신규 공고 건수": null,
+    "이번주 공공입찰 공고": null,
+    "IT 공공입찰 공고": null,
+    "수건설안전지도사사무소": null,
+    "주식회사 클콩": null,
+    "플랜엠": null,
+    "한라산업개발 수주": null,
+    "가포고 교복": null,
+    "대경공조기술 주식회사": null,
+    "동아항업 영상도화": null,
+    "동호건설낙찰": null,
+    "두레이앤씨": null,
+    "두손조경자재": null,
+    "디엠이엔씨 박균철": null,
+    "문방천 생태하천": null,
+    "믹스미디어 정연승": null,
+    "삼신문화재": null,
+    "새화건설": null,
+    "서웅배 기술사": null,
+    "석면조사 업체 오르비텍": null,
+    "소각시설 가스가열기 번들교체 공사": null,
+    "아임오퍼레이션": null,
+    "앞썬코퍼레이션": null,
+    "영도 감지2지구 연안정비사업 혜인이엔씨": null,
+    "예쓸디자인건축사사무소": null,
+    "우삼호건설": null,
+    "위본건설 수주": null,
+    "이수건설 수주": null,
+    "임실청소년수련원 나라장터 계약": null,
+    "자람앤수엔지니어링 입찰": null,
+    "지천인양배수문": null,
+    "지호이엔씨": null,
+    "채은산업": null,
+    "청보건설 광주": null,
+    "피아이에스엔지니어링": null,
+    "한울앤푸드": null,
+    "현대장터 그린푸드": null,
+    "현성토건": null,
+    "웍스피어 유한책임": null
+   }
+  },
+  "sitemaps": [
+   {
+    "path": "https://jodalfit.co.kr/sitemap/8.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 355,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/7.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/6.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 223,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/5.xml",
+    "last_downloaded": "2026-09-20",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/4.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/3.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/2.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/1.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/0.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   }
+  ],
+  "index_sample": {
+   "sampled": 100,
+   "indexed": 0,
+   "by_state": {
+    "URL is unknown to Google": 96,
+    "Discovered - currently not indexed": 4
+   }
+  }
+ },
+ "supabase": {
+  "date": "2026-09-20",
+  "errors": 2,
+  "events": {},
+  "error_top": [
+   {
+    "n": 2,
+    "msg": "회사 벡터가 아직 생성되지 않았습니다 (수주 이력 부족)"
+   }
+  ],
+  "bot_searches": 0,
+  "ssr_searches": 20,
+  "unique_users": 1,
+  "zero_results": 0,
+  "human_searches": 2,
+  "p50_latency_ms": 3217,
+  "subscribers_new": 0,
+  "unique_companies": 2,
+  "company_identified": 2,
+  "returning_companies": 0,
+  "subscribers_verified": 0,
+  "company_mode_searches": 2,
+  "email_subscribers_new": 0
+ }
+}

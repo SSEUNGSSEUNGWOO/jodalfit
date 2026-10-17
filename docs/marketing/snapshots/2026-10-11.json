@@ -1,0 +1,1053 @@
+{
+ "date": "2026-10-11",
+ "domain": "jodalfit.co.kr",
+ "sources": {
+  "naver": "ok",
+  "gsc_search": "ok",
+  "gsc_sitemaps": "ok",
+  "gsc_inspect": "HTTPStatusError: Server error '500 Internal Server Error' for url 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect'\nF",
+  "supabase": "ok"
+ },
+ "naver": {
+  "data_date": "2026-10-11",
+  "clicks": 90,
+  "impressions": 5492,
+  "ctr": 1.6,
+  "top_date": "2026-10-11",
+  "top_queries": [
+   {
+    "query": "해마루고등학교",
+    "clicks": 2,
+    "impressions": 12,
+    "position": 1
+   },
+   {
+    "query": "한라산업개발",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 3
+   },
+   {
+    "query": "금아데이타테크",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 8
+   },
+   {
+    "query": "조달청 회계법인",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "양구 시래기 축제 2026",
+    "clicks": 1,
+    "impressions": 11,
+    "position": 11
+   },
+   {
+    "query": "브니엘네이처",
+    "clicks": 1,
+    "impressions": 8,
+    "position": 2
+   },
+   {
+    "query": "크로바가구",
+    "clicks": 1,
+    "impressions": 5,
+    "position": 1
+   },
+   {
+    "query": "유원디자인",
+    "clicks": 1,
+    "impressions": 5,
+    "position": 10
+   },
+   {
+    "query": "해담솔루션",
+    "clicks": 1,
+    "impressions": 4,
+    "position": 1
+   },
+   {
+    "query": "조달핏",
+    "clicks": 1,
+    "impressions": 4,
+    "position": 1.5
+   },
+   {
+    "query": "병점중 교복",
+    "clicks": 1,
+    "impressions": 3,
+    "position": 6
+   },
+   {
+    "query": "크로마에듀케이션",
+    "clicks": 1,
+    "impressions": 3,
+    "position": 6
+   },
+   {
+    "query": "주식회사 엠닉스",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 4
+   },
+   {
+    "query": "인성여자중학교 교복",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 5
+   },
+   {
+    "query": "장앤파트너스그룹",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 2
+   },
+   {
+    "query": "기상장비업 등록",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 5.5
+   },
+   {
+    "query": "워드캣",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 3
+   },
+   {
+    "query": "와이엠테크 냉각탑",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 7
+   },
+   {
+    "query": "아리수엔지니어링",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 9
+   },
+   {
+    "query": "원상전력",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "대심산림",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 6
+   },
+   {
+    "query": "에치이시스템",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 8
+   },
+   {
+    "query": "나라장터 영농",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "부강종합건설 낙찰",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "(주)유투시스템",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "나주 국가유산수리업",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 4.5
+   },
+   {
+    "query": "넥서스환경디자인연구소",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 5
+   },
+   {
+    "query": "수락고등학교 하복",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "소방용 기동화 추천",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "한국 근로장애인 진흥회",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 8.5
+   },
+   {
+    "query": "동명기술단",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "주식회사 큐씨에스",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "조우 건설",
+    "clicks": 1,
+    "impressions": 2,
+    "position": 5.5
+   },
+   {
+    "query": "영월 중부고고학 연구소",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "(주)태영기술공사 기본정보",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 4
+   },
+   {
+    "query": "이용국 기술사",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 2
+   },
+   {
+    "query": "백두엔지니어링",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 2
+   },
+   {
+    "query": "김제 숲정이산림기술사사무소",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 7
+   },
+   {
+    "query": "천안 한울지오메틱스",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 2
+   },
+   {
+    "query": "한샘농산 서천",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 6
+   },
+   {
+    "query": "지엔씨 부표",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "호남산업(주)",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "다산컨설턴트 수주",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "화신건설",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "부산 연제구 연산동 1127-1번지",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 2
+   },
+   {
+    "query": "수락고등학교 교복",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "마포구합정동447 신축공사",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   },
+   {
+    "query": "제천 덕산 파크골프장공사",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 1
+   },
+   {
+    "query": "세몽나이스 남성구두",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 3
+   },
+   {
+    "query": "넷마루사업",
+    "clicks": 1,
+    "impressions": 1,
+    "position": 5
+   }
+  ],
+  "top_queries_7d": [
+   {
+    "query": "조달핏",
+    "clicks": 12,
+    "impressions": 30,
+    "position": 1.5
+   },
+   {
+    "query": "365안전기술원",
+    "clicks": 6,
+    "impressions": 44,
+    "position": 1
+   },
+   {
+    "query": "해마루고등학교",
+    "clicks": 5,
+    "impressions": 44,
+    "position": 1
+   },
+   {
+    "query": "평택경찰서 이전",
+    "clicks": 5,
+    "impressions": 26,
+    "position": 1.5
+   },
+   {
+    "query": "워드캣",
+    "clicks": 4,
+    "impressions": 15,
+    "position": 3
+   },
+   {
+    "query": "평택경찰서이전",
+    "clicks": 4,
+    "impressions": 8,
+    "position": 3.5
+   },
+   {
+    "query": "두손조경자재",
+    "clicks": 3,
+    "impressions": 33,
+    "position": 1
+   },
+   {
+    "query": "신성토건",
+    "clicks": 3,
+    "impressions": 23,
+    "position": 3
+   },
+   {
+    "query": "리윤컴퍼니",
+    "clicks": 3,
+    "impressions": 15,
+    "position": 1
+   },
+   {
+    "query": "두레에스텍",
+    "clicks": 3,
+    "impressions": 11,
+    "position": 2
+   },
+   {
+    "query": "경원전력",
+    "clicks": 3,
+    "impressions": 9,
+    "position": 3
+   },
+   {
+    "query": "보배엔지니어링",
+    "clicks": 3,
+    "impressions": 8,
+    "position": 4
+   },
+   {
+    "query": "음성군농업타운토지보상연기",
+    "clicks": 3,
+    "impressions": 6,
+    "position": 3
+   },
+   {
+    "query": "리키항공여행사",
+    "clicks": 3,
+    "impressions": 4,
+    "position": 14
+   },
+   {
+    "query": "인바이드",
+    "clicks": 2,
+    "impressions": 96,
+    "position": 2
+   },
+   {
+    "query": "울산여자상업고등학교 교복",
+    "clicks": 2,
+    "impressions": 42,
+    "position": 2
+   },
+   {
+    "query": "동영조경",
+    "clicks": 2,
+    "impressions": 29,
+    "position": 5
+   },
+   {
+    "query": "진주 판문지구 2블럭",
+    "clicks": 2,
+    "impressions": 24,
+    "position": 2.5
+   },
+   {
+    "query": "사이버수사포털",
+    "clicks": 2,
+    "impressions": 24,
+    "position": 1
+   },
+   {
+    "query": "삼보종합건설",
+    "clicks": 2,
+    "impressions": 21,
+    "position": 4
+   },
+   {
+    "query": "효성에너지팜",
+    "clicks": 2,
+    "impressions": 19,
+    "position": 3
+   },
+   {
+    "query": "티비즈",
+    "clicks": 2,
+    "impressions": 18,
+    "position": 3
+   },
+   {
+    "query": "도명메타",
+    "clicks": 2,
+    "impressions": 11,
+    "position": 3
+   },
+   {
+    "query": "평택경찰서 신축",
+    "clicks": 2,
+    "impressions": 10,
+    "position": 2.5
+   },
+   {
+    "query": "대평엔지니어링(주)",
+    "clicks": 2,
+    "impressions": 9,
+    "position": 3
+   },
+   {
+    "query": "현산엔지니어링",
+    "clicks": 2,
+    "impressions": 8,
+    "position": 1
+   },
+   {
+    "query": "연홍코퍼레이션",
+    "clicks": 2,
+    "impressions": 7,
+    "position": 5
+   },
+   {
+    "query": "큰샘기술사사무소",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 5.5
+   },
+   {
+    "query": "평택 경찰서 이전",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 4.5
+   },
+   {
+    "query": "(주)진원엔지니어링",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 1
+   },
+   {
+    "query": "한라산업개발",
+    "clicks": 2,
+    "impressions": 6,
+    "position": 3
+   },
+   {
+    "query": "지속가능 엘라스토머 기술센터 건립공사",
+    "clicks": 2,
+    "impressions": 5,
+    "position": 4
+   },
+   {
+    "query": "운문 도계 도로공사",
+    "clicks": 2,
+    "impressions": 5,
+    "position": 1
+   },
+   {
+    "query": "석암토건",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 1
+   },
+   {
+    "query": "동우에스아이",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 1
+   },
+   {
+    "query": "건설재해예방전문지도기관 나라장터",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 1.5
+   },
+   {
+    "query": "전문설계업1종",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 4
+   },
+   {
+    "query": "금화종합eng",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 2
+   },
+   {
+    "query": "한국산업경제개발원",
+    "clicks": 2,
+    "impressions": 4,
+    "position": 3
+   },
+   {
+    "query": "한섬조경",
+    "clicks": 2,
+    "impressions": 3,
+    "position": 1
+   },
+   {
+    "query": "루트브이",
+    "clicks": 2,
+    "impressions": 3,
+    "position": 1
+   },
+   {
+    "query": "늘품이앤씨",
+    "clicks": 2,
+    "impressions": 3,
+    "position": 5
+   },
+   {
+    "query": "(주)극동 전문감리업",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 8.5
+   },
+   {
+    "query": "신세계 조달청",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "원이앤씨 건축사사무소",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 3
+   },
+   {
+    "query": "한연종합개발 낙찰",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1
+   },
+   {
+    "query": "(유)청정개발",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 5
+   },
+   {
+    "query": "금아데이타테크",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 8
+   },
+   {
+    "query": "조달청 회계법인",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 1.5
+   },
+   {
+    "query": "하영이엔씨",
+    "clicks": 2,
+    "impressions": 2,
+    "position": 6
+   }
+  ],
+  "by_type_top": {
+   "company": {
+    "clicks": 42,
+    "impressions": 164
+   },
+   "notice": {
+    "clicks": 15,
+    "impressions": 59
+   },
+   "home": {
+    "clicks": 1,
+    "impressions": 2
+   }
+  },
+  "tracked": {
+   "조달핏": {
+    "position": 1.5,
+    "impressions": 4,
+    "clicks": 1
+   },
+   "나라장터 입찰공고 추천": null,
+   "입찰공고 추천": null,
+   "나라장터 입찰정보 무료 검색": null,
+   "나라장터 입찰공고 검색": null,
+   "진행중인 용역 입찰공고": null,
+   "사전규격 의견제출 기한": null,
+   "사전규격 공개 조회": null,
+   "나라장터 낙찰 이력 조회": null,
+   "나라장터 개찰결과 조회": null,
+   "업체별 투찰률": null,
+   "조달청 등록업체 조회": null,
+   "공공조달 참여 기업 목록": null,
+   "구례 산우건설": null,
+   "구례 산우건설 계약": null,
+   "정원도시안전진단": null,
+   "신진건설산업": null,
+   "우영기술단건축사사무소 기본정보": null,
+   "삼우건설 입찰": null,
+   "정보통신공사업 등록업체": null,
+   "전기공사업 등록 업체": null,
+   "소프트웨어사업자 등록업체 목록": null,
+   "달 착륙선 구조 해석 용역": null,
+   "2026 와구리 페스타 행사 기획 및 운영 대행 용역": null,
+   "의료폐기물 위탁처리 용역 단가계약": null,
+   "잠실 mice 감리 개찰 결과": null,
+   "공공조달 입찰 절차": null,
+   "나라장터 입찰 처음 절차": null,
+   "발주계획 사전규격 입찰공고 순서": null,
+   "공공조달 주간 동향": null,
+   "나라장터 신규 공고 건수": null,
+   "이번주 공공입찰 공고": null,
+   "IT 공공입찰 공고": null,
+   "365안전기술원": null,
+   "평택경찰서 이전": null,
+   "해마루고등학교": {
+    "position": 1,
+    "impressions": 12,
+    "clicks": 2
+   },
+   "워드캣": {
+    "position": 3,
+    "impressions": 2,
+    "clicks": 1
+   },
+   "평택경찰서이전": null,
+   "경원전력": null,
+   "두레에스텍": null,
+   "두손조경자재": null,
+   "리윤컴퍼니": null,
+   "리키항공여행사": null,
+   "보배엔지니어링": null,
+   "신성토건": null,
+   "음성군농업타운토지보상연기": null,
+   "(유)청정개발": null,
+   "(주)극동 전문감리업": null,
+   "(주)진원엔지니어링": null,
+   "건설재해예방전문지도기관 나라장터": null,
+   "금아데이타테크": {
+    "position": 8,
+    "impressions": 2,
+    "clicks": 2
+   },
+   "금화종합eng": null,
+   "늘품이앤씨": null,
+   "대평엔지니어링(주)": null,
+   "도명메타": null,
+   "동영조경": null,
+   "동우에스아이": null,
+   "루트브이": null,
+   "사이버수사포털": null,
+   "삼보종합건설": null,
+   "석암토건": null,
+   "신세계 조달청": null,
+   "연홍코퍼레이션": null,
+   "운문 도계 도로공사": null,
+   "울산여자상업고등학교 교복": null,
+   "원이앤씨 건축사사무소": null,
+   "인바이드": null,
+   "전문설계업1종": null,
+   "조달청 회계법인": {
+    "position": 1.5,
+    "impressions": 2,
+    "clicks": 2
+   },
+   "지속가능 엘라스토머 기술센터 건립공사": null,
+   "진주 판문지구 2블럭": null,
+   "큰샘기술사사무소": null,
+   "티비즈": null
+  },
+  "crawl": {
+   "pages": 2959,
+   "errors": 0,
+   "server_errors": 0,
+   "not_found": 0
+  },
+  "index": {
+   "date": "2026-10-10",
+   "indexed": 18057,
+   "crawl_limited": 250,
+   "index_excluded": 180,
+   "seo": 0
+  }
+ },
+ "keywords": {
+  "manual": [
+   "조달핏",
+   "나라장터 입찰공고 추천",
+   "입찰공고 추천",
+   "나라장터 입찰정보 무료 검색",
+   "나라장터 입찰공고 검색",
+   "진행중인 용역 입찰공고",
+   "사전규격 의견제출 기한",
+   "사전규격 공개 조회",
+   "나라장터 낙찰 이력 조회",
+   "나라장터 개찰결과 조회",
+   "업체별 투찰률",
+   "조달청 등록업체 조회",
+   "공공조달 참여 기업 목록",
+   "구례 산우건설",
+   "구례 산우건설 계약",
+   "정원도시안전진단",
+   "신진건설산업",
+   "우영기술단건축사사무소 기본정보",
+   "삼우건설 입찰",
+   "정보통신공사업 등록업체",
+   "전기공사업 등록 업체",
+   "소프트웨어사업자 등록업체 목록",
+   "달 착륙선 구조 해석 용역",
+   "2026 와구리 페스타 행사 기획 및 운영 대행 용역",
+   "의료폐기물 위탁처리 용역 단가계약",
+   "잠실 mice 감리 개찰 결과",
+   "공공조달 입찰 절차",
+   "나라장터 입찰 처음 절차",
+   "발주계획 사전규격 입찰공고 순서",
+   "공공조달 주간 동향",
+   "나라장터 신규 공고 건수",
+   "이번주 공공입찰 공고",
+   "IT 공공입찰 공고"
+  ],
+  "auto": [
+   "365안전기술원",
+   "평택경찰서 이전",
+   "해마루고등학교",
+   "워드캣",
+   "평택경찰서이전",
+   "경원전력",
+   "두레에스텍",
+   "두손조경자재",
+   "리윤컴퍼니",
+   "리키항공여행사",
+   "보배엔지니어링",
+   "신성토건",
+   "음성군농업타운토지보상연기",
+   "(유)청정개발",
+   "(주)극동 전문감리업",
+   "(주)진원엔지니어링",
+   "건설재해예방전문지도기관 나라장터",
+   "금아데이타테크",
+   "금화종합eng",
+   "늘품이앤씨",
+   "대평엔지니어링(주)",
+   "도명메타",
+   "동영조경",
+   "동우에스아이",
+   "루트브이",
+   "사이버수사포털",
+   "삼보종합건설",
+   "석암토건",
+   "신세계 조달청",
+   "연홍코퍼레이션",
+   "운문 도계 도로공사",
+   "울산여자상업고등학교 교복",
+   "원이앤씨 건축사사무소",
+   "인바이드",
+   "전문설계업1종",
+   "조달청 회계법인",
+   "지속가능 엘라스토머 기술센터 건립공사",
+   "진주 판문지구 2블럭",
+   "큰샘기술사사무소",
+   "티비즈"
+  ],
+  "added": [
+   "365안전기술원",
+   "평택경찰서 이전",
+   "해마루고등학교",
+   "워드캣",
+   "평택경찰서이전",
+   "경원전력",
+   "두레에스텍",
+   "두손조경자재",
+   "리윤컴퍼니",
+   "리키항공여행사",
+   "보배엔지니어링",
+   "신성토건",
+   "음성군농업타운토지보상연기",
+   "(유)청정개발",
+   "(주)극동 전문감리업",
+   "(주)진원엔지니어링",
+   "건설재해예방전문지도기관 나라장터",
+   "금아데이타테크",
+   "금화종합eng",
+   "늘품이앤씨",
+   "대평엔지니어링(주)",
+   "도명메타",
+   "동영조경",
+   "동우에스아이",
+   "루트브이",
+   "사이버수사포털",
+   "삼보종합건설",
+   "석암토건",
+   "신세계 조달청",
+   "연홍코퍼레이션",
+   "운문 도계 도로공사",
+   "울산여자상업고등학교 교복",
+   "원이앤씨 건축사사무소",
+   "인바이드",
+   "전문설계업1종",
+   "조달청 회계법인",
+   "지속가능 엘라스토머 기술센터 건립공사",
+   "진주 판문지구 2블럭",
+   "큰샘기술사사무소",
+   "티비즈"
+  ],
+  "dropped": []
+ },
+ "gsc": {
+  "search": {
+   "data_date": "2026-10-09",
+   "clicks": 0,
+   "impressions": 0,
+   "ctr": 0,
+   "position": 0,
+   "by_type": {},
+   "top_queries": [],
+   "tracked": {
+    "조달핏": null,
+    "나라장터 입찰공고 추천": null,
+    "입찰공고 추천": null,
+    "나라장터 입찰정보 무료 검색": null,
+    "나라장터 입찰공고 검색": null,
+    "진행중인 용역 입찰공고": null,
+    "사전규격 의견제출 기한": null,
+    "사전규격 공개 조회": null,
+    "나라장터 낙찰 이력 조회": null,
+    "나라장터 개찰결과 조회": null,
+    "업체별 투찰률": null,
+    "조달청 등록업체 조회": null,
+    "공공조달 참여 기업 목록": null,
+    "구례 산우건설": null,
+    "구례 산우건설 계약": null,
+    "정원도시안전진단": null,
+    "신진건설산업": null,
+    "우영기술단건축사사무소 기본정보": null,
+    "삼우건설 입찰": null,
+    "정보통신공사업 등록업체": null,
+    "전기공사업 등록 업체": null,
+    "소프트웨어사업자 등록업체 목록": null,
+    "달 착륙선 구조 해석 용역": null,
+    "2026 와구리 페스타 행사 기획 및 운영 대행 용역": null,
+    "의료폐기물 위탁처리 용역 단가계약": null,
+    "잠실 mice 감리 개찰 결과": null,
+    "공공조달 입찰 절차": null,
+    "나라장터 입찰 처음 절차": null,
+    "발주계획 사전규격 입찰공고 순서": null,
+    "공공조달 주간 동향": null,
+    "나라장터 신규 공고 건수": null,
+    "이번주 공공입찰 공고": null,
+    "IT 공공입찰 공고": null,
+    "365안전기술원": null,
+    "평택경찰서 이전": null,
+    "해마루고등학교": null,
+    "워드캣": null,
+    "평택경찰서이전": null,
+    "경원전력": null,
+    "두레에스텍": null,
+    "두손조경자재": null,
+    "리윤컴퍼니": null,
+    "리키항공여행사": null,
+    "보배엔지니어링": null,
+    "신성토건": null,
+    "음성군농업타운토지보상연기": null,
+    "(유)청정개발": null,
+    "(주)극동 전문감리업": null,
+    "(주)진원엔지니어링": null,
+    "건설재해예방전문지도기관 나라장터": null,
+    "금아데이타테크": null,
+    "금화종합eng": null,
+    "늘품이앤씨": null,
+    "대평엔지니어링(주)": null,
+    "도명메타": null,
+    "동영조경": null,
+    "동우에스아이": null,
+    "루트브이": null,
+    "사이버수사포털": null,
+    "삼보종합건설": null,
+    "석암토건": null,
+    "신세계 조달청": null,
+    "연홍코퍼레이션": null,
+    "운문 도계 도로공사": null,
+    "울산여자상업고등학교 교복": null,
+    "원이앤씨 건축사사무소": null,
+    "인바이드": null,
+    "전문설계업1종": null,
+    "조달청 회계법인": null,
+    "지속가능 엘라스토머 기술센터 건립공사": null,
+    "진주 판문지구 2블럭": null,
+    "큰샘기술사사무소": null,
+    "티비즈": null
+   }
+  },
+  "sitemaps": [
+   {
+    "path": "https://jodalfit.co.kr/sitemap/8.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 355,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/7.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/6.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 223,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/5.xml",
+    "last_downloaded": "2026-10-10",
+    "submitted": 9999,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/4.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/3.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/2.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/1.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   },
+   {
+    "path": "https://jodalfit.co.kr/sitemap/0.xml",
+    "last_downloaded": "2026-09-18",
+    "submitted": 10000,
+    "indexed": 0,
+    "errors": 0,
+    "warnings": 0
+   }
+  ],
+  "index_sample": null
+ },
+ "supabase": {
+  "date": "2026-10-11",
+  "errors": 3,
+  "events": {
+   "click": 20
+  },
+  "error_top": [
+   {
+    "n": 3,
+    "msg": "회사를 찾을 수 없습니다"
+   }
+  ],
+  "bot_searches": 0,
+  "ssr_searches": 117,
+  "unique_users": 6,
+  "zero_results": 0,
+  "human_searches": 20,
+  "p50_latency_ms": 4440,
+  "subscribers_new": 0,
+  "unique_companies": 1,
+  "company_identified": 1,
+  "returning_companies": 0,
+  "subscribers_verified": 0,
+  "company_mode_searches": 4,
+  "email_subscribers_new": 0
+ }
+}
