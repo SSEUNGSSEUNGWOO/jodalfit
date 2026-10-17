@@ -277,7 +277,7 @@ def check(path):
         i = pg.evaluate("""() => { const v = document.querySelector('.vw.on'), cs = e => getComputedStyle(e); return { c: v.dataset.c, me: v.querySelector('.nav .me') && v.querySelector('.nav .me').textContent.includes('you@'),
             cta: v.querySelectorAll('.nav .cta').length, ok: cs(v.querySelector('.okline')).display, gate: v.querySelectorAll('.gateline').length, fade: v.querySelectorAll('.fade').length, star: v.querySelector('.star').textContent, saved: cs(v.querySelector('.savedn')).display } }""")
         assert i["c"] == "5" and i["me"] and i["cta"] == 0 and i["ok"] == "block" and i["gate"] == 0 and i["fade"] == 0 and i["star"] == "회사 저장" and i["saved"] == "none", i
-        pg.click('.vw.on .star'); pg.wait_for_timeout(150)
+        pg.click('.vw.on .star'); pg.wait_for_timeout(400)   # 테두리 전환 .15s 가 끝난 뒤 읽는다
         st = pg.evaluate("""() => { const v = document.querySelector('.vw.on'), cs = e => getComputedStyle(e); return { t: v.querySelector('.star').textContent, bd: cs(v.querySelector('.star')).borderColor, n: cs(v.querySelector('.savedn')).display } }""")
         assert st["t"] == "저장됨" and st["bd"] == "rgb(249, 115, 22)" and st["n"] == "block", st
         pg.click('.vw.on .nav .me'); pg.wait_for_timeout(150)
