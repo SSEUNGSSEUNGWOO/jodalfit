@@ -238,16 +238,17 @@ def reco_pane(d):
                 f'<div class="acts"><a class="bt" href="#">수정 요청</a></div></div>')
     elif not reco:
         # 분석 요청(승우님 2026-10-17 "벡터·이력 안 잡히는 데는 요청") — 막다른 '수정 요청' 대신 주요 사업·품목 한 줄 + 이메일.
-        # 즉시: 입력한 설명으로 키워드 추천. 이후: 업체정보 재조회(register_searched_companies 가 매시 하는 일) → 회사 기준 추천이 준비되면 메일.
+        # 즉시: 입력한 설명으로 키워드 추천. 저장: 설명을 회사에 묶어 다음 회사명 검색부터 바로 표시. 재조회 약속은 안 한다 —
+        # 나라장터에 업종이 있는 회사는 자동 등록 잡(매시)이 요청 없이 풀고, C 는 나라장터에도 업종이 없어 재조회로 못 푸는 회사다(2026-10-17 실측 30일 16곳).
         body = (f'<div class="none-reco"><b>추천 기준이 없는 회사입니다</b>'
                 f'나라장터 업체정보에 등록업종·공급물품이 없고 수주 이력도 없어 참가 자격과 적합도를 판정할 수 없습니다. 이 회사 담당자는 아래에서 분석을 요청합니다.'
                 f'<form class="req" onsubmit="return false"><label><span class="k">주요 사업 · 취급 품목</span><input type="text" placeholder="예: 학교 급식 식자재 납품, 정수기 임대"></label>'
                 f'<label><span class="k">이메일</span><input type="email" placeholder="you@company.co.kr"></label><button class="bt dark" type="submit">분석 요청</button></form>'
-                f'<div class="reqn">요청 즉시 입력한 설명 기준의 공고를 보여드립니다. 나라장터 업체정보를 다시 조회해 회사 기준 추천이 준비되면 이메일로 안내합니다. 비밀번호 없음.</div>'
+                f'<div class="reqn">요청 즉시 입력한 설명 기준의 공고를 보여드리고, 설명은 이 회사에 저장되어 다음 검색부터 바로 표시됩니다. 이메일은 설명 수정·삭제 요청 확인용. 비밀번호 없음.</div>'
                 f'<div class="reqd"><b>분석 요청 접수 · {TODAY.isoformat()} 14:02</b>'
                 f'<div class="row"><span class="k">지금</span><span>입력한 설명 기준 <a href="#">공고 12건 보기</a> — 참가 자격 판정 없음</span></div>'
-                f'<div class="row"><span class="k">다음</span><span>업체정보 재조회는 매시 5분. 등록업종·공급물품이 확인되면 회사 기준 추천을 <em>you@company.co.kr</em>로 안내</span></div>'
-                f'<div class="row"><span class="k">등록이 없으면</span><span>나라장터 업체등록(업종·물품)을 먼저 해야 참가 자격 판정이 가능합니다. 그 전까지는 설명 기준 추천만 제공</span></div></div></div>')
+                f'<div class="row"><span class="k">저장됨</span><span>이 회사명으로 다시 검색하면 설명 기준 추천이 바로 표시. 수정·삭제는 <em>you@company.co.kr</em>로 확인 후 반영</span></div>'
+                f'<div class="row"><span class="k">참가 자격 판정</span><span>나라장터 업체등록(업종·물품) 후 가능. 등록되면 다음 갱신부터 회사 기준 추천으로 전환</span></div></div></div>')
     else:
         res = reco["results"]
         prof_full = dict(prof, names=set(), terms=set(), codes=set())
