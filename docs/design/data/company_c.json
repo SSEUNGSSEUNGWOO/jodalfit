@@ -1,0 +1,42 @@
+{
+ "company": {
+  "bizrno": "3072104519",
+  "corp_nm": "인서트유",
+  "rgn_nm": "충청남도 천안시 서북구 두정동",
+  "corp_bsns_div_nm": "일반용역,용역",
+  "emp_count": 1,
+  "hd_off_div_nm": "본사",
+  "mnfctr_div_nm": "공급",
+  "opng_dt": "2025-09-01",
+  "biz_status_cd": null,
+  "biz_status_nm": null,
+  "biz_closed_dt": null,
+  "is_restricted": false,
+  "embedded": false,
+  "updated": "2026-05-25"
+ },
+ "profile": {
+  "rgn": "충청남도 천안시 서북구 두정동",
+  "industries": [
+   [],
+   []
+  ],
+  "products": [
+   [],
+   []
+  ]
+ },
+ "contracts": [],
+ "contract_summary": {
+  "n": 0,
+  "total": "0",
+  "first": null,
+  "last": null,
+  "top_instt": []
+ },
+ "awards": [],
+ "n_participations": 0,
+ "peers": [],
+ "reco": null,
+ "funnel": null
+}

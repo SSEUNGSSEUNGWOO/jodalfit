@@ -1,0 +1,196 @@
+{
+ "company": {
+  "bizrno": "732-86-01508",
+  "corp_nm": "주식회사 늘푸른임업",
+  "rgn_nm": "경상북도 영덕군 강구면 강구리",
+  "corp_bsns_div_nm": "용역,공사",
+  "emp_count": 7,
+  "hd_off_div_nm": "본사",
+  "mnfctr_div_nm": "공급",
+  "opng_dt": "2019-07-04",
+  "biz_status_cd": "03",
+  "biz_status_nm": "폐업자",
+  "biz_closed_dt": "2026-08-14",
+  "is_restricted": false,
+  "embedded": true,
+  "updated": "2026-10-15"
+ },
+ "profile": {
+  "rgn": "경상북도 영덕군 강구면 강구리",
+  "industries": [
+   [],
+   []
+  ],
+  "products": [
+   [],
+   []
+  ]
+ },
+ "contracts": [
+  {
+   "cntrct_nm": "2026년 춘기 2차 소나무재선충병 및 산불예방숲가꾸기 합동방제사업(영해벌영지구)",
+   "cntrct_cncls_date": "2026-07-02",
+   "cntrct_amt": 157659440,
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "cntrct_instt_nm": "경상북도 영덕군",
+   "bsns_div_nm": "공사",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R26BK01443021"
+  },
+  {
+   "cntrct_nm": "2025년 영덕 초대형산불 긴급벌채 사업 2차(속곡리지구)",
+   "cntrct_cncls_date": "2026-06-15",
+   "cntrct_amt": 111806000,
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "cntrct_instt_nm": "경상북도 영덕군",
+   "bsns_div_nm": "공사",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R26BK01451677"
+  },
+  {
+   "cntrct_nm": "2025년 영덕 초대형산불 긴급벌채 사업 2차(삼화리2지구)",
+   "cntrct_cncls_date": "2026-06-11",
+   "cntrct_amt": 120430000,
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "cntrct_instt_nm": "경상북도 영덕군",
+   "bsns_div_nm": "공사",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R26BK01455510"
+  },
+  {
+   "cntrct_nm": "2025년 영덕 초대형산불 긴급벌채 사업 2차(삼화리2지구)",
+   "cntrct_cncls_date": "2026-05-22",
+   "cntrct_amt": 110426060,
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "cntrct_instt_nm": "경상북도 영덕군",
+   "bsns_div_nm": "공사",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R26BK01455510"
+  },
+  {
+   "cntrct_nm": "2025년 영덕 초대형산불 긴급벌채 사업 2차(속곡리지구)",
+   "cntrct_cncls_date": "2026-05-22",
+   "cntrct_amt": 85608950,
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "cntrct_instt_nm": "경상북도 영덕군",
+   "bsns_div_nm": "공사",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R26BK01451677"
+  }
+ ],
+ "contract_summary": {
+  "n": 5,
+  "total": "585930450",
+  "first": "2026-05-22",
+  "last": "2026-07-02",
+  "top_instt": [
+   "경상북도 영덕군"
+  ]
+ },
+ "awards": [
+  {
+   "bid_ntce_no": "R26BK01455510",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "2025년 영덕 초대형산불 긴급벌채 사업 2차(삼화리2지구) 견적제출 안내공고",
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "bid_clse_date": "2026-04-16",
+   "openg_date": "2026-04-16",
+   "presmpt_prce": 112282728,
+   "bid_amt": 110426063,
+   "bid_rate": "90.038",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "공사"
+  },
+  {
+   "bid_ntce_no": "R26BK01451677",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "2025년 영덕 초대형산불 긴급벌채 사업 2차(속곡리지구) 견적제출 안내공고",
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "bid_clse_date": "2026-04-16",
+   "openg_date": "2026-04-16",
+   "presmpt_prce": 87033637,
+   "bid_amt": 85608956,
+   "bid_rate": "90.015",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "공사"
+  },
+  {
+   "bid_ntce_no": "R26BK01443021",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "2026년 춘기 2차 소나무재선충병 및 산불예방숲가꾸기 합동방제사업(영해벌영지구) 견적제출 안내공고",
+   "dmnd_instt_nm": "경상북도 영덕군",
+   "bid_clse_date": "2026-04-10",
+   "openg_date": "2026-04-10",
+   "presmpt_prce": 158743637,
+   "bid_amt": 157659440,
+   "bid_rate": "89.925",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "공사"
+  }
+ ],
+ "n_participations": 3,
+ "peers": [
+  {
+   "bizrno": "3868802818",
+   "corp_nm": "주식회사 양호산림",
+   "encounter_count": 2,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(기사리지품리지구) 견적제출 안내공고",
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(삼화리3지구) 견적제출 안내공고"
+   ]
+  },
+  {
+   "bizrno": "2338703160",
+   "corp_nm": "주식회사 숲사랑임업",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(율전리2지구) 견적제출 안내공고"
+   ]
+  },
+  {
+   "bizrno": "1798104091",
+   "corp_nm": "엠케이산업 유한회사",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(대곡리지구) 견적제출 안내공고"
+   ]
+  },
+  {
+   "bizrno": "5148175106",
+   "corp_nm": "주식회사 뉴숲",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(화천리지구)  견적제출 안내공고"
+   ]
+  },
+  {
+   "bizrno": "5258802392",
+   "corp_nm": "주식회사 푸른산림조경",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(복곡리지구) 견적제출 안내공고"
+   ]
+  },
+  {
+   "bizrno": "8108703083",
+   "corp_nm": "주식회사 아포레",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(삼화리1지구) 견적제출 안내공고"
+   ]
+  },
+  {
+   "bizrno": "4888803340",
+   "corp_nm": "(주)금산",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "2025년 영덕 초대형산불 긴급벌채 사업 2차(눌곡리삼화리지구) 견적제출 안내공고"
+   ]
+  }
+ ],
+ "reco": null,
+ "funnel": null
+}

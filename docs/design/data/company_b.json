@@ -1,0 +1,2490 @@
+{
+ "company": {
+  "bizrno": "412-81-13667",
+  "corp_nm": "(유)금강환경",
+  "rgn_nm": "전남광주통합특별시 영암군",
+  "corp_bsns_div_nm": "물품,일반용역,용역,공사",
+  "emp_count": 8,
+  "hd_off_div_nm": "본사",
+  "mnfctr_div_nm": "제조",
+  "opng_dt": "1997-11-01",
+  "biz_status_cd": "01",
+  "biz_status_nm": "계속사업자",
+  "biz_closed_dt": null,
+  "is_restricted": false,
+  "embedded": true,
+  "updated": "2026-10-15"
+ },
+ "profile": {
+  "rgn": "전남광주통합특별시 영암군",
+  "industries": [
+   [
+    "건설폐기물 중간처리업"
+   ],
+   [
+    "건설폐기물 수집·운반업",
+    "구조물해체ㆍ비계공사업",
+    "석면해체.제거업",
+    "일반건설기계대여업",
+    "폐기물종합재활용업(지정폐기물외 폐기물)"
+   ]
+  ],
+  "products": [
+   [
+    "순환골재"
+   ],
+   [
+    "순환상온아스팔트콘크리트"
+   ]
+  ]
+ },
+ "contracts": [
+  {
+   "cntrct_nm": "영암군 외국인주민 특화거리 조성사업(시설물부문) 폐기물처리용역",
+   "cntrct_cncls_date": "2026-10-15",
+   "cntrct_amt": 13563000,
+   "dmnd_instt_nm": "전남광주통합특별시 영암군",
+   "cntrct_instt_nm": "전남광주통합특별시 영암군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": ""
+  },
+  {
+   "cntrct_nm": "국립남도국악원 소공연장 건립공사 폐기물 처리 용역",
+   "cntrct_cncls_date": "2026-10-14",
+   "cntrct_amt": 82986000,
+   "dmnd_instt_nm": "문화체육관광부 국립국악원 남도국악원",
+   "cntrct_instt_nm": "조달청 광주지방조달청",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "제한경쟁",
+   "bid_ntce_no": "R26BK01737919"
+  },
+  {
+   "cntrct_nm": "한국 중요 산림식물자원 후계원 건설폐기물처리 용역",
+   "cntrct_cncls_date": "2026-10-13",
+   "cntrct_amt": 132029000,
+   "dmnd_instt_nm": "전남광주통합특별시 무안군",
+   "cntrct_instt_nm": "전남광주통합특별시 무안군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "제한경쟁",
+   "bid_ntce_no": "R26BK01650504"
+  },
+  {
+   "cntrct_nm": "영암군 어울림복합센터 건립공사 건설폐기물 처리용역",
+   "cntrct_cncls_date": "2026-10-12",
+   "cntrct_amt": 19699700,
+   "dmnd_instt_nm": "전남광주통합특별시 영암군",
+   "cntrct_instt_nm": "전남광주통합특별시 영암군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R25BK01063493"
+  },
+  {
+   "cntrct_nm": "영암군 어울림복합센터 건립공사 임목폐기물 처리용역",
+   "cntrct_cncls_date": "2026-10-12",
+   "cntrct_amt": 940500,
+   "dmnd_instt_nm": "전남광주통합특별시 영암군",
+   "cntrct_instt_nm": "전남광주통합특별시 영암군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": ""
+  },
+  {
+   "cntrct_nm": "전라남도청 민원인 전용주차장 건립사업 폐기물처리용역(폐아스콘)",
+   "cntrct_cncls_date": "2026-10-02",
+   "cntrct_amt": 13451000,
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "cntrct_instt_nm": "전남광주통합특별시 무안청사",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": "R25BK00571964"
+  },
+  {
+   "cntrct_nm": "손불 양재소하천 개선복구사업 일반폐기물 처리 용역",
+   "cntrct_cncls_date": "2026-10-02",
+   "cntrct_amt": 123318000,
+   "dmnd_instt_nm": "전남광주통합특별시 함평군",
+   "cntrct_instt_nm": "전남광주통합특별시 함평군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "제한경쟁",
+   "bid_ntce_no": "R26BK01728702"
+  },
+  {
+   "cntrct_nm": "영암읍 교통사고 잦은 곳 개선사업 폐기물처리용역",
+   "cntrct_cncls_date": "2026-10-02",
+   "cntrct_amt": 12964000,
+   "dmnd_instt_nm": "전남광주통합특별시 영암군",
+   "cntrct_instt_nm": "전남광주통합특별시 영암군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": ""
+  },
+  {
+   "cntrct_nm": "가사문학지구 2단계 비상공급망구축사업 폐기물처리용역",
+   "cntrct_cncls_date": "2026-10-01",
+   "cntrct_amt": 348496000,
+   "dmnd_instt_nm": "전남광주통합특별시 담양군 물순환사업소",
+   "cntrct_instt_nm": "전남광주통합특별시 담양군 물순환사업소",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "제한경쟁",
+   "bid_ntce_no": ""
+  },
+  {
+   "cntrct_nm": "삼호 용두마을 진출입로 확장공사 건설폐기물처리용역",
+   "cntrct_cncls_date": "2026-09-30",
+   "cntrct_amt": 9418000,
+   "dmnd_instt_nm": "전남광주통합특별시 영암군",
+   "cntrct_instt_nm": "전남광주통합특별시 영암군",
+   "bsns_div_nm": "용역",
+   "cntrct_cncls_mthd_nm": "수의계약",
+   "bid_ntce_no": ""
+  }
+ ],
+ "contract_summary": {
+  "n": 61,
+  "total": "3608434470",
+  "first": "2026-05-22",
+  "last": "2026-10-15",
+  "top_instt": [
+   "전남광주통합특별시 영암군",
+   "국토교통부 익산지방국토관리청 광주국토관리사무소",
+   "전라남도 영암군"
+  ]
+ },
+ "awards": [
+  {
+   "bid_ntce_no": "R26BK01737919",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국립남도국악원 소공연장 건립공사 폐기물 처리 용역",
+   "dmnd_instt_nm": "문화체육관광부 국립국악원 남도국악원",
+   "bid_clse_date": "2026-10-02",
+   "openg_date": "2026-10-02",
+   "presmpt_prce": 107715455,
+   "bid_amt": 82986000,
+   "bid_rate": "87.811",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01728702",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "손불 양재소하천 개선복구사업 일반폐기물 처리 용역",
+   "dmnd_instt_nm": "전남광주통합특별시 함평군",
+   "bid_clse_date": "2026-09-21",
+   "openg_date": "2026-09-21",
+   "presmpt_prce": 128363636,
+   "bid_amt": 123318000,
+   "bid_rate": "87.748",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01689551",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "해남~대흥사간(2단계) 지방도 4차로 확포장공사 건설폐기물(폐아스콘) 처리용역(총괄,2026년분)",
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "bid_clse_date": "2026-08-28",
+   "openg_date": "2026-08-28",
+   "presmpt_prce": 611727273,
+   "bid_amt": 580243000,
+   "bid_rate": "85.509",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01650504",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "한국 중요 산림식물자원 후계원 건설폐기물처리 용역",
+   "dmnd_instt_nm": "전남광주통합특별시 무안군",
+   "bid_clse_date": "2026-08-04",
+   "openg_date": "2026-08-04",
+   "presmpt_prce": 198827000,
+   "bid_amt": 192214000,
+   "bid_rate": "87.837",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01621526",
+   "bid_ntce_ord": "001",
+   "bid_ntce_nm": "광주전남지역대학 옥외환경 개선공사 건설폐기물 처리용역",
+   "dmnd_instt_nm": "한국방송통신대학교",
+   "bid_clse_date": "2026-07-14",
+   "openg_date": "2026-07-14",
+   "presmpt_prce": 17150000,
+   "bid_amt": 16567000,
+   "bid_rate": "88.013",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01591167",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "보성읍 주봉리 남외~구교마을간 도시계획도로 개설공사 폐기물처리용역",
+   "dmnd_instt_nm": "전라남도 보성군",
+   "bid_clse_date": "2026-06-25",
+   "openg_date": "2026-06-25",
+   "presmpt_prce": 115481818,
+   "bid_amt": 111281000,
+   "bid_rate": "87.745",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01587227",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도17호선 여수 돌산지구 포장도 보수공사 폐기물처리용역",
+   "dmnd_instt_nm": "국토교통부 익산지방국토관리청 순천국토관리사무소",
+   "bid_clse_date": "2026-06-23",
+   "openg_date": "2026-06-23",
+   "presmpt_prce": 126818182,
+   "bid_amt": 122908000,
+   "bid_rate": "88.037",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01558656",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "위임국도 18호선 진도 군내 둔전4지구 노후포장 개선사업 폐아스콘 처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "bid_clse_date": "2026-06-08",
+   "openg_date": "2026-06-08",
+   "presmpt_prce": 139190909,
+   "bid_amt": 135147000,
+   "bid_rate": "88.03",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01540226",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "위임국도 15호선 화순 백아 원리지구 노후포장 개선사업 폐아스콘 처리용역",
+   "dmnd_instt_nm": "전라남도",
+   "bid_clse_date": "2026-06-01",
+   "openg_date": "2026-06-01",
+   "presmpt_prce": 28300000,
+   "bid_amt": 27293000,
+   "bid_rate": "88.095",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01534756",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "여수국가산단 진입도로 접속D교 등 포장 보수공사 건설폐기물(폐아스콘) 처리용역",
+   "dmnd_instt_nm": "전라남도",
+   "bid_clse_date": "2026-05-28",
+   "openg_date": "2026-05-28",
+   "presmpt_prce": 104680000,
+   "bid_amt": 100961000,
+   "bid_rate": "87.912",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01523129",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "(재공고)세풍산단 2단계 내부간선도로 개설사업 건설폐기물 처리 용역",
+   "dmnd_instt_nm": "광양만권경제자유구역청",
+   "bid_clse_date": "2026-05-20",
+   "openg_date": "2026-05-20",
+   "presmpt_prce": 131390000,
+   "bid_amt": 126348000,
+   "bid_rate": "87.842",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01514943",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도18호선 해남 상등지구 등 4개소 포장도 보수공사 폐기물처리용역",
+   "dmnd_instt_nm": "국토교통부 익산지방국토관리청 광주국토관리사무소",
+   "bid_clse_date": "2026-05-18",
+   "openg_date": "2026-05-18",
+   "presmpt_prce": 67836364,
+   "bid_amt": 66553000,
+   "bid_rate": "88.523",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01477269",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "가사문학지구 2단계 비상공급망구축사업 폐기물처리용역(입찰대행)",
+   "dmnd_instt_nm": "전라남도 담양군",
+   "bid_clse_date": "2026-04-28",
+   "openg_date": "2026-04-28",
+   "presmpt_prce": 367700000,
+   "bid_amt": 348496000,
+   "bid_rate": "86.836",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01426938",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "대불로(대불국가산단) 구조개선 및 정비공사 폐기물처리용역(단년도 차수계약)",
+   "dmnd_instt_nm": "전라남도 영암군",
+   "bid_clse_date": "2026-04-03",
+   "openg_date": "2026-04-03",
+   "presmpt_prce": 66727273,
+   "bid_amt": 65664000,
+   "bid_rate": "89.09",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01426843",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "삼호 용앙로 아스콘 덧씌우기공사 폐기물처리용역",
+   "dmnd_instt_nm": "전라남도 영암군",
+   "bid_clse_date": "2026-04-03",
+   "openg_date": "2026-04-03",
+   "presmpt_prce": 34954545,
+   "bid_amt": 34100500,
+   "bid_rate": "88.581",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01398190",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도13호선 해남 북평 남창지구 등 5개소 포장도 보수공사 폐기물처리용역",
+   "dmnd_instt_nm": "국토교통부 익산지방국토관리청 광주국토관리사무소",
+   "bid_clse_date": "2026-03-23",
+   "openg_date": "2026-03-23",
+   "presmpt_prce": 77018182,
+   "bid_amt": 74537000,
+   "bid_rate": "88.14",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01371112",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도 18호선 보성 복내 체육공원 통로암거 설치공사 폐콘크리트 처리용역",
+   "dmnd_instt_nm": "전라남도 도로관리사업소",
+   "bid_clse_date": "2026-03-11",
+   "openg_date": "2026-03-11",
+   "presmpt_prce": 7620000,
+   "bid_amt": 7476000,
+   "bid_rate": "90.01",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01363671",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "강진 제2일반산업단지 조성사업 건설폐기물처리용역",
+   "dmnd_instt_nm": "전라남도 강진군",
+   "bid_clse_date": "2026-03-11",
+   "openg_date": "2026-03-11",
+   "presmpt_prce": 313924545,
+   "bid_amt": 301873000,
+   "bid_rate": "87.002",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01365736",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도1호선 나주 장산지구 등 9개소 포장도 보수공사 폐기물처리용역",
+   "dmnd_instt_nm": "국토교통부 익산지방국토관리청 광주국토관리사무소",
+   "bid_clse_date": "2026-03-09",
+   "openg_date": "2026-03-09",
+   "presmpt_prce": 148181818,
+   "bid_amt": 143890000,
+   "bid_rate": "87.788",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01323430",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "금성천 하천재해예방사업 건설폐기물(폐콘크리트) 처리용역(4차)",
+   "dmnd_instt_nm": "전라남도",
+   "bid_clse_date": "2026-02-19",
+   "openg_date": "2026-02-19",
+   "presmpt_prce": 185363636,
+   "bid_amt": 178465000,
+   "bid_rate": "87.847",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01282180",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "수월지구 용배수로 수리시설개보수사업 폐기물처리 용역",
+   "dmnd_instt_nm": "한국농어촌공사 전남지역본부 구례지사",
+   "bid_clse_date": "2026-01-27",
+   "openg_date": "2026-01-27",
+   "presmpt_prce": 325244545,
+   "bid_amt": 312389000,
+   "bid_rate": "86.751",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R25BK01230284",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": null,
+   "dmnd_instt_nm": null,
+   "bid_clse_date": null,
+   "openg_date": null,
+   "presmpt_prce": null,
+   "bid_amt": 144158000,
+   "bid_rate": "87.773",
+   "openg_rank": 1,
+   "is_winner": true,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01751554",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도13호선 나주 영산대교 교면포장 보수공사 폐기물처리용역",
+   "dmnd_instt_nm": "국토교통부 익산지방국토관리청 광주국토관리사무소",
+   "bid_clse_date": "2026-10-07",
+   "openg_date": "2026-10-07",
+   "presmpt_prce": 48546364,
+   "bid_amt": 46925000,
+   "bid_rate": "88.092",
+   "openg_rank": 3,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01747050",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "장산지구 배수개선사업 폐기물처리 용역",
+   "dmnd_instt_nm": "한국농어촌공사 전남지역본부 강진지사",
+   "bid_clse_date": "2026-10-07",
+   "openg_date": "2026-10-07",
+   "presmpt_prce": 57401818,
+   "bid_amt": 55631000,
+   "bid_rate": "88.783",
+   "openg_rank": 27,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01746217",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "강진 지역활력타운 조성사업 철거공사 건설폐기물 처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 강진군",
+   "bid_clse_date": "2026-10-07",
+   "openg_date": "2026-10-07",
+   "presmpt_prce": 322664545,
+   "bid_amt": 309343000,
+   "bid_rate": "87.552",
+   "openg_rank": 19,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01744261",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "지석천 오계지구 하천환경정비사업 폐기물 위탁처리용역",
+   "dmnd_instt_nm": "기후에너지환경부 영산강유역환경청",
+   "bid_clse_date": "2026-10-01",
+   "openg_date": "2026-10-01",
+   "presmpt_prce": 65454545,
+   "bid_amt": 63965000,
+   "bid_rate": "88.225",
+   "openg_rank": 2,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01740360",
+   "bid_ntce_ord": "003",
+   "bid_ntce_nm": "자라실천 재해복구사업 폐기물처리용역",
+   "dmnd_instt_nm": "충청남도 서천군",
+   "bid_clse_date": "2026-09-30",
+   "openg_date": "2026-09-30",
+   "presmpt_prce": 727010279,
+   "bid_amt": 690715000,
+   "bid_rate": "88.385",
+   "openg_rank": 134,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01733668",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "녹동신항 일반 및 모래부두 축조공사 폐아스콘 처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "bid_clse_date": "2026-09-22",
+   "openg_date": "2026-09-22",
+   "presmpt_prce": 53095455,
+   "bid_amt": 51492000,
+   "bid_rate": "88.735",
+   "openg_rank": 7,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01733644",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "녹동신항 일반 및 모래부두 축조공사 폐콘크리트 처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "bid_clse_date": "2026-09-22",
+   "openg_date": "2026-09-22",
+   "presmpt_prce": 54650000,
+   "bid_amt": 52836000,
+   "bid_rate": "88.136",
+   "openg_rank": 8,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01731132",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "해보면 농촌중심지활성화사업 건설폐기물처리 용역",
+   "dmnd_instt_nm": "한국농어촌공사 전남지역본부 함평지사",
+   "bid_clse_date": "2026-09-22",
+   "openg_date": "2026-09-22",
+   "presmpt_prce": 78660000,
+   "bid_amt": 76548000,
+   "bid_rate": "88.081",
+   "openg_rank": 3,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01726810",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "서성지구 중·소규모치수능력확대사업 건설폐기물처리용역",
+   "dmnd_instt_nm": "한국농어촌공사 전남지역본부 화순지사",
+   "bid_clse_date": "2026-09-22",
+   "openg_date": "2026-09-22",
+   "presmpt_prce": 147625455,
+   "bid_amt": 142787000,
+   "bid_rate": "88.257",
+   "openg_rank": 28,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01728651",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "대동 정창소하천 재해복구사업 일반폐기물 처리 용역",
+   "dmnd_instt_nm": "전남광주통합특별시 함평군",
+   "bid_clse_date": "2026-09-21",
+   "openg_date": "2026-09-21",
+   "presmpt_prce": 130727273,
+   "bid_amt": 126671000,
+   "bid_rate": "88.189",
+   "openg_rank": 15,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01722144",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "각화정수장 배수지 전환공사 건설폐기물처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 상수도사업본부",
+   "bid_clse_date": "2026-09-18",
+   "openg_date": "2026-09-18",
+   "presmpt_prce": 961471819,
+   "bid_amt": 910125000,
+   "bid_rate": "86.136",
+   "openg_rank": 22,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01702422",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "고창천 지방하천 정비사업 폐콘크리트 처리용역(총괄분 및 1차분)",
+   "dmnd_instt_nm": "전북특별자치도 고창군",
+   "bid_clse_date": "2026-09-14",
+   "openg_date": "2026-09-14",
+   "presmpt_prce": 2949481818,
+   "bid_amt": 2724990000,
+   "bid_rate": "83.696",
+   "openg_rank": 30,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01711644",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "2026년 2차 영산강·섬진강수계 건설폐기물(파쇄류) 처리용역(2구역)",
+   "dmnd_instt_nm": "한국환경보전원",
+   "bid_clse_date": "2026-09-11",
+   "openg_date": "2026-09-11",
+   "presmpt_prce": 295578181,
+   "bid_amt": 283430000,
+   "bid_rate": "87.623",
+   "openg_rank": 83,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01704286",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "서천군 종천 당정지구 농어촌마을하수도 정비사업 건설폐기물(폐콘크리트) 처리용역",
+   "dmnd_instt_nm": "한국환경공단 충청권환경본부",
+   "bid_clse_date": "2026-09-11",
+   "openg_date": "2026-09-11",
+   "presmpt_prce": 729960000,
+   "bid_amt": 521945000,
+   "bid_rate": "85.877",
+   "openg_rank": 18,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01703374",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "글로컬 스콜라광장 조성사업(건설폐기물 처리용역)",
+   "dmnd_instt_nm": "국립순천대학교",
+   "bid_clse_date": "2026-09-10",
+   "openg_date": "2026-09-10",
+   "presmpt_prce": 130609091,
+   "bid_amt": 100833000,
+   "bid_rate": "88.1",
+   "openg_rank": 13,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01696438",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "진도군 창유마을 LPG시설 구축사업 건설폐기물 처리용역",
+   "dmnd_instt_nm": "재단법인 한국엘피지사업관리원",
+   "bid_clse_date": "2026-08-31",
+   "openg_date": "2026-08-31",
+   "presmpt_prce": 219543636,
+   "bid_amt": 210347000,
+   "bid_rate": "88.123",
+   "openg_rank": 29,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01676026",
+   "bid_ntce_ord": "002",
+   "bid_ntce_nm": "원효사공원마을지구 정비사업 폐기물 처리용역(5차)",
+   "dmnd_instt_nm": "국립공원공단 무등산국립공원사무소",
+   "bid_clse_date": "2026-08-20",
+   "openg_date": "2026-08-20",
+   "presmpt_prce": 229700000,
+   "bid_amt": 221300000,
+   "bid_rate": "87.805",
+   "openg_rank": 31,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01669061",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "함평천 자연재해위험개선지구 정비사업 건설폐기물(폐콘크리트) 처리용역(2026년분)",
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "bid_clse_date": "2026-08-14",
+   "openg_date": "2026-08-14",
+   "presmpt_prce": 217709091,
+   "bid_amt": 208629000,
+   "bid_rate": "86.822",
+   "openg_rank": 3,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01665695",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "한국에너지공대 캠퍼스 대학원 숙소 건립공사 건설폐기물 처리 용역",
+   "dmnd_instt_nm": "한국에너지공과대학교",
+   "bid_clse_date": "2026-08-12",
+   "openg_date": "2026-08-12",
+   "presmpt_prce": 36740000,
+   "bid_amt": 32348000,
+   "bid_rate": "88.022",
+   "openg_rank": 9,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01665358",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "2026년 농어촌 빈집정비 지원사업(건설폐기물처리용역)",
+   "dmnd_instt_nm": "전남광주통합특별시 장흥군",
+   "bid_clse_date": "2026-08-12",
+   "openg_date": "2026-08-12",
+   "presmpt_prce": 240639091,
+   "bid_amt": 230170000,
+   "bid_rate": "87.05",
+   "openg_rank": 3,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01661270",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "곡성군 청년농촌 보금자리 조성사업 건축공사 건설폐기물 처리용역",
+   "dmnd_instt_nm": "전남개발공사",
+   "bid_clse_date": "2026-08-12",
+   "openg_date": "2026-08-12",
+   "presmpt_prce": 162372727,
+   "bid_amt": 157839000,
+   "bid_rate": "88.062",
+   "openg_rank": 11,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01662859",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "전라우수영 종합정비사업 지장물 철거 건설폐기물처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 해남군",
+   "bid_clse_date": "2026-08-11",
+   "openg_date": "2026-08-11",
+   "presmpt_prce": 257286364,
+   "bid_amt": 246393000,
+   "bid_rate": "87.784",
+   "openg_rank": 25,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01660891",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "대전면 대치리 일원 도시계획도로 소로(3-912호선) 개설공사 폐기물처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 담양군",
+   "bid_clse_date": "2026-08-10",
+   "openg_date": "2026-08-10",
+   "presmpt_prce": 102554545,
+   "bid_amt": 99559000,
+   "bid_rate": "88.29",
+   "openg_rank": 20,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01660669",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "창평처리분구 하수관로 정비사업 건설폐기물처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 담양군",
+   "bid_clse_date": "2026-08-10",
+   "openg_date": "2026-08-10",
+   "presmpt_prce": 648388182,
+   "bid_amt": 615085000,
+   "bid_rate": "87.746",
+   "openg_rank": 88,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01660436",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "용두지구 농촌생활용수 개발사업 폐기물처리용역(장기계속)",
+   "dmnd_instt_nm": "충청남도 부여군",
+   "bid_clse_date": "2026-08-10",
+   "openg_date": "2026-08-10",
+   "presmpt_prce": 1713465455,
+   "bid_amt": 1603720000,
+   "bid_rate": "85.709",
+   "openg_rank": 128,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01653797",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "소규모 지평식 공영주차장 조성을 위한  미평동 707-4번지 건축물 해체공사 폐기물 처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 여수시",
+   "bid_clse_date": "2026-08-05",
+   "openg_date": "2026-08-05",
+   "presmpt_prce": 146521818,
+   "bid_amt": 142189000,
+   "bid_rate": "88.449",
+   "openg_rank": 19,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01653125",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "익산 장선처리분구 하수관로 정비사업 건설폐기물 처리용역",
+   "dmnd_instt_nm": "전북특별자치도 익산시",
+   "bid_clse_date": "2026-08-05",
+   "openg_date": "2026-08-05",
+   "presmpt_prce": 2846636364,
+   "bid_amt": 1995550000,
+   "bid_rate": "85.271",
+   "openg_rank": 111,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01643584",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "오례천 재해복구사업 건설폐기물(폐아스콘) 처리 용역",
+   "dmnd_instt_nm": "전남광주통합특별시 무안청사",
+   "bid_clse_date": "2026-07-30",
+   "openg_date": "2026-07-30",
+   "presmpt_prce": 105090909,
+   "bid_amt": 102046000,
+   "bid_rate": "88.015",
+   "openg_rank": 2,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01633619",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "완도초 본관동 그린스마트스쿨 개축 건설폐기물처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시교육청 전남광주통합특별시완도교육지원청",
+   "bid_clse_date": "2026-07-28",
+   "openg_date": "2026-07-28",
+   "presmpt_prce": 378912728,
+   "bid_amt": 363182000,
+   "bid_rate": "86.79",
+   "openg_rank": 3,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01641488",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "26년 영산강 하류 하천시설물 정비공사 폐기물위탁처리용역",
+   "dmnd_instt_nm": "기후에너지환경부 영산강유역환경청",
+   "bid_clse_date": "2026-07-27",
+   "openg_date": "2026-07-27",
+   "presmpt_prce": 6363636,
+   "bid_amt": 6176000,
+   "bid_rate": "88.898",
+   "openg_rank": 31,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01637665",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "송산지구 배수개선사업 토목공사 건설폐기물처리용역",
+   "dmnd_instt_nm": "한국농어촌공사 전북지역본부 고창지사",
+   "bid_clse_date": "2026-07-27",
+   "openg_date": "2026-07-27",
+   "presmpt_prce": 273178000,
+   "bid_amt": 261215000,
+   "bid_rate": "87.94",
+   "openg_rank": 91,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01630141",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "동진강지구 수리시설개보수사업 건설폐기물처리용역",
+   "dmnd_instt_nm": "한국농어촌공사 전북지역본부 정읍지사",
+   "bid_clse_date": "2026-07-21",
+   "openg_date": "2026-07-21",
+   "presmpt_prce": 312743636,
+   "bid_amt": 298256000,
+   "bid_rate": "87.127",
+   "openg_rank": 39,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01632423",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "(긴급)이서면 장복천(지방하천) 재해복구공사 폐기물처리용역",
+   "dmnd_instt_nm": "전남광주통합특별시 화순군",
+   "bid_clse_date": "2026-07-20",
+   "openg_date": "2026-07-20",
+   "presmpt_prce": 103325454,
+   "bid_amt": 100409000,
+   "bid_rate": "88.161",
+   "openg_rank": 12,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01626486",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "지북지구 하수관로 정비사업 건설폐기물처리용역",
+   "dmnd_instt_nm": "전북특별자치도 순창군",
+   "bid_clse_date": "2026-07-16",
+   "openg_date": "2026-07-16",
+   "presmpt_prce": 1126330000,
+   "bid_amt": 1030773000,
+   "bid_rate": "86.953",
+   "openg_rank": 98,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01622518",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "양천(1공구) 재해복구사업 폐기물처리용역(총체분, 2026년분)",
+   "dmnd_instt_nm": "경상남도",
+   "bid_clse_date": "2026-07-16",
+   "openg_date": "2026-07-16",
+   "presmpt_prce": 480909091,
+   "bid_amt": 463290000,
+   "bid_rate": "89.297",
+   "openg_rank": 141,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01619962",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "국도24호선 장성 발산지구 등 3개소 배수시설 정비공사 폐기물처리용역",
+   "dmnd_instt_nm": "국토교통부 익산지방국토관리청 광주국토관리사무소",
+   "bid_clse_date": "2026-07-13",
+   "openg_date": "2026-07-13",
+   "presmpt_prce": 13130000,
+   "bid_amt": 12788000,
+   "bid_rate": "89.188",
+   "openg_rank": 46,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  },
+  {
+   "bid_ntce_no": "R26BK01609553",
+   "bid_ntce_ord": "000",
+   "bid_ntce_nm": "송림지구 수원공 수리시설개보수사업 건설폐기물처리 용역",
+   "dmnd_instt_nm": "한국농어촌공사 전남지역본부 나주지사",
+   "bid_clse_date": "2026-07-08",
+   "openg_date": "2026-07-08",
+   "presmpt_prce": 69930000,
+   "bid_amt": 67842000,
+   "bid_rate": "88.04",
+   "openg_rank": 11,
+   "is_winner": false,
+   "bsns_div_nm": "용역"
+  }
+ ],
+ "n_participations": 59,
+ "peers": [
+  {
+   "bizrno": "4128115331",
+   "corp_nm": "천지환경(주)",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "금오도 지방도 정비공사 건설폐기물(폐아스콘) 처리용역"
+   ]
+  },
+  {
+   "bizrno": "4158140163",
+   "corp_nm": "(주)삼호환경",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "현산 만안 배수지선관로 설치공사 폐기물처리 용역"
+   ]
+  },
+  {
+   "bizrno": "4168115217",
+   "corp_nm": "호남산업(주)",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "여수지역 지방도 정비공사 건설폐기물(폐아스콘) 처리용역"
+   ]
+  },
+  {
+   "bizrno": "4688602659",
+   "corp_nm": "거산환경개발 유한회사",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "국도 2호선 신안 비금 죽림2지구 위험도로 개선사업 건설폐기물 처리용역"
+   ]
+  },
+  {
+   "bizrno": "6968600561",
+   "corp_nm": "유한회사 서부산업",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "자은~유각간 지방도 시설개량공사 폐콘크리트 처리용역"
+   ]
+  },
+  {
+   "bizrno": "8478100015",
+   "corp_nm": "주식회사 에코",
+   "encounter_count": 1,
+   "sample_notice_names": [
+    "과역~남양간 지방도 확포장공사 건설폐기물(폐아스콘) 처리용역"
+   ]
+  }
+ ],
+ "reco": {
+  "company": {
+   "bizrno": "307-07-69632",
+   "corp_nm": "금강환경",
+   "rgn_nm": "충청남도 공주시",
+   "corp_bsns_div_nm": "일반용역,용역"
+  },
+  "mode": "company",
+  "algorithm": "v2",
+  "keywords": null,
+  "results": [
+   {
+    "bid_ntce_no": "R26BK01758692",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "해양수산부 청사 시설관리운영 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-07",
+    "bid_clse_date": "2026-10-19",
+    "openg_date": "2026-10-19",
+    "presmpt_prce": 3614545455,
+    "ntce_instt_nm": "해양수산부",
+    "dmnd_instt_nm": "해양수산부",
+    "bidprc_psbl_indstryty_nm": "건물위생관리업,건물(시설)관리용역,특수경비업무",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01758692&bidPbancOrd=000",
+    "similarity": 0.629959,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 충족",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 67.0,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 63%",
+      "points": 63.0
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 212.62
+     },
+     {
+      "key": "industry_tokens",
+      "label": "업종·물품 일치",
+      "points": 6,
+      "matched": [
+       "건물(시설)관리용역",
+       "건물위생관리업"
+      ]
+     }
+    ],
+    "base_similarity": 0.629959,
+    "score": 0.335,
+    "insight": {
+     "summary": "해양수산부 청사 시설관리운영 용역은 방호, 미화, 주차 업무를 포함하여 청사의 안전과 청결을 유지하는 사업입니다. 이 용역은 2027년 1월부터 12개월간 진행되며, 미화 용역은 2026년 12월부터 13개월간 수행됩니다.",
+     "scope": [
+      "청사 방호",
+      "청사 미화",
+      "주차 관리",
+      "비상사태 대응",
+      "청소 및 폐기물 처리"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "경비업 허가증",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "건물위생관리업 영업신고증",
+       "mandatory": true
+      },
+      {
+       "kind": "performance",
+       "text": "최근 3년 이내 계약 1건당 19억원 이상 실적",
+       "mandatory": true
+      },
+      {
+       "kind": "certification",
+       "text": "중소기업 확인서",
+       "mandatory": true
+      },
+      {
+       "kind": "certification",
+       "text": "직접생산확인증명서(건물청소서비스)",
+       "mandatory": true
+      }
+     ],
+     "evaluation": {
+      "note": "정량평가는 서면, 정성평가는 발표 후 평가",
+      "method": "협상에 의한 계약",
+      "price_pct": null,
+      "presentation": true,
+      "technical_pct": null
+     },
+     "schedule": {
+      "end": "2027. 12. 31.",
+      "start": "2027. 1. 1.",
+      "duration": "12개월",
+      "delivery_deadline": "2027. 12. 31."
+     },
+     "keywords": [
+      "청사 관리",
+      "방호 용역",
+      "미화 용역",
+      "주차 관리",
+      "안전 관리",
+      "시설 관리"
+     ]
+    }
+   },
+   {
+    "bid_ntce_no": "R26BK01774332",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "서울중계3동우체국 입주청소 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-16",
+    "bid_clse_date": "2026-10-22",
+    "openg_date": "2026-10-22",
+    "presmpt_prce": 2000000,
+    "ntce_instt_nm": "과학기술정보통신부 우정사업본부 서울지방우정청",
+    "dmnd_instt_nm": "과학기술정보통신부 우정사업본부 서울지방우정청",
+    "bidprc_psbl_indstryty_nm": "건물위생관리업",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01774332&bidPbancOrd=000",
+    "similarity": 0.590113,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 충족",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 62.0,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 59%",
+      "points": 59.0
+     },
+     {
+      "key": "industry_tokens",
+      "label": "업종·물품 일치",
+      "points": 3,
+      "matched": [
+       "건물위생관리업"
+      ]
+     }
+    ],
+    "base_similarity": 0.590113,
+    "score": 0.31
+   },
+   {
+    "bid_ntce_no": "R26BK01759591",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "2026년 국가에너지실증연구단지 성과 유지관리 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-07",
+    "bid_clse_date": "2026-10-20",
+    "openg_date": "2026-10-20",
+    "presmpt_prce": 528181818,
+    "ntce_instt_nm": "한국에너지기술평가원",
+    "dmnd_instt_nm": "한국에너지기술평가원",
+    "bidprc_psbl_indstryty_nm": "건물위생관리업,건물(시설)관리용역,시설경비업무",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01759591&bidPbancOrd=000",
+    "similarity": 0.577613,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 충족",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 61.8,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 58%",
+      "points": 57.8
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 31.07
+     },
+     {
+      "key": "industry_tokens",
+      "label": "업종·물품 일치",
+      "points": 6,
+      "matched": [
+       "건물(시설)관리용역",
+       "건물위생관리업"
+      ]
+     }
+    ],
+    "base_similarity": 0.577613,
+    "score": 0.309,
+    "insight": {
+     "summary": "국가에너지실증연구단지의 성과 유지관리를 위한 용역으로, 시설관리, 미화관리, 경비관리 업무를 체계적이고 안전하게 수행하는 사업이다.",
+     "scope": [
+      "시설관리",
+      "미화관리",
+      "경비관리",
+      "건물 유지관리",
+      "청소 업무 수행",
+      "CCTV 모니터링"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "공중위생관리법 및 경비업법 신고 및 허가",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "건물(시설)관리용역업 허가 또는 신고",
+       "mandatory": true
+      },
+      {
+       "kind": "performance",
+       "text": "최근 5년 이내 10,000㎡ 이상 종합관리 용역 실적",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "부정당업체에 해당되지 않아야 함",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "입찰보증금 납부",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "제안요청서 및 입찰유의서 요구 자격 충족",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "공동수급 불허",
+       "mandatory": true
+      }
+     ],
+     "evaluation": {
+      "note": "제안발표회 불참 시 평가 제외.",
+      "method": "협상에 의한 계약",
+      "price_pct": 20,
+      "presentation": true,
+      "technical_pct": 80
+     },
+     "schedule": {
+      "end": "계약일로부터 12개월 이내",
+      "start": "계약체결일",
+      "duration": "12개월",
+      "delivery_deadline": null
+     },
+     "keywords": [
+      "시설관리",
+      "미화관리",
+      "경비관리",
+      "CCTV",
+      "전기설비",
+      "소방설비",
+      "가스설비",
+      "에너지관리"
+     ]
+    }
+   },
+   {
+    "bid_ntce_no": "R26BK01742267",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "기초과학연구원 실험동물자원동 시설물관리 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-09-23",
+    "bid_clse_date": "2026-10-19",
+    "openg_date": "2026-10-19",
+    "presmpt_prce": 629821545,
+    "ntce_instt_nm": "기초과학연구원",
+    "dmnd_instt_nm": "기초과학연구원",
+    "bidprc_psbl_indstryty_nm": "건물(시설)관리용역,시설물관리를 전문으로 하는 자,전기안전관리업무를 전문으로 하는자,건물(시설)관리용역",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01742267&bidPbancOrd=000",
+    "similarity": 0.601165,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 충족",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 61.1,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 60%",
+      "points": 60.1
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 37.05
+     },
+     {
+      "key": "industry_tokens",
+      "label": "업종·물품 일치",
+      "points": 3,
+      "matched": [
+       "건물(시설)관리용역"
+      ]
+     }
+    ],
+    "base_similarity": 0.601165,
+    "score": 0.3055,
+    "insight": {
+     "summary": "실험동물자원동의 시설물 관리를 위한 용역을 수행하는 사업으로, 시설의 일상 관리, 보수 및 안전 관리 등을 포함한다. 계약자는 기초과학연구원이며, 계약 기간은 2026년 12월 1일부터 2028년 12월 31일까지이다.",
+     "scope": [
+      "시설 일상관리",
+      "시설물 보수",
+      "안전관리",
+      "에너지절감대책",
+      "직무범위 정의"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "건물(시설)관리용역(1260) 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "전기안전관리업무(4636) 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "시설물 관리(7144) 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "부정당업체 제재를 받지 않은 자",
+       "mandatory": true
+      }
+     ],
+     "evaluation": {
+      "note": "기술능력평가 점수 85% 이상 필요",
+      "method": "협상에 의한 계약",
+      "price_pct": null,
+      "presentation": null,
+      "technical_pct": null
+     },
+     "schedule": {
+      "end": "2028. 12. 31.",
+      "start": "2026. 12. 1.",
+      "duration": "24개월",
+      "delivery_deadline": null
+     },
+     "keywords": [
+      "시설물관리",
+      "안전관리",
+      "에너지절감",
+      "전기안전관리",
+      "건물관리용역"
+     ]
+    }
+   },
+   {
+    "bid_ntce_no": "R26BK01774222",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "본관 옥외 조경구역 주차장 조성 공사 폐기물 처리용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-15",
+    "bid_clse_date": "2026-10-21",
+    "openg_date": "2026-10-21",
+    "presmpt_prce": 40800000,
+    "ntce_instt_nm": "국민건강보험공단",
+    "dmnd_instt_nm": "국민건강보험공단",
+    "bidprc_psbl_indstryty_nm": "건설폐기물 중간처리업,건설폐기물 수집·운반업,건설폐기물 중간처리업",
+    "rgn_lmt_yn": "Y",
+    "prtcpt_psbl_rgn_nm": "강원특별자치도",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01774222&bidPbancOrd=000",
+    "similarity": 0.604074,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 제한 없음",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 60.4,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 60%",
+      "points": 60.4
+     }
+    ],
+    "base_similarity": 0.604074,
+    "score": 0.302
+   },
+   {
+    "bid_ntce_no": "R26BK01770835",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "노후상수도관개체공사(오태동 673-4번지 일원) 폐기물처리용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-15",
+    "bid_clse_date": "2026-10-23",
+    "openg_date": "2026-10-23",
+    "presmpt_prce": 23372727,
+    "ntce_instt_nm": "경상북도 구미시 맑은물사업소",
+    "dmnd_instt_nm": "경상북도 구미시 맑은물사업소",
+    "bidprc_psbl_indstryty_nm": "폐기물종합처분업,건설폐기물 수집·운반업,건설폐기물 수집·운반업,건설폐기물 중간처리업",
+    "rgn_lmt_yn": "Y",
+    "prtcpt_psbl_rgn_nm": "경상북도 구미시",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01770835&bidPbancOrd=000",
+    "similarity": 0.579071,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 제한 없음",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.9,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 58%",
+      "points": 57.9
+     },
+     {
+      "key": "budget",
+      "label": "예산대 매칭",
+      "points": 2,
+      "ratio": 1.37
+     }
+    ],
+    "base_similarity": 0.579071,
+    "score": 0.2995
+   },
+   {
+    "bid_ntce_no": "R26BK01771266",
+    "bid_ntce_ord": "001",
+    "bid_ntce_nm": "중랑물재생센터 일부시설물 관리대행",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-15",
+    "bid_clse_date": "2026-11-24",
+    "openg_date": "2026-11-24",
+    "presmpt_prce": 19974684545,
+    "ntce_instt_nm": "서울특별시",
+    "dmnd_instt_nm": "서울특별시 물재생센터 중랑물재생센터",
+    "bidprc_psbl_indstryty_nm": "공공하수도 관리대행업(공공하수도-10,000㎥/일 이상)",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01771266&bidPbancOrd=001",
+    "similarity": 0.617577,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 제한 없음",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.8,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 62%",
+      "points": 61.8
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 1174.98
+     }
+    ],
+    "base_similarity": 0.617577,
+    "score": 0.299
+   },
+   {
+    "bid_ntce_no": "R26BK01718798",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "IBS 중이온가속기연구소 시설관리용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-09-08",
+    "bid_clse_date": "2026-10-20",
+    "openg_date": "2026-10-20",
+    "presmpt_prce": 5159988328,
+    "ntce_instt_nm": "기초과학연구원",
+    "dmnd_instt_nm": "기초과학연구원",
+    "bidprc_psbl_indstryty_nm": "건물(시설)관리용역,시설물관리를 전문으로 하는 자,전기안전관리업무를 전문으로 하는자,건물(시설)관리용역",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01718798&bidPbancOrd=000",
+    "similarity": 0.588242,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 충족",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.8,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 59%",
+      "points": 58.8
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 303.53
+     },
+     {
+      "key": "industry_tokens",
+      "label": "업종·물품 일치",
+      "points": 3,
+      "matched": [
+       "건물(시설)관리용역"
+      ]
+     }
+    ],
+    "base_similarity": 0.588242,
+    "score": 0.299,
+    "insight": {
+     "summary": "IBS 중이온가속기연구소의 시설물 관리 및 운영을 위한 용역으로, 기계, 전기, 통신, 건물 관리 등 다양한 분야의 전문적 유지보수를 포함한다. 비상상황에 대한 신속한 대응과 안전 관리도 주요 과업이다.",
+     "scope": [
+      "시설물 관리",
+      "기계설비 유지보수",
+      "전기설비 운영",
+      "통신설비 관리",
+      "비상상황 대응"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "전기안전관리업무 전문 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "시설물 관리 전문 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "performance",
+       "text": "최근 3년 유사실적 5억 이상",
+       "mandatory": true
+      },
+      {
+       "kind": "company_size",
+       "text": "중소기업 확인서",
+       "mandatory": true
+      },
+      {
+       "kind": "region",
+       "text": "본사 소재지 대전",
+       "mandatory": true
+      }
+     ],
+     "evaluation": {
+      "note": "기술능력평가 점수 85% 이상 필요",
+      "method": "협상에 의한 계약",
+      "price_pct": 10,
+      "presentation": true,
+      "technical_pct": 90
+     },
+     "schedule": {
+      "end": "2028. 11. 30.",
+      "start": "2026. 12. 1.",
+      "duration": "24개월",
+      "delivery_deadline": "2028. 11. 30."
+     },
+     "keywords": [
+      "시설관리",
+      "기계설비",
+      "전기설비",
+      "통신설비",
+      "비상대응",
+      "안전관리"
+     ]
+    }
+   },
+   {
+    "bid_ntce_no": "R26BK01775041",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "상설전시실 전시공간 정비 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-16",
+    "bid_clse_date": "2026-10-19",
+    "openg_date": "2026-10-19",
+    "presmpt_prce": 16591000,
+    "ntce_instt_nm": "서울특별시 물재생센터 중랑물재생센터",
+    "dmnd_instt_nm": "서울특별시 물재생센터 중랑물재생센터",
+    "bidprc_psbl_indstryty_nm": null,
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": null,
+    "indstryty_lmt_yn": "N",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01775041&bidPbancOrd=000",
+    "similarity": 0.57815,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 제한 없음",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.8,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 58%",
+      "points": 57.8
+     },
+     {
+      "key": "budget",
+      "label": "예산대 매칭",
+      "points": 2,
+      "ratio": 0.98
+     }
+    ],
+    "base_similarity": 0.57815,
+    "score": 0.299
+   },
+   {
+    "bid_ntce_no": "R26BK01764075",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "TIPA 세종사옥 미화·경비·안내 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-12",
+    "bid_clse_date": "2026-10-21",
+    "openg_date": "2026-10-21",
+    "presmpt_prce": 965851345,
+    "ntce_instt_nm": "조달청 대전지방조달청",
+    "dmnd_instt_nm": "중소기업기술정보진흥원",
+    "bidprc_psbl_indstryty_nm": "건물위생관리업,시설경비업무",
+    "rgn_lmt_yn": "N",
+    "prtcpt_psbl_rgn_nm": "",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01764075&bidPbancOrd=000",
+    "similarity": 0.58653,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 충족",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.7,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 59%",
+      "points": 58.7
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 56.81
+     },
+     {
+      "key": "industry_tokens",
+      "label": "업종·물품 일치",
+      "points": 3,
+      "matched": [
+       "건물위생관리업"
+      ]
+     }
+    ],
+    "base_similarity": 0.58653,
+    "score": 0.2985,
+    "insight": {
+     "summary": "TIPA 세종사옥의 미화, 경비 및 안내 용역을 수행하는 사업으로, 장기계속계약 형태로 진행된다. 본 사업은 청소 서비스와 경비 서비스, 안내 서비스를 포함하며, 2026년 12월 3일부터 2028년 12월 2일까지 진행된다.",
+     "scope": [
+      "미화 서비스",
+      "경비 서비스",
+      "안내 서비스",
+      "건물청소서비스",
+      "시설물경비서비스"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "건물위생관리업 (1162) 업종 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "시설경비업 (1164) 업종 등록",
+       "mandatory": true
+      },
+      {
+       "kind": "certification",
+       "text": "직접생산확인증명서 (건물청소서비스, 시설물경비서비스)",
+       "mandatory": true
+      },
+      {
+       "kind": "certification",
+       "text": "중소기업 확인서",
+       "mandatory": true
+      }
+     ],
+     "evaluation": {
+      "note": null,
+      "method": "최저가 낙찰",
+      "price_pct": null,
+      "presentation": false,
+      "technical_pct": null
+     },
+     "schedule": {
+      "end": "2028. 12. 2.",
+      "start": "2026. 12. 3.",
+      "duration": "24개월",
+      "delivery_deadline": "2028. 12. 2."
+     },
+     "keywords": [
+      "미화용역",
+      "경비용역",
+      "안내용역",
+      "청소서비스",
+      "시설경비서비스"
+     ]
+    }
+   },
+   {
+    "bid_ntce_no": "R26BK01773896",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "음식물류폐기물 위탁처리 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-15",
+    "bid_clse_date": "2026-10-26",
+    "openg_date": "2026-10-26",
+    "presmpt_prce": 490200000,
+    "ntce_instt_nm": "충청남도 당진시",
+    "dmnd_instt_nm": "충청남도 당진시",
+    "bidprc_psbl_indstryty_nm": "폐기물종합처분업,폐기물종합재활용업(지정폐기물외 폐기물),폐기물중간재활용업(지정폐기물외 폐기물),폐기물중간처분업(지정폐기물)",
+    "rgn_lmt_yn": "Y",
+    "prtcpt_psbl_rgn_nm": "충청남도",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01773896&bidPbancOrd=000",
+    "similarity": 0.552138,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 제한 없음",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.2,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 55%",
+      "points": 55.2
+     },
+     {
+      "key": "instt_closed",
+      "label": "고정 거래처 경향",
+      "points": -3,
+      "repeat_ratio": 0.53
+     },
+     {
+      "key": "region",
+      "label": "지역 매칭",
+      "points": 9,
+      "rgn": "충청남도"
+     },
+     {
+      "key": "budget_mismatch",
+      "label": "예산대 괴리",
+      "points": -2,
+      "ratio": 28.84
+     }
+    ],
+    "base_similarity": 0.552138,
+    "score": 0.29600000000000004,
+    "insight": {
+     "summary": "당진시 관내 가정·소형음식점에서 발생한 음식물류폐기물 3,800톤을 적정처리시설에서 처리하는 위탁처리 용역. 음폐수·이물질 등 부산물 처리비용 포함.",
+     "scope": [
+      "음식물류폐기물 위탁처리(3,800톤 추정)",
+      "음폐수 및 이물질 처리",
+      "폐기물 처리상황 기록·보존(3년)",
+      "월 단위 처리실적 정산",
+      "위탁폐기물 우선처리"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "폐기물처리업(중간·종합처분 또는 중간·종합재활용업) 허가, 영업대상에 음식물류 폐기물 처리 가능",
+       "mandatory": true
+      },
+      {
+       "kind": "performance",
+       "text": "음식물류폐기물 처리시설 용량 1일 37톤 이상, 폐수(음폐수) 육상처리(위탁·자체) 가능",
+       "mandatory": true
+      },
+      {
+       "kind": "region",
+       "text": "본사 소재지 충청남도(입찰공고일 전일 기준, 낙찰자는 계약체결일까지 유지)",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "포괄적 재하청 방식 불가",
+       "mandatory": true
+      }
+     ],
+     "evaluation": {
+      "note": "경영상태, 이행실적, 기술능력·신인도 종합평점 85점 이상 낙찰자 결정",
+      "method": "단가계약, 적격심사 대상(예정가격 80.495% 이상 최저가 순으로 심사)",
+      "price_pct": null,
+      "presentation": false,
+      "technical_pct": null
+     },
+     "schedule": {
+      "end": "2027. 1. 31.",
+      "start": "착수일",
+      "duration": "착수일로부터 2027. 1. 31.까지",
+      "delivery_deadline": "2027. 1. 31."
+     },
+     "keywords": [
+      "음식물류폐기물",
+      "폐기물처리업",
+      "음폐수 처리",
+      "위탁처리",
+      "폐기물관리법"
+     ]
+    }
+   },
+   {
+    "bid_ntce_no": "R26BK01773991",
+    "bid_ntce_ord": "000",
+    "bid_ntce_nm": "가락시장 시설현대화 3단계 철거 건축물 석면폐기물 운반 및 처리 용역",
+    "bsns_div_nm": "용역",
+    "bid_ntce_date": "2026-10-15",
+    "bid_clse_date": "2026-10-21",
+    "openg_date": "2026-10-21",
+    "presmpt_prce": 41000000,
+    "ntce_instt_nm": "서울특별시농수산식품공사",
+    "dmnd_instt_nm": "서울특별시농수산식품공사",
+    "bidprc_psbl_indstryty_nm": "폐기물수집·운반업(지정폐기물),폐기물최종처분업(지정폐기물),폐기물중간처분업(지정폐기물)",
+    "rgn_lmt_yn": "Y",
+    "prtcpt_psbl_rgn_nm": "서울특별시",
+    "indstryty_lmt_yn": "Y",
+    "bid_ntce_url": "https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01773991&bidPbancOrd=000",
+    "similarity": 0.590212,
+    "stage": "notice",
+    "qualification": {
+     "passed": true,
+     "unverified": false,
+     "reasons": [
+      "면허 제한 없음",
+      "지역 제한 없음"
+     ],
+     "failures": []
+    },
+    "score_raw": 59.0,
+    "score_breakdown": [
+     {
+      "key": "vector",
+      "label": "유사도 59%",
+      "points": 59.0
+     }
+    ],
+    "base_similarity": 0.590212,
+    "score": 0.295,
+    "insight": {
+     "summary": "지정폐기물인 폐석면 73.7톤(매립 73.0톤, 고형화 0.7톤)을 철거 건축물에서 운반하여 적절히 처리하는 용역 사업. 최저가 경쟁입찰로 진행되며 적격심사를 거쳐 낙찰자를 결정합니다.",
+     "scope": [
+      "폐석면 운반·처리(73.7톤)",
+      "지정폐기물 매립 처리(73.0톤)",
+      "지정폐기물 고형화 처리(0.7톤)",
+      "현장관리 및 안전보건관리"
+     ],
+     "requirements": [
+      {
+       "kind": "license",
+       "text": "폐기물 수집·운반업 등록(지정폐기물, 업종코드 1229)",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "폐기물 중간처분업 등록(지정폐기물, 업종코드 1254)",
+       "mandatory": true
+      },
+      {
+       "kind": "license",
+       "text": "폐기물 최종처분업 등록(지정폐기물, 업종코드 1389)",
+       "mandatory": true
+      },
+      {
+       "kind": "certification",
+       "text": "각 허가증 영업대상폐기물란에 폐석면 명시",
+       "mandatory": true
+      },
+      {
+       "kind": "region",
+       "text": "본점 소재지 서울특별시(입찰공고일 전일부터 계약체결일까지 유지)",
+       "mandatory": true
+      },
+      {
+       "kind": "other",
+       "text": "공동수급 가능(대표사 포함 3개사 이내, 대표사는 수집·운반업체)",
+       "mandatory": false
+      }
+     ],
+     "evaluation": {
+      "note": "서울시폐기물처리용역적격심사세부기준 적용, 종합평점 95점 이상",
+      "method": "최저가입찰(복수예비가격 4개 산술평균 예정가격의 87.745% 이상)",
+      "price_pct": 100,
+      "presentation": false,
+      "technical_pct": null
+     },
+     "schedule": {
+      "end": null,
+      "start": "착수일",
+      "duration": "착수일로부터 28일",
+      "delivery_deadline": null
+     },
+     "keywords": [
+      "폐석면",
+      "지정폐기물",
+      "운반·처리",
+      "매립",
+      "고형화",
+      "중간처분업",
+      "최종처분업"
+     ]
+    }
+   }
+  ],
+  "pre_spec_results": [
+   {
+    "bf_spec_rgst_no": "R26BD00284911",
+    "bid_ntce_no_list": null,
+    "prdct_clsfc_no_nm": "본점 및 영업점 전산기기 통합유지보수",
+    "bsns_div_nm": "일반용역",
+    "sw_biz_obj_yn": "Y",
+    "asign_bdgt_amt": 9000000000,
+    "rgst_dt": "2026-10-14T07:55:00+00:00",
+    "opnin_rgst_clse_dt": "2026-10-19T14:59:00+00:00",
+    "order_instt_nm": "(주)아이비케이시스템",
+    "rl_dminstt_nm": "중소기업은행",
+    "prdct_dtl_list": "",
+    "ref_no": "PP261000006",
+    "similarity": 0.618002,
+    "stage": "pre_spec",
+    "base_similarity": 0.618002,
+    "score": 0.618002
+   },
+   {
+    "bf_spec_rgst_no": "R26BD00284782",
+    "bid_ntce_no_list": null,
+    "prdct_clsfc_no_nm": "IT인프라 및 AI시스템 운영‧유지관리 용역",
+    "bsns_div_nm": "일반용역",
+    "sw_biz_obj_yn": "Y",
+    "asign_bdgt_amt": 16151562000,
+    "rgst_dt": "2026-10-14T06:16:20+00:00",
+    "opnin_rgst_clse_dt": "2026-10-19T14:59:00+00:00",
+    "order_instt_nm": "서울주택도시개발공사",
+    "rl_dminstt_nm": "서울주택도시개발공사",
+    "prdct_dtl_list": "",
+    "ref_no": "SH 전자공고 제2026-0387호",
+    "similarity": 0.55461,
+    "stage": "pre_spec",
+    "base_similarity": 0.55461,
+    "score": 0.55461
+   },
+   {
+    "bf_spec_rgst_no": "R26BD00283949",
+    "bid_ntce_no_list": null,
+    "prdct_clsfc_no_nm": "24시간 사이버대피소 운영",
+    "bsns_div_nm": "일반용역",
+    "sw_biz_obj_yn": "Y",
+    "asign_bdgt_amt": 1360549000,
+    "rgst_dt": "2026-10-13T02:28:03+00:00",
+    "opnin_rgst_clse_dt": "2026-10-18T14:59:00+00:00",
+    "order_instt_nm": "조달청 광주지방조달청",
+    "rl_dminstt_nm": "한국인터넷진흥원",
+    "prdct_dtl_list": "[1^8111189901^정보시스템유지관리서비스]",
+    "ref_no": "위협대응단-2026-6190",
+    "similarity": 0.552834,
+    "stage": "pre_spec",
+    "base_similarity": 0.552834,
+    "score": 0.552834
+   }
+  ],
+  "order_plan_results": [
+   {
+    "order_plan_unty_no": "R26DD20790776",
+    "biz_nm": "토지매수 관련 기록물 순차이관 용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "06",
+    "cntrct_mthd_nm": "제한경쟁",
+    "order_instt_nm": "한강수계관리위원회",
+    "totlmng_instt_nm": "한강수계관리위원회",
+    "sum_order_amt": 60000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-06-14T05:00:40+00:00",
+    "similarity": 0.5496,
+    "stage": "order_plan",
+    "base_similarity": 0.5496,
+    "score": 0.5496
+   },
+   {
+    "order_plan_unty_no": "R26DD20769933",
+    "biz_nm": "일반용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "05",
+    "cntrct_mthd_nm": "제한경쟁",
+    "order_instt_nm": "해병 제9691부대",
+    "totlmng_instt_nm": "국방부",
+    "sum_order_amt": 10000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-05-23T10:06:37+00:00",
+    "similarity": 0.517685,
+    "stage": "order_plan",
+    "base_similarity": 0.517685,
+    "score": 0.517685
+   },
+   {
+    "order_plan_unty_no": "R26DD20769919",
+    "biz_nm": "2026년 북부공원여가센터 물놀이형 수경시설 청소 용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "05",
+    "cntrct_mthd_nm": "수의계약",
+    "order_instt_nm": "서울특별시 북부공원여가센터",
+    "totlmng_instt_nm": "서울특별시",
+    "sum_order_amt": 54980000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-05-23T05:53:33+00:00",
+    "similarity": 0.513318,
+    "stage": "order_plan",
+    "base_similarity": 0.513318,
+    "score": 0.513318
+   },
+   {
+    "order_plan_unty_no": "R26DD20769931",
+    "biz_nm": "내남면 기초생활거점조성사업(2단계) 지역역량강화(S/W) 기본계획수립 용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "05",
+    "cntrct_mthd_nm": "수의계약",
+    "order_instt_nm": "경상북도 경주시",
+    "totlmng_instt_nm": "경상북도",
+    "sum_order_amt": 71380000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-05-23T08:46:38+00:00",
+    "similarity": 0.507199,
+    "stage": "order_plan",
+    "base_similarity": 0.507199,
+    "score": 0.507199
+   },
+   {
+    "order_plan_unty_no": "R26DD20790729",
+    "biz_nm": "영양읍(북세천~동부천)노후 위험 수로구조물 개체공사 건설폐기물처리용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "06",
+    "cntrct_mthd_nm": "제한경쟁",
+    "order_instt_nm": "경상북도 영양군",
+    "totlmng_instt_nm": "경상북도",
+    "sum_order_amt": 200920000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-06-14T01:33:29+00:00",
+    "similarity": 0.501712,
+    "stage": "order_plan",
+    "base_similarity": 0.501712,
+    "score": 0.501712
+   },
+   {
+    "order_plan_unty_no": "R26DD20790770",
+    "biz_nm": "2여과지 전동밸브 및 과산화수소 주입설비 자동제어 연계 용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "06",
+    "cntrct_mthd_nm": "수의계약",
+    "order_instt_nm": "서울특별시 서울아리수본부 뚝도아리수정수센터",
+    "totlmng_instt_nm": "서울특별시",
+    "sum_order_amt": 43000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-06-14T04:29:23+00:00",
+    "similarity": 0.495731,
+    "stage": "order_plan",
+    "base_similarity": 0.495731,
+    "score": 0.495731
+   },
+   {
+    "order_plan_unty_no": "R26DD20769926",
+    "biz_nm": "「생태산업개발순환형 네트워크 설비 및 사업화 지원」컨설팅",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "05",
+    "cntrct_mthd_nm": "일반경쟁",
+    "order_instt_nm": "유한회사 그린바이오",
+    "totlmng_instt_nm": "유한회사 그린바이오",
+    "sum_order_amt": 55000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-05-23T07:40:06+00:00",
+    "similarity": 0.477497,
+    "stage": "order_plan",
+    "base_similarity": 0.477497,
+    "score": 0.477497
+   },
+   {
+    "order_plan_unty_no": "R26DD20769927",
+    "biz_nm": "「생태산업개발순환형 네트워크 설비 및 사업화 지원」컨설팅",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "05",
+    "cntrct_mthd_nm": "일반경쟁",
+    "order_instt_nm": "유한회사 그린바이오",
+    "totlmng_instt_nm": "유한회사 그린바이오",
+    "sum_order_amt": 55000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-05-23T07:57:31+00:00",
+    "similarity": 0.477497,
+    "stage": "order_plan",
+    "base_similarity": 0.477497,
+    "score": 0.477497
+   },
+   {
+    "order_plan_unty_no": "R26DD20769924",
+    "biz_nm": "2026년 남해군 음식물류폐기물 위탁처리 용역(긴급)",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "05",
+    "cntrct_mthd_nm": "제한경쟁",
+    "order_instt_nm": "경상남도 남해군",
+    "totlmng_instt_nm": "경상남도",
+    "sum_order_amt": 356000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-05-23T06:59:07+00:00",
+    "similarity": 0.474886,
+    "stage": "order_plan",
+    "base_similarity": 0.474886,
+    "score": 0.474886
+   },
+   {
+    "order_plan_unty_no": "R26DD20790672",
+    "biz_nm": "서울올림픽기념 마라톤대회 운영 대행용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "06",
+    "cntrct_mthd_nm": "제한경쟁",
+    "order_instt_nm": "서울올림픽기념국민체육진흥공단 경륜경정총괄본부",
+    "totlmng_instt_nm": "서울올림픽기념국민체육진흥공단",
+    "sum_order_amt": 120000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-06-13T08:12:49+00:00",
+    "similarity": 0.466876,
+    "stage": "order_plan",
+    "base_similarity": 0.466876,
+    "score": 0.466876
+   },
+   {
+    "order_plan_unty_no": "R26DD20790692",
+    "biz_nm": "조합 학곡지구 DMC타워 건축 공사",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "06",
+    "cntrct_mthd_nm": "지명경쟁",
+    "order_instt_nm": "강원특별자치도 춘천시",
+    "totlmng_instt_nm": "강원특별자치도",
+    "sum_order_amt": 4000000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-06-13T11:05:20+00:00",
+    "similarity": 0.463832,
+    "stage": "order_plan",
+    "base_similarity": 0.463832,
+    "score": 0.463832
+   },
+   {
+    "order_plan_unty_no": "R26DD20790736",
+    "biz_nm": "세종여고 외부환경개선공사 폐기물처리용역",
+    "bsns_div_nm": "용역",
+    "bsns_ty_nm": "신규",
+    "order_year": "2026",
+    "order_mnth": "06",
+    "cntrct_mthd_nm": "수의계약",
+    "order_instt_nm": "세종특별자치시교육청 세종특별자치시교육청학교지원본부",
+    "totlmng_instt_nm": "세종특별자치시교육청",
+    "sum_order_amt": 14234000,
+    "prdct_clsfc_no_nm": null,
+    "usg_cntnts": null,
+    "spec_cntnts": null,
+    "ntice_dt": "2026-06-14T02:32:55+00:00",
+    "similarity": 0.463271,
+    "stage": "order_plan",
+    "base_similarity": 0.463271,
+    "score": 0.463271
+   }
+  ],
+  "viz": {
+   "anchors": [
+    {
+     "key": "it",
+     "label": "IT·시스템",
+     "x": 6.123233995736766e-17,
+     "y": -1.0
+    },
+    {
+     "key": "ai",
+     "label": "AI·데이터",
+     "x": 0.4999999999999999,
+     "y": -0.8660254037844387
+    },
+    {
+     "key": "content",
+     "label": "콘텐츠",
+     "x": 0.8660254037844386,
+     "y": -0.5
+    },
+    {
+     "key": "design",
+     "label": "디자인",
+     "x": 1.0,
+     "y": 0.0
+    },
+    {
+     "key": "event",
+     "label": "행사",
+     "x": 0.8660254037844387,
+     "y": 0.49999999999999983
+    },
+    {
+     "key": "hrd",
+     "label": "HRD·연수",
+     "x": 0.4999999999999999,
+     "y": 0.8660254037844387
+    },
+    {
+     "key": "education",
+     "label": "교육",
+     "x": 6.123233995736766e-17,
+     "y": 1.0
+    },
+    {
+     "key": "consulting",
+     "label": "컨설팅",
+     "x": -0.4999999999999998,
+     "y": 0.8660254037844387
+    },
+    {
+     "key": "medical",
+     "label": "의료",
+     "x": -0.8660254037844385,
+     "y": 0.5000000000000003
+    },
+    {
+     "key": "facility",
+     "label": "시설·청소",
+     "x": -1.0,
+     "y": 1.2246467991473532e-16
+    },
+    {
+     "key": "construction",
+     "label": "건설",
+     "x": -0.8660254037844386,
+     "y": -0.5000000000000001
+    },
+    {
+     "key": "supplies",
+     "label": "물품·자재",
+     "x": -0.5000000000000004,
+     "y": -0.8660254037844385
+    }
+   ],
+   "company": {
+    "x": -0.4026041626930237,
+    "y": -0.04251956567168236
+   },
+   "results": [
+    {
+     "bid_ntce_no": "R26BK01758692",
+     "bid_ntce_ord": "000",
+     "x": -0.2964213490486145,
+     "y": -0.0053940340876579285,
+     "score": 0.335,
+     "bid_ntce_nm": "해양수산부 청사 시설관리운영 용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01774332",
+     "bid_ntce_ord": "000",
+     "x": -0.2878454923629761,
+     "y": -0.04364335164427757,
+     "score": 0.31,
+     "bid_ntce_nm": "서울중계3동우체국 입주청소 용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01759591",
+     "bid_ntce_ord": "000",
+     "x": -0.22934623062610626,
+     "y": 0.06469777971506119,
+     "score": 0.309,
+     "bid_ntce_nm": "2026년 국가에너지실증연구단지 성과 유지관리 용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01742267",
+     "bid_ntce_ord": "000",
+     "x": -0.28322798013687134,
+     "y": -0.014613775536417961,
+     "score": 0.3055,
+     "bid_ntce_nm": "기초과학연구원 실험동물자원동 시설물관리 용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01774222",
+     "bid_ntce_ord": "000",
+     "x": -0.3762848377227783,
+     "y": -0.029460951685905457,
+     "score": 0.302,
+     "bid_ntce_nm": "본관 옥외 조경구역 주차장 조성 공사 폐기물 처리용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01770835",
+     "bid_ntce_ord": "000",
+     "x": -0.3136937618255615,
+     "y": -0.0608997717499733,
+     "score": 0.2995,
+     "bid_ntce_nm": "노후상수도관개체공사(오태동 673-4번지 일원) 폐기물처리용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01771266",
+     "bid_ntce_ord": "001",
+     "x": -0.3182215988636017,
+     "y": -0.0183272622525692,
+     "score": 0.299,
+     "bid_ntce_nm": "중랑물재생센터 일부시설물 관리대행"
+    },
+    {
+     "bid_ntce_no": "R26BK01718798",
+     "bid_ntce_ord": "000",
+     "x": -0.24555766582489014,
+     "y": 0.014039797708392143,
+     "score": 0.299,
+     "bid_ntce_nm": "IBS 중이온가속기연구소 시설관리용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01775041",
+     "bid_ntce_ord": "000",
+     "x": -0.2624146342277527,
+     "y": -0.05446402728557587,
+     "score": 0.299,
+     "bid_ntce_nm": "상설전시실 전시공간 정비 용역"
+    },
+    {
+     "bid_ntce_no": "R26BK01764075",
+     "bid_ntce_ord": "000",
+     "x": -0.32374462485313416,
+     "y": -0.04429608955979347,
+     "score": 0.2985,
+     "bid_ntce_nm": "TIPA 세종사옥 미화·경비·안내 용역"
+    }
+   ]
+  }
+ },
+ "funnel": {
+  "total": 9261,
+  "industry": 311,
+  "qualified": 103,
+  "result": 12
+ }
+}
