@@ -1,0 +1,288 @@
+<!doctype html><html lang="ko" class="v-panel"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>조달핏 검토함</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>
+* { box-sizing:border-box } body { margin:0; background:#fff; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+a { color:inherit; text-decoration:none } .dim { color:#6b6b67 } .mute { color:#8f8f8b } .acc { color:#f97316 }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:700; font-size:14.5px } .brand i { width:7px; height:7px; border-radius:50%; background:#f97316; display:inline-block }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+.k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+.ok::after { content:"✓"; color:#1f5f3a; font-weight:700; margin-left:6px } .warn::after { content:"!"; color:#f97316; font-weight:700; margin-left:6px }
+.bt { display:inline-flex; align-items:center; height:36px; padding:0 14px; border-radius:8px; border:1px solid #e3e1dc; font-size:13px; font-weight:600; background:#fff } .bt.dark { background:#141414; color:#fff; border-color:#141414 } .bt.txt { border:0; padding:0 4px; color:#55554f; font-weight:500 } .bt.txt u { text-decoration:none; border-bottom:1px solid #d8d6d0 }
+
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.head { padding:28px 0 22px; border-bottom:1px solid #141414 }
+.head h1 { margin:0; font-size:30px; letter-spacing:-0.035em; font-weight:650; line-height:1.15 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head .meta { margin-top:8px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.head .ind { margin-top:14px; font-size:13.5px; line-height:1.7; max-width:880px } .head .ind b { font-weight:600 } .head .ind .k { margin-right:10px }
+.head .act { margin-top:14px; display:flex; align-items:center; gap:14px; font-size:13px; color:#55554f } .head .act .q { color:#f97316; font-weight:600 }
+.count { display:flex; align-items:flex-end; justify-content:space-between; padding:26px 0 14px }
+.count .n { font-size:44px; letter-spacing:-0.04em; font-weight:650; line-height:1 } .count .n small { font-size:14px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:10px }
+.count .f { display:flex; gap:20px; font-size:13px; color:#6b6b67 } .count .f b { color:#141414; font-weight:600; border-bottom:1px solid #141414; padding-bottom:2px }
+.th, .tr { display:grid; grid-template-columns:36px minmax(0,1fr) 200px 180px 92px 88px 60px; gap:0 16px; align-items:baseline }
+.th { padding:10px 0 8px; border-bottom:1px solid #141414; font-size:11px; letter-spacing:.06em; color:#737370; font-weight:600 }
+.tr { padding:15px 0; border-bottom:1px solid #ececea; font-size:14px; cursor:pointer } .tr:hover .t { color:#f97316 }
+.tr .no { font-size:12px; color:#8f8f8b } .tr .t { font-weight:550; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em }
+.tr .org, .tr .why { font-size:13px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .why { color:#6b6b67 }
+.tr .r { text-align:right } .tr .d { font-weight:600 } .tr .d.hot { color:#f97316 } .tr .d small { color:#737370; font-weight:450; margin-left:6px }
+.tr .fit { font-weight:600 } .tr .fit i { display:inline-block; width:56px; height:4px; background:#dedbd4; margin-right:8px; vertical-align:middle; position:relative } .tr .fit i b { position:absolute; left:0; top:0; height:100%; background:#141414 }
+.x { padding:22px 0 26px 52px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:1.1fr 1.2fr .8fr; gap:40px }
+.x .k { display:block; margin-bottom:10px } .x ul { margin:0; padding:0; list-style:none } .x li { font-size:13.5px; line-height:1.65; padding:4px 0; color:#333 } .x li.todo { color:#737370 }
+.x .life { display:flex; gap:0; margin-top:4px } .x .life span { flex:1; font-size:11.5px; color:#8f8f8b; padding-top:8px; border-top:2px solid #ececea } .x .life span.on { color:#141414; border-top-color:#141414 }
+.x .acts { margin-top:18px; display:flex; gap:8px; flex-wrap:wrap }
+.fade .tr { opacity:.32; filter:blur(1.5px); pointer-events:none }
+.gateline { display:flex; align-items:center; gap:14px; padding:22px 0; border-bottom:1px solid #141414; font-size:14px } .gateline b { font-weight:650 } .gateline .sp { flex:1 } .gateline .in { display:flex; gap:6px } .gateline .in span:first-child { width:260px; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
+.foot { margin-top:28px; font-size:12px; color:#737370 }
+
+.crit { display:grid; border-top:1px solid #141414; border-bottom:1px solid #e6e4df; padding:16px 0 14px; grid-template-columns:1.35fr 1fr 1fr auto; gap:26px; align-items:start }
+.crit .k { display:block; margin-bottom:6px } .crit .txt { font-size:13px; line-height:1.7; color:#333 } .crit .txt b { font-weight:600 } .crit .txt .dim { color:#737370 }
+.crit .k + .k { margin-top:10px }
+.crit .act { display:flex; flex-direction:column; gap:8px; align-items:flex-end } .crit .act .mute { font-size:11.5px }
+@media screen and (max-width:900px){ .crit { grid-template-columns:1fr 1fr; gap:18px } .crit .act { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-start } }
+
+.wrap { width:auto; max-width:1120px; padding:0 20px 120px }
+.brand { font-weight:800; font-size:16px; letter-spacing:-0.035em; gap:8px } .brand svg { display:block }
+.ok::after { color:#141414 }   /* ✓ 는 먹 — 초록 폐기(공고 시안 결정) */
+.q { padding:26px 0 0; font-size:13.5px; color:#55554f } .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px }
+.stage { margin-top:20px; border-top:1px solid #141414; cursor:pointer } .done .stage, .st-err .stage { cursor:auto }
+.labs { position:relative; height:56px; overflow:hidden; transition:height .5s cubic-bezier(.3,.7,.2,1) }
+.field { position:relative; height:392px; overflow:hidden; transition:height .55s cubic-bezier(.3,.7,.2,1) }
+.field canvas { display:block; width:100%; height:392px; transition:transform .55s cubic-bezier(.3,.7,.2,1) }
+.lab { position:absolute; top:4px; opacity:0; transition:opacity .4s ease } .lab.on { opacity:1 }
+.lab.g { border-left:1px solid #d8d6d0; padding-left:12px }
+.lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; line-height:1.3 }
+.lab .n { margin-top:5px; font-size:26px; letter-spacing:-0.04em; font-weight:650; line-height:1; font-variant-numeric:tabular-nums; color:#141414 }
+.lab .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:5px }
+.lab.last .n { color:#f97316 }
+/* 덩어리 위에 글자를 얹으려면 판을 깔아야 읽힌다 — 흰 판 + 회색 글자(대비 5.1:1) */
+.ttl { position:absolute; font-size:11.5px; line-height:1.45; color:#6b6b67; letter-spacing:-0.015em; white-space:nowrap;
+       overflow:hidden; text-overflow:ellipsis; background:#fff; padding:1px 5px; opacity:0; transition:opacity .35s ease }
+.ttl.on { opacity:1 }
+/* 탈락 이유는 같은 흰 판을 쓰지만 벽에 오른쪽을 붙이고 한 톤 진하다 — 공고명과 섞이지 않게 */
+.ttl.rsn { text-align:right; color:#55554f } .st-zero .rsn[data-w="3"] { display:none }
+.chain { display:flex; align-items:baseline; flex-wrap:wrap; gap:10px; font-size:13px; color:#737370; height:0; opacity:0; overflow:hidden; transition:opacity .4s ease .15s, height .4s ease }
+.chain b { font-size:17px; font-weight:650; color:#141414; letter-spacing:-0.02em; font-variant-numeric:tabular-nums } .chain b.acc { color:#f97316 } .chain i { font-style:normal; color:#c9c9c4 }
+.done .field, .done .labs { height:0 } .done .field canvas { transform:translateY(-150px) }
+.done .chain { height:48px; opacity:1; padding-top:16px }
+.res { opacity:0; max-height:0; overflow:hidden; transition:opacity .5s ease .2s } .done .res { opacity:1; max-height:none }
+/* 오류·지연 — 머리는 셋째 관문 앞에서 멈추고, 받은 숫자는 남긴다 */
+.err { display:none; align-items:center; gap:14px; padding:16px 0; border-top:1px solid #141414; font-size:13.5px; color:#141414 } .err .sp { flex:1 }
+.st-err .err { display:flex }
+/* 0건 — 깔때기 마지막 0 + 기준 띠 + 다음 단계 한 줄 */
+.zero { display:none; padding:30px 0 34px; border-bottom:1px solid #141414 }
+.zero b { display:block; font-size:17px; font-weight:650; letter-spacing:-0.015em } .zero .dim { display:block; margin-top:6px; font-size:13.5px }
+.zero .acts { display:flex; gap:8px; align-items:center; margin-top:18px; flex-wrap:wrap } .zero .in { display:flex; gap:6px }
+.zero .in span:first-child { width:300px; max-width:100%; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
+.st-zero .zero { display:block } .st-zero .sheet, .st-zero .okline { display:none }
+/* 이메일 뒤 — 게이트 없음, 12건 전부, 확인 한 줄(다음 방문부터 표시하지 않음) */
+.okline { display:none; padding:13px 0; border-bottom:1px solid #ececea; font-size:13.5px; color:#55554f } .okline b { color:#141414; font-weight:650 }
+.st-email .okline { display:block } .st-email .fade .tr { opacity:1; filter:none; pointer-events:auto } .st-email .gateline { display:none }
+.st-email .nav .cta { border:0; color:#55554f }
+/* 검토 — 버튼은 주황 헤어라인, 누르면 행 왼쪽 괘선 + "검토함" + 조용한 안내 한 줄 */
+.tr { position:relative } .tr.rvd::before { content:""; position:absolute; left:-20px; top:0; bottom:0; width:2px; background:#f97316 }
+.rvm { font-style:normal; font-size:11px; font-weight:600; color:#141414; margin-left:8px; letter-spacing:.02em; vertical-align:2px }
+.bt.rv { border-color:#f97316 } .bt.rv.on { color:#55554f; border-color:#e3e1dc; cursor:default }
+.rvn { padding:9px 0 10px 52px; border-bottom:1px solid #ececea; font-size:12.5px; color:#6b6b67 } .rvn a { color:#141414; border-bottom:1px solid #141414 }
+.tr .fit i { margin-right:0 }
+.ctl { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; white-space:nowrap }
+.ctl span { padding:6px 14px; border-radius:999px; color:#55554f; cursor:pointer } .ctl span.on { background:#141414; color:#fff } .ctl i { width:1px; background:#e6e4df; margin:4px 4px }
+.foot { max-width:880px; line-height:1.6 }
+@media (prefers-reduced-motion: reduce) { .field, .field canvas, .labs, .lab, .ttl, .chain, .res { transition:none !important } }
+/* 390 — 번호·근거·추정가·적합 열 생략, 제목 / 기관·마감 두 줄. 머리는 220px */
+@media screen and (max-width:520px){
+  .wrap { padding:0 16px 90px } .nav .links { gap:14px } .nav .links span:not(.cta) { display:none }
+  .q { font-size:12.5px } .q b { font-size:15px; display:block; margin-bottom:2px }
+  .labs { height:auto; display:grid; grid-template-columns:repeat(4,1fr); gap:0 10px; padding:10px 0 8px } .lab { position:static; border-left:0; padding-left:0 }
+  .lab .k { white-space:normal; font-size:11px } .lab .k .sub { display:none } .lab .n { font-size:18px } .lab .n small { font-size:10.5px; margin-left:3px }
+  .done .labs { padding:0 } .field, .field canvas { height:220px } .ttl { display:none }
+  .chain { font-size:12px; gap:7px } .chain b { font-size:15px }
+  .th { display:none } .tr { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"t t" "o d"; gap:3px 12px; padding:12px 0 }
+  .tr .no, .tr .why, .tr .r:not(.d) { display:none } .tr .t { grid-area:t; white-space:normal; font-size:14px; line-height:1.4 } .tr .org { grid-area:o } .tr .d { grid-area:d; font-size:13px }
+  .tr.rvd::before { left:-16px }
+  .x { padding-left:0; grid-template-columns:1fr; gap:18px } .rvn { padding-left:0 }
+  .gateline { flex-wrap:wrap; gap:10px } .gateline .in { width:100%; flex-wrap:wrap } .gateline .in span:first-child { flex:1; width:auto }
+  .crit { grid-template-columns:1fr; gap:14px } .crit .act { flex-direction:row; align-items:center }
+  .ctl { font-size:11.5px; padding:2px; white-space:normal; flex-wrap:wrap; justify-content:center; width:calc(100% - 24px); border-radius:16px } .ctl span { padding:5px 8px } .ctl i { display:none }
+}
+
+.wrap { width:auto; max-width:1120px; margin:0 auto; padding:0 20px 120px }
+.brand { font-weight:800; font-size:16px; letter-spacing:-0.035em; gap:8px } .brand svg { display:block }
+.ok::after { color:#141414 }
+/* 머리 — 회사 이름 + 한 줄 + 걸러낸 경로. 전체 폭 */
+.head { padding:26px 0 18px; border-bottom:1px solid #141414 }
+.head h1 { margin:0; font-size:24px; letter-spacing:-0.03em; font-weight:650; line-height:1.2 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head .meta { margin-top:6px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.sum { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-top:16px }
+.chain { display:flex; align-items:flex-start; gap:12px; font-size:13px; color:#737370 } .chain .k { padding-top:3px; margin-right:4px }
+.chain .n { font-size:20px; font-weight:650; color:#141414; letter-spacing:-0.02em; line-height:1.15 } .chain .n.acc { color:#f97316 } .chain .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:4px }
+.chain .l { font-size:11.5px; color:#737370; margin-top:3px; line-height:1.3 } .chain i { font-style:normal; color:#c9c9c4; font-size:16px; padding-top:2px }
+.tabs { text-align:right; font-size:13px; color:#55554f; line-height:1.9 } .tabs b { color:#141414; font-weight:650; border-bottom:1px solid #141414; padding-bottom:1px } .tabs span + span::before, .tabs b + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.tabs .due .d { font-weight:650; color:#141414 } .tabs .due .d.hot { color:#f97316 }
+/* 두 단 */
+.cols { display:grid; grid-template-columns:240px minmax(0,1fr); gap:0 44px; align-items:start }
+.side { position:sticky; top:0; padding:22px 0 20px; font-size:13px }
+.side summary { list-style:none; cursor:default } .side summary::-webkit-details-marker { display:none }
+.side summary .k { display:block } .side summary .h { display:none }
+.side .sec { padding:14px 0 0 } .side .sec .k { display:block; margin-bottom:6px }
+.side .txt { font-size:13px; line-height:1.65; color:#333 } .side .txt b { font-weight:600 } .side .txt .dim { color:#737370 }
+.side ul { margin:0; padding:0; list-style:none } .side li { padding:2px 0; line-height:1.5; color:#333; border-bottom:1px solid #f1f0ec }
+.side li.rep { font-weight:600 } .side li.rep::after { content:"대표"; font-size:10.5px; color:#737370; font-weight:500; margin-left:6px; letter-spacing:.02em }
+.side .act { display:flex; gap:10px; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid #141414 } .side .act .bt { height:32px }
+.side .mute { display:block; margin-top:10px; font-size:11.5px }
+/* 오른쪽 머리 + 스위치 */
+.main { padding-top:22px }
+.mh { display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #141414 }
+.mh .k { display:block } .mh .k b { color:#141414; font-size:13px; font-weight:650; letter-spacing:0; text-transform:none; margin-right:6px }
+.sw { display:flex; gap:2px; border:1px solid #e3e1dc; border-radius:999px; padding:2px; font-size:12px } .sw span { padding:4px 12px; border-radius:999px; color:#55554f; cursor:pointer } .sw span.on { background:#141414; color:#fff }
+.v-table, [data-v="table"] .v-block { display:none } [data-v="table"] .v-table { display:block }
+/* 블록 — 보고서 행을 화면 크기로 */
+.bk { display:grid; grid-template-columns:28px 1fr; gap:0 10px; padding:14px 0 15px; border-bottom:1px solid #ececea; font-size:13.5px }
+.bk .no { font-size:12px; color:#8f8f8b; padding-top:3px }
+.bk .t { font-weight:600; font-size:15px; letter-spacing:-0.01em; line-height:1.4 }
+.bk .m { margin-top:3px; color:#55554f; font-size:13px } .bk .m .d { font-weight:650; color:#141414 } .bk .m .d.hot { color:#f97316 }
+.bk .q, .bk .w { display:grid; grid-template-columns:58px 1fr; gap:0 8px; margin-top:7px; line-height:1.6; color:#333 } .bk .q { margin-top:9px }
+.bk .q b, .bk .w b { font-weight:650; font-size:12.5px; color:#141414 }
+.bk .acts { display:flex; gap:14px; align-items:center; margin-top:10px; font-size:12.5px } .bk .acts a.u { color:#55554f; border-bottom:1px solid #d8d6d0 }
+.bt.rv { border-color:#f97316; height:30px; padding:0 12px; font-size:12.5px }
+/* 표 — 번호·공고(2줄: 제목 / 기관 · 근거)·마감·추정가. 근거는 열이 아니라 제목 아래 둘째 줄 — 폭을 안 쓰고 늘 보인다 */
+.th, .tr { grid-template-columns:28px minmax(0,1fr) 84px 72px; gap:0 12px }
+.tr { padding:12px 0; align-items:start } .tr .no { padding-top:3px } .tr .t { font-size:14.5px; display:block }
+.tr .sub { display:block; margin-top:3px; font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .sub .why { color:#6b6b67 } .tr .sub .why::before { content:"·"; margin:0 6px; color:#c9c9c4 }
+.tr .d, .tr .r { padding-top:2px }
+/* 펼침 — display 토글 대신 grid-template-rows 0fr → 1fr. 높이를 모르는 내용을 부드럽게 여는 유일한 CSS 방법 */
+.x { display:grid; grid-template-rows:0fr; grid-template-columns:1fr; gap:0; padding:0 0 0 40px; border-bottom:0; opacity:0;
+     transition:grid-template-rows .4s cubic-bezier(.3,.7,.2,1), padding .4s cubic-bezier(.3,.7,.2,1), opacity .3s ease }
+.x.on { grid-template-rows:1fr; padding:16px 0 20px 40px; border-bottom:1px solid #ececea; opacity:1; transition-delay:0s, 0s, .1s }
+.x > .xi { min-height:0; overflow:hidden; display:grid; grid-template-columns:1fr 1.2fr; gap:28px }
+.x li { font-size:13px; line-height:1.6; padding:3px 0 } .x .acts { grid-column:1/-1; margin-top:0 }
+.tr .t { transition:color .15s ease } .bt { transition:background .15s ease, border-color .15s ease, color .15s ease }
+@media (prefers-reduced-motion: reduce) { .x, .tr .t, .bt { transition:none !important } }
+.fade .bk { opacity:.32; filter:blur(1.5px); pointer-events:none }
+.gateline { font-size:13.5px; flex-wrap:wrap } .gateline .in span:first-child { width:220px }
+.foot { margin-top:28px; font-size:12px; color:#737370; line-height:1.6; max-width:880px }
+/* 390 — 한 단. 회사 정보는 접힌 한 줄, 공고는 블록만 */
+@media screen and (max-width:720px){
+  .wrap { padding:0 16px 90px } .nav .links span:not(.cta) { display:none }
+  .head h1 { font-size:20px } .head h1 small { display:block; margin:4px 0 0 } .sum { flex-direction:column; align-items:flex-start; gap:10px }
+  .chain { gap:8px } .chain .k { display:none } .chain .n { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
+  .cols { grid-template-columns:1fr } .side { position:static; padding:14px 0; border-bottom:1px solid #ececea }
+  .side summary { cursor:pointer; display:flex; justify-content:space-between; align-items:center } .side summary .h { display:inline; font-size:12.5px; color:#55554f; border-bottom:1px solid #d8d6d0 }
+  .side[open] summary .h.o, .side:not([open]) summary .h.c { display:none }
+  .main { padding-top:14px } .sw { display:none } .v-table { display:none !important } .v-block { display:block !important }
+  .bk .q, .bk .w { grid-template-columns:1fr; gap:0 } .bk .m { line-height:1.5 }
+  .gateline .in { width:100%; flex-wrap:wrap } .gateline .in span:first-child { flex:1; width:auto }
+}
+
+/* 머리 — split 의 .head 를 캔버스 위에. 괘선은 .stage 가 긋는다 */
+.head { padding:26px 0 0; border-bottom:0 }
+/* 걸러낸 경로 — flow 의 접힘(height 0 → 보임)은 유지하고 모양은 split: 숫자 + 단계 라벨, 오른쪽 종류 탭·마감 요약 */
+.chain { justify-content:space-between; align-items:flex-start; gap:24px } .chain .k { padding-top:3px }
+.chain .fun { display:flex; align-items:flex-start; gap:12px } .chain .fun > div { display:flex; flex-direction:column }
+.chain b { font-size:20px; line-height:1.15 } .chain b.acc { color:#f97316 } .chain .l { font-size:11.5px; color:#737370; margin-top:3px; line-height:1.3 }
+.chain i { font-size:16px; padding-top:2px } .chain .nl { display:flex; align-items:baseline } .chain .un { font-size:11.5px; color:#6b6b67; margin-left:4px }
+.st-zero .tabs { display:none }   /* 0건이면 종류 탭·마감 요약은 거짓말이 된다(결과 12건 기준 계산) */
+/* 가독성(2026-10-16 승우님 "가독성 좋게") — 글자 한 단계 ↑, 행 간격 ↑, 회색 대비 ↑. 한글 라벨에 자간·대문자 처리는 의미 없어 뺀다 */
+.k { font-size:12px; letter-spacing:0; text-transform:none; color:#6b6b67 } .mute { color:#7a7a76 }
+.head .meta { font-size:14px } .chain b { font-size:22px } .chain .l { font-size:12.5px } .tabs { font-size:14px }
+.side { font-size:14px } .side li { padding:4px 0 } .side .txt { font-size:14px; line-height:1.7 } .side .sec { padding-top:16px }
+.mh .k b { font-size:14px }
+.tr { padding:16px 0 } .tr .t { font-size:16px; font-weight:600 } .tr .sub { font-size:13.5px; color:#4a4a46; margin-top:4px } .tr .sub .why { color:#6b6b67 }
+.tr .d, .tr .r { font-size:15px } .tr .d small { font-size:12.5px }
+.x.on { padding:20px 0 24px 40px } .x > .xi { gap:32px } .x .k { margin-bottom:8px } .x li { font-size:14px; line-height:1.7; padding:4px 0 }
+/* 이펙트(승우님 "부드럽게") — 한 곡선(.3,.7,.2,1)으로. 본문은 투명도만이 아니라 10px 떠오르고, 경로 줄은 height:auto 점프 대신 grid 행 0fr → 1fr, 검토 괘선은 위에서 아래로 그어진다 */
+.res { transform:translateY(10px); transition:opacity .5s ease .2s, transform .55s cubic-bezier(.3,.7,.2,1) .2s } .done .res { transform:none }
+.chain { display:grid; grid-template-columns:1fr auto; grid-template-rows:0fr; align-items:start; transition:grid-template-rows .45s cubic-bezier(.3,.7,.2,1), opacity .4s ease .15s, padding .45s cubic-bezier(.3,.7,.2,1) }
+.chain > * { min-height:0 } .done .chain { grid-template-rows:1fr; height:auto }
+.tr::before { content:""; position:absolute; left:-16px; top:0; bottom:0; width:2px; background:#f97316; transform:scaleY(0); transform-origin:top; transition:transform .3s cubic-bezier(.3,.7,.2,1) }
+.tr.rvd::before { transform:scaleY(1) }
+@media (prefers-reduced-motion: reduce) { .res, .chain, .tr::before { transition:none !important } }
+/* 참가 자격 — 충족(먹 600 + ✓) > 제한 없음(회색, 표식 없음). 같은 ✓ 두 개로 보이던 것을 가른다 */
+.x li.ok { font-weight:600 } .x li.none { color:#737370 }
+/* 다른 회사 — 회사 이름이 곧 검색창(입구 결정 "검색창 하나"를 결과 페이지에서도). 누르면 머리가 입구 상자로 바뀌고 결과는 흐려진다 */
+.sw-co { font-size:13px; font-weight:500; color:#55554f; margin-left:14px; letter-spacing:0; border-bottom:1px solid #d8d6d0; vertical-align:middle; transition:border-color .15s } .sw-co:hover { border-bottom-color:#f97316 }
+.search { display:none; padding:2px 0 4px } .st-search .search { display:block } .st-search .head h1, .st-search .head .meta { display:none }
+.box { display:flex; align-items:stretch; border:2px solid #f97316; border-radius:6px; background:#fff; max-width:720px; transition:box-shadow .15s } .box:focus-within { box-shadow:0 0 0 4px rgba(249,115,22,.18) }
+.box input { flex:1; min-width:0; border:0; background:transparent; padding:14px 18px; font:inherit; font-size:20px; letter-spacing:-0.02em; font-weight:500; color:#141414; outline:none } .box input::placeholder { color:#8f8f8b; font-weight:450 }
+.box .go { border:0; border-left:1px solid #ececea; background:#fff; color:#141414; font:inherit; font-size:15px; font-weight:650; padding:0 20px; cursor:pointer; border-radius:0 4px 4px 0 } .box .go .t { border-bottom:2px solid #f97316; padding-bottom:1px }
+.search .rc { display:flex; gap:14px; align-items:center; margin-top:10px; font-size:13px; color:#55554f; max-width:720px } .rc a { color:#141414; border-bottom:1px solid #d8d6d0 } .rc .esc { margin-left:auto; color:#737370; border:0 }
+.st-search .stage, .st-search .err, .st-search .res, .st-search.done .res { opacity:.22; filter:blur(1px); pointer-events:none }
+.stage, .err { transition:opacity .3s ease, filter .3s ease }
+@media screen and (max-width:720px){ .sw-co { display:inline-block; margin:6px 0 0 } .box input { font-size:17px; padding:12px 14px } .box .go { padding:0 14px } }
+/* 판(승우님 "밋밋하다") — 장식이 아니라 바닥과 크기. 따뜻한 회색 바닥 위에 머리·캔버스, 결과는 흰 판 하나. 먹 괘선은 머리 아래 하나만. 회사 이름 32 / 경로 숫자 28 / 마지막 12 는 34 */
+.v-panel, .v-panel body { background:#faf9f7 }
+.v-panel .head h1 { font-size:32px; letter-spacing:-0.035em } .v-panel .chain b { font-size:28px } .v-panel .chain b.acc { font-size:34px } .v-panel .chain .l { font-size:12.5px }
+.v-panel .ttl { background:#faf9f7 }
+.v-panel .res .cols { background:#fff; border:1px solid #e6e4df; border-radius:14px; padding:6px 28px 28px; margin-top:22px }
+.v-panel .side { top:0 } .v-panel .mh, .v-panel .th, .v-panel .gateline, .v-panel .side .act { border-color:#e6e4df }
+.v-panel .err { border-top-color:#e6e4df } .v-panel .ctl { background:#fff }
+@media screen and (max-width:720px){ .v-panel .head h1 { font-size:24px } .v-panel .chain b { font-size:20px } .v-panel .chain b.acc { font-size:24px } .v-panel .res .cols { padding:0 16px 20px; border-radius:12px } .v-panel .tr.rvd::before, .v-panel .tr::before { left:-10px } }
+.gateline { font-size:14.5px; padding:24px 0 } .gateline .dim { font-size:13.5px }
+.zero b { font-size:18px } .zero .dim { font-size:14px } .okline { font-size:14px }
+@media screen and (max-width:720px){ .tr .t { font-size:15px } .tr .sub { font-size:13px } .side { font-size:13.5px } }
+.done .chain { height:auto; padding-top:16px }
+.tabs em { font-style:normal; color:#141414; font-weight:650; border-bottom:1px solid #141414; padding-bottom:1px } .tabs em + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+/* 본문은 두 단. 0건이면 오른쪽 단만 비고 왼쪽은 그대로 — 기준이 곧 이유 */
+.res .cols { border-top:0 }
+.st-zero .sheet, .st-zero .mh { display:none } .zero { border-bottom:0; padding-top:22px }
+.okline { padding:13px 0 } .st-email .fade .tr { cursor:pointer }
+.rvn { padding-left:40px } .tr.rvd::before { left:-16px }
+@media screen and (max-width:720px){
+  .head h1 { font-size:20px } .chain { grid-template-columns:1fr; grid-template-rows:0fr 0fr; gap:10px 0 } .done .chain { grid-template-rows:1fr 1fr } .chain .k { display:none } .chain b { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
+  /* flow 의 390 표 규칙(.org/.why 열)은 두 줄 표에 안 맞는다 — 제목 묶음 + 마감만 */
+  .tr { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:none; gap:0 12px; padding:12px 0 } .tr .no, .tr .r:not(.d) { display:none } .tr .t { white-space:normal; font-size:14px }
+  .tr .d { grid-area:auto }                 /* flow 의 grid-area:d 는 areas 가 없으면 새 줄로 밀린다 */
+  .tr .sub { white-space:normal } .tr .sub .why { display:inline }   /* flow 의 .tr .why{display:none} 은 열용 — 둘째 줄 칩은 보인다 */
+  .x, .x.on { padding-left:0 } .rvn { padding-left:0 } .tr.rvd::before { left:-16px }
+}
+
+html, body { background:#faf9f7 } .wrap { padding-bottom:140px }
+.nav .cta { border-bottom:1px solid #141414; color:#141414 } .nav .me { position:relative; color:#141414; font-weight:600; cursor:pointer; border-bottom:1px solid #141414 }
+.nav .me .menu { display:none }
+.head { border-bottom:1px solid #141414; padding-bottom:0 } .head h1 { font-size:32px; letter-spacing:-0.035em; margin-bottom:14px }
+/* 탭 — 머리 괘선 위에 앉는다. 선택은 먹 밑줄 2px */
+.tabs2 { display:flex; gap:24px; font-size:15px } .tabs2 a { padding:0 0 12px; color:#55554f; border-bottom:2px solid transparent; margin-bottom:-1px } .tabs2 a.on { color:#141414; font-weight:650; border-bottom-color:#141414 }
+.tabs2 a small { color:#737370; font-weight:450; margin-left:6px; font-size:13.5px }
+.pane { background:#fff; border:1px solid #e6e4df; border-radius:14px; padding:6px 28px 28px; margin-top:22px }
+.tab { display:none } .tab.on { display:block }
+/* 공고 행 — 결과 표 격자 + 해제 */
+.sh, .sr { display:grid; grid-template-columns:minmax(0,1fr) 84px 84px 64px; gap:0 12px; align-items:start }
+.sh { padding:18px 0 8px; border-bottom:1px solid #141414; font-size:12px; color:#6b6b67; font-weight:600 }
+.sr { padding:16px 0; border-bottom:1px solid #ececea; font-size:14px } .sr .t { font-size:16px; font-weight:600; line-height:1.4 } .sr .t a:hover { border-bottom:1px solid #f97316 }
+.sr .sub { display:block; margin-top:4px; font-size:13.5px; color:#4a4a46 } .sr .sub .co { color:#141414 } .sr .sub .co::before { content:"★"; color:#f97316; font-size:11px; margin-right:5px } .sr .sub .why { color:#6b6b67 } .sr .sub span + span::before { content:"·"; margin:0 7px; color:#c9c9c4 }
+.sr .sub span.co + span::before { content:"·"; margin:0 7px; color:#c9c9c4 }
+.sr .r { text-align:right; font-size:15px } .sr .d { font-weight:600 } .sr .d.hot { color:#f97316 } .sr .d small { display:block; font-size:12.5px; color:#737370; font-weight:450 }
+.sr .un { text-align:right; font-size:13px; color:#55554f } .sr .un a { border-bottom:1px solid #d8d6d0 } .sr .un a:hover { border-bottom-color:#f97316 }
+.sr.rm { opacity:.35; transition:opacity .3s } .sr.rm .un a { border-bottom:0; color:#141414 }
+/* 마감 지남 — 아래 회색 묶음 */
+.past { margin-top:22px } .past .k { display:block; padding:0 0 8px; border-bottom:1px solid #e6e4df } .past .sr { color:#737370 } .past .sr .t, .past .sr .d, .past .sr .r, .past .sr .sub .co { color:#737370; font-weight:500 } .past .sr .sub .co::before { color:#b8b6b0 }
+.past .sr .d small { color:#9b9a95 }
+/* 회사 행 */
+.ch, .cr { display:grid; grid-template-columns:minmax(0,1fr) 150px 110px 110px; gap:0 12px; align-items:start }
+.ch { padding:18px 0 8px; border-bottom:1px solid #141414; font-size:12px; color:#6b6b67; font-weight:600 }
+.cr { padding:16px 0; border-bottom:1px solid #ececea; font-size:14px } .cr .t { font-size:16px; font-weight:600; line-height:1.4 } .cr .t::before { content:"★"; color:#f97316; font-size:13px; margin-right:7px; vertical-align:1px }
+.cr .sub { display:block; margin-top:4px; font-size:13.5px; color:#4a4a46 } .cr .sub span + span::before { content:"·"; margin:0 7px; color:#c9c9c4 }
+.cr .n { font-size:15px } .cr .n b { font-weight:650; font-size:18px; letter-spacing:-0.02em } .cr .n small { display:block; font-size:12.5px; color:#737370; margin-top:2px }
+.cr .n .d { font-weight:600 } .cr .n .d.hot { color:#f97316 }
+.cr .go a.bt { height:32px } .cr .un { text-align:right; font-size:13px; color:#55554f } .cr .un a { border-bottom:1px solid #d8d6d0 }
+.cr.rm { opacity:.35 }
+/* 빈 상태·비로그인 */
+.empty { padding:30px 0 10px; font-size:14px; color:#55554f; line-height:1.7 } .empty b { display:block; color:#141414; font-size:16px; font-weight:650; margin-bottom:4px } .empty a { color:#141414; border-bottom:1px solid #141414 }
+.gateline { border-bottom:0; padding:26px 0 10px }
+.foot { margin-top:28px }
+.cases { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; white-space:nowrap; z-index:9 }
+.cases span { padding:6px 14px; border-radius:999px; color:#55554f; cursor:pointer } .cases span.on { background:#141414; color:#fff } .cases i { width:1px; height:18px; background:#e6e4df; margin:0 4px }
+.vw { display:none } .vw.on { display:block }
+@media screen and (max-width:720px){
+  .head h1 { font-size:24px } .pane { padding:0 16px 20px; border-radius:12px; margin-top:16px }
+  .sh, .sr { grid-template-columns:minmax(0,1fr) 72px } .sh span:nth-child(3), .sh span:nth-child(4), .sr .r:not(.d), .sr .un { display:none } .sr .t { font-size:15px } .sr .sub { font-size:13px }
+  .sr .d { font-size:14px }
+  .ch, .cr { grid-template-columns:minmax(0,1fr) auto } .ch span:nth-child(3), .ch span:nth-child(4), .cr .go, .cr .un { display:none } .cr .n b { font-size:16px }
+  .tabs2 { gap:18px; font-size:14px }
+  .nav .links span.me { display:inline-block }   /* SHEET_CSS 가 390 에서 span 링크를 숨긴다 — 로그인된 이메일은 보여야 한다 */
+  .cases { font-size:11.5px; padding:2px; white-space:normal; flex-wrap:wrap; justify-content:center; width:calc(100% - 24px); border-radius:16px } .cases span { padding:5px 8px } .cases i { display:none }
+}
+</style></head><body class="done"><div class="wrap"><div class="vw on" data-c="in"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><div class="links"><span>추천</span><b>검토함</b><span>개선 기록</span><span class="me">you@…<div class="menu"><a href="#">you@company.co.kr<small>로그인됨</small></a><div class="sep"></div><span class="k">저장한 회사 2</span><a class="co" href="#">한종산업개발 주식회사</a><a class="co" href="#">(유)금강환경</a><div class="sep"></div><a href="#">검토함<small>검토한 공고 3건</small></a><a href="#">설정<small>비밀번호 변경 · 알림 수신 · 탈퇴</small></a><div class="sep"></div><a class="dim" href="#" data-go="7">로그아웃</a></div></span></div></div><div class="head"><h1>검토함</h1><div class="tabs2"><a href="#" class="on" data-t="n">공고<small>5</small></a><a href="#" data-t="c">저장한 회사<small>2</small></a></div></div><div class="pane"><div class="tab on" data-t="n"><div class="sh"><span>공고 · 결과를 본 회사 · 발주기관 · 근거</span><span class="r">마감</span><span class="r">추정가</span><span></span></div><div class="sr"><span><span class="t"><a href="#">해양수산부 청사 시설관리운영 용역</a></span><span class="sub"><span class="co">(유)금강환경</span><span>해양수산부</span><span class="why">업종·물품 일치</span></span></span><span class="r d hot">D-3<small>10.19</small></span><span class="r">36.1억</span><span class="un"><a href="#" data-l="해제">해제</a></span></div><div class="sr"><span><span class="t"><a href="#">서울중계3동우체국 입주청소 용역</a></span><span class="sub"><span class="co">(유)금강환경</span><span>과학기술정보통신부 우정사업본부 서울지방우정청</span><span class="why">업종·물품 일치</span></span></span><span class="r d hot">D-6<small>10.22</small></span><span class="r">200만</span><span class="un"><a href="#" data-l="해제">해제</a></span></div><div class="sr"><span><span class="t"><a href="#">송탄정수장 공업용수공급 시설공사(1공구)</a></span><span class="sub"><span class="co">한종산업개발 주식회사</span><span>경기도 평택시 상하수도사업소</span><span class="why">재출현 기관</span></span></span><span class="r d ">D-13<small>10.29</small></span><span class="r">50.3억</span><span class="un"><a href="#" data-l="해제">해제</a></span></div><div class="sr"><span><span class="t"><a href="#">송탄정수장 공업용수공급 시설공사(2공구)</a></span><span class="sub"><span class="co">한종산업개발 주식회사</span><span>경기도 평택시 상하수도사업소</span><span class="why">재출현 기관</span></span></span><span class="r d ">D-13<small>10.29</small></span><span class="r">76.9억</span><span class="un"><a href="#" data-l="해제">해제</a></span></div><div class="sr"><span><span class="t"><a href="#">중랑물재생센터 제1처리장 관리대행</a></span><span class="sub"><span class="co">한종산업개발 주식회사</span><span>서울특별시 물재생센터 중랑물재생센터</span><span class="why">업종·물품 일치</span></span></span><span class="r d ">D-40<small>11.25</small></span><span class="r">61.1억</span><span class="un"><a href="#" data-l="해제">해제</a></span></div><div class="past"><span class="k">마감 지남 2건 — 마감 30일 뒤 자동 정리</span><div class="sr"><span><span class="t"><a href="#">평택시 공공하수처리시설 관리대행 용역(2권역)(장기계속)(협상에의한계약)</a></span><span class="sub"><span class="co">한종산업개발 주식회사</span><span>경기도 평택시 상하수도사업소</span></span></span><span class="r d">마감<small>5.19</small></span><span class="r">554.6억</span><span class="un"><a href="#" data-l="해제">해제</a></span></div><div class="sr"><span><span class="t"><a href="#">(수의시담)예비처리장 관리대행 용역</a></span><span class="sub"><span class="co">한종산업개발 주식회사</span><span>경상남도 창원시 하수도사업소</span></span></span><span class="r d">마감<small>4.10</small></span><span class="r">26.8억</span><span class="un"><a href="#" data-l="해제">해제</a></span></div></div></div><div class="tab" data-t="c"><div class="ch"><span>회사</span><span>오늘</span><span>마감</span><span></span></div><div class="cr"><span><span class="t">한종산업개발 주식회사</span><span class="sub"><span>경상남도 창원시</span><span>등록업종 15</span></span></span><span class="n"><b>12건</b> 검토할 공고<small>이번 주 마감 1건</small></span><span class="n"><span class="d hot">D-4</span><small>가장 빠른 마감 10.20</small></span><span class="un"><a class="bt" href="#" style="height:32px;border-bottom:1px solid #e3e1dc">결과</a> &nbsp; <a href="#" data-l="★ 해제">★ 해제</a></span></div><div class="cr"><span><span class="t">(유)금강환경</span><span class="sub"><span>전남광주통합특별시 영암군</span><span>등록업종 6</span></span></span><span class="n"><b>12건</b> 검토할 공고<small>이번 주 마감 10건</small></span><span class="n"><span class="d hot">D-3</span><small>가장 빠른 마감 10.19</small></span><span class="un"><a class="bt" href="#" style="height:32px;border-bottom:1px solid #e3e1dc">결과</a> &nbsp; <a href="#" data-l="★ 해제">★ 해제</a></span></div></div></div></div><div class="vw " data-c="empty"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><div class="links"><span>추천</span><b>검토함</b><span>개선 기록</span><span class="me">you@…<div class="menu"><a href="#">you@company.co.kr<small>로그인됨</small></a><div class="sep"></div><span class="k">저장한 회사 2</span><a class="co" href="#">한종산업개발 주식회사</a><a class="co" href="#">(유)금강환경</a><div class="sep"></div><a href="#">검토함<small>검토한 공고 3건</small></a><a href="#">설정<small>비밀번호 변경 · 알림 수신 · 탈퇴</small></a><div class="sep"></div><a class="dim" href="#" data-go="7">로그아웃</a></div></span></div></div><div class="head"><h1>검토함</h1><div class="tabs2"><a href="#" class="on" data-t="n">공고<small>0</small></a><a href="#" data-t="c">저장한 회사<small>0</small></a></div></div><div class="pane"><div class="tab on" data-t="n"><div class="empty"><b>검토 표시한 공고가 없습니다</b>결과 표의 행을 펼쳐 <a href="#">검토</a>를 누르면 여기에 보관됩니다.</div></div><div class="tab" data-t="c"><div class="empty"><b>저장한 회사가 없습니다</b>회사 페이지 또는 결과 머리의 ☆ 로 저장합니다.</div></div></div></div><div class="vw " data-c="guest"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><div class="links"><span>추천</span><b>검토함</b><span>개선 기록</span><a class="cta" href="#" data-go="1">로그인</a></div></div><div class="head"><h1>검토함</h1></div><div class="pane"><div class="gateline"><div><b>검토함은 로그인 후 사용</b><span class="dim" style="display:block;margin-top:4px">검토 표시한 공고와 저장한 회사를 보관</span></div><span class="sp"></span><span class="in"><a class="bt" href="#" data-go="1">로그인</a><a class="bt dark" href="#" data-go="2">회원가입</a></span></div></div></div><div class="foot">검토함 최종 시안 — 공고(검토 표시, 마감 순, 어느 회사 결과에서 검토했는지 ★ 표시) / 저장한 회사(오늘 검토할 공고 N건 · 가장 빠른 마감 · 결과). 마감 지난 공고는 아래 회색, 30일 뒤 자동 정리. 해제는 되돌리기 가능. 공고·회사는 2026-10-16 실제 추천 결과(data/sample.json · company_b.json), 마감 지난 건은 한종산업개발의 실제 낙찰 공고.</div></div><div class="cases"><span data-c="in" class="on">채움</span><span data-c="empty" class="">빈 상태</span><span data-c="guest" class="">비로그인</span></div><script>
+const cs = document.querySelector('.cases');
+function show(k){ document.querySelectorAll('.vw').forEach(v => v.classList.toggle('on', v.dataset.c === k)); cs.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x.dataset.c === k)); location.hash = k; }
+cs.querySelectorAll('[data-c]').forEach(s => s.onclick = () => show(s.dataset.c));
+document.querySelectorAll('.tabs2 a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const v = a.closest('.vw'); v.querySelectorAll('.tabs2 a').forEach(x => x.classList.toggle('on', x === a)); v.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.t === a.dataset.t)); }));
+document.querySelectorAll('.un a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const r = a.closest('.sr, .cr'); const on = r.classList.toggle('rm'); a.textContent = on ? '되돌리기' : a.dataset.l; }));
+if (location.hash.length > 1 && cs.querySelector(`[data-c="${location.hash.slice(1)}"]`)) show(location.hash.slice(1));
+</script></body></html>

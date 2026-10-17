@@ -84,6 +84,7 @@ html, body { background:#faf9f7 }
   .sent .steps li { grid-template-columns:1fr; gap:0 } .star { margin:8px 0 0 } .gateline .in { flex-wrap:wrap }
   .cases { font-size:11.5px; padding:2px; white-space:normal; flex-wrap:wrap; justify-content:center; width:calc(100% - 24px); border-radius:16px } .cases span { padding:5px 8px } .cases i { display:none }
   .nav .me .menu { right:-8px }
+  .nav .links span.me { display:inline-block }   /* SHEET_CSS 가 390 에서 span 링크를 숨긴다 — 로그인된 이메일은 보여야 한다 */
 }
 """
 
