@@ -122,6 +122,16 @@ CSS = FINAL_CSS + r"""
 .none-reco .acts { display:flex; gap:8px; align-items:center; margin-top:16px; flex-wrap:wrap } .none-reco .in { display:flex; gap:6px }
 .none-reco .in span:first-child { width:300px; max-width:100%; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
 .side .txt .dim { color:#737370 }
+/* 분석 요청 — 칸 둘 + 버튼 한 줄. 접수 뒤는 지금/다음/조건 세 줄 */
+.req { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto; gap:10px; align-items:end; margin-top:18px }
+.req label { display:flex; flex-direction:column; gap:6px } .req input { height:38px; border:1px solid #e3e1dc; border-radius:8px; padding:0 12px; font:inherit; font-size:14px; color:#141414; background:#fff; outline:none; transition:border-color .15s, box-shadow .15s }
+.req input:focus { border-color:#f97316; box-shadow:0 0 0 4px rgba(249,115,22,.14) } .req input::placeholder { color:#9b9a95 } .req .bt { height:38px; cursor:pointer }
+.reqn { margin-top:10px; font-size:12.5px; color:#6b6b67; line-height:1.6 }
+.reqd { display:none; margin-top:18px; border-top:1px solid #141414; padding-top:14px } .reqd > b { display:block; font-size:15px; margin-bottom:8px }
+.reqd .row { display:grid; grid-template-columns:96px 1fr; gap:12px; padding:6px 0; border-bottom:1px solid #ececea; font-size:14px; line-height:1.6 } .reqd .row .k { padding-top:3px }
+.reqd a { color:#141414; border-bottom:1px solid #141414 } .reqd em { font-style:normal; font-weight:600 }
+.req-done .req, .req-done .reqn { display:none } .req-done .reqd { display:block }
+@media screen and (max-width:720px){ .req { grid-template-columns:1fr } .reqd .row { grid-template-columns:1fr; gap:2px } }
 /* 사례·상태 스위치(시안용) — split 의 .sw(블록/표)와 이름이 겹쳐 .cases */
 .cases { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; align-items:center; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; white-space:nowrap; z-index:9 }
 .cases span { padding:6px 14px; border-radius:999px; color:#55554f; cursor:pointer } .cases span.on { background:#141414; color:#fff } .cases i { width:1px; height:18px; background:#e6e4df; margin:0 4px }
@@ -141,6 +151,7 @@ document.querySelectorAll('.sheet .tr').forEach(t => t.addEventListener('click',
 if (matchMedia('(max-width:720px)').matches) document.querySelectorAll('details.side').forEach(d => d.open = false);
 function openSearch(){ document.body.classList.add('st-search'); const i = document.querySelector('.vw.on .box input'); i.value = ''; i.focus(); }
 function closeSearch(){ document.body.classList.remove('st-search'); }
+document.querySelectorAll('.req').forEach(f => f.addEventListener('submit', () => f.closest('.none-reco').classList.add('req-done')));
 document.querySelectorAll('.sw-co').forEach(a => a.onclick = e => { e.preventDefault(); openSearch(); });
 document.querySelectorAll('.rc .esc').forEach(a => a.onclick = e => { e.preventDefault(); closeSearch(); });
 addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
@@ -226,9 +237,17 @@ def reco_pane(d):
                 f'폐업일 {ymd(co["biz_closed_dt"])}. 사업자 상태가 바뀌면 다음 갱신(매일 05:00)부터 다시 추천합니다. 재개업 또는 정보 오류는 수정 요청으로 접수합니다.'
                 f'<div class="acts"><a class="bt" href="#">수정 요청</a></div></div>')
     elif not reco:
+        # 분석 요청(승우님 2026-10-17 "벡터·이력 안 잡히는 데는 요청") — 막다른 '수정 요청' 대신 주요 사업·품목 한 줄 + 이메일.
+        # 즉시: 입력한 설명으로 키워드 추천. 이후: 업체정보 재조회(register_searched_companies 가 매시 하는 일) → 회사 기준 추천이 준비되면 메일.
         body = (f'<div class="none-reco"><b>추천 기준이 없는 회사입니다</b>'
-                f'나라장터 업체정보에 등록업종·공급물품이 없고 수주 이력도 없어 참가 자격과 적합도를 판정할 수 없습니다. 키워드로 공고를 검색하거나, 이 회사 담당자라면 업종·물품 등록 후 수정 요청으로 반영을 요청합니다.'
-                f'<div class="acts"><span class="in"><span>키워드 · 업종 또는 품목</span><span class="bt dark">키워드로 공고 검색</span></span><a class="bt" href="#">업종·물품 수정 요청</a></div></div>')
+                f'나라장터 업체정보에 등록업종·공급물품이 없고 수주 이력도 없어 참가 자격과 적합도를 판정할 수 없습니다. 이 회사 담당자는 아래에서 분석을 요청합니다.'
+                f'<form class="req" onsubmit="return false"><label><span class="k">주요 사업 · 취급 품목</span><input type="text" placeholder="예: 학교 급식 식자재 납품, 정수기 임대"></label>'
+                f'<label><span class="k">이메일</span><input type="email" placeholder="you@company.co.kr"></label><button class="bt dark" type="submit">분석 요청</button></form>'
+                f'<div class="reqn">요청 즉시 입력한 설명 기준의 공고를 보여드립니다. 나라장터 업체정보를 다시 조회해 회사 기준 추천이 준비되면 이메일로 안내합니다. 비밀번호 없음.</div>'
+                f'<div class="reqd"><b>분석 요청 접수 · {TODAY.isoformat()} 14:02</b>'
+                f'<div class="row"><span class="k">지금</span><span>입력한 설명 기준 <a href="#">공고 12건 보기</a> — 참가 자격 판정 없음</span></div>'
+                f'<div class="row"><span class="k">다음</span><span>업체정보 재조회는 매시 5분. 등록업종·공급물품이 확인되면 회사 기준 추천을 <em>you@company.co.kr</em>로 안내</span></div>'
+                f'<div class="row"><span class="k">등록이 없으면</span><span>나라장터 업체등록(업종·물품)을 먼저 해야 참가 자격 판정이 가능합니다. 그 전까지는 설명 기준 추천만 제공</span></div></div></div>')
     else:
         res = reco["results"]
         prof_full = dict(prof, names=set(), terms=set(), codes=set())
@@ -351,6 +370,10 @@ def check(path):
         cc = pg.evaluate("""() => { const v = document.querySelector('.vw.on'); return { none: !!v.querySelector('.none-reco'), sheet: v.querySelectorAll('.sheet').length, panes: v.querySelectorAll('.pane').length, chain: v.querySelectorAll('.chain').length } }""")
         assert cc["none"] and cc["sheet"] == 0 and cc["panes"] == 0 and cc["chain"] == 0, cc
         pg.screenshot(path=str(out / "_shot_cfinal_c.png"), full_page=True)
+        pg.click('.vw.on .req .bt'); pg.wait_for_timeout(200)   # 분석 요청 → 접수 상태
+        rq = pg.evaluate("""() => { const v = document.querySelector('.vw.on'), cs = e => getComputedStyle(e); return { form: cs(v.querySelector('.req')).display, done: cs(v.querySelector('.reqd')).display, rows: v.querySelectorAll('.reqd .row').length } }""")
+        assert rq["form"] == "none" and rq["done"] == "block" and rq["rows"] == 3, rq
+        pg.screenshot(path=str(out / "_shot_cfinal_c_req.png"), full_page=True)
         pg.click('.cases [data-c="d"]'); pg.wait_for_timeout(300)
         dd = pg.evaluate("""() => { const v = document.querySelector('.vw.on'), cs = e => getComputedStyle(e); const st = v.querySelector('.head .st'); return { st: st && st.textContent, rule: st && cs(st).borderLeftColor, none: !!v.querySelector('.none-reco') } }""")
         assert dd["st"] and dd["st"].startswith("국세청 폐업") and dd["rule"] == "rgb(249, 115, 22)" and dd["none"], dd
