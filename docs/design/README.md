@@ -218,3 +218,15 @@ notice-rail(10-15 선택안)의 구성·본문 블록은 `gen_notice.l3` 그대�
 - 함정: Playwright `goto` 는 해시만 다르면 다시 읽지 않는다 → `reload()`. `getComputedStyle(el, '::before')` 를 래퍼로 감싸면 두 번째 인자가 사라진다.
 - 390 에서 공용 SHEET_CSS 가 nav 의 span 링크를 전부 숨겨 로그인된 이메일(`.me`)까지 사라졌다 → login·saved 두 시안에 `.nav .links span.me { display:inline-block }`. 구현 때 nav 를 한 컴포넌트로.
 - 약한 곳: 회사 행의 "결과" 버튼은 `#`. 마감 지난 공고의 낙찰 여부(이 회사가 땄는지)는 안 보여 준다 — 데이터는 있으니 구현 때 "낙찰 · 2위" 한 칸 검토.
+
+## 개선 기록 최종 시안 (2026-10-17, `scripts/gen_changelog.py` → `prototypes/changelog-final.html`)
+`/changelog`. `docs/recommender/changelog.md` 를 **그대로** 렌더링하는 읽기 페이지 — 문서가 곧 페이지. 구현도 같은 방식(빌드 때 md → 페이지, 콘텐츠를 따로 쓰지 않는다).
+- 머리: 제목 + 문서 첫 두 문단(무엇을 적는지 · 재는 방법). 왼쪽 **차례**(날짜 회색 / 제목 먹, sticky, 스크롤 스파이로 현재 항목 괘선 먹) + 아래 요약(변경 N건 · 기간 · 원문 경로). 오른쪽 흰 판에 글 순서 그대로 — 처음 → 변경 18건 → 지금.
+- 변환하는 마크다운은 네 가지뿐: `##`(날짜 · 제목을 쪼개 날짜를 회색으로) · 문단 · 표 · `**굵게**`/`` `코드` ``. 표는 숫자 tabular, 첫 열 왼쪽 정렬, **"후"·"지금" 행만 굵게** — 전/후 색·화살표는 안 입힌다(숫자가 말한다).
+- 로그인 무관. 상태 없음. 390 은 차례를 숨기고 표는 가로 스크롤.
+- `--check`: 페이지 틀(머리·차례·바닥·nav) 금지어 0 — 본문은 원문이라 검사 밖(원문 마지막 줄이 폐기한 버튼 이름 "안 맞아요"를 인용한다), 인주 0, 항목 18 = 차례 18, 표 15, 차례 sticky + 7번째 항목으로 스크롤하면 스파이가 따라옴, 원시 마크다운(`**`·`|`) 0, 390 한 단·차례 숨김·가로 넘침 없음. 캡처 `_shot_changelog{,_mid,_390}.png`.
+- 함정: 390 에서 `.cols { grid-template-columns:1fr }` 만 두면 `white-space:nowrap` 표가 단을 665px 로 벌린다 → `minmax(0,1fr)` + `.doc { min-width:0 }`.
+
+## 페이지 인벤토리 상태 (2026-10-17)
+새로 그리는 5 + 추가 1 전부 최종 시안 있음: 입구 `entry-simple` · 결과 `results-final` · 공고 상세 `notice-final` · 회사 `company-final` · 로그인·회원가입 `login-final` · 검토함 `saved-final` · 개선 기록 `changelog-final`. 로고 `brand/`. 인쇄 `report.html`.
+구현 전 일괄 반영할 것: ① nav "이메일 구독" → "로그인"/로그인됨(전 시안) ② 게이트 "이메일 등록" 한 칸 → 로그인/회원가입 두 버튼(results·company) ③ 사업자번호 마스킹 `124-XX-X731`(results·split) ④ 문구 미사여구 제거 기준(로그인 시안 기준)을 results·company 게이트·분석 요청 문구에도 ⑤ 결과·회사 머리에 ☆ 회사 저장.
