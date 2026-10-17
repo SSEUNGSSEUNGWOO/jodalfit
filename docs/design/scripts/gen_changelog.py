@@ -59,6 +59,7 @@ html, body { background:#faf9f7 } .wrap { padding-bottom:140px }
 .score .k { display:block; margin-bottom:6px } .score ul { margin:0; padding:0; list-style:none } .score li { display:flex; justify-content:space-between; gap:12px; padding:6px 0; border-bottom:1px solid #f1f0ec; font-size:13.5px; color:#333 }
 .score li b { font-variant-numeric:tabular-nums; font-weight:600; color:#141414; white-space:nowrap } .score li b.m { color:#737370; font-weight:500 } .score li .d { color:#6b6b67; margin-left:6px; font-size:12.5px }
 .score .note { grid-column:1/-1; margin-top:10px; font-size:12.5px; color:#6b6b67; line-height:1.6 }
+.ent p.tried { margin-top:14px; padding:10px 14px; border-left:2px solid #d8d6d0; background:#faf9f7; border-radius:0 8px 8px 0; color:#55554f; font-size:13.5px } .ent p.tried b { color:#141414 }
 .ent h2 .tag { font-size:11.5px; color:#737370; font-weight:500; margin-left:10px; letter-spacing:0; border:1px solid #e3e1dc; border-radius:999px; padding:2px 8px; vertical-align:2px }
 @media screen and (max-width:720px){ .steps { grid-template-columns:1fr 1fr; gap:0 16px } .steps > div:nth-child(2) { border-right:0 } .score { grid-template-columns:1fr } }
 .foot { margin-top:28px }
@@ -94,7 +95,8 @@ def md(text):
 
     def flush_p():
         if buf:
-            (cur[3] if cur else lead).append(f"<p>{inline(' '.join(buf))}</p>"); buf.clear()
+            txt = " ".join(buf); cls = ' class="tried"' if txt.startswith("**해 보고 뺀 것**") else ""   # 실패한 실험 — 회색 블록
+            (cur[3] if cur else lead).append(f"<p{cls}>{inline(txt)}</p>"); buf.clear()
 
     def flush_t():
         if tbl:
@@ -248,7 +250,7 @@ def check(path):
         assert s["ents"] == 21 and s["grps"] == 12 and s["dts"][:4] == ["10.16", "10.15", "10.14", "10.13"] and s["dts"][-1] == "05.24", s
         h = pg.evaluate("""() => ({ steps: document.querySelectorAll('.how2 .steps > div').length, nums: [...document.querySelectorAll('.how2 .steps .n')].map(e => e.firstChild.textContent), pos: document.querySelectorAll('.how2 .score li').length,
             tags: [...document.querySelectorAll('.ent h2 .tag')].map(e => e.textContent), hidden: [...document.querySelectorAll('.ent h2')].some(e => /린트|검사 오류|건강 점검|3,000곳/.test(e.textContent)), frame: document.querySelector('.now .frame').textContent })""")
-        assert h["steps"] == 4 and h["nums"] == ["9,374", "835", "372", "12"] and h["pos"] == 9 and h["tags"].count("측정 전") == 8 and h["tags"].count("처음 측정") == 1 and not h["hidden"] and "0.3%" in h["frame"], h
+        assert pg.evaluate("document.querySelectorAll('.ent p.tried').length") == 3 and h["steps"] == 4 and h["nums"] == ["9,374", "835", "372", "12"] and h["pos"] == 9 and h["tags"].count("측정 전") == 8 and h["tags"].count("처음 측정") == 1 and not h["hidden"] and "0.3%" in h["frame"], h
         assert s["sts"] == 3 and s["big"] == ["49%", "28%", "38%"] and s["dl"] == 3 and s["tdl"] >= 15 and s["bar"] != "none" and s["sticky"] == "sticky" and s["firstDot"] == "rgb(249, 115, 22)", s
         assert not s["raw"] and s["b"] == "개선 기록" and s["start"], s
         pg.screenshot(path=str(out / "_shot_changelog.png"), full_page=False)
