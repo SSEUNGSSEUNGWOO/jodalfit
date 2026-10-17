@@ -42,7 +42,7 @@ html, body { background:#faf9f7 }
 .f input[type=email], .f input[type=password], .f input[type=text] { width:100%; height:46px; border:1px solid #e3e1dc; border-radius:8px; padding:0 14px; font:inherit; font-size:16px; color:#141414; background:#fff; outline:none; transition:border-color .15s, box-shadow .15s }
 .f input:focus { border-color:#f97316; box-shadow:0 0 0 4px rgba(249,115,22,.14) } .f input::placeholder { color:#9b9a95 } .f input[disabled] { color:#737370; background:#faf9f7 }
 .f .pw { position:relative } .f .pw input { padding-right:56px } .f .pw .eye { position:absolute; right:12px; top:34px; font-size:12.5px; color:#55554f; border:0; border-bottom:1px solid #d8d6d0; cursor:pointer; background:none; padding:0; font-family:inherit }
-.f .hint { font-size:12.5px; color:#6b6b67; margin-top:6px; line-height:1.55 } .f .hint.bad { color:#141414; border-left:2px solid #f97316; padding-left:8px }
+.f .hint { font-size:12.5px; color:#6b6b67; margin-top:6px; line-height:1.55 } .f .hint[data-min] { display:none } .f .hint.bad { display:block; color:#141414; border-left:2px solid #f97316; padding-left:8px }
 .f .row2 { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px } .f .row2 .k { margin:0 } .f .row2 a { font-size:12.5px; color:#55554f; border-bottom:1px solid #d8d6d0 }
 .f .cs { margin:16px 0 18px; display:flex; flex-direction:column; gap:8px } .f .cs label { display:flex; gap:8px; align-items:flex-start; font-size:13px; line-height:1.55; color:#333; cursor:pointer }
 .f .cs input { margin:3px 0 0; accent-color:#141414 } .f .cs a { border-bottom:1px solid #d8d6d0 } .f .cs .opt { color:#55554f } .f .cs .opt .k { display:inline; margin:0 6px 0 0; color:#737370 }
@@ -115,7 +115,7 @@ def nav(state="guest", here=None):
     else:
         cos = "".join(f'<a class="co" href="#">{esc(c)}</a>' for c in SAVED)
         tail = (f'<span class="me">{EMAIL.split("@")[0]}@…<div class="menu"><a href="#">{EMAIL}<small>로그인됨</small></a><div class="sep"></div>'
-                f'<span class="k">저장한 회사 {len(SAVED)}</span>{cos}<a class="dim" href="#">회사 추가 — 회사 페이지의 ☆</a><div class="sep"></div>'
+                f'<span class="k">저장한 회사 {len(SAVED)}</span>{cos}<div class="sep"></div>'
                 f'<a href="#">검토함<small>검토한 공고 3건</small></a><a href="#">설정<small>비밀번호 변경 · 알림 수신 · 탈퇴</small></a><div class="sep"></div><a class="dim" href="#" data-go="7">로그아웃</a></div></span>')
     return f'<div class="nav"><a class="brand" href="#">{TILE}조달핏</a><div class="links">{ls}{tail}</div></div>'
 
@@ -123,18 +123,18 @@ def nav(state="guest", here=None):
 def pw_field(label="비밀번호", min_=8, hint=True, forgot=False, placeholder="8자 이상"):
     top = f'<div class="row2"><span class="k">{label}</span><a href="#" data-go="6">비밀번호 찾기</a></div>' if forgot else f'<span class="k">{label}</span>'
     return (f'<div class="fld pw"><label>{top}<input type="password" placeholder="{placeholder}" autocomplete="{"current-password" if forgot else "new-password"}" data-min="{min_}"></label><button class="eye" type="button">표시</button>'
-            + (f'<div class="hint" data-min="{min_}">8자 이상. 영문·숫자·기호 조합은 강제하지 않습니다 — 길이가 규칙보다 안전합니다.</div>' if hint else '') + '</div>')
+            + (f'<div class="hint" data-min="{min_}">8자 이상</div>' if hint else '') + '</div>')
 
 
 def consent():
     return ('<div class="cs"><label><input type="checkbox" class="must"><span><b>[필수]</b> <a href="#">이용약관</a> 동의</span></label>'
-            '<label><input type="checkbox" class="must"><span><b>[필수]</b> 개인정보 수집·이용 동의 — 이메일 주소를 로그인·검토함·저장한 회사 보관에만 사용하고, 탈퇴 시 삭제합니다. <a href="#">처리방침</a></span></label>'
-            '<label class="opt"><input type="checkbox"><span><span class="k">[선택]</span>알림 메일 수신 동의 — 새로 남은 공고 알림은 준비 중이며, 시작할 때 다시 안내합니다. 언제든 거부 가능</span></label></div>')
+            '<label><input type="checkbox" class="must"><span><b>[필수]</b> 개인정보 수집·이용 동의 — 이메일 주소 · 로그인·검토함·저장한 회사 보관 · 탈퇴 시 삭제. <a href="#">처리방침</a></span></label>'
+            '<label class="opt"><input type="checkbox"><span><span class="k">[선택]</span>알림 메일 수신 동의 — 준비 중, 시작 시 안내</span></label></div>')
 
 
 def gain():
-    return ('<div class="gain"><span class="k">로그인하면</span><ul><li><b>결과 전부</b><span>상위 5건 뒤의 나머지 공고와 추천 근거</span></li>'
-            '<li><b>검토함</b><span>검토 표시한 공고 보관, 마감 순 정리</span></li><li><b>저장한 회사</b><span>자주 보는 회사를 여러 곳 저장 — 입력 없이 바로 결과</span></li></ul></div>')
+    return ('<div class="gain"><span class="k">로그인하면</span><ul><li><b>결과 전부</b><span>상위 5건 뒤의 나머지 공고</span></li>'
+            '<li><b>검토함</b><span>검토 표시한 공고 보관</span></li><li><b>저장한 회사</b><span>여러 회사 저장, 바로 결과</span></li></ul></div>')
 
 
 def frame(title, lead, inner):
@@ -144,40 +144,39 @@ def frame(title, lead, inner):
 def scene_login():
     inner = (f'<form class="f" data-next="5" novalidate><div class="fld"><label><span class="k">이메일</span><input type="email" placeholder="{EMAIL}" autocomplete="email" inputmode="email"></label></div>'
              f'{pw_field(min_=1, forgot=True, hint=False, placeholder="비밀번호")}<button class="bt dark" type="submit">로그인</button></form>'
-             f'<div class="alt"><span>처음입니까?</span><a href="#" data-go="2">회원가입 — 이메일과 비밀번호, 1분</a></div>{gain()}')
-    return frame("로그인", "이메일과 비밀번호로 로그인합니다.", inner)
+             f'<div class="alt"><span></span><a href="#" data-go="2">회원가입</a></div>{gain()}')
+    return frame("로그인", "", inner)
 
 
 def scene_signup():
     inner = (f'<form class="f" data-next="3" novalidate><div class="fld"><label><span class="k">이메일</span><input type="email" placeholder="{EMAIL}" autocomplete="email" inputmode="email"></label>'
-             f'<div class="hint">확인 메일이 갑니다. 회사 메일이 아니어도 됩니다.</div></div>{pw_field()}{consent()}<button class="bt dark" type="submit">가입</button>'
-             f'<div class="note">이름·연락처·사업자번호는 받지 않습니다. 회사는 가입 뒤 회사 페이지의 ☆ 로 저장합니다.</div></form>'
-             f'<div class="alt"><span>이미 계정이 있습니까?</span><a href="#" data-go="1">로그인</a></div>')
-    return frame("회원가입", "이메일과 비밀번호. 확인 메일의 링크를 열면 가입이 끝납니다.", inner)
+             f'<div class="hint">확인 메일 발송</div></div>{pw_field()}{consent()}<button class="bt dark" type="submit">가입</button></form>'
+             f'<div class="alt"><span></span><a href="#" data-go="1">로그인</a></div>')
+    return frame("회원가입", "", inner)
 
 
 def scene_sent(kind):
     if kind == "signup":
-        title, h, p_, back, mail = "회원가입", "확인 메일을 보냈습니다", "메일의 <b>이메일 확인</b> 버튼을 누르면 가입이 끝나고 바로 로그인됩니다. 다른 기기에서 열어도 됩니다.", "2", "4"
+        title, h, p_, back, mail = "회원가입", "확인 메일을 보냈습니다", "메일의 링크를 열면 가입이 완료됩니다.", "2", "4"
     else:
-        title, h, p_, back, mail = "비밀번호 재설정", "재설정 링크를 보냈습니다", "메일의 <b>비밀번호 재설정</b> 버튼을 누르면 새 비밀번호를 정하는 화면이 열립니다.", "6", "6b"
+        title, h, p_, back, mail = "비밀번호 재설정", "재설정 링크를 보냈습니다", "메일의 링크를 열면 새 비밀번호를 정합니다.", "6", "6b"
     inner = (f'<div class="sent"><h2>{h}</h2><p>{p_}</p><ul class="steps"><li><span class="k">받는 곳</span><span><b class="em">{EMAIL}</b></span></li>'
-             f'<li><span class="k">유효</span><span>{TTL}분 · 한 번만. 지나면 여기서 다시 받습니다</span></li>'
-             f'<li><span class="k">안 오면</span><span>스팸함과 프로모션함 확인. 보낸 주소 <b>noreply@jodalfit.co.kr</b></span></li></ul>'
-             f'<div class="acts"><a class="wait">다시 보내기 — 47초 뒤</a><a href="#" data-go="{back}">다른 이메일로</a><a href="#" data-go="{mail}">받은 메일 보기 →</a></div></div>')
+             f'<li><span class="k">유효</span><span>{TTL}분 · 1회</span></li>'
+             f'<li><span class="k">안 오면</span><span>스팸함 확인 · 보낸 주소 <b>noreply@jodalfit.co.kr</b></span></li></ul>'
+             f'<div class="acts"><a class="wait">다시 보내기 — 47초 뒤</a><a href="#" data-go="{back}">다른 이메일</a><a href="#" data-go="{mail}">받은 메일 보기 →</a></div></div>')
     return frame(title, "", inner)
 
 
 def scene_mail(kind):
     if kind == "confirm":
-        subj, h, p_, btn, link, go, what = f"조달핏 이메일 확인 ({TTL}분 유효)", "이메일 확인", "아래 버튼을 누르면 가입이 끝나고 조달핏에 로그인됩니다.", "이메일 확인", "https://jodalfit.co.kr/auth/confirm?token_hash=7f3a…&type=signup&next=%2Frecommendations", "5", "가입"
+        subj, h, p_, btn, link, go, what = f"조달핏 이메일 확인 ({TTL}분 유효)", "이메일 확인", "아래 버튼을 누르면 가입이 완료됩니다.", "이메일 확인", "https://jodalfit.co.kr/auth/confirm?token_hash=7f3a…&type=signup&next=%2Frecommendations", "5", "가입"
     else:
-        subj, h, p_, btn, link, go, what = f"조달핏 비밀번호 재설정 ({TTL}분 유효)", "비밀번호 재설정", "아래 버튼을 누르면 새 비밀번호를 정하는 화면이 열립니다. 새로 정하기 전까지 지금 비밀번호는 그대로입니다.", "비밀번호 재설정", "https://jodalfit.co.kr/auth/confirm?token_hash=9c1d…&type=recovery&next=%2Fsettings%2Fpassword", "6c", "비밀번호 재설정"
+        subj, h, p_, btn, link, go, what = f"조달핏 비밀번호 재설정 ({TTL}분 유효)", "비밀번호 재설정", "아래 버튼을 누르면 새 비밀번호를 정하는 화면이 열립니다.", "비밀번호 재설정", "https://jodalfit.co.kr/auth/confirm?token_hash=9c1d…&type=recovery&next=%2Fsettings%2Fpassword", "6c", "비밀번호 재설정"
     return (f'<div class="mail"><div class="hdr"><span>보낸 사람</span><span><b>조달핏</b> &lt;noreply@jodalfit.co.kr&gt;</span><span>받는 사람</span><span>{EMAIL}</span><span>제목</span><span><b>{subj}</b></span></div>'
             f'<div class="body"><div class="brand">{TILE}조달핏</div><h2>{h}</h2><p>{p_}</p><a class="btn" href="#" data-go="{go}">{btn}</a>'
-            f'<p>링크는 {TODAY.month}.{TODAY.day:02d} 15:02까지({TTL}분) 한 번만 유효합니다. 버튼이 동작하지 않으면 아래 주소를 브라우저에 붙여 넣습니다.</p>'
+            f'<p>유효 {TODAY.month}.{TODAY.day:02d} 15:02까지 · 1회. 버튼이 동작하지 않으면 아래 주소를 브라우저에 입력합니다.</p>'
             f'<div class="raw"><code>{link}</code></div>'
-            f'<div class="ft">이 메일은 {EMAIL} 로 {what}을 요청해 발송되었습니다. 요청한 적이 없으면 무시하십시오 — 링크를 열지 않는 한 아무 일도 일어나지 않습니다.<br>조달핏 · jodalfit.co.kr · 개인정보처리방침</div></div></div>')
+            f'<div class="ft">{EMAIL} 의 {what} 요청으로 발송된 메일입니다. 요청한 적이 없으면 무시하십시오.<br>조달핏 · jodalfit.co.kr · 개인정보처리방침</div></div></div>')
 
 
 def scene_in(d, prof_stub):
@@ -187,34 +186,34 @@ def scene_in(d, prof_stub):
     return (f'{nav("in", "reco")}<div class="piece"><div class="head"><h1>{esc(co["corp_nm"])}<small>124-XX-X731</small><button class="star" type="button">회사 저장</button><a class="sw-co" href="#">다른 회사</a></h1>'
             f'<div class="meta"><span>경상남도 창원시</span><span>등록업종 15</span><span>공급물품 없음</span><span>기준일 {TODAY.isoformat()}</span></div></div>'
             f'<div class="res"><div class="cols"><div class="main"><div class="mh"><span class="k"><b>검토할 공고 {len(res)}건</b>적합 순</span></div>'
-            f'<div class="okline"><span class="em">{EMAIL}</span> 가입 완료 · 로그인되었습니다<span class="x2">전체 {len(res)}건 공개 · 검토한 공고는 검토함에 보관 · 자주 보는 회사는 ☆ 로 저장</span></div>'
-            f'<div class="savedn">저장됨 — 오른쪽 위 메뉴와 <a href="#">검토함 › 저장한 회사</a>에서 바로 엽니다. 여러 곳이어도 됩니다.</div>'
+            f'<div class="okline"><span class="em">{EMAIL}</span> 가입 완료<span class="x2">전체 {len(res)}건 공개</span></div>'
+            f'<div class="savedn">저장됨 — <a href="#">검토함 › 저장한 회사</a></div>'
             f'<div class="sheet"><div class="th"><span>#</span><span>공고 · 발주기관 · 근거</span><span class="r">마감</span><span class="r">추정가</span></div>{"".join(trs)}</div>'
             f'<div class="tail">… 이하 {len(res) - 3}건 — 흐림·게이트 없음. 안내 줄은 가입 직후 한 번만. ☆ 는 회사 페이지·결과 페이지 머리의 같은 자리.</div></div></div></div></div>')
 
 
 def scene_reset():
-    inner = (f'<form class="f" data-next="6a" novalidate><p class="notice">비밀번호를 모르면 이메일로 재설정 링크를 받습니다. 링크를 열어 새 비밀번호를 정할 때까지 지금 비밀번호는 그대로입니다.</p>'
+    inner = (f'<form class="f" data-next="6a" novalidate><p class="notice">가입한 이메일로 재설정 링크를 보냅니다.</p>'
              f'<div class="fld"><label><span class="k">이메일</span><input type="email" value="{EMAIL}" autocomplete="email"></label></div><button class="bt dark" type="submit">재설정 링크 받기</button></form>'
-             f'<div class="alt"><a href="#" data-go="1">로그인으로</a></div>')
-    return frame("비밀번호 재설정", "가입한 이메일을 입력합니다.", inner)
+             f'<div class="alt"><span></span><a href="#" data-go="1">로그인</a></div>')
+    return frame("비밀번호 재설정", "", inner)
 
 
 def scene_newpw():
     inner = (f'<form class="f" data-next="5" novalidate><div class="fld"><label><span class="k">계정</span><input type="email" value="{EMAIL}" disabled></label></div>'
-             f'{pw_field("새 비밀번호")}{pw_field("새 비밀번호 확인", hint=False, placeholder="한 번 더")}<button class="bt dark" type="submit">비밀번호 변경 후 로그인</button>'
-             f'<div class="note">변경하면 다른 기기의 로그인은 모두 풀립니다.</div></form>')
-    return frame("새 비밀번호", "재설정 링크를 확인했습니다. 새 비밀번호를 정합니다.", inner)
+             f'{pw_field("새 비밀번호")}{pw_field("새 비밀번호 확인", hint=False, placeholder="한 번 더")}<button class="bt dark" type="submit">변경</button>'
+             f'<div class="note">변경 시 다른 기기 로그인 해제.</div></form>')
+    return frame("새 비밀번호", "", inner)
 
 
 def scene_out():
-    inner = ('<div class="sent"><p>검토함과 저장한 회사는 계정에 남아 있습니다. 이 브라우저에는 회사 이름도 남기지 않았습니다 — 공용 PC 라면 여기서 끝입니다.</p>'
-             '<div class="acts"><a href="#" data-go="1">다시 로그인</a><a href="#">추천으로</a></div></div>')
-    return frame("로그아웃되었습니다", "다시 로그인하면 그대로 보입니다.", inner)
+    inner = ('<div class="sent"><p>검토함·저장한 회사는 계정에 보관됩니다.</p>'
+             '<div class="acts"><a href="#" data-go="1">로그인</a><a href="#">추천</a></div></div>')
+    return frame("로그아웃되었습니다", "", inner)
 
 
 def gate_auth(n):
-    return (f'<div class="gateline"><div><b>나머지 {n - 5}건은 로그인 후 공개</b><span class="dim" style="display:block;margin-top:4px">상위 5건은 로그인 없이 공개 · 회원가입은 이메일과 비밀번호, 1분 · 끝나면 이 페이지로 돌아옵니다</span></div>'
+    return (f'<div class="gateline"><div><b>나머지 {n - 5}건은 로그인 후 공개</b><span class="dim" style="display:block;margin-top:4px">상위 5건은 로그인 없이 공개</span></div>'
             f'<span class="sp"></span><span class="in"><a class="bt" href="#" data-go="1">로그인</a><a class="bt dark" href="#" data-go="2">회원가입</a></span></div>')
 
 
