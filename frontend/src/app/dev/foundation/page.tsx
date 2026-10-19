@@ -6,6 +6,7 @@ import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
 import { Sheet } from "./sheet";
 import { SiteFooter } from "@/components/SiteFooter";
+import { maskBizrno } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "foundation", robots: { index: false, follow: false } };
 
@@ -15,7 +16,7 @@ export default function FoundationPage() {
     <div className="rn bg-paper min-h-screen text-ink">
       <div className="mx-auto max-w-[1120px] px-5 pb-[120px]">
         <Nav user={{ email: "you@company.co.kr", savedCompanies: [{ bizrnoNorm: "1248177731", name: "한종산업개발 주식회사" }, { bizrnoNorm: "4128113667", name: "(유)금강환경" }], reviewedCount: 3 }} />
-        <PageHead title="한종산업개발 주식회사" small="124-XX-X731" aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
+        <PageHead title="한종산업개발 주식회사" small={maskBizrno("1248177731")} aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
           meta={["경상남도 창원시", "등록업종 15", "공급물품 없음", "기준일 2026-10-16"]} />
         <Panel className="mt-[22px]">
           <PanelHead title="검토할 공고 12건" small="적합 순" />

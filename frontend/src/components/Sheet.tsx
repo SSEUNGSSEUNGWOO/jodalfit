@@ -2,6 +2,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[28px_minmax(0,1fr)_84px_72px] gap-x-3 items-start max-sm:grid-cols-[minmax(0,1fr)_auto]";
@@ -20,7 +21,7 @@ export type SheetRowProps = {
   title: ReactNode;
   org: ReactNode;          // 둘째 줄 왼쪽
   why?: ReactNode;         // 둘째 줄 근거 칩(가장 강한 신호 1개)
-  dLeft: { days: number; month: number; day: number };
+  dLeft: { days: number; month: number; day: number } | null;
   price: string;           // won()
   reviewed?: boolean;      // 왼쪽 주황 괘선
   defaultOpen?: boolean;
@@ -32,7 +33,7 @@ export type SheetRowProps = {
 export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href }: SheetRowProps) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
-  const hot = dLeft.days <= 7;
+  const hot = !!dLeft && dLeft.days >= 0 && dLeft.days <= 7;
   const toggle = () => setOpen((v) => !v);
   return (
     <>
@@ -51,15 +52,23 @@ export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultO
         )}
         <span className="min-w-0">
           <span className="block text-[16px] font-semibold leading-[1.4] text-ink max-sm:text-[15px]">
-            {href ? <a href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</a> : title}
+            {href ? <Link href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</Link> : title}
           </span>
           <span className="mt-1 block truncate text-[13.5px] text-ink-sub max-sm:whitespace-normal max-sm:text-[13px]">
             {org}{why && <span className="text-ink-dim before:mx-1.5 before:text-[#c9c9c4] before:content-['·']">{why}</span>}
           </span>
         </span>
-        <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot ? "text-orange" : "text-ink")}>
-          D-{dLeft.days}<small className="ml-1.5 text-[12.5px] font-normal text-ink-mute">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
-        </span>
+        {dLeft == null ? (
+          <span className="num pt-0.5 text-right text-[15px] text-ink-mute">—</span>
+        ) : dLeft.days < 0 ? (
+          <span className="num pt-0.5 text-right text-[15px] text-ink-mute">
+            마감<small className="ml-1.5 text-[12.5px] font-normal">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
+          </span>
+        ) : (
+          <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot ? "text-orange" : "text-ink")}>
+            D-{dLeft.days}<small className="ml-1.5 text-[12.5px] font-normal text-ink-mute">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
+          </span>
+        )}
         <span className="num pt-0.5 text-right text-[15px] max-sm:hidden">{price}</span>
       </div>
       {children && (

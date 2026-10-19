@@ -66,17 +66,27 @@ test("won — 억·만 축약, 없으면 —", () => {
   assert.equal(won(2000000), "200만");
   assert.equal(won(0), "—");
   assert.equal(won(null), "—");
+  assert.equal(won(1), "—");
+  assert.equal(won(9999), "—");
 });
 
 test("wonFull — 전액 원", () => {
   assert.equal(wonFull(6824573000), "6,824,573,000원");
   assert.equal(wonFull(null), "—");
+  assert.equal(wonFull(1), "—");
 });
 
 test("dLeft — 오늘 기준 남은 일수와 날짜", () => {
   const today = new Date(2026, 9, 16);         // 2026-10-16
   assert.deepEqual(dLeft("2026-10-29", today), { days: 13, month: 10, day: 29 });
   assert.deepEqual(dLeft("2026-10-16T00:00:00+00:00", today), { days: 0, month: 10, day: 16 });
+});
+
+test("dLeft — 없거나 깨진 날짜는 null", () => {
+  const today = new Date(2026, 9, 16);
+  assert.equal(dLeft(null), null);
+  assert.equal(dLeft("", today), null);
+  assert.equal(dLeft("not-a-date", today), null);
 });
 
 test("ymd — 2026.10.16", () => {
@@ -109,6 +119,7 @@ Expected: `Cannot find module './format.ts'` 로 FAIL
 export function won(v: number | string | null | undefined): string {
   const n = typeof v === "string" ? Number(v) : v;
   if (!n) return "—";
+  if (n < 10_000) return "—";   // 나라장터 원천의 1원 등 placeholder 금액은 미표기(utils.ts formatKRW 와 같은 규칙)
   if (n >= 100_000_000) {
     const s = (n / 100_000_000).toLocaleString("ko-KR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     return `${s.replace(/\.0$/, "")}억`;
@@ -119,11 +130,13 @@ export function won(v: number | string | null | undefined): string {
 export function wonFull(v: number | string | null | undefined): string {
   const n = typeof v === "string" ? Number(v) : v;
   if (!n) return "—";
+  if (n < 10_000) return "—";   // 나라장터 원천의 1원 등 placeholder 금액은 미표기(utils.ts formatKRW 와 같은 규칙)
   return `${Math.trunc(n).toLocaleString("ko-KR")}원`;
 }
 
 /** 마감까지 남은 일수. 날짜 문자열 앞 10자리만 쓴다(시간대 무시 — 나라장터 마감은 날짜 단위로 본다). */
-export function dLeft(dateStr: string, today: Date = new Date()): { days: number; month: number; day: number } {
+export function dLeft(dateStr: string | null | undefined, today: Date = new Date()): { days: number; month: number; day: number } | null {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return null;
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
   const target = new Date(y, m - 1, d);
   const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -147,7 +160,7 @@ export function rgnBase(rgn: string | null | undefined): string {
 ```bash
 cd C:/Dev/personal/jodalfit/frontend && node --test src/lib/format.test.ts
 ```
-Expected: `# pass 5` `# fail 0`
+Expected: `# pass 6` `# fail 0`
 
 - [ ] **Step 5: 커밋**
 
@@ -587,6 +600,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/SiteFooter.tsx fr
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[28px_minmax(0,1fr)_84px_72px] gap-x-3 items-start max-sm:grid-cols-[minmax(0,1fr)_auto]";
@@ -605,7 +619,7 @@ export type SheetRowProps = {
   title: ReactNode;
   org: ReactNode;          // 둘째 줄 왼쪽
   why?: ReactNode;         // 둘째 줄 근거 칩(가장 강한 신호 1개)
-  dLeft: { days: number; month: number; day: number };
+  dLeft: { days: number; month: number; day: number } | null;
   price: string;           // won()
   reviewed?: boolean;      // 왼쪽 주황 괘선
   defaultOpen?: boolean;
@@ -617,7 +631,7 @@ export type SheetRowProps = {
 export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href }: SheetRowProps) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
-  const hot = dLeft.days <= 7;
+  const hot = !!dLeft && dLeft.days >= 0 && dLeft.days <= 7;
   const toggle = () => setOpen((v) => !v);
   return (
     <>
@@ -636,15 +650,23 @@ export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultO
         )}
         <span className="min-w-0">
           <span className="block text-[16px] font-semibold leading-[1.4] text-ink max-sm:text-[15px]">
-            {href ? <a href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</a> : title}
+            {href ? <Link href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</Link> : title}
           </span>
           <span className="mt-1 block truncate text-[13.5px] text-ink-sub max-sm:whitespace-normal max-sm:text-[13px]">
             {org}{why && <span className="text-ink-dim before:mx-1.5 before:text-[#c9c9c4] before:content-['·']">{why}</span>}
           </span>
         </span>
-        <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot ? "text-orange" : "text-ink")}>
-          D-{dLeft.days}<small className="ml-1.5 text-[12.5px] font-normal text-ink-mute">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
-        </span>
+        {dLeft == null ? (
+          <span className="num pt-0.5 text-right text-[15px] text-ink-mute">—</span>
+        ) : dLeft.days < 0 ? (
+          <span className="num pt-0.5 text-right text-[15px] text-ink-mute">
+            마감<small className="ml-1.5 text-[12.5px] font-normal">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
+          </span>
+        ) : (
+          <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot ? "text-orange" : "text-ink")}>
+            D-{dLeft.days}<small className="ml-1.5 text-[12.5px] font-normal text-ink-mute">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
+          </span>
+        )}
         <span className="num pt-0.5 text-right text-[15px] max-sm:hidden">{price}</span>
       </div>
       {children && (
@@ -758,6 +780,7 @@ import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
 import { Sheet } from "./sheet";
 import { SiteFooter } from "@/components/SiteFooter";
+import { maskBizrno } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "foundation", robots: { index: false, follow: false } };
 
@@ -767,7 +790,7 @@ export default function FoundationPage() {
     <div className="rn bg-paper min-h-screen text-ink">
       <div className="mx-auto max-w-[1120px] px-5 pb-[120px]">
         <Nav user={{ email: "you@company.co.kr", savedCompanies: [{ bizrnoNorm: "1248177731", name: "한종산업개발 주식회사" }, { bizrnoNorm: "4128113667", name: "(유)금강환경" }], reviewedCount: 3 }} />
-        <PageHead title="한종산업개발 주식회사" small="124-XX-X731" aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
+        <PageHead title="한종산업개발 주식회사" small={maskBizrno("1248177731")} aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
           meta={["경상남도 창원시", "등록업종 15", "공급물품 없음", "기준일 2026-10-16"]} />
         <Panel className="mt-[22px]">
           <PanelHead title="검토할 공고 12건" small="적합 순" />
