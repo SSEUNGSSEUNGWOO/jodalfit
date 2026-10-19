@@ -204,14 +204,16 @@ import { createServerClient } from "@supabase/ssr";
  * 서버 컴포넌트·라우트 핸들러용(anon 키 + 요청 쿠키). 사용자 세션으로 RLS 테이블을 읽고 쓴다.
  * 공개 데이터 SSR 은 기존 `lib/supabase-server.ts`(service_role) 그대로 — 둘을 섞지 않는다.
  * 서버 컴포넌트에서는 setAll 이 실패할 수 있다(읽기 전용 렌더) — proxy.ts 가 갱신을 맡으므로 삼킨다.
+ * 라우트 핸들러에서는 { strict: true } — 쿠키 쓰기 실패를 숨기지 않는다. 라우트 핸들러의 리다이렉트 응답에는 Cache-Control: no-store 를 직접 붙인다(Task 7).
  */
-export async function getServerSupabase() {
+export async function getServerSupabase({ strict = false }: { strict?: boolean } = {}) {
   const store = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() { return store.getAll(); },
       setAll(cookiesToSet) {
-        try { cookiesToSet.forEach(({ name, value, options }) => store.set(name, value, options)); } catch { /* 서버 컴포넌트 렌더 중 — proxy 가 갱신 */ }
+        try { cookiesToSet.forEach(({ name, value, options }) => store.set(name, value, options)); }
+        catch (e) { if (strict) throw e; /* 서버 컴포넌트 렌더 중 — proxy 가 갱신 */ }
       },
     },
   });
@@ -229,10 +231,11 @@ export async function proxy(request: NextRequest) {
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() { return request.cookies.getAll(); },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headers?: Record<string, string>) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
         response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        Object.entries(headers ?? {}).forEach(([k, v]) => response.headers.set(k, v));   // 세션 쿠키 실린 응답은 캐시 금지
       },
     },
   });
@@ -719,10 +722,12 @@ export async function GET(req: NextRequest) {
   const type = url.searchParams.get("type") as EmailOtpType | null;
   const next = type === "recovery" ? "/reset/new" : safeNext(url.searchParams.get("next"));
   if (!token_hash || !type) return NextResponse.redirect(new URL("/login?error=link", url.origin));
-  const supabase = await getServerSupabase();
+  const supabase = await getServerSupabase({ strict: true });
   const { error } = await supabase.auth.verifyOtp({ token_hash, type });
   if (error) return NextResponse.redirect(new URL("/login?error=link", url.origin));
-  return NextResponse.redirect(new URL(next, url.origin));
+  const res = NextResponse.redirect(new URL(next, url.origin));
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }
 ```
 ```ts
@@ -732,9 +737,11 @@ import { getServerSupabase } from "@/lib/supabase/server";
 
 /** 로그아웃 — 쿠키 세션 제거 후 홈. Nav 가 <a href="/logout"> 로 온다(프리페치 안 되게 Link 가 아님). */
 export async function GET(req: NextRequest) {
-  const supabase = await getServerSupabase();
+  const supabase = await getServerSupabase({ strict: true });
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/?logout=1", new URL(req.url).origin));
+  const res = NextResponse.redirect(new URL("/?logout=1", new URL(req.url).origin));
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }
 ```
   라우트 핸들러의 `setAll` 은 `cookies()` 에 쓰기가 가능하므로 세션 쿠키가 응답에 실린다.
