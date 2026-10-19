@@ -164,6 +164,8 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/format.ts frontend/src/l
 
 - [ ] **Step 1: `@theme` 에 새 토큰 추가** — `--shadow-xl: …;` 줄 바로 아래에 붙인다
 
+> 품질 검토 기록(2026-10-19): 컴파일된 CSS 에서 덮어쓰기 확인됨. 컷오버 전까지 옛 `Footer` 등은 먹 제목 + 네이비 본문이 섞여 보인다 — 의도된 과도기, 중간에 '고치지' 말 것. `.rn :focus-visible` 과 `.world-gc :focus-visible` 은 특이도가 같으니 두 범위를 중첩하지 않는다.
+
 > 주의: `--color-ink` 와 `--color-line` 은 옛 `@theme` 에 이미 있다(#17233a · #dde3ec). 같은 이름을 **아래에서 다시 선언해 덮어쓴다** — 옛 페이지의 `text-ink` 가 먹 #141414 로, `border-line` 이 #d8d6d0 로 바뀐다. 의도한 것이다(컷오버 때 전 페이지가 먹으로 간다). 옛 `--color-ink-2…7` 은 건드리지 않는다.
 
 ```css
@@ -576,6 +578,8 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/SiteFooter.tsx fr
 
 - [ ] **Step 1: 구현** — 값은 `gen_split.py::SPLIT_CSS` 의 `.th/.tr/.sub/.x` 와 `gen_results_final.py::CSS` 가독성 패스(제목 16 / 둘째 줄 13.5 / 행 패딩 16 / 마감·추정가 15)
 
+> Task 2 품질 검토 지적: `.x-wrap > * { overflow:hidden }` 이 펼침 안 버튼의 포커스 링(4px box-shadow)을 왼쪽 가장자리에서 자른다. 펼침 안쪽 `<div>` 에 `px-1 -mx-1 pb-1` 을 주어 링이 들어갈 여백을 만든다(아래 코드에 반영됨).
+
 ```tsx
 // frontend/src/components/Sheet.tsx
 "use client";
@@ -635,7 +639,7 @@ export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultO
       </div>
       {children && (
         <div className={cn("x-wrap pl-10 max-sm:pl-0", open && "border-b border-rule pb-6 pt-4")} data-open={open}>
-          <div>{children}</div>
+          <div className="-mx-1 px-1 pb-1">{children}</div>
         </div>
       )}
     </>
