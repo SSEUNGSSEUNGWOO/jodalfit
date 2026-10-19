@@ -113,7 +113,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/.env.local.example && git commit
 **Files:**
 - Create: `frontend/src/lib/safe-next.ts`, `frontend/src/lib/safe-next.test.ts`, `frontend/src/lib/terms.ts`
 
-- [ ] **Step 1: 테스트**
+- [x] **Step 1: 테스트**
 ```ts
 // frontend/src/lib/safe-next.test.ts
 import { test } from "node:test";
@@ -143,8 +143,8 @@ test("safeNext — 로그인·가입 페이지로 되돌아가지 않는다", ()
   assert.equal(safeNext("/auth/confirm?x=1"), "/recommendations");
 });
 ```
-- [ ] **Step 2: 실패 확인** — `cd C:/Dev/personal/jodalfit/frontend && node --test src/lib/safe-next.test.ts` → `Cannot find module`
-- [ ] **Step 3: 구현**
+- [x] **Step 2: 실패 확인** — `cd C:/Dev/personal/jodalfit/frontend && node --test src/lib/safe-next.test.ts` → `Cannot find module`
+- [x] **Step 3: 구현**
 ```ts
 // frontend/src/lib/safe-next.ts
 /** 로그인·가입·확인 뒤 돌아갈 곳. 상대 경로(`/` 하나로 시작)만 허용 — 오픈 리다이렉트 방지(renewal-00 §3.2). */
@@ -163,8 +163,8 @@ export function safeNext(raw: string | null | undefined, fallback = "/recommenda
 /** 이용약관 시행일. 내용이 바뀌면 올린다. user_consents.terms_version 에 남는다. lib/privacy.ts 의 PRIVACY_VERSION 과 같은 역할. */
 export const TERMS_VERSION = "2026-10-19";
 ```
-- [ ] **Step 4: 통과** — `node --test src/lib/safe-next.test.ts` → `# pass 3`
-- [ ] **Step 5: 커밋**
+- [x] **Step 4: 통과** — `node --test src/lib/safe-next.test.ts` → `# pass 3`
+- [x] **Step 5: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/lib/safe-next.ts frontend/src/lib/safe-next.test.ts frontend/src/lib/terms.ts && git commit -m "feat(renewal): safeNext(상대 경로만) + TERMS_VERSION"
 ```
@@ -176,7 +176,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/safe-next.ts frontend/sr
 **Files:**
 - Create: `frontend/src/lib/supabase/browser.ts`, `frontend/src/lib/supabase/server.ts`, `frontend/src/proxy.ts`, `frontend/src/lib/auth.ts`
 
-- [ ] **Step 1: browser**
+- [x] **Step 1: browser**
 ```ts
 // frontend/src/lib/supabase/browser.ts
 "use client";
@@ -193,7 +193,7 @@ export function getBrowserSupabase() {
   return client;
 }
 ```
-- [ ] **Step 2: server**
+- [x] **Step 2: server**
 ```ts
 // frontend/src/lib/supabase/server.ts
 import "server-only";
@@ -219,7 +219,7 @@ export async function getServerSupabase({ strict = false }: { strict?: boolean }
   });
 }
 ```
-- [ ] **Step 3: proxy**
+- [x] **Step 3: proxy**
 ```ts
 // frontend/src/proxy.ts
 import { NextResponse, type NextRequest } from "next/server";
@@ -247,7 +247,7 @@ export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|opengraph-image|sitemap.xml|robots.txt|api/|.*\\.(?:png|jpg|svg|webp)$).*)"],
 };
 ```
-- [ ] **Step 4: auth 헬퍼**
+- [x] **Step 4: auth 헬퍼**
 ```ts
 // frontend/src/lib/auth.ts
 import "server-only";
@@ -269,8 +269,8 @@ export async function getNavUser(): Promise<NavUser | null> {
   return u ? { email: u.email, savedCompanies: [], reviewedCount: 0 } : null;
 }
 ```
-- [ ] **Step 5: 타입·빌드** — `cd C:/Dev/personal/jodalfit/frontend && npx tsc --noEmit -p tsconfig.json; echo $?` → 0. `npm run build 2>&1 | tail -3` → 성공(proxy 가 `ƒ Proxy` 로 잡힌다).
-- [ ] **Step 6: 커밋**
+- [x] **Step 5: 타입·빌드** — `cd C:/Dev/personal/jodalfit/frontend && npx tsc --noEmit -p tsconfig.json; echo $?` → 0. `npm run build 2>&1 | tail -3` → 성공(proxy 가 `ƒ Proxy` 로 잡힌다).
+- [x] **Step 6: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/lib/supabase frontend/src/proxy.ts frontend/src/lib/auth.ts && git commit -m "feat(renewal): Supabase 브라우저·서버 클라이언트, proxy 세션 갱신, getSessionUser/getNavUser"
 ```
@@ -284,7 +284,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/supabase frontend/src/pr
 - Move: `frontend/src/app/dev/foundation/{page,sheet}.tsx` → `frontend/src/app/(renewal)/dev/foundation/`
 - Modify: `frontend/src/components/Nav.tsx`, `frontend/scripts/check_foundation.py`
 
-- [ ] **Step 1: 레이아웃**
+- [x] **Step 1: 레이아웃**
 ```tsx
 // frontend/src/app/(renewal)/layout.tsx
 import type { ReactNode } from "react";
@@ -306,8 +306,8 @@ export default async function RenewalLayout({ children }: { children: ReactNode 
   );
 }
 ```
-- [ ] **Step 2: `/dev/foundation` 이동** — `git mv frontend/src/app/dev frontend/src/app/\(renewal\)/dev`. `page.tsx` 에서 `Nav`·`SiteFooter` import 와 두 JSX, 바깥 두 `<div>` 래퍼를 제거하고 fragment(`<>…</>`)로 감싼다. `Nav` 의 가짜 `user` 는 없어진다(레이아웃이 실제 세션을 넣는다) — 로그인 전이면 "로그인" 링크가 보인다.
-- [ ] **Step 3: Nav 손질** — 전체 교체
+- [x] **Step 2: `/dev/foundation` 이동** — `git mv frontend/src/app/dev frontend/src/app/\(renewal\)/dev`. `page.tsx` 에서 `Nav`·`SiteFooter` import 와 두 JSX, 바깥 두 `<div>` 래퍼를 제거하고 fragment(`<>…</>`)로 감싼다. `Nav` 의 가짜 `user` 는 없어진다(레이아웃이 실제 세션을 넣는다) — 로그인 전이면 "로그인" 링크가 보인다.
+- [x] **Step 3: Nav 손질** — 전체 교체
 ```tsx
 // frontend/src/components/Nav.tsx
 "use client";
@@ -403,9 +403,9 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
 }
 ```
   (로그아웃은 `<a href>` — 라우트 핸들러가 쿠키를 지우고 `/` 로 보낸다. Next `Link` 프리페치가 로그아웃을 미리 실행하면 안 되므로 일부러 `<a>`.)
-- [ ] **Step 4: 검증 스크립트 갱신** — `frontend/scripts/check_foundation.py` 에서 `m = pg.evaluate("document.querySelectorAll('[role=menu] [role=menuitem]').length"); assert m == 5, m` → `m = pg.evaluate("document.querySelectorAll('[data-menu] a').length"); assert m == 5, m` 로, `assert pg.evaluate("!document.querySelector('[role=menu]')")` → `assert pg.evaluate("!document.querySelector('[data-menu]')")`. 그리고 이 페이지는 이제 **비로그인**으로 렌더되므로 메뉴 검사는 로그인 뒤 페이지(Task 10 `check_auth.py`)로 옮기고, 여기서는 `me` 조건을 `login: !!document.querySelector('a[href^="/login?next="]')` 로 바꾼다 — 메뉴 클릭·Escape·`m == 5` 세 줄과 390 의 `me` 를 삭제하고 `gateBtns == 2` 는 **nav 의 로그인 링크까지 3** 이 되므로 `a[href^="/login"], a[href^="/signup"]` 를 `.hairline a[href^="/login"], .hairline a[href^="/signup"]` 로 좁힌다. 01 계획 문서 Task 10 블록도 같은 내용으로.
-- [ ] **Step 5: 확인** — `npm run lint && npx tsc --noEmit -p tsconfig.json && npm run build 2>&1 | tail -3`; 개발 서버(`npm run dev -- --port 3001`) 띄우고 `FOUNDATION_URL=http://localhost:3001/dev/foundation uv run --no-sync python ../frontend/scripts/check_foundation.py` → ok.
-- [ ] **Step 6: 커밋**
+- [x] **Step 4: 검증 스크립트 갱신** — `frontend/scripts/check_foundation.py` 에서 `m = pg.evaluate("document.querySelectorAll('[role=menu] [role=menuitem]').length"); assert m == 5, m` → `m = pg.evaluate("document.querySelectorAll('[data-menu] a').length"); assert m == 5, m` 로, `assert pg.evaluate("!document.querySelector('[role=menu]')")` → `assert pg.evaluate("!document.querySelector('[data-menu]')")`. 그리고 이 페이지는 이제 **비로그인**으로 렌더되므로 메뉴 검사는 로그인 뒤 페이지(Task 10 `check_auth.py`)로 옮기고, 여기서는 `me` 조건을 `login: !!document.querySelector('a[href^="/login?next="]')` 로 바꾼다 — 메뉴 클릭·Escape·`m == 5` 세 줄과 390 의 `me` 를 삭제하고 `gateBtns == 2` 는 **nav 의 로그인 링크까지 3** 이 되므로 `a[href^="/login"], a[href^="/signup"]` 를 `.hairline a[href^="/login"], .hairline a[href^="/signup"]` 로 좁힌다. 01 계획 문서 Task 10 블록도 같은 내용으로.
+- [x] **Step 5: 확인** — `npm run lint && npx tsc --noEmit -p tsconfig.json && npm run build 2>&1 | tail -3`; 개발 서버(`npm run dev -- --port 3001`) 띄우고 `FOUNDATION_URL=http://localhost:3001/dev/foundation uv run --no-sync python ../frontend/scripts/check_foundation.py` → ok.
+- [x] **Step 6: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add -A frontend/src/app frontend/src/components/Nav.tsx frontend/scripts/check_foundation.py docs/superpowers/plans/2026-10-19-renewal-01-foundation.md && git commit -m "feat(renewal): (renewal) 레이아웃(세션 Nav), /dev/foundation 이동, Nav 로그인 링크에 쿼리·팝오버 role 제거·포커스 복귀"
 ```
