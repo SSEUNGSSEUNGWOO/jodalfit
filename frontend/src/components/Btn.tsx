@@ -17,7 +17,7 @@ type Common = { variant?: Variant; className?: string; children: ReactNode; on?:
 type AsLink = Common & { href: string } & Omit<ComponentProps<typeof Link>, "href" | "className" | "children">;
 type AsButton = Common & { href?: undefined } & Omit<ComponentProps<"button">, "className" | "children">;
 
-/** 링크면 <a>(Next Link), 아니면 <button>. shadcn Button 은 asChild 가 없어 링크에 못 쓴다. */
+/** 링크면 <a>(Next Link), 아니면 <button>. shadcn Button 은 asChild 가 없어 링크에 못 쓴다. onClick 을 넘기는 쪽은 Client Component 여야 한다(서버 컴포넌트에서 핸들러를 넘기면 Next 가 거부). */
 export function Btn(props: AsLink | AsButton) {
   const { variant = "line", className, children, on, ...rest } = props;
   const cls = cn(base, variants[variant], className);
