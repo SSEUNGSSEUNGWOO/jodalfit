@@ -164,6 +164,8 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/format.ts frontend/src/l
 
 - [ ] **Step 1: `@theme` 에 새 토큰 추가** — `--shadow-xl: …;` 줄 바로 아래에 붙인다
 
+> 주의: `--color-ink` 와 `--color-line` 은 옛 `@theme` 에 이미 있다(#17233a · #dde3ec). 같은 이름을 **아래에서 다시 선언해 덮어쓴다** — 옛 페이지의 `text-ink` 가 먹 #141414 로, `border-line` 이 #d8d6d0 로 바뀐다. 의도한 것이다(컷오버 때 전 페이지가 먹으로 간다). 옛 `--color-ink-2…7` 은 건드리지 않는다.
+
 ```css
   /* ── 2026-10 리뉴얼 토큰 (docs/design/README.md · renewal-00-master §3.1). 옛 gc-* 는 09 컷오버에서 삭제 ── */
   --color-paper:   #faf9f7;   /* 바닥 */
