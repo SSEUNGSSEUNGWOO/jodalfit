@@ -19,8 +19,10 @@ def main():
         pg = b.new_page(viewport={"width": 1280, "height": 900}); pg.goto(URL); pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(500)
         txt = pg.evaluate("document.body.innerText"); bad = [w for w in BANNED if w in txt]; assert not bad, f"금지어 {bad}"
         s = pg.evaluate("""() => { const cs = e => getComputedStyle(e);
+            // 주황 면 금지 — 실제 요소의 배경만 본다. ::before/::after 는 못 본다(검토 행 왼쪽 2px 괘선 before:bg-orange 는 '선'이라 허용 대상)
             const orangeFaces = [...document.querySelectorAll('body *')].filter(e => cs(e).backgroundColor === 'rgb(249, 115, 22)' && !e.closest('svg')).length;
-            const injuk = [...document.querySelectorAll('body *')].some(e => [cs(e).color, cs(e).backgroundColor, cs(e).borderColor].includes('rgb(232, 67, 27)'));
+            // 인주 #e8431b 금지 — border 는 shorthand 가 아니라 네 변 longhand 로 본다(한 변만 색이 있으면 shorthand 는 다중값이라 못 잡는다)
+            const injuk = [...document.querySelectorAll('body *')].some(e => { const c = cs(e); return [c.color, c.backgroundColor, c.borderTopColor, c.borderRightColor, c.borderBottomColor, c.borderLeftColor].includes('rgb(232, 67, 27)'); });
             const h1 = document.querySelector('h1'); const head = h1.closest('.rule-ink');
             return { bg: cs(document.querySelector('.rn')).backgroundColor, orangeFaces, injuk,
               rule: cs(head).borderBottomColor, h1: cs(h1).fontSize, panel: cs(document.querySelector('section')).backgroundColor, radius: cs(document.querySelector('section')).borderRadius,
