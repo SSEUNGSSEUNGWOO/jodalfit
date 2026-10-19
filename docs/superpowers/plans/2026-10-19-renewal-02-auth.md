@@ -417,7 +417,7 @@ cd C:/Dev/personal/jodalfit && git add -A frontend/src/app frontend/src/componen
 **Files:**
 - Create: `frontend/src/components/Field.tsx`, `frontend/src/components/Consent.tsx`, `frontend/src/components/Narrow.tsx`
 
-- [ ] **Step 1: Field**
+- [x] **Step 1: Field**
 ```tsx
 // frontend/src/components/Field.tsx
 "use client";
@@ -456,7 +456,7 @@ export function PasswordField({ label = "비밀번호", min = 8, showMinHint = t
   );
 }
 ```
-- [ ] **Step 2: Consent**
+- [x] **Step 2: Consent**
 ```tsx
 // frontend/src/components/Consent.tsx
 "use client";
@@ -489,7 +489,7 @@ export function Consent({ value, onChange, idPrefix = "consent" }: { value: Cons
   );
 }
 ```
-- [ ] **Step 3: Narrow**
+- [x] **Step 3: Narrow**
 ```tsx
 // frontend/src/components/Narrow.tsx
 import type { ReactNode } from "react";
@@ -505,8 +505,8 @@ export function Narrow({ title, children }: { title: string; children: ReactNode
   );
 }
 ```
-- [ ] **Step 4: 타입** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0
-- [ ] **Step 5: 커밋**
+- [x] **Step 4: 타입** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0
+- [x] **Step 5: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/components/Field.tsx frontend/src/components/Consent.tsx frontend/src/components/Narrow.tsx && git commit -m "feat(renewal): 폼 부품 TextField·PasswordField·Consent·Narrow"
 ```
