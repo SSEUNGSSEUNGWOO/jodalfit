@@ -21,7 +21,7 @@ export function SignupForm({ next }: { next: string }) {
     const redirectTo = `${location.origin}/auth/confirm?next=${encodeURIComponent(next)}`;
     const { error } = await getBrowserSupabase().auth.signUp({
       email, password: pw,
-      options: { emailRedirectTo: redirectTo, data: { terms_version: TERMS_VERSION, privacy_version: PRIVACY_VERSION, marketing_opt_in: consent.marketing, consented_at: new Date().toISOString() } },
+      options: { emailRedirectTo: redirectTo, data: { terms_version: TERMS_VERSION, privacy_version: PRIVACY_VERSION, marketing_opt_in: consent.marketing } },
     });
     // 계정 존재 여부를 알리지 않는다(열거 방지) — Confirm email ON 이면 기존 계정에도 성공처럼 돌아오므로 같은 안내로 보낸다.
     if (error) { setErr("가입하지 못했습니다. 잠시 후 다시"); setBusy(false); return; }

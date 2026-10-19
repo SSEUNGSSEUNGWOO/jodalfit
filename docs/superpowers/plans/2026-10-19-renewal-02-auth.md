@@ -51,7 +51,7 @@
 **Files:** 없음. 대시보드 작업. 완료 전에는 Task 9(스모크)가 통과할 수 없다.
 
 - [ ] **Step 1: Supabase → Authentication → Providers → Email**
-  - Enable Email provider: ON · Confirm email: **ON** · Secure email change: ON · Minimum password length: **8** · Password requirements: No required characters(길이만)
+  - Enable Email provider: ON · Confirm email: **ON** · Secure email change: ON · Secure password change: **ON**(오래된 세션이 기존 비밀번호 없이 변경하는 것을 막는다 — recovery 링크 로그인은 최근 인증으로 인정) · Minimum password length: **8** · Password requirements: No required characters(길이만)
 - [ ] **Step 2: Authentication → Settings(URL Configuration)**
   - Site URL: `https://jodalfit.co.kr`
   - Redirect URLs 추가: `http://localhost:3000/**`, `http://localhost:3001/**`, `https://*.vercel.app/**`, `https://jodalfit.co.kr/**`
@@ -225,9 +225,17 @@ export async function getServerSupabase({ strict = false }: { strict?: boolean }
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+let warned = false;
+
 /** 매 요청 세션 토큰 갱신(만료된 access token 을 refresh 해 쿠키에 다시 쓴다). 보호 경로 리다이렉트는 하지 않는다 — 비로그인 /saved 는 안내 판(시안). */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // 키 미설정이면 세션 갱신 건너뜀 — 02 Task 2 전 로컬. 운영에서는 조용히 비로그인으로 넘어가지 않는다.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (process.env.NODE_ENV === "production") throw new Error("NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정");
+    if (!warned) { warned = true; console.warn("[proxy] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정 — 세션 갱신 건너뜀"); }
+    return response;
+  }
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() { return request.cookies.getAll(); },
@@ -251,17 +259,26 @@ export const config = {
 ```ts
 // frontend/src/lib/auth.ts
 import "server-only";
+import { cache } from "react";
 import type { NavUser } from "@/components/Nav";
 import { getServerSupabase } from "@/lib/supabase/server";
 
 export type SessionUser = { id: string; email: string };
 
-/** 서버에서 현재 사용자. getUser 는 토큰을 서버에서 검증한다(getSession 은 쿠키를 믿는다 — 쓰지 않는다). */
-export async function getSessionUser(): Promise<SessionUser | null> {
+let warned = false;
+
+/** 서버에서 현재 사용자. getUser 는 토큰을 서버에서 검증한다(getSession 은 쿠키를 믿는다 — 쓰지 않는다). react cache 로 요청당 1번만 호출한다. */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
+  // 키 미설정이면 비로그인으로 — 02 Task 2 전 로컬. 운영에서는 조용히 비로그인으로 넘어가지 않는다.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (process.env.NODE_ENV === "production") throw new Error("NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정");
+    if (!warned) { warned = true; console.warn("[auth] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정 — 비로그인으로 동작"); }
+    return null;
+  }
   const supabase = await getServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   return user?.email ? { id: user.id, email: user.email } : null;
-}
+});
 
 /** Nav 가 받는 모양. 저장한 회사·검토 건수는 03 에서 채운다. */
 export async function getNavUser(): Promise<NavUser | null> {
@@ -634,8 +651,9 @@ export function SignupForm({ next }: { next: string }) {
     const redirectTo = `${location.origin}/auth/confirm?next=${encodeURIComponent(next)}`;
     const { error } = await getBrowserSupabase().auth.signUp({
       email, password: pw,
-      options: { emailRedirectTo: redirectTo, data: { terms_version: TERMS_VERSION, privacy_version: PRIVACY_VERSION, marketing_opt_in: consent.marketing, consented_at: new Date().toISOString() } },
+      options: { emailRedirectTo: redirectTo, data: { terms_version: TERMS_VERSION, privacy_version: PRIVACY_VERSION, marketing_opt_in: consent.marketing } },
     });
+    // consented_at 은 클라이언트가 보내지 않는다 — 0052 트리거가 서버 시각으로 찍는다(서버 시각이 기록의 진실값).
     // 계정 존재 여부를 알리지 않는다(열거 방지) — Confirm email ON 이면 기존 계정에도 성공처럼 돌아오므로 같은 안내로 보낸다.
     if (error) { setErr("가입하지 못했습니다. 잠시 후 다시"); setBusy(false); return; }
     router.push(`/signup/sent?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
@@ -745,6 +763,7 @@ let warned = false;
 
 /** 로그아웃 — 쿠키 세션 제거 후 홈. Nav 가 <a href="/logout"> 로 온다(프리페치 안 되게 Link 가 아님). */
 export async function GET(req: NextRequest) {
+  if (req.headers.get("sec-fetch-site") && req.headers.get("sec-fetch-site") !== "same-origin") return NextResponse.redirect(new URL("/", new URL(req.url).origin));
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = await getServerSupabase({ strict: true });
     await supabase.auth.signOut();
@@ -869,7 +888,8 @@ cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/login" "front
 -- 0052 user_consents — 가입 때 받은 동의 기록 (이용약관·개인정보 필수, 알림 메일 선택)
 --
 -- 가입 폼은 동의를 auth.signUp 의 user_metadata 로 보낸다(확인 전엔 세션이 없어 RLS 테이블에 직접 못 쓴다).
--- auth.users 에 행이 생길 때 트리거가 metadata 를 이 표로 옮긴다. 이후 metadata 가 바뀌어도 이 표는 그대로 —
+-- auth.users 에 행이 생길 때 트리거가 metadata 를 이 표로 옮긴다. consented_at 은 metadata 를 신뢰하지 않고
+-- 트리거 실행 시각(서버 시각)을 찍는다 — 서버 시각이 기록의 진실값. 이후 metadata 가 바뀌어도 이 표는 그대로 —
 -- "가입 당시 무엇에 동의했나"가 기록의 뜻이다. 알림 수신 변경은 나중 설정 페이지가 update 한다(별도 정책).
 -- Dashboard SQL Editor 에서 실행 (CLI 아님).
 -- ====================================================================
@@ -886,6 +906,8 @@ create table if not exists public.user_consents (
 comment on table public.user_consents is '가입 시 동의 기록. terms_version=lib/terms.ts TERMS_VERSION, privacy_version=lib/privacy.ts PRIVACY_VERSION.';
 
 alter table public.user_consents enable row level security;
+
+grant select, update (marketing_opt_in) on public.user_consents to authenticated;
 
 drop policy if exists "own consent read" on public.user_consents;
 create policy "own consent read" on public.user_consents
@@ -908,7 +930,7 @@ begin
     coalesce(new.raw_user_meta_data->>'terms_version', ''),
     coalesce(new.raw_user_meta_data->>'privacy_version', ''),
     coalesce(nullif(new.raw_user_meta_data->>'marketing_opt_in', '') ~* '^(true|t|1)$', false),
-    coalesce((new.raw_user_meta_data->>'consented_at')::timestamptz, now())
+    now()
   )
   on conflict (user_id) do nothing;
   return new;
@@ -924,6 +946,7 @@ create trigger on_auth_user_created_consent
 create or replace function public.lock_consent_history()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   if new.user_id <> old.user_id
@@ -947,7 +970,7 @@ create trigger trg_user_consents_lock_history
 select tgname from pg_trigger where tgrelid = 'auth.users'::regclass and tgname = 'on_auth_user_created_consent';
 select count(*) from public.user_consents;
 ```
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add supabase/migrations/0052_user_consents.sql && git commit -m "feat(db): 0052 user_consents + auth.users 트리거"
 ```
@@ -962,12 +985,13 @@ cd C:/Dev/personal/jodalfit && git add supabase/migrations/0052_user_consents.sq
 - [ ] **Step 1: 스크립트** — service_role 로 사용자 생성 → `admin.generateLink` 로 `hashed_token` 을 얻어 우리 `/auth/confirm` 을 직접 친다. 실제 메일은 안 보낸다.
 ```js
 // frontend/scripts/auth_smoke.mjs
-// 실행: cd frontend && node --env-file=.env.local scripts/auth_smoke.mjs   (BASE 는 AUTH_BASE, 기본 http://localhost:3000)
+// 실행: cd frontend && node --env-file=.env.local scripts/auth_smoke.mjs   (BASE 는 AUTH_URL, 기본 http://localhost:3000)
 import { createClient } from "@supabase/supabase-js";
 
-const BASE = process.env.AUTH_BASE ?? "http://localhost:3000";
+const BASE = process.env.AUTH_URL ?? "http://localhost:3000";
 const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 필요(.env.local)");
+if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY 필요(.env.local)");
 const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 const email = `smoke+${Date.now()}@jodalfit.co.kr`, password = "smoke-pass-12345";
 const meta = { terms_version: "2026-10-19", privacy_version: "2026-10-19", marketing_opt_in: true, consented_at: new Date().toISOString() };
@@ -994,24 +1018,32 @@ try {
   // 3) 동의 기록 — 트리거
   const { data: consent } = await admin.from("user_consents").select("*").eq("user_id", userId).maybeSingle();
   if (!consent || consent.terms_version !== meta.terms_version || consent.marketing_opt_in !== true) throw new Error(`user_consents 불일치: ${JSON.stringify(consent)}`);
+  // 3b) authenticated RLS — 본인 동의 읽기는 되고, 잠긴 컬럼 수정은 막힌다
+  const anon = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  const { error: eIn } = await anon.auth.signInWithPassword({ email, password });
+  if (eIn) throw eIn;
+  const { data: mine, error: eSel } = await anon.from("user_consents").select("marketing_opt_in").eq("user_id", userId).maybeSingle();
+  if (eSel || !mine) throw new Error(`RLS 자기 동의 읽기 실패: ${eSel?.message}`);
+  const { error: eUp } = await anon.from("user_consents").update({ terms_version: "hack" }).eq("user_id", userId);
+  if (!eUp) throw new Error("terms_version 변경이 막히지 않음");
   // 4) 재설정 링크 → /reset/new 로 302 + 쿠키
   const { data: l2, error: e3 } = await admin.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo: `${BASE}/auth/confirm?next=%2Freset%2Fnew` } });
   if (e3) throw e3;
   const r2 = await hit(`/auth/confirm?next=%2Freset%2Fnew&token_hash=${l2.properties.hashed_token}&type=recovery`);
   if (!r2.location?.endsWith("/reset/new") || !/sb-.*-auth-token/.test(r2.cookie)) throw new Error(`confirm(recovery) ${r2.status} ${r2.location}`);
-  // 5) 밖으로 나가는 next 는 기본값으로
+  // 5) 가짜 토큰은 거부 (safeNext 자체는 lib/safe-next.test.ts 가 검증)
   const r3 = await hit(`/auth/confirm?next=https%3A%2F%2Fevil.example&token_hash=bogus&type=signup`);
   if (!r3.location?.includes("/login?error=link")) throw new Error(`bogus token: ${r3.location}`);
   // 6) 로그아웃 라우트
   const r4 = await hit("/logout");
   if (!(r4.status >= 300 && r4.status < 400) || !r4.location?.includes("/?logout=1")) throw new Error(`logout ${r4.status} ${r4.location}`);
-  console.log("ok auth smoke: signup confirm → next + cookie · reuse blocked · consents row · recovery → /reset/new · bogus next blocked · logout");
+  console.log("ok auth smoke: signup confirm → next + cookie · reuse blocked · consents row · recovery → /reset/new · bogus next blocked · logout · RLS own read · immutable");
 } finally {
   if (userId) await admin.auth.admin.deleteUser(userId);
 }
 ```
-- [ ] **Step 2: 실행** — 개발 서버 3001: `cd C:/Dev/personal/jodalfit/frontend && AUTH_BASE=http://localhost:3001 node --env-file=.env.local scripts/auth_smoke.mjs` → `ok auth smoke: …`. (`.env.local` 에 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY` 가 이미 있다.) 실패 시 메시지가 어느 단계인지 말해 준다 — 1·4 가 실패하면 Task 1 Step 1~2(Confirm email, Redirect URL) 또는 Task 8 미적용.
-- [ ] **Step 3: 커밋**
+- [ ] **Step 2: 실행** — 개발 서버 3001: `cd C:/Dev/personal/jodalfit/frontend && AUTH_URL=http://localhost:3001 node --env-file=.env.local scripts/auth_smoke.mjs` → `ok auth smoke: …`. (`.env.local` 에 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`·`NEXT_PUBLIC_SUPABASE_ANON_KEY` 가 이미 있다.) 실패 시 메시지가 어느 단계인지 말해 준다 — 1·4 가 실패하면 Task 1 Step 1~2(Confirm email, Redirect URL) 또는 Task 8 미적용.
+- [x] **Step 3: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/scripts/auth_smoke.mjs && git commit -m "test(renewal): auth 스모크 — generateLink 로 확인·재설정 링크 왕복, 동의 트리거, 로그아웃"
 ```
@@ -1183,9 +1215,9 @@ def main():
 if __name__ == "__main__":
     sys.exit(main())
 ```
-- [ ] **Step 2: 실행** — `cd C:/Dev/personal/jodalfit/backend && AUTH_URL=http://localhost:3001 uv run --no-sync python ../frontend/scripts/check_auth.py` → ok. 실패가 컴포넌트 결함이면 스크립트를 느슨하게 하지 말고 고친다.
+- [x] **Step 2: 실행** — `cd C:/Dev/personal/jodalfit/backend && AUTH_URL=http://localhost:3001 uv run --no-sync python ../frontend/scripts/check_auth.py` → ok. 실패가 컴포넌트 결함이면 스크립트를 느슨하게 하지 말고 고친다.
 - [ ] **Step 3: 수동 완주(승우님 또는 실행자, 실제 메일)** — 프리뷰 또는 로컬에서: `/signup` 으로 실제 이메일 가입 → 받은 메일의 "이메일 확인" → `/dev/foundation` 등 next 로 돌아오고 nav 에 `you@…` → 메뉴 → 로그아웃 → `/login` 으로 다시 로그인 → `/reset` 으로 재설정 메일 → 링크 → `/reset/new` 에서 변경 → 새 비밀번호로 로그인. Resend 대시보드에서 메일 2통 발송 기록 확인. 결과를 README 기록에 한 줄로 남긴다(날짜·메일 도착 시간).
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_auth.py && git commit -m "test(renewal): 인증 화면 Playwright 검증"
 ```
@@ -1197,14 +1229,15 @@ cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_auth.py && git com
 **Files:**
 - Modify: `docs/design/README.md`
 
-- [ ] **Step 1: README 끝에 추가**
+- [x] **Step 1: README 끝에 추가**
 ```markdown
 ## 구현 — 02 auth (2026-10-xx, 브랜치 `renewal`)
 Supabase Auth(이메일+비밀번호, Confirm email, OTP 60분) + Resend SMTP(`noreply@jodalfit.co.kr`). `@supabase/ssr` 쿠키 세션(`lib/supabase/{browser,server}.ts`, `src/proxy.ts`), `(renewal)` 레이아웃이 세션을 읽어 `Nav` 에 넣는다. 페이지 `/login` `/signup` `/signup/sent` `/reset` `/reset/new` `/terms`, 라우트 `/auth/confirm`(token_hash → 세션 → safeNext) `/logout`. 동의는 가입 metadata → 트리거 → `user_consents`(0052). 개인정보처리방침에 계정 항목·Resend 위탁 추가(버전 2026-10-19), 이용약관 초안(승우님 검토 후 시행일 확정).
 검증: `scripts/auth_smoke.mjs`(generateLink 로 메일 없이 왕복) · `scripts/check_auth.py` · 실제 메일 완주 1회(날짜·소요).
 남은 것: 설정 페이지(`/settings` 비밀번호 변경·알림 수신·탈퇴)는 03 또는 09 에서. `Nav` 로그인 링크 쿼리·팝오버 role 정리는 이 계획에서 반영.
+최종 검토 반영: consented_at 서버 시각, authenticated 에 select·update(marketing_opt_in) grant, getSessionUser cache(), 운영에서 키 미설정이면 throw, GET /logout same-origin 확인. Supabase 설정에 Secure password change ON 추가.
 ```
-- [ ] **Step 2: 푸시**
+- [x] **Step 2: 푸시**
 ```bash
 cd C:/Dev/personal/jodalfit && git add docs/design/README.md && git commit -m "docs(design): 구현 02 auth 기록" && git push origin renewal
 ```

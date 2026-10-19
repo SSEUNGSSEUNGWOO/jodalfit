@@ -9,6 +9,7 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   // 키 미설정이면 세션 갱신 건너뜀 — 02 Task 2 전 로컬
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (process.env.NODE_ENV === "production") throw new Error("NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정");
     if (!warned) { warned = true; console.warn("[proxy] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정 — 세션 갱신 건너뜀"); }
     return response;
   }

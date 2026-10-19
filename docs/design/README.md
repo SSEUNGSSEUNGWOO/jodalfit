@@ -245,3 +245,4 @@ Supabase Auth(이메일+비밀번호, Confirm email, OTP 60분) + Resend SMTP(`n
 검토에서 고친 것: 가입 오류 문구 단일화(계정 존재 비노출) · 만료 안내의 "다시 가입" 링크 · 재발송 쿨다운 재장전 · 키 미설정 가드에 경고 · 0052 동의 기록 불변 트리거.
 검증: `scripts/check_auth.py` 통과(로그인·가입·보냄·재설정·재설정 가드·약관·390). `scripts/auth_smoke.mjs`(generateLink 왕복)와 실제 메일 완주는 **Task 1(Supabase Auth·Resend·템플릿)·Task 2(공개 키)·Task 8 Step 2(0052 적용)** 뒤에.
 남은 것: 설정 페이지(`/settings` 비밀번호 변경·알림 수신·탈퇴)는 03 또는 09.
+최종 검토 반영: consented_at 서버 시각, authenticated 에 select·update(marketing_opt_in) grant, getSessionUser cache(), 운영에서 키 미설정이면 throw, GET /logout same-origin 확인. Supabase 설정에 Secure password change ON 추가.
