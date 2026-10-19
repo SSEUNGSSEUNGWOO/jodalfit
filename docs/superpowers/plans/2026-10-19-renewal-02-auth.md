@@ -887,10 +887,12 @@ comment on table public.user_consents is '가입 시 동의 기록. terms_versio
 
 alter table public.user_consents enable row level security;
 
+drop policy if exists "own consent read" on public.user_consents;
 create policy "own consent read" on public.user_consents
   for select using (auth.uid() = user_id);
 
-create policy "own marketing update" on public.user_consents
+drop policy if exists "own marketing_opt_in update" on public.user_consents;
+create policy "own marketing_opt_in update" on public.user_consents
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create or replace function public.handle_new_user_consent()
@@ -905,7 +907,7 @@ begin
     new.id,
     coalesce(new.raw_user_meta_data->>'terms_version', ''),
     coalesce(new.raw_user_meta_data->>'privacy_version', ''),
-    coalesce((new.raw_user_meta_data->>'marketing_opt_in')::boolean, false),
+    coalesce(nullif(new.raw_user_meta_data->>'marketing_opt_in', '') ~* '^(true|t|1)$', false),
     coalesce((new.raw_user_meta_data->>'consented_at')::timestamptz, now())
   )
   on conflict (user_id) do nothing;
@@ -917,6 +919,28 @@ drop trigger if exists on_auth_user_created_consent on auth.users;
 create trigger on_auth_user_created_consent
   after insert on auth.users
   for each row execute function public.handle_new_user_consent();
+
+-- 동의 기록은 불변 — 설정 페이지가 바꿀 수 있는 것은 marketing_opt_in 뿐. updated_at 은 여기서 찍는다(0001 의 set_updated_at 관례).
+create or replace function public.lock_consent_history()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.user_id <> old.user_id
+     or new.terms_version <> old.terms_version
+     or new.privacy_version <> old.privacy_version
+     or new.consented_at <> old.consented_at then
+    raise exception 'user_consents: user_id/terms_version/privacy_version/consented_at are immutable';
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_user_consents_lock_history on public.user_consents;
+create trigger trg_user_consents_lock_history
+  before update on public.user_consents
+  for each row execute function public.lock_consent_history();
 ```
 - [ ] **Step 2: 적용** — Supabase Dashboard → SQL Editor 에 붙여 실행. 확인:
 ```sql
