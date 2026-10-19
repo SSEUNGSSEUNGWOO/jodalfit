@@ -864,12 +864,14 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/app/dev && git commit -m "fe
 # frontend/scripts/check_foundation.py
 """/dev/foundation 검증 — 금지어 0 · 인주 0 · 주황 면 0(로고 타일 제외) · 핵심 요소 · 펼침 · 메뉴 · 390.
 실행: cd backend && uv run --no-sync python ../frontend/scripts/check_foundation.py  (frontend 에서 npm run dev 가 떠 있어야 한다)
+주소: 환경변수 FOUNDATION_URL (기본 http://localhost:3000/dev/foundation)
 """
+import os
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-URL = "http://localhost:3000/dev/foundation"
+URL = os.environ.get("FOUNDATION_URL", "http://localhost:3000/dev/foundation")
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요", "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "아침 7시"]
 OUT = Path(__file__).resolve().parent
 
@@ -885,7 +887,7 @@ def main():
             const h1 = document.querySelector('h1'); const head = h1.closest('.rule-ink');
             return { bg: cs(document.querySelector('.rn')).backgroundColor, orangeFaces, injuk,
               rule: cs(head).borderBottomColor, h1: cs(h1).fontSize, panel: cs(document.querySelector('section')).backgroundColor, radius: cs(document.querySelector('section')).borderRadius,
-              rows: document.querySelectorAll('button[aria-expanded]').length, open: document.querySelectorAll('.x-wrap[data-open=true]').length,
+              rows: document.querySelectorAll('button.num[aria-expanded]').length, open: document.querySelectorAll('.x-wrap[data-open=true]').length,
               gateBtns: document.querySelectorAll('a[href^="/login"], a[href^="/signup"]').length, fade: document.querySelectorAll('[inert] > [data-sheet-row]').length,
               me: !!document.querySelector('button[aria-haspopup=menu]') } }""")
         assert s["bg"] == "rgb(250, 249, 247)" and s["orangeFaces"] == 0 and not s["injuk"], s
@@ -894,7 +896,7 @@ def main():
         pg.click("button[aria-haspopup=menu]"); pg.wait_for_timeout(150)
         m = pg.evaluate("document.querySelectorAll('[role=menu] [role=menuitem]').length"); assert m == 5, m
         pg.keyboard.press("Escape"); assert pg.evaluate("!document.querySelector('[role=menu]')")
-        pg.locator("button[aria-expanded]").first.click(); pg.wait_for_timeout(500)   # 1행 접힘
+        pg.locator("button.num[aria-expanded]").first.click(); pg.wait_for_timeout(500)   # 1행 접힘
         assert pg.evaluate("document.querySelectorAll('.x-wrap[data-open=true]').length") == 0
         pg.screenshot(path=str(OUT / "_shot_foundation.png"), full_page=True)
         pg.set_viewport_size({"width": 390, "height": 844}); pg.reload(); pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(300)
