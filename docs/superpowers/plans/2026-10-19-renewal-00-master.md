@@ -47,6 +47,7 @@
 
 ### 3.2 인증
 - Supabase Auth, **이메일 + 비밀번호(8자 이상, 조합 규칙 없음)**. 가입 시 확인 메일 필수(Confirm email ON), 링크 유효 60분·1회. 재설정은 recovery 메일.
+- `next` 되돌아가기 파라미터(Gate·Nav 가 붙인다)는 **상대 경로(`/`로 시작, `//`·`http` 금지)만 허용**하고 아니면 `/recommendations` 로 — 오픈 리다이렉트 방지. 검증 함수 `lib/safe-next.ts` 하나에 두고 로그인·회원가입·확인 콜백이 전부 그것만 쓴다.
 - 세션은 `@supabase/ssr` 쿠키. `src/proxy.ts` 가 매 요청 세션을 갱신(Next 16: `middleware` 아님). 보호 경로는 `/saved` 하나(비로그인이면 안내 판, 리다이렉트 아님 — 시안 그대로).
 - 동의: 이용약관(필수)·개인정보(필수)·알림 메일(선택) → `user_consents(user_id, terms_version, privacy_version, marketing_opt_in, consented_at)`. 버전은 `lib/privacy.ts::PRIVACY_VERSION` 와 새로 두는 `TERMS_VERSION`.
 - 메일 발신 `noreply@jodalfit.co.kr`(Resend, SPF/DKIM). 제목 "조달핏 이메일 확인 (60분 유효)" / "조달핏 비밀번호 재설정 (60분 유효)". 본문은 시안 `gen_login.py::scene_mail` 문구.
