@@ -235,3 +235,7 @@ notice-rail(10-15 선택안)의 구성·본문 블록은 `gen_notice.l3` 그대�
 ## 페이지 인벤토리 상태 (2026-10-17)
 새로 그리는 5 + 추가 1 전부 최종 시안 있음: 입구 `entry-simple` · 결과 `results-final` · 공고 상세 `notice-final` · 회사 `company-final` · 로그인·회원가입 `login-final` · 검토함 `saved-final` · 개선 기록 `changelog-final`. 로고 `brand/`. 인쇄 `report.html`.
 구현 전 일괄 반영할 것: ① nav "이메일 구독" → "로그인"/로그인됨(전 시안) ② 게이트 "이메일 등록" 한 칸 → 로그인/회원가입 두 버튼(results·company) ③ 사업자번호 마스킹 `124-XX-X731`(results·split) ④ 문구 미사여구 제거 기준(로그인 시안 기준)을 results·company 게이트·분석 요청 문구에도 ⑤ 결과·회사 머리에 ☆ 회사 저장.
+
+## 구현 — 01 foundation (2026-10-19, 브랜치 `renewal`)
+토큰(`globals.css` `--color-paper … --color-orange`, `--ease-sheet`)과 공용 부품(`Logo` `Btn` `Nav` `SiteFooter` `PageHead` `Panel/PanelHead` `Sheet/SheetRow/SheetExpand/SheetFade` `Gate`), 포맷 유틸(`lib/format.ts`, `node --test`)을 넣었다. 전시 `/dev/foundation`(noindex) + `frontend/scripts/check_foundation.py`(주소는 `FOUNDATION_URL`, 3000 이 다른 프로젝트에 잡혀 있으면 3001). 옛 `gc-*` 토큰·`Header`·`Footer`·`Brand`는 09 컷오버에서 삭제. 운영(main)은 아직 에메랄드.
+검토에서 고친 것: PageHead 의 aside 를 h1 밖으로(제목 접근성) · Sheet 흐림 묶음을 `inert` 로(키보드로 게이트 우회되던 것) · 펼침 토글을 번호 칸의 실제 버튼으로(행 role=button 안의 링크 중첩 해소) · 샘플 추정가 세 값을 sample.json 그대로.
