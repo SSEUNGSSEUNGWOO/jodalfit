@@ -19,13 +19,12 @@ export function SignupForm({ next }: { next: string }) {
   async function submit(e: FormEvent) {
     e.preventDefault(); if (!ok) return; setBusy(true); setErr(null);
     const redirectTo = `${location.origin}/auth/confirm?next=${encodeURIComponent(next)}`;
-    const { data, error } = await getBrowserSupabase().auth.signUp({
+    const { error } = await getBrowserSupabase().auth.signUp({
       email, password: pw,
       options: { emailRedirectTo: redirectTo, data: { terms_version: TERMS_VERSION, privacy_version: PRIVACY_VERSION, marketing_opt_in: consent.marketing, consented_at: new Date().toISOString() } },
     });
-    if (error) { setErr(error.code === "user_already_exists" ? "이미 가입된 이메일입니다. 로그인 또는 비밀번호 재설정" : "가입하지 못했습니다. 잠시 후 다시"); setBusy(false); return; }
-    // Confirm email ON 이면 identities 가 빈 기존 계정에도 성공처럼 돌아온다(열거 방지). 같은 안내로 보낸다.
-    void data;
+    // 계정 존재 여부를 알리지 않는다(열거 방지) — Confirm email ON 이면 기존 계정에도 성공처럼 돌아오므로 같은 안내로 보낸다.
+    if (error) { setErr("가입하지 못했습니다. 잠시 후 다시"); setBusy(false); return; }
     router.push(`/signup/sent?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
   }
 

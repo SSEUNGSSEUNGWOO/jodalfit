@@ -572,7 +572,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError?: boole
 
   return (
     <form onSubmit={submit} noValidate>
-      {linkError && <p className="mb-4 border-l-2 border-orange pl-2.5 text-[13.5px] leading-[1.6] text-ink-g"><b className="font-semibold text-ink">링크가 만료되었거나 이미 사용되었습니다.</b> 링크는 60분 동안 한 번만 유효합니다. 가입 확인은 <Link href="/signup/sent" className="u-link text-ink">다시 받기</Link>, 비밀번호는 <Link href="/reset" className="u-link text-ink">재설정</Link>.</p>}
+      {linkError && <p className="mb-4 border-l-2 border-orange pl-2.5 text-[13.5px] leading-[1.6] text-ink-g"><b className="font-semibold text-ink">링크가 만료되었거나 이미 사용되었습니다.</b> 링크는 60분 동안 한 번만 유효합니다. 가입 확인은 <Link href="/signup" className="u-link text-ink">다시 가입</Link>, 비밀번호는 <Link href="/reset" className="u-link text-ink">재설정</Link>.</p>}
       <TextField label="이메일" type="email" autoComplete="email" inputMode="email" placeholder="you@company.co.kr" value={email} onChange={(e) => setEmail(e.target.value)} />
       <PasswordField className="mt-3.5" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" placeholder="비밀번호" showMinHint={false}
         right={<Link href={`/reset${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="u-link text-[12.5px] text-ink-g">비밀번호 찾기</Link>} />
@@ -632,13 +632,12 @@ export function SignupForm({ next }: { next: string }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault(); if (!ok) return; setBusy(true); setErr(null);
     const redirectTo = `${location.origin}/auth/confirm?next=${encodeURIComponent(next)}`;
-    const { data, error } = await getBrowserSupabase().auth.signUp({
+    const { error } = await getBrowserSupabase().auth.signUp({
       email, password: pw,
       options: { emailRedirectTo: redirectTo, data: { terms_version: TERMS_VERSION, privacy_version: PRIVACY_VERSION, marketing_opt_in: consent.marketing, consented_at: new Date().toISOString() } },
     });
-    if (error) { setErr(error.code === "user_already_exists" ? "이미 가입된 이메일입니다. 로그인 또는 비밀번호 재설정" : "가입하지 못했습니다. 잠시 후 다시"); setBusy(false); return; }
-    // Confirm email ON 이면 identities 가 빈 기존 계정에도 성공처럼 돌아온다(열거 방지). 같은 안내로 보낸다.
-    void data;
+    // 계정 존재 여부를 알리지 않는다(열거 방지) — Confirm email ON 이면 기존 계정에도 성공처럼 돌아오므로 같은 안내로 보낸다.
+    if (error) { setErr("가입하지 못했습니다. 잠시 후 다시"); setBusy(false); return; }
     router.push(`/signup/sent?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
   }
 
@@ -693,17 +692,18 @@ import { getBrowserSupabase } from "@/lib/supabase/browser";
 
 /** 다시 보내기 — 60초 뒤 활성. signup 은 auth.resend, recovery 는 resetPasswordForEmail 재호출. */
 export function ResendButton({ email, next, kind }: { email: string; next: string; kind: "signup" | "recovery" }) {
-  const [left, setLeft] = useState(60); const [state, setState] = useState<"idle" | "busy" | "sent" | "error">("idle");
+  const [left, setLeft] = useState(60); const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const [sentCount, setSentCount] = useState(0);
   useEffect(() => { if (left <= 0) return; const t = setTimeout(() => setLeft((s) => s - 1), 1000); return () => clearTimeout(t); }, [left]);
   async function resend() {
     setState("busy");
     const sb = getBrowserSupabase();
     const redirectTo = `${location.origin}/auth/confirm?next=${encodeURIComponent(kind === "recovery" ? "/reset/new" : next)}`;
     const { error } = kind === "signup" ? await sb.auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectTo } }) : await sb.auth.resetPasswordForEmail(email, { redirectTo });
-    setState(error ? "error" : "sent"); setLeft(60);
+    if (!error) setSentCount((c) => c + 1);
+    setState(error ? "error" : "idle"); setLeft(60);
   }
-  if (state === "sent") return <span className="text-ink-g">다시 보냈습니다</span>;
-  if (left > 0) return <span className="text-ink-mute">다시 보내기 — {left}초 뒤</span>;
+  if (left > 0) return <span className="text-ink-mute">{sentCount > 0 && <span className="text-ink-g">다시 보냈습니다 · </span>}다시 보내기 — {left}초 뒤</span>;
   return <button type="button" onClick={resend} disabled={state === "busy"} className="u-link text-ink">{state === "error" ? "다시 보내기(실패, 재시도)" : "다시 보내기"}</button>;
 }
 ```
@@ -715,6 +715,8 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/safe-next";
 
+let warned = false;
+
 /** 메일 링크 — token_hash 를 세션으로 바꾸고 next 로. 실패는 /login?error=link. recovery 는 /reset/new 로 강제. */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -723,6 +725,7 @@ export async function GET(req: NextRequest) {
   const next = type === "recovery" ? "/reset/new" : safeNext(url.searchParams.get("next"));
   if (!token_hash || !type) return NextResponse.redirect(new URL("/login?error=link", url.origin));
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (!warned) { warned = true; console.warn("[auth/confirm] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정"); }
     return NextResponse.redirect(new URL("/login?error=link", url.origin));
   }
   const supabase = await getServerSupabase({ strict: true });
@@ -738,11 +741,15 @@ export async function GET(req: NextRequest) {
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSupabase } from "@/lib/supabase/server";
 
+let warned = false;
+
 /** 로그아웃 — 쿠키 세션 제거 후 홈. Nav 가 <a href="/logout"> 로 온다(프리페치 안 되게 Link 가 아님). */
 export async function GET(req: NextRequest) {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = await getServerSupabase({ strict: true });
     await supabase.auth.signOut();
+  } else if (!warned) {
+    warned = true; console.warn("[logout] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 미설정");
   }
   const res = NextResponse.redirect(new URL("/?logout=1", new URL(req.url).origin));
   res.headers.set("Cache-Control", "no-store");

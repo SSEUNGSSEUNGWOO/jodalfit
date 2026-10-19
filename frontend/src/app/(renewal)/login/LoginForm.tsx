@@ -27,7 +27,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError?: boole
 
   return (
     <form onSubmit={submit} noValidate>
-      {linkError && <p className="mb-4 border-l-2 border-orange pl-2.5 text-[13.5px] leading-[1.6] text-ink-g"><b className="font-semibold text-ink">링크가 만료되었거나 이미 사용되었습니다.</b> 링크는 60분 동안 한 번만 유효합니다. 가입 확인은 <Link href="/signup/sent" className="u-link text-ink">다시 받기</Link>, 비밀번호는 <Link href="/reset" className="u-link text-ink">재설정</Link>.</p>}
+      {linkError && <p className="mb-4 border-l-2 border-orange pl-2.5 text-[13.5px] leading-[1.6] text-ink-g"><b className="font-semibold text-ink">링크가 만료되었거나 이미 사용되었습니다.</b> 링크는 60분 동안 한 번만 유효합니다. 가입 확인은 <Link href="/signup" className="u-link text-ink">다시 가입</Link>, 비밀번호는 <Link href="/reset" className="u-link text-ink">재설정</Link>.</p>}
       <TextField label="이메일" type="email" autoComplete="email" inputMode="email" placeholder="you@company.co.kr" value={email} onChange={(e) => setEmail(e.target.value)} />
       <PasswordField className="mt-3.5" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" placeholder="비밀번호" showMinHint={false}
         right={<Link href={`/reset${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="u-link text-[12.5px] text-ink-g">비밀번호 찾기</Link>} />
