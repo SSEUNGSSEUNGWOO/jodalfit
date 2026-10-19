@@ -1,7 +1,7 @@
 // frontend/src/components/Sheet.tsx
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[28px_minmax(0,1fr)_84px_72px] gap-x-3 items-start max-sm:grid-cols-[minmax(0,1fr)_auto]";
@@ -28,19 +28,27 @@ export type SheetRowProps = {
   href?: string;           // 제목 링크(공고 상세). 없으면 행 클릭 = 펼침
 };
 
-/** 표 행 — 번호 · 제목/둘째 줄 · 마감 · 추정가. 클릭하면 아래 펼침. 검토한 행은 왼쪽에 주황 괘선 2px. */
+/** 표 행 — 번호 · 제목/둘째 줄 · 마감 · 추정가. 번호 칸의 버튼이 펼침 토글(키보드·AT), 행 클릭은 마우스 편의. 검토한 행은 왼쪽에 주황 괘선 2px. */
 export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href }: SheetRowProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const panelId = useId();
   const hot = dLeft.days <= 7;
+  const toggle = () => setOpen((v) => !v);
   return (
     <>
-      <div role={children ? "button" : undefined} tabIndex={children ? 0 : undefined} aria-expanded={children ? open : undefined}
-        onClick={() => children && setOpen((v) => !v)}
-        onKeyDown={(e) => { if (children && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setOpen((v) => !v); } }}
+      <div data-sheet-row onClick={children ? toggle : undefined}
         className={cn(GRID, "relative border-b border-rule py-4 text-[14px] max-sm:py-3", children && "cursor-pointer",
           "before:absolute before:-left-4 before:top-0 before:bottom-0 before:w-0.5 before:origin-top before:bg-orange before:transition-transform before:duration-300 before:[transition-timing-function:var(--ease-sheet)]",
           reviewed ? "before:scale-y-100" : "before:scale-y-0")}>
-        <span className="pt-[3px] text-[12px] text-ink-off max-sm:hidden">{String(no).padStart(2, "0")}</span>
+        {children ? (
+          <button type="button" aria-expanded={open} aria-controls={panelId} aria-label={`${no}번 공고 ${open ? "접기" : "펼치기"}`}
+            onClick={(e) => { e.stopPropagation(); toggle(); }}
+            className="num cursor-pointer self-start pt-[3px] text-left text-[12px] text-ink-off max-sm:sr-only">
+            {String(no).padStart(2, "0")}
+          </button>
+        ) : (
+          <span className="pt-[3px] text-[12px] text-ink-off max-sm:hidden">{String(no).padStart(2, "0")}</span>
+        )}
         <span className="min-w-0">
           <span className="block text-[16px] font-semibold leading-[1.4] text-ink max-sm:text-[15px]">
             {href ? <a href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</a> : title}
@@ -55,7 +63,7 @@ export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultO
         <span className="num pt-0.5 text-right text-[15px] max-sm:hidden">{price}</span>
       </div>
       {children && (
-        <div className={cn("x-wrap pl-10 max-sm:pl-0", open && "border-b border-rule pb-6 pt-4")} data-open={open}>
+        <div id={panelId} className={cn("x-wrap pl-10 max-sm:pl-0", open && "border-b border-rule pb-6 pt-4")} data-open={open}>
           <div className="-mx-1 px-1 pb-1">{children}</div>
         </div>
       )}
@@ -90,7 +98,7 @@ export function SheetExpand({ quals, whys, actions }: { quals: QualLine[]; whys:
   );
 }
 
-/** 흐림 묶음 — 게이트 뒤 6건째부터. 글자는 읽히지 않되 존재는 보인다. */
+/** 흐림 묶음 — 게이트 뒤 6건째부터. 글자는 읽히지 않되 존재는 보인다. inert 로 포커스·클릭·AT 전부 차단(게이트 우회 방지). */
 export function SheetFade({ children, off = false }: { children: ReactNode; off?: boolean }) {
-  return <div className={cn(!off && "[&>*]:pointer-events-none [&>*]:opacity-[.32] [&>*]:blur-[1.5px]")} aria-hidden={!off}>{children}</div>;
+  return <div className={cn(!off && "[&>*]:opacity-[.32] [&>*]:blur-[1.5px]")} inert={!off}>{children}</div>;
 }
