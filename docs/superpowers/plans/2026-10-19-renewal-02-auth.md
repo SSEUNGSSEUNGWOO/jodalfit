@@ -518,7 +518,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/Field.tsx fronten
 **Files:**
 - Create: `frontend/src/app/(renewal)/login/page.tsx`, `LoginForm.tsx`; `(renewal)/signup/page.tsx`, `SignupForm.tsx`; `(renewal)/signup/sent/page.tsx`, `ResendButton.tsx`; `(renewal)/reset/page.tsx`, `ResetForm.tsx`; `(renewal)/reset/new/page.tsx`, `NewPasswordForm.tsx`; `frontend/src/app/auth/confirm/route.ts`; `frontend/src/app/logout/route.ts`
 
-- [ ] **Step 1: 로그인**
+- [x] **Step 1: 로그인**
 ```tsx
 // frontend/src/app/(renewal)/login/page.tsx
 import type { Metadata } from "next";
@@ -591,7 +591,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError?: boole
   );
 }
 ```
-- [ ] **Step 2: 회원가입**
+- [x] **Step 2: 회원가입**
 ```tsx
 // frontend/src/app/(renewal)/signup/page.tsx
 import type { Metadata } from "next";
@@ -654,7 +654,7 @@ export function SignupForm({ next }: { next: string }) {
   );
 }
 ```
-- [ ] **Step 3: 확인 메일 보냄**
+- [x] **Step 3: 확인 메일 보냄**
 ```tsx
 // frontend/src/app/(renewal)/signup/sent/page.tsx
 import type { Metadata } from "next";
@@ -707,7 +707,7 @@ export function ResendButton({ email, next, kind }: { email: string; next: strin
   return <button type="button" onClick={resend} disabled={state === "busy"} className="u-link text-ink">{state === "error" ? "다시 보내기(실패, 재시도)" : "다시 보내기"}</button>;
 }
 ```
-- [ ] **Step 4: 확인 라우트 · 로그아웃**
+- [x] **Step 4: 확인 라우트 · 로그아웃**
 ```ts
 // frontend/src/app/auth/confirm/route.ts
 import { NextResponse, type NextRequest } from "next/server";
@@ -722,6 +722,9 @@ export async function GET(req: NextRequest) {
   const type = url.searchParams.get("type") as EmailOtpType | null;
   const next = type === "recovery" ? "/reset/new" : safeNext(url.searchParams.get("next"));
   if (!token_hash || !type) return NextResponse.redirect(new URL("/login?error=link", url.origin));
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.redirect(new URL("/login?error=link", url.origin));
+  }
   const supabase = await getServerSupabase({ strict: true });
   const { error } = await supabase.auth.verifyOtp({ token_hash, type });
   if (error) return NextResponse.redirect(new URL("/login?error=link", url.origin));
@@ -737,15 +740,17 @@ import { getServerSupabase } from "@/lib/supabase/server";
 
 /** 로그아웃 — 쿠키 세션 제거 후 홈. Nav 가 <a href="/logout"> 로 온다(프리페치 안 되게 Link 가 아님). */
 export async function GET(req: NextRequest) {
-  const supabase = await getServerSupabase({ strict: true });
-  await supabase.auth.signOut();
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const supabase = await getServerSupabase({ strict: true });
+    await supabase.auth.signOut();
+  }
   const res = NextResponse.redirect(new URL("/?logout=1", new URL(req.url).origin));
   res.headers.set("Cache-Control", "no-store");
   return res;
 }
 ```
   라우트 핸들러의 `setAll` 은 `cookies()` 에 쓰기가 가능하므로 세션 쿠키가 응답에 실린다.
-- [ ] **Step 5: 재설정 · 새 비밀번호**
+- [x] **Step 5: 재설정 · 새 비밀번호**
 ```tsx
 // frontend/src/app/(renewal)/reset/page.tsx
 import type { Metadata } from "next";
@@ -838,8 +843,8 @@ export function NewPasswordForm({ email }: { email: string }) {
   );
 }
 ```
-- [ ] **Step 6: 확인** — `npm run lint && npx tsc --noEmit -p tsconfig.json; echo $?` → 0. 개발 서버에서 `/login` `/signup` `/signup/sent?email=a@b.c` `/reset` 이 뜨고, `/reset/new` 는 비로그인 시 `/reset` 으로, `/logout` 은 `/`로 간다(curl -I 로 302 확인).
-- [ ] **Step 7: 커밋**
+- [x] **Step 6: 확인** — `npm run lint && npx tsc --noEmit -p tsconfig.json; echo $?` → 0. 개발 서버에서 `/login` `/signup` `/signup/sent?email=a@b.c` `/reset` 이 뜨고, `/reset/new` 는 비로그인 시 `/reset` 으로, `/logout` 은 `/`로 간다(curl -I 로 302 확인).
+- [x] **Step 7: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/login" "frontend/src/app/(renewal)/signup" "frontend/src/app/(renewal)/reset" frontend/src/app/auth frontend/src/app/logout && git commit -m "feat(renewal): 로그인·회원가입·확인 메일·재설정·새 비밀번호·로그아웃 + /auth/confirm"
 ```
