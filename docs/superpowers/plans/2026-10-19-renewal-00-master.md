@@ -81,6 +81,11 @@
 - `npm run lint` · `npm run build` 통과. 빌드가 깨지면 커밋하지 않는다.
 - 로직이 있는 유틸(마크다운 변환, 마스킹, 날짜 계산)은 `node --test` 로 파일 하나씩 검사(`frontend/src/lib/*.test.ts`, `tsx` 없이 `node --experimental-strip-types`).
 
+## 3.7 01 foundation 최종 검토에서 02~09 로 넘긴 것 (2026-10-19)
+- **02**: `Nav` 의 로그인 링크가 `usePathname()` 만 써서 쿼리(`?mode=keywords&q=…`)를 잃는다 → `useSearchParams()` 로 `next` 에 쿼리까지 담되, Next 16 에선 Suspense 경계가 필요하니 Nav 를 클라이언트 섬으로 감싼다. `Nav` 메뉴의 `role="menu"/"menuitem"` 은 화살표 이동·포커스 복귀가 없어 반쪽이다 → role 을 떼고 링크 팝오버로 두되 Escape 때 트리거로 포커스를 돌린다(`check_foundation.py` 의 `menuitem == 5` 도 링크 수로 바꾼다). `.rn bg-paper` 는 페이지마다 반복하지 말고 리뉴얼 레이아웃 하나에 둔다.
+- **05~07**: `SheetFade.off`·`SheetHead.cols` 가 안 쓰이면 09 에서 지운다. `dLeft` 가 null 을 돌려주면 행은 `—`, 마감 지난 행은 회색 "마감"(01 에서 반영).
+- **09**: `formatKRW`·`formatKRWFull`·`daysUntil` 을 옛 페이지와 함께 삭제(`won`·`wonFull`·`dLeft` 로 통일), 미사용 토큰(`ink-ph`·`ink-tick`·`rule-2`)·`Mark`/`Mark16` 사용 여부 점검, 검증 스크립트 이름을 `check_<page>.py` 로 통일.
+
 ## 4. 시안 ↔ 코드 대응 (옮길 때 보는 원천)
 
 | 페이지 | 시안 HTML | 생성기(CSS·문구·동작의 원천) | 데이터 예시 |
