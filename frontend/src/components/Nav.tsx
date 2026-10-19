@@ -2,8 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Lockup } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
@@ -19,21 +19,30 @@ const LINKS = [
   { href: "/changelog", label: "개선 기록", match: /^\/changelog/ },
 ];
 
-/** 상단 nav — 비로그인 '로그인' / 로그인됨 you@… + 메뉴(저장한 회사 ★ · 검토함 · 설정 · 로그아웃). 390: 링크 숨김, 현재 페이지와 로그인만. */
+/** 로그인 링크 — 현재 경로 + 쿼리를 next 로. useSearchParams 는 Suspense 경계가 필요하다(Next 16). */
+function LoginLink() {
+  const pathname = usePathname() ?? "/";
+  const search = useSearchParams()?.toString();
+  const next = search ? `${pathname}?${search}` : pathname;
+  return <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-ink border-b border-ink">로그인</Link>;
+}
+
+/** 상단 nav — 비로그인 '로그인' / 로그인됨 you@… + 팝오버(저장한 회사 ★ · 검토함 · 설정 · 로그아웃). 링크 묶음이라 role=menu 는 쓰지 않는다. */
 export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; signOutHref?: string }) {
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); trigger.current?.focus(); } };
     addEventListener("click", close); addEventListener("keydown", esc);
     return () => { removeEventListener("click", close); removeEventListener("keydown", esc); };
   }, [open]);
 
   return (
-    <div className="rn flex items-center justify-between py-[22px] text-[13px] text-ink-g">
+    <div className="flex items-center justify-between py-[22px] text-[13px] text-ink-g">
       <Link href="/" aria-label="조달핏 홈"><Lockup /></Link>
       <nav className="flex items-center gap-[22px]" aria-label="주 메뉴">
         {LINKS.map((l) => {
@@ -47,35 +56,35 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
         })}
         {user ? (
           <div ref={ref} className="relative">
-            <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu"
+            <button ref={trigger} type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="nav-user-menu"
               className="text-ink font-semibold border-b border-ink cursor-pointer">
               {user.email.split("@")[0]}@…
             </button>
             {open && (
-              <div role="menu" className="absolute right-0 top-7 z-20 min-w-[240px] rounded-[10px] border border-hair bg-panel p-1.5 text-left font-normal shadow-[0_8px_24px_rgba(20,20,20,.06)] max-sm:-right-2">
+              <div id="nav-user-menu" data-menu className="absolute right-0 top-7 z-20 min-w-[240px] rounded-[10px] border border-hair bg-panel p-1.5 text-left font-normal shadow-[0_8px_24px_rgba(20,20,20,.06)] max-sm:-right-2">
                 <div className="px-3 py-2 text-[13.5px] text-ink">{user.email}<small className="block text-[12px] text-ink-mute">로그인됨</small></div>
                 <div className="my-1.5 h-px bg-rule" />
                 <span className="t-k block px-3 pb-0.5 pt-2">저장한 회사 {user.savedCompanies.length}</span>
                 {user.savedCompanies.map((c) => (
-                  <Link key={c.bizrnoNorm} role="menuitem" href={`/companies/${c.bizrnoNorm}`}
+                  <Link key={c.bizrnoNorm} href={`/companies/${c.bizrnoNorm}`}
                     className="block rounded-md px-3 py-[7px] text-[13.5px] text-ink hover:bg-paper before:mr-2 before:text-[11px] before:text-orange before:content-['★']">
                     {c.name}
                   </Link>
                 ))}
                 <div className="my-1.5 h-px bg-rule" />
-                <Link role="menuitem" href="/saved" className="block rounded-md px-3 py-2 text-[13.5px] text-ink hover:bg-paper">
+                <Link href="/saved" className="block rounded-md px-3 py-2 text-[13.5px] text-ink hover:bg-paper">
                   검토함<small className="block text-[12px] text-ink-mute">검토한 공고 {user.reviewedCount}건</small>
                 </Link>
-                <Link role="menuitem" href="/settings" className="block rounded-md px-3 py-2 text-[13.5px] text-ink hover:bg-paper">
+                <Link href="/settings" className="block rounded-md px-3 py-2 text-[13.5px] text-ink hover:bg-paper">
                   설정<small className="block text-[12px] text-ink-mute">비밀번호 변경 · 알림 수신 · 탈퇴</small>
                 </Link>
                 <div className="my-1.5 h-px bg-rule" />
-                <Link role="menuitem" href={signOutHref} className="block rounded-md px-3 py-2 text-[13.5px] text-ink-mute hover:bg-paper">로그아웃</Link>
+                <a href={signOutHref} className="block rounded-md px-3 py-2 text-[13.5px] text-ink-mute hover:bg-paper">로그아웃</a>
               </div>
             )}
           </div>
         ) : (
-          <Link href={`/login?next=${encodeURIComponent(pathname || "/")}`} className="text-ink border-b border-ink">로그인</Link>
+          <Suspense fallback={<span className="text-ink border-b border-ink">로그인</span>}><LoginLink /></Suspense>
         )}
       </nav>
     </div>

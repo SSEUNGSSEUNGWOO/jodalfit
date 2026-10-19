@@ -5,6 +5,8 @@ import { createServerClient } from "@supabase/ssr";
 /** 매 요청 세션 토큰 갱신(만료된 access token 을 refresh 해 쿠키에 다시 쓴다). 보호 경로 리다이렉트는 하지 않는다 — 비로그인 /saved 는 안내 판(시안). */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // 키 미설정이면 세션 갱신 건너뜀 — 02 Task 2 전 로컬
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return response;
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() { return request.cookies.getAll(); },

@@ -913,24 +913,21 @@ def main():
             return { bg: cs(document.querySelector('.rn')).backgroundColor, orangeFaces, injuk,
               rule: cs(head).borderBottomColor, h1: cs(h1).fontSize, panel: cs(document.querySelector('section')).backgroundColor, radius: cs(document.querySelector('section')).borderRadius,
               rows: document.querySelectorAll('button.num[aria-expanded]').length, open: document.querySelectorAll('.x-wrap[data-open=true]').length,
-              gateBtns: document.querySelectorAll('a[href^="/login"], a[href^="/signup"]').length, fade: document.querySelectorAll('[inert] > [data-sheet-row]').length,
-              me: !!document.querySelector('button[aria-haspopup=menu]') } }""")
+              gateBtns: document.querySelectorAll('.hairline a[href^="/login"], .hairline a[href^="/signup"]').length, fade: document.querySelectorAll('[inert] > [data-sheet-row]').length,
+              login: !!document.querySelector('nav a[href^="/login?next="]') } }""")
         assert s["bg"] == "rgb(250, 249, 247)" and s["orangeFaces"] == 0 and not s["injuk"], s
         assert s["rule"] == "rgb(20, 20, 20)" and s["h1"] == "32px" and s["panel"] == "rgb(255, 255, 255)" and s["radius"] == "14px", s
-        assert s["rows"] >= 1 and s["open"] == 1 and s["gateBtns"] == 2 and s["fade"] >= 2 and s["me"], s   # 게이트 두 버튼(로그인됨이라 nav 에는 로그인 링크 없음)
-        pg.click("button[aria-haspopup=menu]"); pg.wait_for_timeout(150)
-        m = pg.evaluate("document.querySelectorAll('[role=menu] [role=menuitem]').length"); assert m == 5, m
-        pg.keyboard.press("Escape"); assert pg.evaluate("!document.querySelector('[role=menu]')")
+        assert s["rows"] >= 1 and s["open"] == 1 and s["gateBtns"] == 2 and s["fade"] >= 2 and s["login"], s   # 게이트 두 버튼(로그인됨이라 nav 에는 로그인 링크 없음)
         pg.locator("button.num[aria-expanded]").first.click(); pg.wait_for_timeout(500)   # 1행 접힘
         assert pg.evaluate("document.querySelectorAll('.x-wrap[data-open=true]').length") == 0
         pg.screenshot(path=str(OUT / "_shot_foundation.png"), full_page=True)
         pg.set_viewport_size({"width": 390, "height": 844}); pg.reload(); pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(300)
         mo = pg.evaluate("""() => ({ overflow: document.documentElement.scrollWidth > 390, radius: getComputedStyle(document.querySelector('section')).borderRadius,
-            priceHidden: getComputedStyle(document.querySelector('[data-sheet-row]').children[3]).display === 'none', me: getComputedStyle(document.querySelector('button[aria-haspopup=menu]')).display !== 'none' })""")
-        assert not mo["overflow"] and mo["radius"] == "12px" and mo["priceHidden"] and mo["me"], mo
+            priceHidden: getComputedStyle(document.querySelector('[data-sheet-row]').children[3]).display === 'none' })""")
+        assert not mo["overflow"] and mo["radius"] == "12px" and mo["priceHidden"], mo
         pg.screenshot(path=str(OUT / "_shot_foundation_390.png"), full_page=True)
         b.close()
-    print("ok foundation: tokens · head rule · panel · sheet(open/close) · gate · fade · nav menu(5) · 390")
+    print("ok foundation: tokens · head rule · panel · sheet(open/close) · gate · fade · nav login · 390")
 
 if __name__ == "__main__":
     sys.exit(main())
