@@ -78,6 +78,27 @@
   --shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.04), 0 1px 4px 0 rgba(0, 0, 0, 0.03);
   --shadow-lg: 0 8px 24px 0 rgba(0, 0, 0, 0.06), 0 2px 8px 0 rgba(0, 0, 0, 0.04);
   --shadow-xl: 0 16px 40px 0 rgba(0, 0, 0, 0.08), 0 4px 12px 0 rgba(0, 0, 0, 0.05);
+
+  /* ── 2026-10 리뉴얼 토큰 (docs/design/README.md · renewal-00-master §3.1). 옛 gc-* 는 09 컷오버에서 삭제 ── */
+  --color-paper:   #faf9f7;   /* 바닥 */
+  --color-panel:   #ffffff;   /* 판 */
+  --color-hair:    #e6e4df;   /* 판 테두리·헤어라인 */
+  --color-rule:    #ececea;   /* 행 사이 연회색 괘선 */
+  --color-rule-2:  #f1f0ec;   /* 더 연한 괘선(목록 안) */
+  --color-ink:     #141414;   /* 먹 */
+  --color-ink-body:#333333;
+  --color-ink-sub: #4a4a46;
+  --color-ink-g:   #55554f;   /* 회색 글 */
+  --color-ink-dim: #6b6b67;   /* 흐림(대비 4.9:1) */
+  --color-ink-mute:#737370;
+  --color-ink-off: #8f8f8b;   /* 비활성 */
+  --color-ink-ph:  #9b9a95;   /* placeholder */
+  --color-ink-tick:#b8b6b0;   /* 제한 없음 점·회색 괘선 */
+  --color-line:    #d8d6d0;   /* 글자 밑줄(기본) */
+  --color-field:   #e3e1dc;   /* 입력·버튼 테두리 */
+  --color-orange:  #f97316;   /* 선·밑줄·점·D-day≤7·마지막 숫자. 면 금지(로고 타일 예외) */
+  --color-orange-ring: rgba(249, 115, 22, .14);
+  --ease-sheet: cubic-bezier(.3, .7, .2, 1);
 }
 
 :root {
@@ -377,3 +398,22 @@ body {
     @apply font-sans;
   }
 }
+
+/* ── 2026-10 리뉴얼 공용 유틸 ─────────────────────────────── */
+/* 라벨 — 12px 회색 600. 한글 라벨에 자간·uppercase 없음 */
+.t-k { font-size: 12px; font-weight: 600; color: var(--color-ink-dim); letter-spacing: 0; text-transform: none; }
+/* 괘선 */
+.rule-ink { border-bottom: 1px solid var(--color-ink); }
+.hairline { border-bottom: 1px solid var(--color-hair); }
+/* 숫자 */
+.num { font-variant-numeric: tabular-nums; }
+/* 글자 밑줄 링크 — 기본 회색, hover 주황 */
+.u-link { border-bottom: 1px solid var(--color-line); transition: border-color .15s ease; }
+.u-link:hover { border-bottom-color: var(--color-orange); }
+/* 포커스 — 리뉴얼 부품 안에서는 주황 링 */
+.rn :focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--color-orange-ring); border-radius: 6px; }
+/* 펼침 — display 토글 대신 grid-rows 0fr → 1fr (gen_split.py .x) */
+.x-wrap { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .4s var(--ease-sheet), padding .4s var(--ease-sheet), opacity .3s ease; }
+.x-wrap[data-open="true"] { grid-template-rows: 1fr; opacity: 1; transition-delay: 0s, 0s, .1s; }
+.x-wrap > * { min-height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .x-wrap { transition: none; } }
