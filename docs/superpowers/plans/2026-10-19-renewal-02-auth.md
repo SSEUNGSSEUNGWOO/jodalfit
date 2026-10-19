@@ -863,7 +863,7 @@ cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/login" "front
 **Files:**
 - Create: `supabase/migrations/0052_user_consents.sql`
 
-- [ ] **Step 1: 마이그레이션**
+- [x] **Step 1: 마이그레이션**
 ```sql
 -- ====================================================================
 -- 0052 user_consents — 가입 때 받은 동의 기록 (이용약관·개인정보 필수, 알림 메일 선택)
@@ -942,7 +942,7 @@ create trigger trg_user_consents_lock_history
   before update on public.user_consents
   for each row execute function public.lock_consent_history();
 ```
-- [ ] **Step 2: 적용** — Supabase Dashboard → SQL Editor 에 붙여 실행. 확인:
+- [x] **Step 2: 적용** — Supabase Dashboard → SQL Editor 에 붙여 실행. 확인:
 ```sql
 select tgname from pg_trigger where tgrelid = 'auth.users'::regclass and tgname = 'on_auth_user_created_consent';
 select count(*) from public.user_consents;
@@ -1024,7 +1024,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/scripts/auth_smoke.mjs && git co
 - Create: `frontend/src/app/(renewal)/terms/page.tsx`
 - Modify: `frontend/src/app/privacy/page.tsx`, `frontend/src/lib/privacy.ts`
 
-- [ ] **Step 1: 이용약관(초안)** — 승우님 검토 뒤 시행일(`TERMS_VERSION`)을 확정한다. 문구는 공문 톤.
+- [x] **Step 1: 이용약관(초안)** — 승우님 검토 뒤 시행일(`TERMS_VERSION`)을 확정한다. 문구는 공문 톤.
 ```tsx
 // frontend/src/app/(renewal)/terms/page.tsx
 import type { Metadata } from "next";
@@ -1096,13 +1096,15 @@ export default function TermsPage() {
   );
 }
 ```
-- [ ] **Step 2: 개인정보처리방침 개정** — `frontend/src/app/privacy/page.tsx` 의 수집 항목 절(현재 "주간 메일 신청" 중심)에 **계정** 항목을 추가한다. 파일을 읽고 수집·이용 목적 표(또는 목록)가 있는 Section 안에 아래 세 줄을 같은 마크업 스타일로 넣는다:
+- [x] **Step 2: 개인정보처리방침 개정** — `frontend/src/app/privacy/page.tsx` 의 수집 항목 절(현재 "주간 메일 신청" 중심)에 **계정** 항목을 추가한다. 파일을 읽고 수집·이용 목적 표(또는 목록)가 있는 Section 안에 아래 세 줄을 같은 마크업 스타일로 넣는다:
   - 수집 항목: 이메일 주소, 비밀번호(해시로만 저장), 동의 기록(약관·개인정보처리방침 버전·알림 수신 여부·동의 시각), 저장한 회사·검토한 공고
   - 목적: 로그인과 계정 식별, 검토함·저장한 회사 보관, 동의 이력 보존
   - 보유 기간: 탈퇴 시 즉시 삭제(법령상 보존 의무가 있는 기록 제외). 로그인 기록은 1년.
   처리 위탁 절에 **Resend(메일 발송, 미국)** 를 추가한다(이미 Supabase·Vercel 등이 적혀 있으면 같은 형식). `frontend/src/lib/privacy.ts` 의 `PRIVACY_VERSION` 을 `"2026-10-19"` 로 올린다(가입 폼이 이 값을 동의 기록에 남긴다).
-- [ ] **Step 3: 확인** — `/terms` 와 `/privacy` 가 뜨고, `npm run lint` 통과. `grep -rn "PRIVACY_VERSION" frontend/src` 에서 구독 폼(`subscribe.ts`)과 가입 폼이 같은 값을 쓰는지 본다.
-- [ ] **Step 4: 커밋**
+> **승우님 검토 항목(2026-10-19 검토에서 나온 것, 시행일 확정 전에 결정)**: ① 만 14세 미만 가입 제한(법정대리인 동의) 조항 추가 여부 — 이메일만으로 누구나 가입 가능한 구조. ② 제10조 전속 관할 — 이용자가 소비자로 해석되면 약관규제법 제14조상 무효 소지 → "민사소송법에 따른 관할"로 완화하거나 "사업자 대상 서비스" 명시. ③ (선택) 제5조 3항 탈퇴 시 삭제에 "로그인 기록 등 법령상 보존 자료 제외" 괄호. ④ 유료 전환 시 결제·환불 조항 개정 필요(지금은 없음).
+
+- [x] **Step 3: 확인** — `/terms` 와 `/privacy` 가 뜨고, `npm run lint` 통과. `grep -rn "PRIVACY_VERSION" frontend/src` 에서 구독 폼(`subscribe.ts`)과 가입 폼이 같은 값을 쓰는지 본다.
+- [x] **Step 4: 커밋**
 ```bash
 cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/terms" frontend/src/app/privacy/page.tsx frontend/src/lib/privacy.ts && git commit -m "feat(renewal): 이용약관 초안(/terms) + 개인정보처리방침에 계정 항목·Resend 위탁, 버전 2026-10-19"
 ```
