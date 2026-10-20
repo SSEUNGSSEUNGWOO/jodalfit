@@ -84,6 +84,7 @@
 ## 3.7 01 foundation 최종 검토에서 02~09 로 넘긴 것 (2026-10-19)
 - **02**: `Nav` 의 로그인 링크가 `usePathname()` 만 써서 쿼리(`?mode=keywords&q=…`)를 잃는다 → `useSearchParams()` 로 `next` 에 쿼리까지 담되, Next 16 에선 Suspense 경계가 필요하니 Nav 를 클라이언트 섬으로 감싼다. `Nav` 메뉴의 `role="menu"/"menuitem"` 은 화살표 이동·포커스 복귀가 없어 반쪽이다 → role 을 떼고 링크 팝오버로 두되 Escape 때 트리거로 포커스를 돌린다(`check_foundation.py` 의 `menuitem == 5` 도 링크 수로 바꾼다). `.rn bg-paper` 는 페이지마다 반복하지 말고 리뉴얼 레이아웃 하나에 둔다.
 - **05~07**: `SheetFade.off`·`SheetHead.cols` 가 안 쓰이면 09 에서 지운다. `dLeft` 가 null 을 돌려주면 행은 `—`, 마감 지난 행은 회색 "마감"(01 에서 반영).
+- **09**: 개인정보처리방침 8조(기업 정보 비공개 요청)에 본인 확인 한 줄 추가 — "회사 도메인 이메일 회신 또는 사업자등록증 사본(사업자번호 확인용)". 2026-10-20 제이엔지한섬엔지니어링(주) 문의를 계기로 결정(승우님: 리뉴얼 때 같이).
 - **09**: `formatKRW`·`formatKRWFull`·`daysUntil` 을 옛 페이지와 함께 삭제(`won`·`wonFull`·`dLeft` 로 통일), 미사용 토큰(`ink-ph`·`ink-tick`·`rule-2`)·`Mark`/`Mark16` 사용 여부 점검, 검증 스크립트 이름을 `check_<page>.py` 로 통일.
 
 ## 4. 시안 ↔ 코드 대응 (옮길 때 보는 원천)
