@@ -1,12 +1,12 @@
-"""결과 페이지 최종 시안(`prototypes/results-final.html`) = flow 의 머리 장면·네 상태 + split 의 두 단 표형 본문.
+"""결과 페이지 최종 시안(`prototypes/final/results-final.html`) = flow 의 머리 장면·네 상태 + split 의 두 단 표형 본문.
 
 - 머리: 회사 이름·사업자번호 마스킹·한 줄 → 선 캔버스(gen_flow 엔진 그대로) → 접히면 걸러낸 경로(숫자 + 단계 라벨) 와 종류 탭·마감 요약 한 줄.
 - 본문: 왼쪽 240px 회사 정보(sticky) / 오른쪽 표(제목 / 기관 · 근거 둘째 줄, 행 클릭 펼침). 블록 스위치는 split.html 에만(비교용). 화면 = 표, 메일·인쇄 = 블록(report.html).
 - 네 상태(알약): 0건 — 오른쪽 단만 비고 왼쪽 회사 정보가 이유 / 오류·지연 — 머리 정지 + 다시 시도(본문은 안 뜸) / 이메일 뒤 — 게이트 없이 12건 / 검토 뒤 — 행 왼쪽 주황 괘선.
 - 720px 이하: 한 단, 회사 정보 접힘, 표는 제목·둘째 줄 + 마감.
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_results_final.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/data/scene_titles.json ../docs/design/prototypes/results-final.html
-검증: gen_results_final.py --check ../docs/design/prototypes/results-final.html → 캡처 6장(기본·0건·오류·이메일 뒤·검토 뒤·390), 금지어·인주 0, 행 12.
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_results_final.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/data/scene_titles.json ../docs/design/prototypes/final/results-final.html
+검증: gen_results_final.py --check ../docs/design/prototypes/final/results-final.html → 캡처 6장(기본·0건·오류·이메일 뒤·검토 뒤·390), 금지어·인주 0, 행 12.
 """
 import json
 import sys

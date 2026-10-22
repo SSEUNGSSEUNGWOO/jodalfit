@@ -1,4 +1,4 @@
-"""회사 페이지 최종 시안(`prototypes/company-final.html`) — `/companies/[bizrno]` 를 결과 페이지 문법으로.
+"""회사 페이지 최종 시안(`prototypes/final/company-final.html`) — `/companies/[bizrno]` 를 결과 페이지 문법으로.
 
 결정(2026-10-17 승우님): 추천 먼저, 머리 장면(선 캔버스) 없음. 회사 페이지는 SSR 문서이고 추천은 대부분 캐시 히트라
 "계산이 안 걸리면 안 보여준다" 원칙상 캔버스가 설 자리가 없다. 걸러낸 경로는 숫자 한 줄로만 남긴다.
@@ -10,8 +10,8 @@
  C 인서트유(벡터·업종·이력 없음 → 색인 제외 대상) / D 늘푸른임업(국세청 폐업). 상태: 비로그인 / 이메일 뒤 / 계산 중.
 
 데이터: cd backend && KURE_BACKEND=torch PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_company.py --data ../docs/design/data
-생성:   cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_company.py ../docs/design/data ../docs/design/prototypes/company-final.html
-검증:   gen_company.py --check ../docs/design/prototypes/company-final.html
+생성:   cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_company.py ../docs/design/data ../docs/design/prototypes/final/company-final.html
+검증:   gen_company.py --check ../docs/design/prototypes/final/company-final.html
 """
 import json
 import sys

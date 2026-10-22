@@ -1,6 +1,6 @@
 # 리뉴얼 02 — auth: 로그인 · 회원가입 · 재설정 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 먼저 `2026-10-19-renewal-00-master.md` §3.2·§3.3·§3.7 과 01 계획의 부품(`Nav` `Btn` `Panel` `PageHead` `SiteFooter`)을 읽는다. 시안: `docs/design/prototypes/login-final.html`, 원천 `docs/design/scripts/gen_login.py`.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 먼저 `2026-10-19-renewal-00-master.md` §3.2·§3.3·§3.7 과 01 계획의 부품(`Nav` `Btn` `Panel` `PageHead` `SiteFooter`)을 읽는다. 시안: `docs/design/prototypes/final/login-final.html`, 원천 `docs/design/scripts/gen_login.py`.
 
 **Goal:** Supabase Auth(이메일 + 비밀번호, 확인 메일 1회, 재설정 메일)를 `@supabase/ssr` 쿠키 세션으로 붙이고, 시안의 장면(로그인 → 회원가입 → 확인 메일 보냄 → 메일 링크 → 로그인됨 / 재설정 → 새 비밀번호 / 로그아웃)을 `(renewal)` 레이아웃 위에 만든다. 동의(약관·개인정보 필수, 알림 선택)는 가입 시 메타데이터로 받아 트리거가 `user_consents`(0052)에 남긴다. `/terms` 와 개인정보처리방침 개정을 포함한다.
 

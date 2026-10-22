@@ -1,11 +1,11 @@
-"""추천 공고 보고서 — A4 세로 한 장(`prototypes/report.html`). 결과 페이지의 '인쇄 / PDF 저장' 뷰이자 이메일 게이트가 보내는 첨부,
+"""추천 공고 보고서 — A4 세로 한 장(`prototypes/final/report.html`). 결과 페이지의 '인쇄 / PDF 저장' 뷰이자 이메일 게이트가 보내는 첨부,
 나중엔 아침 메일 본문. 입찰 담당자가 상사에게 그대로 건네는 문서.
 
 화면과 같은 말을 한다 — 근거·자격은 gen_flow.why_lines/qual_lines(공문 톤, flow.html 이 쓰는 것), 기준 띠는 gen_results_v6.crit 그대로.
 주황 #f97316 은 마지막 12 · D-day ≤ 7 · 로고 타일뿐. 먹/회색 + 헤어라인. 버튼 없음(화면 모드의 '인쇄 / PDF 저장' 하나만, 인쇄에선 숨김).
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_report.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/prototypes/report.html
-검증: 같은 환경에서 gen_report.py --check ../docs/design/prototypes/report.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_report.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/prototypes/final/report.html
+검증: 같은 환경에서 gen_report.py --check ../docs/design/prototypes/final/report.html
       → 800px 화면 캡처 `_shot_report_800.png`, A4 PDF `_report.pdf`(1장이어야 통과), 인쇄 매체에서 주황 유지 확인.
 """
 import json

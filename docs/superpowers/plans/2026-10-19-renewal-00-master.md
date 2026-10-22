@@ -16,10 +16,10 @@
 |---|---|---|---|---|
 | 01 | **foundation** — 토큰·셸·공용 부품 | `globals.css` 새 토큰, `Nav`(로그인 상태 자리만), `Footer`, `Panel`, `Sheet/SheetRow`(표 행 + 펼침), `Gate`, `Pill`(알약 없음 — 운영엔 없다), 글자 단계 유틸, 390 규칙 | — | 전부 |
 | 02 | **auth** — 로그인·회원가입·재설정 | Supabase Auth 설정(확인 메일 필수, 링크 60분), Resend SMTP, `proxy.ts` 세션 갱신, `/login` `/signup` `/signup/sent` `/auth/confirm` `/reset` `/reset/new`, `user_consents` 테이블(0052), `/terms` 틀, Nav 로그인 상태(메뉴) | 01 | login-final |
-| 03 | **saved** — 저장한 회사·검토한 공고·검토함 | `saved_companies`·`reviewed_notices` 테이블(0053, RLS), `StarCompany` ☆ 버튼, `ReviewButton` 검토, `/saved`(공고/저장한 회사 탭), Nav 메뉴 ★ 목록 | 02 | saved-final |
+| 03 | **saved** — 저장한 회사·검토한 공고·검토함 | `saved_companies`·`reviewed_notices` 테이블(0054, RLS), `StarCompany` ☆ 버튼, `ReviewButton` 검토, `/saved`(공고/저장한 회사 탭), Nav 메뉴 ★ 목록 | 02 | saved-final |
 | 04 | **entry** — 입구(랜딩) | `/` 교체: 검색 상자 하나(콤보박스 회사·키워드 행), 오늘 등록된 공고 세로 틱, 최근 조회 칩(localStorage) | 01 | entry-simple |
 | 05 | **results** — 결과 페이지 | `/recommendations` 교체: 머리(회사 이름·☆·다른 회사=상자) → 선 캔버스 머리 장면(실제 `/stream` 진행 이벤트에 묶음, 캐시 히트면 생략) → 두 단(회사 정보 sticky / 표 5건 + Gate + 흐림 7건) → 네 상태(0건·오류·로그인 뒤·검토 뒤), 종류 탭(사전규격·발주계획), 인쇄 뷰(report) | 01 02 03 | results-final, flow, report |
-| 06 | **company** — 회사 페이지 | `/companies/[bizrno]` 본문 교체(URL·메타·JSON-LD·noindex 규칙 유지): 머리·걸러낸 경로·추천 판(계산 중 상태)·수주 이력 판·낙찰 판(투찰률 눈금)·같은 시장 낙찰 회사, 폐업이면 추천 중단, 벡터·이력 없으면 **분석 요청**(`company_descriptions` 0054 + 백엔드 설명 기반 키워드 추천 분기) | 01 02 03 05 | company-final |
+| 06 | **company** — 회사 페이지 | `/companies/[bizrno]` 본문 교체(URL·메타·JSON-LD·noindex 규칙 유지): 머리·걸러낸 경로·추천 판(계산 중 상태)·수주 이력 판·낙찰 판(투찰률 눈금)·같은 시장 낙찰 회사, 폐업이면 추천 중단, 벡터·이력 없으면 **분석 요청**(`company_descriptions` 0055 + 백엔드 설명 기반 키워드 추천 분기) | 01 02 03 05 | company-final |
 | 07 | **notice** — 공고 상세 | `/notices/[no]` 본문 교체(URL·JSON-LD 유지): 레일(마감·자격 세 상태·수치) + 본문(과업·조건·단계·기관·정정), 지역 판정은 `qualifications.region_allows` 와 같은 규칙(백엔드 `/qualifications/check` 사용) | 01 02 03 | notice-final |
 | 08 | **changelog** — 개선 기록 | `/changelog`: 빌드 때 `docs/recommender/changelog.md` → 페이지(최신순 타임라인, 머리 숫자 셋 + 틀 문장, "어떻게 고르는가" 판은 `score.py` 상수에서 생성, HIDE·측정 전·해 보고 뺀 것) | 01 | changelog-final |
 | 09 | **cutover** — 스킨 교체·정리·배포 | `/about` `/privacy` `/terms` `/companies/browse` `/companies/industry` 스킨, 로고·파비콘·OG 교체(`docs/design/brand/`), 옛 컴포넌트·`DESIGN.md`·`world-gc` 삭제, 사업자번호 마스킹 통일, 문구 일괄 점검, Lighthouse ≥ 90, GSC·sitemap 확인, 배포 | 전부 | — |
@@ -29,7 +29,7 @@
 ## 2. 배포 전략 — 부분 선반영 금지
 
 - 브랜치 `renewal` 하나에서 전부 작업. Vercel 프리뷰로 확인. 운영(`main`)은 리뉴얼이 통째로 준비될 때까지 에메랄드 그대로(`docs/design/README.md` 결정).
-- 백엔드·DB 변경(0052~0054, 설명 기반 추천 분기, `/qualifications/check`)은 **운영에 먼저 적용해도 무해**하다(새 테이블·새 분기). 프론트 컷오버 전에 적용해 둔다.
+- 백엔드·DB 변경(0052~0055, 설명 기반 추천 분기, `/qualifications/check`)은 **운영에 먼저 적용해도 무해**하다(새 테이블·새 분기). 프론트 컷오버 전에 적용해 둔다.
 - Supabase Auth 켜기·Resend 도메인 인증은 프리뷰 단계에서 끝낸다(확인 메일이 실제로 와야 02 를 끝낼 수 있다).
 - 컷오버 = `renewal` → `main` PR 하나. 되돌리기 = PR revert.
 
@@ -56,10 +56,10 @@
 ### 3.3 사용자 데이터 (RLS, 사용자 세션으로 접근)
 ```sql
 -- 0052 user_consents (02)
--- 0053 saved_companies(user_id, bizrno_norm, created_at) PK(user_id, bizrno_norm)
+-- 0054 saved_companies(user_id, bizrno_norm, created_at) PK(user_id, bizrno_norm)
 --      reviewed_notices(user_id, bid_ntce_no, bid_ntce_ord, via_bizrno_norm, created_at) PK(user_id, bid_ntce_no, bid_ntce_ord)
 --      정책: auth.uid() = user_id 로 select/insert/delete. 마감 30일 지난 reviewed 행은 pg_cron 주 1회 삭제.
--- 0054 company_descriptions(bizrno_norm PK, description, email, created_at, updated_at) — 분석 요청. 익명 insert 는 백엔드(service_role)만.
+-- 0055 company_descriptions(bizrno_norm PK, description, email, created_at, updated_at) — 분석 요청. 익명 insert 는 백엔드(service_role)만.
 ```
 프론트는 사용자 테이블을 **anon 키 + 세션**으로 접근(`lib/supabase-browser.ts`, `lib/supabase-session.ts` 신설). `lib/supabase-server.ts`(service_role)는 공개 데이터 SSR 전용으로 유지.
 
@@ -91,7 +91,7 @@
 
 | 페이지 | 시안 HTML | 생성기(CSS·문구·동작의 원천) | 데이터 예시 |
 |---|---|---|---|
-| 입구 | `prototypes/entry-simple.html` | `scripts/gen_entry_simple.py`, 콤보박스 JS `gen_entry.py` | `fetch_today` 쿼리 |
+| 입구 | `prototypes/final/entry-simple.html` | `scripts/gen_entry_simple.py`, 콤보박스 JS `gen_entry.py` | `fetch_today` 쿼리 |
 | 결과 | `results-final.html`, `flow.html`, `report.html` | `gen_results_final.py`, `gen_flow.py`(ENGINE_JS·RUN_JS), `gen_split.py`, `gen_report.py` | `data/sample.json`, `funnel.json` |
 | 공고 상세 | `notice-final.html` | `gen_notice_final.py`, `gen_notice.py`(l3 블록) | `gen_notice.fetch` |
 | 회사 | `company-final.html` | `gen_company.py` | `data/company_{a,b,c,d}.json` |

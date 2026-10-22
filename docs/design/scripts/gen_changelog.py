@@ -1,11 +1,11 @@
-"""개선 기록 최종 시안(`prototypes/changelog-final.html`) — `/changelog`. `docs/recommender/changelog.md` 를 그대로 렌더링하는 읽기 페이지.
+"""개선 기록 최종 시안(`prototypes/final/changelog-final.html`) — `/changelog`. `docs/recommender/changelog.md` 를 그대로 렌더링하는 읽기 페이지.
 
 - 머리: 제목 + 재는 방법(문서 첫 문단 그대로). 왼쪽 목차(날짜·제목, sticky, 스크롤 스파이) / 오른쪽 흰 판에 글 순서 그대로(처음 → 변경 → 지금).
 - 마크다운 부분집합만 변환: ## · 문단 · 표 · **굵게** · `코드` · ---. 표 숫자는 tabular, 전/후 열은 그대로(화살표·색 안 입힘 — 숫자가 말한다).
 - 로그인 무관(공개 페이지). 상태 없음. 문서가 바뀌면 다시 생성하면 된다 — 구현도 같은 방식(빌드 때 md → 페이지).
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_changelog.py ../docs/recommender/changelog.md ../docs/design/prototypes/changelog-final.html
-검증: gen_changelog.py --check ../docs/design/prototypes/changelog-final.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_changelog.py ../docs/recommender/changelog.md ../docs/design/prototypes/final/changelog-final.html
+검증: gen_changelog.py --check ../docs/design/prototypes/final/changelog-final.html
 """
 import re
 import sys

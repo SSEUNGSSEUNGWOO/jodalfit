@@ -15,7 +15,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Backend: FastAPI (Python 3.12, uv) + slowapi rate limit
 - Frontend: Next.js 16 (App Router, TypeScript, Tailwind v4, React 19)
 - DB: Supabase (Postgres + pgvector HNSW + pg_trgm, 싱가포르 ap-southeast-1 — 2026-10-13 뭄바이에서 이전) — 백엔드는 service_role 키로 직접 접근
-- Embedding: OpenAI `text-embedding-3-small` (1536d) / LLM 설명: `claude-haiku-4-5`(`EXPLAIN_PROVIDER`, 키 없으면 `gpt-4o-mini` 로 degrade) / 첨부문서 인사이트: claude-haiku-4-5 (Message Batches)
+- Embedding: **두 공간 병행, `EMBED_SPACE` 하나로 전환/롤백** — `openai`(text-embedding-3-small 1536d, 컬럼 `embedding`) / `kure`(KURE-v1 1024d, 컬럼 `embedding_k` + RPC `_k` 변형, 0045). **운영은 2026-10-15부터 kure**(Railway는 int8 ONNX 상주, 배치는 `uv sync --extra embed-cpu`의 torch). 모든 임베딩 호출은 `app/services/embedding.py`만 거친다(sha1 캐시 `text_embeddings` 0046) — openai_client/local_embed 직접 호출 금지. 프론트 `NEXT_PUBLIC_EMBED_SPACE`도 같이 바꾼다.
+- LLM 설명: `claude-haiku-4-5`(`EXPLAIN_PROVIDER`, 키 없으면 `gpt-4o-mini` 로 degrade) / 첨부문서 인사이트: claude-haiku-4-5 (Message Batches, `INSIGHT_PROVIDER`)
+- 운영: Frontend Vercel / Backend Railway / 배치 GitHub Actions. 계측 PostHog(`frontend/src/instrumentation-client.ts`, `lib/analytics.ts`) + Sentry 양쪽(DSN 없으면 비활성) + UptimeRobot.
 
 ## 명령어
 - Backend 실행: `cd backend && uv run uvicorn app.main:app --reload` → :8000
@@ -23,26 +25,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Frontend lint: `cd frontend && npm run lint` / build: `npm run build`
 - 잡 실행: `cd backend && uv run python -m jobs.<이름> [--days-back N ...]` (전체 시드 순서는 README.md §8)
 - 연결 점검: `uv run python -m jobs.verify_setup` (row count) / `jobs.verify_phase2`
-- 의존성 추가: `uv add <pkg>` (backend), `npm install <pkg>` (frontend)
-- 테스트 프레임워크 없음. `jobs/test_api.py`·`probe_*.py`는 pytest가 아니라 API 탐색용 CLI 스크립트.
+- 추천 평가(채점표): `cd backend && uv run python -m jobs.evaluate_recommender --as-of YYYY-MM-DD --companies 3000 --seed 7` → `backend/data/recommender_eval/<run_id>/report.md`. 규칙은 `docs/recommender/evaluation.md`.
+- 의존성 추가: `uv add <pkg>` (backend), `npm install <pkg>` (frontend). 일부 잡(backfill/사업자상태/purge/채점표/상세필드)은 Supabase 대신 `DATABASE_URL`(psycopg 직결)을 쓴다.
+- 테스트 프레임워크 없음. `jobs/test_api.py`·`probe_*.py`는 pytest가 아니라 API 탐색용 CLI 스크립트. 대신 순수 로직 모듈은 `__main__` 자체 점검을 둔다 — `uv run python -m app.recommender.evaluation` / `app.core.traffic_source` / `app.recommender.qualifications` / `app.services.embedding` / `app.services.doc_extract`. 새 순수 로직도 이 패턴을 따른다.
 
 ## 아키텍처 큰 그림
 
 ### 추천 파이프라인 (요청 경로)
-`POST /recommendations` → `app/api/recommendations.py` → `app/services/recommend.py`:
+`POST /recommendations`(회사 SEO 페이지 SSR self-call, `recommendation_cache.py` read-through — 0019 `company_recommendations`, 마감 지난 건 걷어내고 5건 미만이면 미스) / `POST /recommendations/stream`(대화형 보드가 쓰는 실사용자 경로, 항상 라이브) → `app/api/recommendations.py` → `app/services/recommend.py`:
 1. `find_company` — pg_trgm fuzzy + 사업자번호로 회사 식별 (실패 시 키워드 모드)
 2. `_search_with_embedding` — pgvector RPC(`match_bid_notices`) 3채널(dense + 회사 업종 허용 공고 0044 + 회사 공급물품 코드 공고 0048, `RECO_RETRIEVAL`)을 번갈아 합쳐 후보 풀
 3. **v2 랭커 (현재 기본)** — `app/recommender/pipeline.py::rank_v2`:
    자격 하드 제외(`qualifications.py`) → 가중치 score + breakdown(`score.py`) → 협업 시그널(peer 기관, `collaborative.py`) → MMR 다양성(`mmr.py`)
 4. `app/services/explain.py` — LLM 상단 요약 1회 + 카드별 설명 (ThreadPoolExecutor 병렬)
 
+`POST /qualifications/check` — 같은 `check_qualifications`를 **라벨용**으로 재사용(하드 제외 아님, 조건 검색 결과에 passed/failures 표시). 자격 규칙은 `app/recommender/qualifications.py` 한 곳만 고친다.
+
 주의: `recommend.py` ↔ `recommender/` 사이 순환 import를 함수 내 lazy import로 회피하고 있음 — 모듈 상단으로 끌어올리지 말 것. v1 rerank(소프트 감점)는 `recommend.py::rerank`에 아직 남아 있음.
 
+### 알고리즘을 바꿀 때 (필수)
+- 후보 검색·자격·점수·MMR을 건드리면 **채점표로 전후 비교**한다: `--companies 3000 --seed 7`, 시점 7/1·8/1·9/1, 기준점 `docs/recommender/baseline-2026-10-16-big.md`. 300곳은 잡음과 구분이 안 된다.
+- **한 군(cold/small/rich)이 떨어지면 전체 평균이 올라도 채택하지 않는다.** 두 시점 이상 같은 방향이어야 한다.
+- 결과는 `docs/recommender/exp-YYYY-MM-DD-<주제>.md`(실험 기록) + `docs/recommender/changelog.md`(사용자 언어로 "무엇이 왜 달라졌나")에 남긴다. 운영 전환 스위치(`RECO_RETRIEVAL`, `EMBED_SPACE`, `*_PROVIDER`)는 환경변수 하나로 롤백되게 유지한다.
+
 ### backend 구조
-- `app/api/` — 라우터 (recommendations, events=행동 로깅)
-- `app/core/` — pydantic-settings config, rate_limit, bot_guard
-- `app/services/` — supabase/openai 클라이언트, recommend(후보 검색+v1), explain, viz(임베딩 시각화), search_log, notice_events
-- `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative)
+- `app/api/` — 라우터 (recommendations, events=행동 로깅, qualifications=자격 라벨)
+- `app/core/` — pydantic-settings config(환경변수 스위치는 전부 여기, 주석에 근거 문서 링크), rate_limit, bot_guard, traffic_source, timing(Server-Timing)
+- `app/services/` — supabase/openai/anthropic 클라이언트, embedding(공간 스위치+캐시)·local_embed(KURE), recommend(후보 검색+v1), recommendation_cache, explain, doc_extract(hwp/hwpx/pdf/xlsx 본문)·notice_insights(LLM 구조화), viz(임베딩 시각화), search_log, notice_events
+- `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative) + evaluation(지표 순수 함수)
 - `jobs/` — 접두사 규칙: `ingest_*`(나라장터 API 수집) / `embed_*`(임베딩 생성) / `compute_company_vectors`(회사 벡터 통합) / `probe_*`(API 응답 탐색, 개발용) / `verify_*`·`check_*`·`diag_*`(검증/진단). 공통 fetch/페이징/타입 변환은 `jobs/_common.py`.
 - `jobs/marketing_report/` — 일일 마케팅 성적표 (`/marketing-report`, 설명서 `docs/marketing/README.md`).
 
@@ -56,23 +66,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 새 로그 경로를 추가하면 `source`를 같이 넘긴다. `v_search_logs_sources`에서 internal 비중이 갑자기 오르면 계측이 깨진 신호다.
 
 ### 데이터 파이프라인 (자동화)
-`.github/workflows/daily-sync.yml` — 매일 KST 5시: ingest(공고/계약/낙찰/참가업체/사전규격/면허/지역...) → embed → compute_company_vectors. 각 스텝 `continue-on-error: true`.
-`lunch-sync.yml` — KST 12:30 보조 사이클 (당일 오전 신규 공고).
+`.github/workflows/` 세 개, 각 스텝 `continue-on-error: true` + `timeout-minutes`:
+- `daily-sync.yml` — 매일 KST 05:00: ingest(공고/계약/낙찰/참가업체/사전규격·의견/발주계획/면허/지역) → embed → sitemap warm-up → purge_expired_documents → `check_ingest_health`(실패·0건·48h 누락을 빨간색으로, `if: always()`). 회사 벡터 재계산은 별도 `company-vectors` 잡으로 병렬.
+- `hourly-sync.yml` — 매시 5분: 검색된 회사 등록 → 공고 수집(24h) → `ingest_bid_notices_full`(상세 필드: 분류번호·사전규격·자격등록 마감·발주계획 번호, 물품·용역·공사·외자 네 구분) → 임베딩 500건. **임베딩의 주 담당은 이 잡**(daily는 50분 제한에 잘려서 500건만).
+- `documents-sync.yml` — 2시간 주기: 첨부 목록 → 본문 추출 150건 → LLM 요약(Batch 수거+제출 100건).
 나라장터 API 제약이 코드 전반에 배어 있음: 일일 호출 한도(UsrInfoService02 4,500/일), 조회범위 30일 초과 시 에러 → 청크 처리, 429 백오프 등.
 
 ### Supabase migrations
-`supabase/migrations/0001~0015` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
+`supabase/migrations/0001~0051` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**. 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
 
 ### frontend 구조
-- `src/app/` — 랜딩, `recommendations/`(mode=company|keywords), `companies/[bizrno]`(SEO 회사 페이지), `notices/[bid_ntce_no]`(공고 라이프사이클 6단계), `insights/[type]`(주간 콘텐츠), sitemap/robots/JSON-LD (SEO 비중 큼 → 서버 컴포넌트 + `lib/supabase-server.ts` 직접 조회 적극 활용)
+- `src/app/` — 랜딩, `recommendations/`(mode=company|keywords), `companies/[bizrno]`(SEO 회사 페이지) + `companies/browse/[sido]`·`companies/industry/[code]`(디렉터리 MV 0027), `notices/[bid_ntce_no]`(공고 라이프사이클 6단계), `about`·`privacy`, `api/`(route handler: 회사 추천·유사 공고 — 브라우저가 백엔드를 직접 안 치게), sitemap/robots/JSON-LD/OG (SEO 비중 큼 → 서버 컴포넌트 + `lib/supabase-server.ts` 직접 조회 적극 활용). **SEO 페이지의 URL·SSR 구조는 리뉴얼에서도 보존.**
 - `src/lib/api.ts` — 백엔드 호출 + mock 폴백. `NEXT_PUBLIC_USE_MOCK=true`면 백엔드 없이 디자인 확인 가능.
-- `src/components/` — 플랫한 단일 폴더 (BidCard, MatchScore, Lifecycle 등) + `ui/`(shadcn)
+- `src/components/` — 플랫한 단일 폴더 (BidCard, MatchScore, Lifecycle 등) + `board/`(대화형 추천 보드, `/stream` 사용) + `ui/`(shadcn)
+- `frontend/CLAUDE.md`는 `@AGENTS.md`만 가리킨다(Next.js 16 지침).
 
 ## 주의사항 (gotchas)
 - **Next.js 16**: 학습 데이터와 다른 breaking change 있음. 코드 작성 전 `frontend/node_modules/next/dist/docs/`의 해당 가이드 확인 (frontend/AGENTS.md 지침).
 - **shadcn base-nova preset (@base-ui/react 기반)**: `Button`이 `asChild` 미지원 — 링크는 `<a>`에 직접 스타일.
 - 브랜드 컬러는 **에메랄드 `#047857`** (2026-08 리브랜딩; README §13의 `#166534`은 구버전). 토큰은 `src/app/globals.css`. **2026-10 디자인 리뉴얼은 주황 `#f97316`(docs/design/README.md) — 리뉴얼 배포 때 한꺼번에 교체, 그 전엔 운영 색 그대로.**
-- 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음.
+- **디자인 리뉴얼 작업 전 `docs/design/README.md`를 먼저 읽는다.** 결정 사항(주황은 선이지 면이 아니다, 공문 톤 문체, 적합 점수 숫자 비노출·근거는 유지, 폐기한 컨셉 목록, 머리 장면은 로딩 가림막)이 거기 있고 최종 시안은 `prototypes/final/*.html`(그 밖의 `prototypes/*.html`은 폐기·중간안)(생성 스크립트 `scripts/`). 루트 `DESIGN.md`(개찰판·청색 장부)는 **현행 운영 디자인**이고 리뉴얼에서 폐기 대상. 로고 자산은 `docs/design/brand/`.
+- 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음(로그인은 이메일 매직링크 = 알림 구독, 비밀번호 없음 — 리뉴얼 결정).
 - `backend/.env`의 `SUPABASE_SERVICE_ROLE_KEY`는 RLS 우회 admin 키 — frontend/git 노출 금지. 환경변수 전체 목록은 README.md §9.
 - `data/`는 gitignored 임시 수집 데이터.
 
@@ -80,3 +94,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - MVP는 임베딩 매칭 하나로만 일단 공개 가능한 최소 단위 우선
 - 무료/유료 경계선 처음부터 설계: 무료(1회 분석, 주간 TOP5, 점수 숫자) / 유료 후보(실시간 알림, LLM 점수 설명 상세, 자격요건 매칭 상세)
 - README.md가 상세 문서(알고리즘 근거, API 서비스 목록, 잡 시드 순서, 응답 예시) — 중복 기술하지 말고 참조
+
+## 문서 지도
+- `PRODUCT.md` — 사용자·성공 기준(재방문·재검색 정착)·카피 원칙·미해결 제품 사실. 제품 판단이 필요하면 여기부터.
+- `docs/roadmap-2026-10.md` — 현재 Phase(측정 → DB 이전 → 디자인 → 약관 → 회원가입)와 남은 수동 작업.
+- `docs/recommender/` — 평가 규칙(`evaluation.md`), 기준점(`baseline-*.md`), 실험(`exp-*.md`), 사용자 언어 변경 기록(`changelog.md`).
+- `docs/design/README.md` — 리뉴얼 결정 사항(위 gotchas 참조). `docs/infra/` — Supabase 이전 절차. `docs/marketing/` — 일일 성적표.
+- `docs/superpowers/plans/` — 실행한 구현 계획 원본(날짜 접두). 왜 그렇게 만들었는지 궁금하면 여기.
