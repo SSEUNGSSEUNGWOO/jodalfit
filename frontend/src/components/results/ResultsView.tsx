@@ -51,7 +51,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
         else if (e.type === "error") { got = true; clearTimeout(timer); setError(e.message); }
       },
       ac.signal,
-    ).catch((err) => { if (!ac.signal.aborted) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
+    ).catch((err) => { if (!ac.signal.aborted && !got) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
     return () => { clearTimeout(timer); ac.abort(); };
   }, [query, mode, keywords, algorithm, attempt]);
 
@@ -86,14 +86,14 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           </div>
         </div>
       ) : mode === "company" ? (
-        <PageHead title={co?.corp_nm ?? query} small={co ? maskBizrno(co.bizrno) : undefined} className="border-b-0 pb-0"
+        <PageHead title={co?.corp_nm ?? query} small={co ? maskBizrno(co.bizrno) : undefined} className="border-b-0! pb-0"
           aside={<>
             {bizrno && <StarCompany bizrnoNorm={bizrno} saved={savedKeys.includes(bizrno)} loggedIn={loggedIn} className="ml-3 h-[30px] text-[13px]" />}
             <button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 회사</button>
           </>}
           meta={co ? [co.rgn_nm ?? "—", `기준일 ${today.toISOString().slice(0, 10)}`] : undefined} />
       ) : (
-        <PageHead title={`“${query}”`} className="border-b-0 pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
+        <PageHead title={`“${query}”`} className="border-b-0! pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
           meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />
       )}
 
