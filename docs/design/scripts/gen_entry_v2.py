@@ -99,6 +99,11 @@ def dleft(d) -> int | None:
     return None if d is None else (d - date.today()).days
 
 
+# 리뉴얼 금지어 — frontend/scripts/check_results.py 와 같은 목록.
+# "하세요"·"주십시오"가 막혀 있어 "입력해 주세요"는 쓸 수 없고, "넣으면"도 막혀 있다.
+BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요",
+          "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "주십시오"]
+
 # ---------------------------------------------------------------- CSS
 CSS = r"""
 *{box-sizing:border-box} html,body{margin:0}
@@ -174,6 +179,14 @@ nav .mn u{text-decoration:none;border-bottom:1px solid #141414;padding-bottom:1p
 foot{display:block;border-top:1px solid #ececea;margin-top:48px;padding:16px 0 28px;
  color:#8a8a85;font-size:12.5px;display:flex;justify-content:space-between;gap:16px}
 
+/* 판 — 결과·회사 페이지와 같은 문법(종이 바닥 위 흰 판). 입구에서는 검색창 아래 내용을 담는다. */
+.pane{background:#fff;border:1px solid #ececea;border-radius:6px;padding:22px 24px;
+ margin:26px auto 0;width:100%;max-width:760px}
+.pane .stat{padding-top:0;margin:0;max-width:none}
+.pane .gold{margin:22px 0 0;max-width:none}
+.ask{margin:0 auto 14px;width:100%;max-width:760px;font-size:15px;color:#55554f}
+.ask b{color:#141414;font-weight:650}
+
 .ctl{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:2px;background:#fff;
  border:1px solid #e6e4df;border-radius:999px;padding:3px;font-size:12.5px;z-index:9;white-space:nowrap;
  box-shadow:0 2px 10px rgba(20,20,20,.06)}
@@ -208,7 +221,7 @@ def box_html(hint: str) -> str:
 def stat_html(d: dict) -> str:
     return ('<div class="stat">'
             f'<div><b class="num">{d["active"]:,}</b><span>지금 입찰 가능한 공고</span></div>'
-            f'<div class="hot"><b class="num">{d["spec_open"]:,}</b><span>의견 낼 수 있는 사전규격</span></div>'
+            f'<div class="hot"><b class="num">{d["spec_open"]:,}</b><span>의견 접수 중인 사전규격</span></div>'
             f'<div><b class="num">{d["companies"]:,}</b><span>등록된 회사</span></div>'
             '</div>')
 
@@ -220,7 +233,7 @@ def gold_html(d: dict) -> str:
         f'{dwhen(s["clse"])}</span>'
         f'<span class="a num">{won(s["amt"])}</span></li>' for s in d["specs"])
     return ('<div class="gold"><div class="hd">'
-            '<b>지금 의견을 낼 수 있는 사전규격</b>'
+            '<b>지금 의견 접수 중인 사전규격</b>'
             f'<span class="why">본공고가 뜨면 사양은 거의 못 바꿉니다 · {d["spec_soon"]:,}건은 이틀 안에 닫힙니다</span>'
             '</div>'
             f'<ul>{li}</ul></div>')
@@ -253,15 +266,24 @@ def variant_a(d: dict) -> str:
 
 
 def variant_b(d: dict) -> str:
-    hint = "회사를 넣으면 등록업종·공급물품·수주 이력으로 맞는 공고를 찾습니다"
+    hint = "회사를 고르면 등록업종·공급물품·수주 이력으로 맞는 공고만 남깁니다"
     return (f'<div class="v" data-v="b"><div class="mid">{box_html(hint)}{stat_html(d)}{gold_html(d)}</div>'
             f'{foot_html()}</div>')
 
 
+def variant_d(d: dict) -> str:
+    """B 에 판을 씌우고 검색창 위에 가벼운 한 줄. 2026-10-23 승우님 요청.
+    "입력해 주세요"는 쓸 수 없다 — 금지어 "하세요"에 걸린다. 공문 톤으로 묻는 형태를 쓴다."""
+    ask = '<div class="ask">어느 <b>회사</b>의 공고를 찾습니까</div>'
+    hint = "회사명 · 사업자등록번호 · 업종 또는 품목 중 아는 것 하나면 됩니다"
+    return (f'<div class="v" data-v="d"><div class="mid">{ask}{box_html(hint)}'
+            f'<div class="pane">{stat_html(d)}{gold_html(d)}</div></div>{foot_html()}</div>')
+
+
 def variant_c(d: dict) -> str:
-    hint = "회사를 넣으면 등록업종·공급물품·수주 이력으로 맞는 공고를 찾습니다"
+    hint = "회사를 고르면 등록업종·공급물품·수주 이력으로 맞는 공고만 남깁니다"
     lede = ('<p class="lede">남들이 입찰공고를 볼 때, <em>사전규격부터</em> 봅니다.</p>'
-            '<p class="sub">사양에 의견을 낼 수 있는 기간은 3~10일입니다. 본공고가 뜨면 거의 못 바꿉니다.</p>')
+            '<p class="sub">사양에 의견을 내는 기간은 3~10일입니다. 본공고가 뜨면 거의 못 바꿉니다.</p>')
     return (f'<div class="v" data-v="c">{lede}<div style="margin-top:34px">{box_html(hint)}{stat_html(d)}'
             f'{gold_html(d)}{list_html(d, "soon")}</div>{foot_html()}</div>')
 
@@ -271,19 +293,20 @@ const vs = [...document.querySelectorAll('.v')], ps = [...document.querySelector
 function pick(k){ vs.forEach(v => v.classList.toggle('on', v.dataset.v === k));
   ps.forEach(p => p.classList.toggle('on', p.dataset.v === k)); }
 ps.forEach(p => p.addEventListener('click', () => pick(p.dataset.v)));
-pick('b');
+pick('d');
 """
 
 
 def build(d: dict) -> str:
     ctl = ('<div class="ctl">'
-           '<span data-v="a">A 현행</span><span data-v="b">B 골든타임</span><span data-v="c">C 머리 세움</span>'
+           '<span data-v="a">A 현행</span><span data-v="b">B 골든타임</span>'
+           '<span data-v="c">C 머리 세움</span><span data-v="d">D 판 + 묻는 줄</span>'
            '</div>')
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>입구 화면 재설계 — A 현행 / B 골든타임 / C 머리 세움</title>{FONT}'
             f'<style>{CSS}</style></head><body><div class="wrap">{nav_html()}'
-            f'{variant_a(d)}{variant_b(d)}{variant_c(d)}</div>{ctl}<script>{JS}</script></body></html>')
+            f'{variant_a(d)}{variant_b(d)}{variant_c(d)}{variant_d(d)}</div>{ctl}<script>{JS}</script></body></html>')
 
 
 def check(path: str) -> None:
@@ -293,7 +316,7 @@ def check(path: str) -> None:
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 1280, "height": 900}, device_scale_factor=2)
         pg.goto(Path(path).resolve().as_uri())
-        for k in ("a", "b", "c"):
+        for k in ("a", "b", "c", "d"):
             pg.click(f'.ctl [data-v="{k}"]')
             pg.wait_for_timeout(150)
             s = pg.evaluate("""() => { const v = document.querySelector('.v.on'); const cs = e => getComputedStyle(e);
@@ -306,6 +329,9 @@ def check(path: str) -> None:
             assert not s["over"], (k, "가로 넘침")
             # 주황은 선이지 면이 아니다 — 로고 점 하나만 면으로 허용한다(docs/design/README.md)
             assert s["orangeFaces"] <= 1, (k, s)
+            txt = pg.evaluate("document.body.innerText")
+            bad = [w for w in BANNED if w in txt]
+            assert not bad, (k, bad)
             pg.screenshot(path=str(out / f"_shot_entry_v2_{k}.png"), full_page=True)
             print(f"  {k}: 높이 {s['h']}px · 줄 {s['rows']}개 · 주황 면 {s['orangeFaces']}")
         pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
