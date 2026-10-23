@@ -30,7 +30,7 @@ export function SearchBox({ defaultValue = "", autoFocus = false, className, onS
   }
   return (
     <form onSubmit={submit} role="search" data-searchbox
-      className={cn("flex max-w-[720px] items-stretch rounded-[6px] border-2 border-orange bg-panel transition-shadow duration-150 focus-within:shadow-[0_0_0_4px_rgba(249,115,22,.18)]", className)}>
+      className={cn("flex max-w-[720px] items-stretch rounded-[6px] border-2 border-orange bg-panel transition-shadow duration-150 focus-within:shadow-[0_0_0_4px_var(--color-orange-ring)]", className)}>
       <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus={autoFocus} autoComplete="off" spellCheck={false}
         placeholder="회사명 · 사업자등록번호 · 업종 또는 품목" aria-label="회사명, 사업자등록번호, 업종 또는 품목"
         className="min-w-0 flex-1 bg-transparent px-[18px] py-3.5 text-[20px] font-medium tracking-[-0.02em] text-ink outline-none placeholder:font-[450] placeholder:text-ink-mute max-sm:px-3.5 max-sm:py-3 max-sm:text-[17px]" />

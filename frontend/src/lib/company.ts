@@ -166,7 +166,7 @@ export interface CompanySectors {
 
 export interface CompanyProfile {
   industries: string[]; // 등록업종 (대표 먼저)
-  industryLinks: { cd: string; nm: string }[]; // industries와 같은 순서, 업종 페이지 링크용
+  industryLinks: { cd: string; nm: string; rep: boolean }[]; // industries와 같은 순서, 업종 페이지 링크용
   products: string[]; // 공급물품 (대표 먼저)
 }
 
@@ -186,11 +186,11 @@ export async function fetchCompanyProfile(bizrno: string): Promise<CompanyProfil
       .eq("bizrno", bizrno)
       .order("dtl_prdct_clsfc_nm"),
   ]);
-  const industryLinks: { cd: string; nm: string }[] = [];
+  const industryLinks: { cd: string; nm: string; rep: boolean }[] = [];
   for (const r of (indRes.data as { indstryty_cd: string; indstryty_nm: string | null; rprsnt_indstryty_yn: string | null }[]) ?? []) {
     if (!r.indstryty_nm) continue;
-    const link = { cd: r.indstryty_cd, nm: r.indstryty_nm };
-    if (r.rprsnt_indstryty_yn === "Y") industryLinks.unshift(link);
+    const link = { cd: r.indstryty_cd, nm: r.indstryty_nm, rep: r.rprsnt_indstryty_yn === "Y" };
+    if (link.rep) industryLinks.unshift(link);
     else industryLinks.push(link);
   }
   const industries = industryLinks.map((l) => l.nm);
@@ -216,6 +216,8 @@ export async function fetchCompanyByBizrno(
         : "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
     )
     .eq("bizrno_norm", bizrnoNorm)
+    // 같은 사업자번호가 하이픈 유무로 두 행인 경우가 있다 — 벡터 있는 행(업종이 붙은 쪽)을 고른다(백엔드 _row_by_norm 과 동일)
+    .order("embedded_at", { ascending: false, nullsFirst: false })
     .limit(1)
     .maybeSingle();
 
