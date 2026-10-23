@@ -158,13 +158,17 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     return notices, X
 
 
-def fetch_company_profile(conn, biz: str, t: date) -> dict:
+def fetch_company_profile(conn, biz: str, t: date | None = None) -> dict:
     """같은 norm 의 모든 회사 행을 합친 업종·물품(대표/나머지), 지역, 업종 이름 set, 토큰 set.
 
     t 시점 기준으로 거른다 — 낙찰 뒤에 추가된 등록정보가 과거 평가를 낙관적으로 만든다(코덱스 지적).
     2026-10-23 실측: 8/1 표본 3,557곳 중 t 이후 업종 추가 0.6%, 물품 추가 4.3% 라 영향은 작지만
     지표를 믿으려면 시점이 맞아야 한다. 등록일에 0227년·4004년 같은 쓰레기 값이 섞여 있어
-    상식 범위를 벗어난 값은 '모름'으로 보고 남긴다 — 버리면 프로필이 통째로 비어버린다."""
+    상식 범위를 벗어난 값은 '모름'으로 보고 남긴다 — 버리면 프로필이 통째로 비어버린다.
+
+    t 를 안 주면 오늘 — 시안 생성기(docs/design/scripts/*)처럼 '지금 등록정보'가 맞는 호출용이다.
+    채점표는 반드시 시점을 넘긴다."""
+    t = t or date.today()
     from app.recommender.score import _tokenize  # 운영과 같은 토큰화
     rows = conn.execute("select bizrno, rgn_nm from companies where bizrno_norm = %s order by bizrno", (biz,)).fetchall()
     pks = [r[0] for r in rows]

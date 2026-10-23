@@ -99,7 +99,7 @@ document.querySelectorAll('.ctl [data-skin]').forEach(s => s.onclick = () => { d
 
 
 def chain(f, d, res):
-    vals = [f'{f["total"]:,}', str(f["industry"]), str(f["qualified"]), str(len(res))]
+    vals = [f'{f["total"]:,}', str(f["candidate"]), str(f["qualified"]), str(len(res))]
     # 숫자는 <b> 하나 — flow 의 setCounts 가 .chain b 의 textContent 를 갈아 끼우므로 '건' 은 b 밖에
     fun = "".join(f'<div><span class="nl"><b class="{"acc" if k == 3 else ""}">{v}</b>{"<span class=un>건</span>" if k == 3 else ""}</span><span class="l">{l}</span></div>' + ("<i>→</i>" if k < 3 else "")
                   for k, (v, l) in enumerate(zip(vals, LABELS)))
@@ -119,7 +119,7 @@ def main_col(res, prof):
 
 def page(d, prof, f, titles):
     res, co = d["results"], d["company"]
-    c = dict(cfg(), CNT=[f["total"], f["industry"], f["qualified"], len(res)])
+    c = dict(cfg(), CNT=[f["total"], f["candidate"], f["qualified"], len(res)])
     n_ind = len(prof["industries"][0] + prof["industries"][1])
     body = (f'<div class="wrap">{nav()}'
             f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small><a class="sw-co" href="#">다른 회사</a></h1>'
@@ -154,7 +154,11 @@ def check(path):
         s = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { done: document.body.classList.contains('done'), tr: document.querySelectorAll('.sheet .tr').length,
             sticky: cs(document.querySelector('.side')).position, labs: document.querySelectorAll('.chain .l').length, nums: [...document.querySelectorAll('.chain b')].map(e => e.textContent),
             acc: cs(document.querySelector('.chain b.acc')).color, res: cs(document.querySelector('.res')).opacity } }""")
-        assert s["done"] and s["tr"] == 12 and s["sticky"] == "sticky" and s["labs"] == 4 and s["nums"] == ["9,374", "835", "372", "12"] and s["acc"] == "rgb(249, 115, 22)" and s["res"] == "1", s
+        # 20건 — 2026-10-23 결정(ResultsView.tsx RESULT_LIMIT). 숫자는 실제 DB 라 고정값으로 못 박지 않고
+        # 네 칸이 앞 칸의 부분집합인지만 단정한다 — 깔때기가 거짓이 되는 건 그게 깨질 때다.
+        nums = [int(x.replace(",", "")) for x in s["nums"]]
+        assert all(nums[i] >= nums[i + 1] for i in range(3)), nums
+        assert s["done"] and s["tr"] == 20 and s["sticky"] == "sticky" and s["labs"] == 4 and nums[-1] == 20 and s["acc"] == "rgb(249, 115, 22)" and s["res"] == "1", s
         pg.screenshot(path=str(out / "_shot_final_default.png"), full_page=True)
         q = pg.evaluate("""() => ({ ok: document.querySelectorAll('.x.on li.ok').length, none: document.querySelectorAll('.x.on li.none').length,
             okw: getComputedStyle(document.querySelector('.x.on li.ok, .x.on li.none')).fontWeight })""")
