@@ -42,8 +42,12 @@ type CompanyLite = { bizrno: string; bizrno_norm: string; corp_nm: string; rgn_n
 
 async function companiesByNorm(norms: string[]): Promise<Map<string, CompanyLite>> {
   if (norms.length === 0) return new Map();
-  const { data } = await getPublicSupabase().from("companies").select("bizrno,bizrno_norm,corp_nm,rgn_nm").in("bizrno_norm", norms);
-  return new Map(((data ?? []) as CompanyLite[]).map((c) => [c.bizrno_norm, c]));
+  // 같은 사업자번호가 하이픈 유무로 두 행인 경우가 있다 — 벡터 있는 행(업종이 붙은 쪽)을 먼저 받아 첫 행만 쓴다(백엔드 _row_by_norm 과 같은 규칙)
+  const { data } = await getPublicSupabase().from("companies").select("bizrno,bizrno_norm,corp_nm,rgn_nm")
+    .in("bizrno_norm", norms).order("embedded_at", { ascending: false, nullsFirst: false });
+  const map = new Map<string, CompanyLite>();
+  for (const c of (data ?? []) as CompanyLite[]) if (!map.has(c.bizrno_norm)) map.set(c.bizrno_norm, c);
+  return map;
 }
 
 /** Nav 메뉴용 — ★ 목록(이름)과 검토 건수 */
