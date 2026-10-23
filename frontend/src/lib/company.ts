@@ -16,6 +16,7 @@ export interface CompanyDetail {
   contract_count: number;
   biz_status_cd: string | null; // 국세청: 01 계속 / 02 휴업 / 03 폐업 (migration 0028)
   biz_closed_dt: string | null;
+  biz_status_checked_at: string | null; // migration 0028
   /** 정보주체 비공개 요청 (migration 0037). null 이 아니면 페이지를 내보내지 않는다. */
   optout_at: string | null;
 }
@@ -211,8 +212,8 @@ export async function fetchCompanyByBizrno(
     .from("companies")
     .select(
       IS_KURE
-        ? "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding:embedding_k,is_restricted,contract_count,biz_status_cd,biz_closed_dt,optout_at"
-        : "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,optout_at"
+        ? "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding:embedding_k,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
+        : "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
     )
     .eq("bizrno_norm", bizrnoNorm)
     .limit(1)
@@ -233,6 +234,7 @@ export async function fetchCompanyByBizrno(
     contract_count: data.contract_count ?? 0,
     biz_status_cd: data.biz_status_cd ?? null,
     biz_closed_dt: data.biz_closed_dt ?? null,
+    biz_status_checked_at: data.biz_status_checked_at ?? null,
     optout_at: data.optout_at ?? null,
   };
 }
