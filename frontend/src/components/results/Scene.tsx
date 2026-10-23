@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createEngine, SCENE, type Engine } from "./scene-engine";
 import { cn } from "@/lib/utils";
 
-const LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"] as const;
+export const FUNNEL_LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"] as const;
 const REASONS = ["등록업종 미허용", "면허·지역 제한 미충족", "회사와의 유사도 낮음"] as const;
 
 export type SceneCounts = {
@@ -143,7 +143,7 @@ export function Scene({
           done ? "h-0" : "h-14 max-sm:h-auto max-sm:grid max-sm:grid-cols-4 max-sm:gap-x-2.5 max-sm:py-2.5",
         )}
       >
-        {LABELS.map((k, i) => (
+        {FUNNEL_LABELS.map((k, i) => (
           <div
             key={k}
             ref={(el) => {

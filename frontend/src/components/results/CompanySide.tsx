@@ -15,21 +15,23 @@ function dedupeIndustries(names: string[]): string[] {
 
 export function CompanySide({ bizrnoNorm, region }: { bizrnoNorm: string; region: string | null }) {
   const [d, setD] = useState<CompanySideData | null>(null);
-  const [open, setOpen] = useState(() => typeof window === "undefined" || !matchMedia("(max-width: 720px)").matches);
+  const [open, setOpen] = useState(true);
   useEffect(() => {
     const ac = new AbortController();
     fetch(`/api/companies/${bizrnoNorm}/profile`, { signal: ac.signal }).then((r) => (r.ok ? r.json() : null)).then(setD).catch(() => {});
     return () => ac.abort();
   }, [bizrnoNorm]);
+  useEffect(() => { queueMicrotask(() => { if (matchMedia("(max-width: 639px)").matches) setOpen(false); }); }, []);
   const inds = d ? dedupeIndustries(d.industries) : [];
+  const rep = new Set((d?.industries ?? []).slice(0, d?.repCount ?? 0).map((n) => n.split("(")[0].trim()));
   return (
     <details open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)} data-side
       className="sticky top-0 pb-5 pt-[22px] text-[14px] max-sm:static max-sm:border-b max-sm:border-rule max-sm:py-3.5 max-sm:text-[13.5px]">
       <summary className="t-k list-none cursor-default max-sm:flex max-sm:cursor-pointer max-sm:justify-between">회사 정보<span className="hidden max-sm:inline">{open ? "접기" : "펼치기"}</span></summary>
       <Sec k={<>등록업종 {d ? inds.length : "…"}{d && d.industries.length > inds.length && <small className="ml-1 text-[12px] font-normal text-ink-mute">세부 {d.industries.length}</small>}</>}>
         <ul className="m-0 list-none p-0">
-          {inds.map((n, i) => (
-            <li key={n} className={`border-b border-[#f1f0ec] py-1 leading-[1.5] text-ink-g ${i < (d?.repCount ?? 0) ? "font-semibold after:ml-1.5 after:text-[10.5px] after:font-medium after:text-ink-mute after:content-['대표']" : ""}`}>{n}</li>
+          {inds.map((n) => (
+            <li key={n} className={`border-b border-[#f1f0ec] py-1 leading-[1.5] text-ink-g ${rep.has(n) ? "font-semibold after:ml-1.5 after:text-[10.5px] after:font-medium after:text-ink-mute after:content-['대표']" : ""}`}>{n}</li>
           ))}
         </ul>
       </Sec>

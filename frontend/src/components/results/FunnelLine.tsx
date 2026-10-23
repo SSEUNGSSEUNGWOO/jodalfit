@@ -1,9 +1,8 @@
 // frontend/src/components/results/FunnelLine.tsx
 // 걸러낸 경로(숫자 + 단계 라벨) 왼쪽, 종류 탭·마감 요약 오른쪽. 장면이 접힌 뒤(open) 펼쳐진다. 0건이면 탭·마감 요약 숨김(12건 기준 계산이라 거짓).
 import { cn } from "@/lib/utils";
-import type { SceneCounts } from "./Scene";
+import { FUNNEL_LABELS, type SceneCounts } from "./Scene";
 
-const LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"];
 const fmt = (n: number | null) => (n == null ? "…" : n.toLocaleString("ko-KR"));
 
 export function FunnelLine({ counts, open, tabs, due }: {
@@ -16,7 +15,7 @@ export function FunnelLine({ counts, open, tabs, due }: {
     <div data-funnel className={cn("grid grid-cols-[1fr_auto] items-start gap-6 transition-[grid-template-rows,padding] duration-[450ms] [transition-timing-function:var(--ease-sheet)] max-sm:grid-cols-1 max-sm:gap-y-2.5", open ? "grid-rows-[1fr] pt-4" : "grid-rows-[0fr]")}>
       <div className="flex min-h-0 items-start gap-3 overflow-hidden">
         <span className="t-k pt-[3px] max-sm:hidden">걸러낸 경로</span>
-        {LABELS.map((l, i) => (
+        {FUNNEL_LABELS.map((l, i) => (
           <div key={l} className="contents">
             {i > 0 && <i className="pt-0.5 text-[16px] not-italic text-ink-mute">→</i>}
             <div className="flex flex-col">

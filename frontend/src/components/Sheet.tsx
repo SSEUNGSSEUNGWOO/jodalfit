@@ -87,22 +87,26 @@ export type QualLine = { state: "ok" | "none" | "warn" | "todo"; text: string };
 export function SheetExpand({ quals, whys, actions }: { quals: QualLine[]; whys: ReactNode[]; actions?: ReactNode }) {
   return (
     <div className="grid grid-cols-[1fr_1.2fr] gap-7 max-sm:grid-cols-1 max-sm:gap-[18px]">
-      <div>
-        <span className="t-k mb-2 block">참가 자격</span>
-        <ul className="m-0 list-none p-0">
-          {quals.map((q, i) => (
-            <li key={i} className={cn("py-1 text-[14px] leading-[1.7]",
-              q.state === "ok" && "font-semibold text-ink after:ml-1.5 after:content-['✓']",
-              q.state === "none" && "text-ink-mute",
-              q.state === "warn" && "text-ink after:ml-1.5 after:font-bold after:text-orange after:content-['✕']",
-              q.state === "todo" && "text-ink-mute")}>{q.text}</li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <span className="t-k mb-2 block">추천 근거</span>
-        <ul className="m-0 list-none p-0">{whys.map((w, i) => <li key={i} className="py-1 text-[14px] leading-[1.7] text-ink-body">{w}</li>)}</ul>
-      </div>
+      {quals.length > 0 && (
+        <div>
+          <span className="t-k mb-2 block">참가 자격</span>
+          <ul className="m-0 list-none p-0">
+            {quals.map((q, i) => (
+              <li key={i} className={cn("py-1 text-[14px] leading-[1.7]",
+                q.state === "ok" && "font-semibold text-ink after:ml-1.5 after:content-['✓']",
+                q.state === "none" && "text-ink-mute",
+                q.state === "warn" && "text-ink after:ml-1.5 after:font-bold after:text-orange after:content-['✕']",
+                q.state === "todo" && "text-ink-mute")}>{q.text}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {whys.length > 0 && (
+        <div>
+          <span className="t-k mb-2 block">추천 근거</span>
+          <ul className="m-0 list-none p-0">{whys.map((w, i) => <li key={i} className="py-1 text-[14px] leading-[1.7] text-ink-body">{w}</li>)}</ul>
+        </div>
+      )}
       {actions && <div className="col-span-full flex flex-wrap gap-2">{actions}</div>}
     </div>
   );
