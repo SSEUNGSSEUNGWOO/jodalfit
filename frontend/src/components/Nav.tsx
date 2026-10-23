@@ -42,7 +42,7 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
   }, [open]);
 
   return (
-    <div className="flex items-center justify-between py-[22px] text-[13px] text-ink-g">
+    <div className="flex items-center justify-between py-[22px] text-[13px] text-ink-g print:hidden">
       <Link href="/" aria-label="조달핏 홈"><Lockup /></Link>
       <nav className="flex items-center gap-[22px]" aria-label="주 메뉴">
         {LINKS.map((l) => {

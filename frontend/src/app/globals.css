@@ -425,7 +425,7 @@ body {
 .report { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 @media print {
   html, body { background: #fff; }
-  .rn nav, .rn footer, .report-nav { display: none !important; }
+  .rn footer, .report-nav { display: none !important; }
   .rn > div { padding: 0 !important; max-width: none !important; }
   .report { width: auto; }
   .report-page { width: auto; min-height: 240mm; margin: 0; border: 0; padding: 0; }

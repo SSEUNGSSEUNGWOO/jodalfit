@@ -9,21 +9,23 @@ import { dLeft, rgnBase, won } from "@/lib/format";
 import { qualLines, whyLines } from "@/lib/why";
 import { PrintButton } from "./PrintButton";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
-const LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"];
+export const metadata: Metadata = { title: "추천 공고 보고서 | 조달핏", robots: { index: false, follow: false } };
+const LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "검토할 공고"];
 
 export default async function ReportPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const p = await searchParams;
   const company = (p.company ?? "").trim();
   if (!company) redirect("/recommendations");
   const user = await getSessionUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/recommendations/report?company=${company}`)}`);
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/recommendations/report?company=${encodeURIComponent(company)}`)}`);
   const d = await getRecommendations({ query: company, mode: "company", limit: 12, candidate_pool: 200, with_explanation: false });
   if (!d.company) redirect(`/recommendations?company=${encodeURIComponent(company)}`);
-  const today = new Date(); const ymd = today.toISOString().slice(0, 10);
+  // Vercel 은 UTC — 기준일·D-day 는 KST 로
+  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const f = d.funnel ?? null; const res = d.results;
-  // 비스트림 응답은 stage 를 모른다 — 셋째 칸(자격 통과)은 "—", 넷째는 결과 수
-  const nums = [f?.total ?? null, f?.industry ?? null, null, res.length];
+  // 비스트림 응답은 자격 통과 수를 모른다 — 세 칸만(전체 → 업종 허용 → 검토할 공고). 캐시 히트로 funnel 자체가 없으면 띠를 안 그린다.
+  const nums = [f?.total ?? null, f?.industry ?? null, res.length];
   return (
     <div className="report mx-auto w-[210mm] max-sm:w-auto">
       <div className="report-nav flex items-center justify-between py-[18px] pb-3 text-[13px] text-ink-g">
@@ -35,16 +37,18 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
           <span className="flex items-center gap-1.5 text-[12px] font-extrabold tracking-[-0.035em]"><Tile size={20} />조달핏</span>
           <div className="text-right"><b>추천 공고 보고서 · 기준일 {ymd}</b><div className="mt-0.5 text-ink-g">{d.company.corp_nm} · {rgnBase(d.company.rgn_nm) || "—"}</div></div>
         </div>
-        <div className="mt-2.5 flex items-start gap-3 border-b border-hair pb-2">
-          <span className="t-k pt-0.5">걸러낸 경로</span>
-          {nums.map((n, i) => (
-            <div key={LABELS[i]} className="flex items-center gap-3"><div><b className={`num text-[13px] ${i === 3 ? "text-orange" : ""}`}>{n == null ? "—" : n.toLocaleString("ko-KR")}</b><div className="text-[9px] text-ink-mute">{LABELS[i]}</div></div>{i < 3 && <span className="text-ink-mute">→</span>}</div>
-          ))}
-        </div>
+        {f && (
+          <div className="mt-2.5 flex items-start gap-3 border-b border-hair pb-2">
+            <span className="t-k pt-0.5">걸러낸 경로</span>
+            {nums.map((n, i) => (
+              <div key={LABELS[i]} className="flex items-center gap-3"><div><b className={`num text-[13px] ${i === 2 ? "text-orange" : ""}`}>{n == null ? "—" : n.toLocaleString("ko-KR")}</b><div className="text-[9px] text-ink-mute">{LABELS[i]}</div></div>{i < 2 && <span className="text-ink-mute">→</span>}</div>
+            ))}
+          </div>
+        )}
         <div className="t-k mt-3 border-b border-ink pb-1">검토할 공고 {res.length}건 · 적합 순</div>
         {res.map((b, i) => {
           const org = b.dmnd_instt_nm || b.ntce_instt_nm || "—"; const dl = dLeft(b.bid_clse_date, today);
-          const q = qualLines(b.qualification).map((l) => (l.state === "todo" ? "규모 미입력" : l.text.replace(" — ", " ") + (l.state === "ok" ? " ✓" : l.state === "warn" ? " !" : ""))).join(" · ");
+          const q = qualLines(b.qualification).filter((l) => l.state !== "todo").map((l) => l.text.replace(" — ", " ") + (l.state === "ok" ? " ✓" : l.state === "warn" ? " !" : "")).join(" · ");
           return (
             <div key={`${b.bid_ntce_no}-${b.bid_ntce_ord}`} className="grid grid-cols-[20px_1fr] gap-x-1.5 border-b border-[#ececea] py-1 break-inside-avoid">
               <span className="num text-ink-mute">{String(i + 1).padStart(2, "0")}</span>
