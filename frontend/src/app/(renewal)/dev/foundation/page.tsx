@@ -3,20 +3,27 @@ import type { Metadata } from "next";
 import { Btn } from "@/components/Btn";
 import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
+import { StarCompany } from "@/components/StarCompany";
+import { getSessionUser } from "@/lib/auth";
+import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";
 import { Sheet } from "./sheet";
 import { maskBizrno } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "foundation", robots: { index: false, follow: false } };
 
 /** 부품 전시 — 09 컷오버에서 삭제. 값은 data/sample.json(한종산업개발, 2026-10-16 실제 추천) 첫 세 건. */
-export default function FoundationPage() {
+export default async function FoundationPage() {
+  const user = await getSessionUser();
+  const [stars, reviews] = user ? await Promise.all([getSavedCompanyKeys(), getReviewedKeys()]) : [new Set<string>(), new Set<string>()];
+  const loggedIn = !!user;
   return (
     <>
-      <PageHead title="한종산업개발 주식회사" small={maskBizrno("1248177731")} aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
+      <PageHead title="한종산업개발 주식회사" small={maskBizrno("1248177731")}
+        aside={<StarCompany bizrnoNorm="1248177731" saved={stars.has("1248177731")} loggedIn={loggedIn} className="ml-3 h-[30px] text-[13px]" />}
         meta={["경상남도 창원시", "등록업종 15", "공급물품 없음", "기준일 2026-10-16"]} />
       <Panel className="mt-[22px]">
         <PanelHead title="검토할 공고 12건" small="적합 순" />
-        <Sheet />
+        <Sheet loggedIn={loggedIn} reviewed={[...reviews]} />
       </Panel>
       <Panel className="mt-7">
         <PanelHead title="수주 이력" small="계약 7건 · 2026.06.26 ~ 2026.09.30" summary={[<>누적 <b>268.2억</b></>, <>주요 발주기관 경상남도 창원시</>]} />
