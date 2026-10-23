@@ -34,6 +34,10 @@ alter table public.reviewed_notices enable row level security;
 grant select, insert, delete on public.saved_companies  to authenticated;
 grant select, insert, delete on public.reviewed_notices to authenticated;
 
+-- Supabase 스키마 기본 권한(pg_default_acl)이 anon·authenticated 에 7종(arwdDxtm)을 전부 붙인다 — 0041 주석과 같은 사정.
+-- RLS 가 막지 못하는 TRUNCATE 와, 위 주석대로 존재하지 않아야 하는 UPDATE 를 회수한다. select/insert/delete 는 RLS 가 행 단위로 거른다.
+revoke truncate, references, trigger, update on public.saved_companies, public.reviewed_notices from anon, authenticated;
+
 drop policy if exists "own saved_companies" on public.saved_companies;
 create policy "own saved_companies" on public.saved_companies
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
