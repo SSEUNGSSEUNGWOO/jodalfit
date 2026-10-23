@@ -12,7 +12,7 @@ import { streamRecommendations } from "@/lib/stream";
 import { getSessionId } from "@/lib/events";
 import { cn, maskBizrno } from "@/lib/utils";
 import { companyStats } from "@/lib/saved-stats";
-import type { RecommendationResponse } from "@/types/recommendations";
+import type { CompanyDigest, RecommendationResponse } from "@/types/recommendations";
 import { Scene, type SceneCounts } from "./Scene";
 import { FunnelLine } from "./FunnelLine";
 import { CompanySide } from "./CompanySide";
@@ -22,9 +22,9 @@ const TIMEOUT_MS = 8000;
 const EMPTY: SceneCounts = { total: null, industry: null, candidates: null, passed: null, results: null };
 const OTHER = "ml-3.5 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange";
 
-export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, savedKeys, reviewedKeys, next }: {
+export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, savedKeys, reviewedKeys, next, initialCompany }: {
   query: string; mode: "company" | "keywords"; keywords: string | null; algorithm: "v1" | "v2"; from: string | null;
-  loggedIn: boolean; savedKeys: string[]; reviewedKeys: string[]; next: string;
+  loggedIn: boolean; savedKeys: string[]; reviewedKeys: string[]; next: string; initialCompany?: CompanyDigest | null;
 }) {
   const [counts, setCounts] = useState<SceneCounts>(EMPTY);
   const [data, setData] = useState<RecommendationResponse | null>(null);
@@ -68,7 +68,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
     addEventListener("keydown", onKey); return () => removeEventListener("keydown", onKey);
   }, []);
 
-  const co = data?.company ?? null;
+  const co = data?.company ?? initialCompany ?? null;
   const bizrno = co ? co.bizrno.replace(/\D/g, "") : null;
   const results = data?.results ?? [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";

@@ -12,7 +12,7 @@ export function FunnelLine({ counts, open, tabs, due }: {
 }) {
   const nums = [counts.total, counts.industry, counts.passed, counts.results];
   return (
-    <div data-funnel className={cn("grid grid-cols-[1fr_auto] items-start gap-6 transition-[grid-template-rows,padding] duration-[450ms] [transition-timing-function:var(--ease-sheet)] max-sm:grid-cols-1 max-sm:gap-y-2.5", open ? "grid-rows-[1fr] pt-4" : "grid-rows-[0fr]")}>
+    <div data-funnel className={cn("grid grid-cols-[1fr_auto] items-start gap-6 overflow-hidden transition-[grid-template-rows,padding,opacity] duration-[450ms] [transition-timing-function:var(--ease-sheet)] max-sm:grid-cols-1 max-sm:gap-y-2.5", open ? "grid-rows-[1fr] pt-4 opacity-100" : "grid-rows-[0fr] opacity-0")}>
       <div className="flex min-h-0 items-start gap-3 overflow-hidden">
         <span className="t-k pt-[3px] max-sm:hidden">걸러낸 경로</span>
         {FUNNEL_LABELS.map((l, i) => (

@@ -7,6 +7,8 @@ import { SearchBox } from "@/components/SearchBox";
 import { ResultsView } from "@/components/results/ResultsView";
 import { getSessionUser } from "@/lib/auth";
 import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";
+import { fetchCompanyByBizrno } from "@/lib/company";
+import type { CompanyDigest } from "@/types/recommendations";
 
 export const metadata: Metadata = { title: "추천 공고 | 조달핏", robots: { index: false, follow: false } };
 
@@ -21,10 +23,18 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
   const m = query.match(NOTICE_NO);
   if (m) redirect(`/notices/${m[1].toUpperCase()}`);
 
-  const user = await getSessionUser();
+  const bizrnoNorm = company.replace(/\D/g, "");
+  const [user, companyRow] = await Promise.all([
+    getSessionUser(),
+    bizrnoNorm.length === 10 ? fetchCompanyByBizrno(bizrnoNorm) : Promise.resolve(null),
+  ]);
   const [saved, reviewed] = user ? await Promise.all([getSavedCompanyKeys(), getReviewedKeys()]) : [new Set<string>(), new Set<string>()];
   const qs = new URLSearchParams(Object.entries(p).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
   const next = `/recommendations${qs ? `?${qs}` : ""}`;
+  // 사업자번호 질의 — 회사 이름을 서버에서 미리 알아 h1 에 질의 원문 대신 즉시 보여준다. 비공개 요청 회사는 null(백엔드가 키워드로 폴백).
+  const initialCompany: CompanyDigest | null = companyRow && !companyRow.optout_at
+    ? { bizrno: companyRow.bizrno, corp_nm: companyRow.corp_nm, rgn_nm: companyRow.rgn_nm ?? undefined }
+    : null;
 
   if (!query) {
     return (
@@ -37,6 +47,6 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
   return (
     <ResultsView key={`${company ? "company" : "keywords"}:${query}:${keywords ?? ""}:${algorithm}`}
       query={query} mode={company ? "company" : "keywords"} keywords={keywords} algorithm={algorithm} from={from}
-      loggedIn={!!user} savedKeys={[...saved]} reviewedKeys={[...reviewed]} next={next} />
+      loggedIn={!!user} savedKeys={[...saved]} reviewedKeys={[...reviewed]} next={next} initialCompany={initialCompany} />
   );
 }
