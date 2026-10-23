@@ -16,6 +16,7 @@ import type { CompanyDigest, RecommendationResponse } from "@/types/recommendati
 import { Scene, type SceneCounts } from "./Scene";
 import { FunnelLine } from "./FunnelLine";
 import { LeadsLine } from "./LeadsLine";
+import { rememberCompany } from "@/components/entry/RecentChips";
 import { CompanySide } from "./CompanySide";
 import { ResultRows, ZeroBlock } from "./ResultRows";
 
@@ -74,6 +75,11 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   }, []);
 
   const co = data?.company ?? initialCompany ?? null;
+
+  // 회사를 확정하면 입구의 '최근 조회' 에 남긴다 — 다시 치지 않게. 브라우저에만 남는다.
+  useEffect(() => {
+    if (co?.corp_nm) rememberCompany({ nm: co.corp_nm, rgn: co.rgn_nm ?? undefined });
+  }, [co?.corp_nm, co?.rgn_nm]);
   const bizrno = co ? co.bizrno.replace(/\D/g, "") : null;
   const results = data?.results ?? [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";

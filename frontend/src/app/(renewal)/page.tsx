@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { SearchSuggest } from "@/components/entry/SearchSuggest";
 import { EntryPanel } from "@/components/entry/EntryPanel";
+import { RecentChips } from "@/components/entry/RecentChips";
 import { getEntryData } from "@/lib/entry";
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default async function EntryPage() {
       <p className="mx-auto mt-[11px] max-w-[760px] text-[13.5px] text-ink-g">
         회사명 · 사업자등록번호 · 업종 또는 품목 중 아는 것 하나면 됩니다
       </p>
+      <RecentChips />
       {entry && <EntryPanel d={entry} />}
     </>
   );
