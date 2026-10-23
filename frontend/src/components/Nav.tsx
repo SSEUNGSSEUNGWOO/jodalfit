@@ -27,7 +27,7 @@ function LoginLink() {
   return <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-ink border-b border-ink">로그인</Link>;
 }
 
-/** 상단 nav — 비로그인 '로그인' / 로그인됨 you@… + 팝오버(저장한 회사 ★ · 검토함 · 설정 · 로그아웃). 링크 묶음이라 role=menu 는 쓰지 않는다. */
+/** 상단 nav — 비로그인 '로그인' / 로그인됨 you@… + 팝오버(저장한 회사 ★ · 검토함 · 로그아웃). 링크 묶음이라 role=menu 는 쓰지 않는다. */
 export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; signOutHref?: string }) {
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
@@ -67,16 +67,13 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
                 <span className="t-k block px-3 pb-0.5 pt-2">저장한 회사 {user.savedCompanies.length}</span>
                 {user.savedCompanies.map((c) => (
                   <Link key={c.bizrnoNorm} href={`/companies/${c.bizrnoNorm}`}
-                    className="block rounded-md px-3 py-[7px] text-[13.5px] text-ink hover:bg-paper before:mr-2 before:text-[11px] before:text-orange before:content-['★']">
+                    className="block rounded-md px-3 py-[7px] text-[13.5px] text-ink hover:bg-paper before:mr-2 before:text-[11px] before:text-orange-ink before:content-['★']">
                     {c.name}
                   </Link>
                 ))}
                 <div className="my-1.5 h-px bg-rule" />
                 <Link href="/saved" className="block rounded-md px-3 py-2 text-[13.5px] text-ink hover:bg-paper">
                   검토함<small className="block text-[12px] text-ink-mute">검토한 공고 {user.reviewedCount}건</small>
-                </Link>
-                <Link href="/settings" className="block rounded-md px-3 py-2 text-[13.5px] text-ink hover:bg-paper">
-                  설정<small className="block text-[12px] text-ink-mute">비밀번호 변경 · 알림 수신 · 탈퇴</small>
                 </Link>
                 <div className="my-1.5 h-px bg-rule" />
                 <a href={signOutHref} className="block rounded-md px-3 py-2 text-[13.5px] text-ink-mute hover:bg-paper">로그아웃</a>

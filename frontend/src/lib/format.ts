@@ -18,13 +18,18 @@ export function wonFull(v: number | string | null | undefined): string {
   return `${Math.trunc(n).toLocaleString("ko-KR")}원`;
 }
 
-/** 마감까지 남은 일수. 날짜 문자열 앞 10자리만 쓴다(시간대 무시 — 나라장터 마감은 날짜 단위로 본다). */
+/** 한국 시각의 날짜. 서버·브라우저의 로컬 시간대에 의존하지 않는다. */
+export function kstDate(date: Date = new Date()): string {
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+}
+
+/** 마감까지 남은 일수. 공고의 날짜와 한국 시각의 오늘을 비교한다. */
 export function dLeft(dateStr: string | null | undefined, today: Date = new Date()): { days: number; month: number; day: number } | null {
   if (!dateStr || !/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return null;
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
-  const target = new Date(y, m - 1, d);
-  const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const days = Math.round((target.getTime() - base.getTime()) / 86_400_000);
+  const target = Date.UTC(y, m - 1, d);
+  const base = Date.parse(`${kstDate(today)}T00:00:00Z`);
+  const days = Math.round((target - base) / 86_400_000);
   return { days, month: m, day: d };
 }
 

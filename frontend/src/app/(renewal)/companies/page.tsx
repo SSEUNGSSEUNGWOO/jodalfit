@@ -9,7 +9,7 @@ import {
   Globe,
   Calendar,
 } from "lucide-react";
-import { BoardSearch } from "@/components/board/BoardSearch";
+import { SearchSuggest } from "@/components/entry/SearchSuggest";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { BROWSE_SIDO_LIST, fetchBrowseCompanies } from "@/lib/company";
@@ -40,7 +40,7 @@ export default async function CompaniesIndexPage() {
 
   return (
     <>
-      <main>
+      <div>
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
             <h1 className="font-[650] text-[28px] sm:text-[36px] tracking-[-0.02em] text-ink">
@@ -51,7 +51,7 @@ export default async function CompaniesIndexPage() {
               해당 회사에 맞는 추천 공고와 과거 수주 분석을 볼 수 있어요.
             </p>
             <div className="mt-6 max-w-[560px]">
-              <BoardSearch />
+              <SearchSuggest />
             </div>
           </div>
         </section>
@@ -214,7 +214,7 @@ export default async function CompaniesIndexPage() {
             </ul>
           </section>
         )}
-      </main>
+      </div>
     </>
   );
 }

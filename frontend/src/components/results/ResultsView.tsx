@@ -12,6 +12,7 @@ import { streamRecommendations } from "@/lib/stream";
 import { getSessionId } from "@/lib/events";
 import { cn, maskBizrno } from "@/lib/utils";
 import { companyStats } from "@/lib/saved-stats";
+import { kstDate } from "@/lib/format";
 import type { CompanyDigest, RecommendationResponse } from "@/types/recommendations";
 import { Scene, type SceneCounts } from "./Scene";
 import { FunnelLine } from "./FunnelLine";
@@ -22,7 +23,7 @@ import { ResultRows, ZeroBlock } from "./ResultRows";
 
 const TIMEOUT_MS = 8000;
 // 20 건 — 채점표 K 곡선(12→20 은 낙찰 포함률이 크게 오르고 20→30 은 거의 안 는다)과 실사용 로그(13~20위에서 저장의 27%)를 같이 보고 정했다. 2026-10-23.
-// 공개 5 + 흐림 15. 인쇄 보고서는 A4 한 장에 맞춰 12 건으로 따로 간다(report/page.tsx).
+// 공개 5 + 흐림 미리보기 3. 인쇄 보고서는 A4 한 장에 맞춰 12 건으로 따로 간다(report/page.tsx).
 const RESULT_LIMIT = 20;
 const EMPTY: SceneCounts = { total: null, candidates: null, passed: null, results: null };
 const OTHER = "ml-3.5 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange";
@@ -100,10 +101,10 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       ) : mode === "company" ? (
         <PageHead title={co?.corp_nm ?? query} small={co ? maskBizrno(co.bizrno) : undefined} className="border-b-0! pb-0"
           aside={<>
-            {bizrno && <StarCompany bizrnoNorm={bizrno} saved={savedKeys.includes(bizrno)} loggedIn={loggedIn} className="ml-3 h-[30px] text-[13px]" />}
+            {bizrno && <StarCompany bizrnoNorm={bizrno} saved={savedKeys.includes(bizrno)} loggedIn={loggedIn} next={next} className="ml-3 h-[30px] text-[13px]" />}
             <button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 회사</button>
           </>}
-          meta={co ? [co.rgn_nm ?? "—", `기준일 ${today.toISOString().slice(0, 10)}`] : undefined} />
+          meta={co ? [co.rgn_nm ?? "—", `기준일 ${kstDate(today)}`] : undefined} />
       ) : (
         <PageHead title={`“${query}”`} className="border-b-0! pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
           meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />
@@ -127,28 +128,30 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       )}
 
       {mode === "company" && !error && (
-        <FunnelLine counts={counts} open={state === "done"} tabs={zero || !data ? null : { notices: results.length, preSpecs: data.pre_spec_results?.length ?? 0, orderPlans: data.order_plan_results?.length ?? 0 }} due={stats} />
+        <FunnelLine counts={counts} open={state === "done"} />
       )}
 
       {state === "done" && data && (
-        <Panel data-res className="mt-[22px] translate-y-0 opacity-100 transition-[opacity,transform] duration-500 [transition-timing-function:var(--ease-sheet)] starting:translate-y-2.5 starting:opacity-0">
-          <div className={cn("grid items-start gap-x-11", mode === "company" ? "grid-cols-[240px_minmax(0,1fr)] max-sm:grid-cols-1" : "grid-cols-1")}>
-            {mode === "company" && bizrno && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
-            <div className="pt-[22px] max-sm:pt-3.5">
-              {/* 공고 전 단계(사전규격·발주계획)는 표 위에 접힌 줄로. 0건이면 그려지지 않는다.
-                  지금까지는 숫자만 띄우고 누를 데가 없었다 — 목록을 서버가 만들어 버렸다. */}
-              {mode === "company" && (
-                <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
-              )}
-              {!zero && (
-                <div className="flex items-center justify-between border-b border-ink pb-2.5">
-                  <span className="t-k"><b className="mr-1.5 text-[14px] font-[650] text-ink">검토할 공고 {results.length}건</b>{mode === "company" ? "적합 순" : "유사도 순"}</span>
-                  {mode === "company" && co && <a href={loggedIn ? `/recommendations/report?company=${encodeURIComponent(co.bizrno)}` : `/login?next=${encodeURIComponent(`/recommendations/report?company=${co.bizrno}`)}`} className="border-b border-field text-[13px] text-ink-g hover:border-orange">인쇄 / PDF 저장</a>}
+        <Panel data-res className="mt-4 translate-y-0 opacity-100 transition-[opacity,transform] duration-500 [transition-timing-function:var(--ease-sheet)] starting:translate-y-2.5 starting:opacity-0">
+          <div className="pt-6 max-sm:pt-5">
+            {!zero && (
+              <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-3 border-b border-ink pb-5 max-sm:pb-4">
+                <div>
+                  <h2 className="text-[24px] font-semibold tracking-[-0.035em] text-ink max-sm:text-[21px]">검토할 공고 <span className="num">{results.length}</span><span className="ml-0.5 text-[16px] font-medium">건</span></h2>
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-g">
+                    <span>{mode === "company" ? "적합 순" : "검색어 유사도 순"}</span>
+                    {stats && stats.week > 0 && <span>이번 주 마감 <b className="num font-semibold text-ink">{stats.week}건</b></span>}
+                  </p>
                 </div>
-              )}
-              {zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
-                    : <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
-            </div>
+                {mode === "company" && co && <a href={loggedIn ? `/recommendations/report?company=${encodeURIComponent(co.bizrno)}` : `/login?next=${encodeURIComponent(`/recommendations/report?company=${co.bizrno}`)}`} className="inline-flex h-9 items-center gap-2 rounded-[6px] border border-field px-3 text-[12.5px] font-medium text-ink-g transition-colors hover:border-ink max-sm:h-8"><span className="max-sm:hidden">인쇄 / PDF 저장</span><span className="hidden max-sm:inline">PDF 저장</span><span aria-hidden="true">↗</span></a>}
+              </div>
+            )}
+            {zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
+                  : <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
+            {mode === "company" && (
+              <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
+            )}
+            {mode === "company" && bizrno && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
           </div>
         </Panel>
       )}

@@ -93,7 +93,7 @@ function Entry({ e }: { e: ChangeEntry }) {
           <span
             className={cn(
               "mt-1 inline-block rounded-full border px-2 py-0.5 text-[11.5px]",
-              e.tag === "처음 측정" ? "border-orange text-orange" : "border-field text-ink-mute",
+              e.tag === "처음 측정" ? "border-orange text-orange-ink" : "border-field text-ink-mute",
             )}
           >
             {e.tag}

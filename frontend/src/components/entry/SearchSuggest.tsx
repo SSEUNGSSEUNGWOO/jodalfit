@@ -20,6 +20,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [cos, setCos] = useState<CompanySuggestion[]>([]);
+  const [suggestQuery, setSuggestQuery] = useState("");
   const [closed, setClosed] = useState(false); // 사용자가 Esc·바깥 클릭으로 닫았는가 — 열림은 계산으로 낸다
   const [act, setAct] = useState(0);
   const box = useRef<HTMLDivElement>(null);
@@ -36,6 +37,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
         .then((rows: CompanySuggestion[]) => {
           if (!live) return;
           setCos(rows);
+          setSuggestQuery(v);
           setAct(0);
         })
         .catch(() => {
@@ -58,14 +60,15 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
   }, []);
 
   // 마지막 줄은 '그대로 찾기'(키워드). 목록이 비어도 이 줄은 남는다.
-  const rows = q.trim().length >= MIN ? [...cos.map((c) => ({ co: c })), { co: null }] : [];
+  const candidates = suggestQuery === q.trim() ? cos : [];
+  const rows = q.trim().length >= MIN ? [...candidates.map((c) => ({ co: c })), { co: null }] : [];
 
   function go(i: number) {
     const r = rows[i];
     const v = q.trim();
-    if (!r || !v) return;
+    if (!v) return;
     setClosed(true);
-    if (r.co) {
+    if (r?.co) {
       track("search_submit", { mode: "company", length: r.co.nm.length, from: "suggest" });
       router.push(`/recommendations?company=${encodeURIComponent(r.co.nm)}`);
       return;
@@ -76,6 +79,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
   }
 
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (!show) {
       if (e.key === "Enter" && q.trim()) {
         e.preventDefault();
@@ -114,6 +118,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
             const v = e.target.value;
             setQ(v);
             setClosed(false);
+            setAct(0);
             if (v.trim().length < MIN) setCos([]); // 짧아지면 이전 후보가 남지 않게
           }}
           onKeyDown={onKey}
@@ -125,6 +130,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
           aria-expanded={show}
           aria-controls="suggest-list"
           aria-autocomplete="list"
+          aria-activedescendant={show ? `suggest-option-${act}` : undefined}
           placeholder="회사명 · 사업자등록번호 · 업종 또는 품목"
           aria-label="회사명, 사업자등록번호, 업종 또는 품목"
           className="min-w-0 flex-1 bg-transparent px-[18px] py-3.5 text-[20px] font-medium tracking-[-0.02em] text-ink outline-none placeholder:font-[450] placeholder:text-ink-mute max-sm:px-3.5 max-sm:py-3 max-sm:text-[17px]"
@@ -143,6 +149,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
           {rows.map((r, i) => (
             <div
               key={r.co ? r.co.nm + r.co.rgn : "__kw"}
+              id={`suggest-option-${i}`}
               role="option"
               aria-selected={i === act}
               onMouseEnter={() => setAct(i)}

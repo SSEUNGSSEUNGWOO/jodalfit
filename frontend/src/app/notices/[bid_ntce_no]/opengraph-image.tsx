@@ -7,11 +7,12 @@ export const alt = "jodalfit 입찰공고";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const PRIMARY = "#1e3a66";
-const INK = "#111827";
-const MUTED = "#6B7280";
+// 09 전환: 리뉴얼 색으로. 주황은 선이지 면이 아니다 — 여기서도 글자·선에만 쓴다.
+const PRIMARY = "#f97316";
+const INK = "#141414";
+const MUTED = "#55554f";
 const SURFACE = "#F7F9FC";
-const BORDER = "#E5E7EB";
+const BORDER = "#e6e4df";
 const WARN = "#F59E0B";
 const DANGER = "#DC2626";
 
@@ -54,7 +55,7 @@ export default async function Image({
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: "#FFFFFF",
+          background: "#faf9f7",
           fontFamily: "Pretendard",
           padding: "72px 80px",
         }}

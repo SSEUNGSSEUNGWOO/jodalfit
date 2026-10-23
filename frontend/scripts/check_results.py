@@ -35,7 +35,10 @@ def goto(pg, path, wait=600):
 def wait_done(pg):
     pg.wait_for_selector("[data-scene][data-done=true], [data-err]", timeout=30000)
     assert not pg.query_selector("[data-err]"), "오류 상태 — 백엔드(:8000) 확인"
-    pg.wait_for_selector("[data-res]", timeout=5000); pg.wait_for_timeout(700)
+    # 건너뛰기는 장면만 끝낸다. 데이터는 화면의 8초 제한까지 기다린다.
+    pg.wait_for_selector("[data-res], [data-err]", timeout=10000)
+    assert not pg.query_selector("[data-err]"), "추천 데이터 조회 실패"
+    pg.wait_for_timeout(700)
 
 def admin(url, key, method, path, body=None):
     req = urllib.request.Request(f"{url}/auth/v1{path}", method=method, data=json.dumps(body).encode() if body else None,
@@ -54,12 +57,33 @@ def main():
         pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
         s = pg.evaluate("""() => ({ nums: [...document.querySelectorAll('[data-funnel] b[data-n]')].map(e => e.textContent), acc: getComputedStyle(document.querySelector('[data-funnel] b[data-n="3"]')).color,
             rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, gate: document.querySelectorAll('.hairline a[href^="/login"], .hairline a[href^="/signup"]').length,
-            fade: document.querySelectorAll('[inert] [data-sheet-row]').length, side: getComputedStyle(document.querySelector('[data-side]')).position,
+            fade: document.querySelectorAll('[inert] [data-sheet-row]').length, side: document.querySelector('[data-side]').open,
             panel: getComputedStyle(document.querySelector('[data-res]')).backgroundColor, radius: getComputedStyle(document.querySelector('[data-res]')).borderRadius,
             quals: document.querySelectorAll('.x-wrap[data-open=true] li').length, star: !!document.querySelector('[data-star]'), other: !!document.querySelector('[data-other]') })""")
-        assert "…" not in s["nums"] and s["acc"] == "rgb(249, 115, 22)", s
-        assert s["rows"] >= 6 and s["gate"] == 2 and s["fade"] >= 1 and s["side"] == "sticky" and s["panel"] == "rgb(255, 255, 255)" and s["radius"] == "14px" and s["quals"] >= 3 and s["star"] and s["other"], s
+        # 글자용 주황(--color-orange-ink #b85510) — 브랜드 주황 #f97316 은 종이색 위 대비가 2.66:1 이라
+        # 글자로 쓸 수 없다(2026-10-23 Lighthouse). 선·테두리·로고 타일은 여전히 #f97316.
+        assert "…" not in s["nums"] and s["acc"] == "rgb(184, 85, 16)", s
+        assert s["rows"] >= 6 and s["gate"] == 2 and s["fade"] >= 1 and s["side"] is False and s["panel"] == "rgb(255, 255, 255)" and s["radius"] == "14px" and s["quals"] == 0 and s["star"] and s["other"], s
+        expected = f"/recommendations?company={CO}"
+        for selector in ("[data-star=guest]", "[data-review=guest]"):
+            href = pg.locator(selector).first.get_attribute("href")
+            assert urllib.parse.parse_qs(urllib.parse.urlsplit(href).query)["next"] == [expected], href
+        assert pg.locator("[data-rows] > [inert] [data-sheet-row]").count() == 3
+        hidden = pg.locator(".x-wrap[data-open=false] a").first
+        hidden.focus()
+        assert not hidden.evaluate("e => document.activeElement === e"), "접힌 공고의 링크에 포커스가 들어간다"
         pg.screenshot(path=str(OUT / "_shot_results_default.png"), full_page=True)
+        pg.get_by_role("button", name="1번 공고 펼치기", exact=True).click()
+        pg.wait_for_selector(".x-wrap[data-open=true] li")
+        assert pg.locator(".x-wrap[data-open=true] li").count() >= 3
+        pg.wait_for_timeout(500)
+        pg.screenshot(path=str(OUT / "_shot_results_expanded.png"), full_page=True)
+        pg.locator("[data-side] summary").click()
+        assert pg.locator("[data-side]").evaluate("e => e.open")
+        pg.locator("[data-side] summary").click()
+        pg.locator("[data-funnel] summary").click()
+        assert pg.locator("[data-funnel] ol").is_visible()
+        pg.locator("[data-funnel] summary").click()
         # 다른 회사
         pg.click("[data-other]"); pg.wait_for_timeout(500)
         o = pg.evaluate("() => ({ box: !!document.querySelector('[data-search] [data-searchbox]'), res: getComputedStyle(document.querySelector('[data-res]')).opacity, focus: document.activeElement?.tagName })")
@@ -69,8 +93,8 @@ def main():
         assert not pg.query_selector("[data-search]") and pg.evaluate("getComputedStyle(document.querySelector('[data-res]')).opacity") == "1"
         # 390
         pg.set_viewport_size({"width": 390, "height": 844}); goto(pg, f"/recommendations?company={CO}", 300); pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
-        m = pg.evaluate("() => ({ open: document.querySelector('[data-side]').open, cols: getComputedStyle(document.querySelector('[data-res] > div')).gridTemplateColumns.split(' ').length })")
-        assert m["open"] is False and m["cols"] == 1, m
+        m = pg.evaluate("() => ({ open: document.querySelector('[data-side]').open, first: document.querySelector('[data-sheet-row]').getBoundingClientRect().top, side: document.querySelector('[data-side]').getBoundingClientRect().top })")
+        assert m["open"] is False and m["first"] < 450 and m["side"] > m["first"], m
         pg.screenshot(path=str(OUT / "_shot_results_390.png"), full_page=True)
         pg.set_viewport_size({"width": 1280, "height": 900})
         # 키워드 모드
@@ -83,7 +107,7 @@ def main():
         assert pg.query_selector("[data-suggest] input"), "입구 검색창이 없다"
 
         if not (url and anon and srv):
-            print("ok results(guest): scene→done · funnel 4 · rows/gate/fade · side sticky · other company · 390 · keywords · 로그인 검사 건너뜀"); b.close(); return 0
+            print("ok results(guest): scene→done · funnel 4 · rows/gate/fade · disclosures · other company · 390 · keywords · 로그인 검사 건너뜀"); b.close(); return 0
         email, pw_ = "check-results@jodalfit.test", "check-results-pw-1"
         for u in admin(url, srv, "GET", "/admin/users?per_page=200").get("users", []):
             if u.get("email") == email: admin(url, srv, "DELETE", f"/admin/users/{u['id']}")
@@ -91,8 +115,9 @@ def main():
         try:
             goto(pg, f"/login?next=%2Frecommendations%3Fcompany%3D{CO}"); pg.fill("input[type=email]", email); pg.fill("input[type=password]", pw_); pg.click("button[type=submit]")
             pg.wait_for_url(re.compile(r"/recommendations")); pg.wait_for_load_state("networkidle"); pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg)
-            l = pg.evaluate("() => ({ gate: document.querySelectorAll('.hairline a[href^=\"/login\"]').length, rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, fade: document.querySelectorAll('[inert]').length, report: !!document.querySelector('a[href^=\"/recommendations/report\"]') })")
+            l = pg.evaluate("() => ({ gate: document.querySelectorAll('.hairline a[href^=\"/login\"]').length, rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, fade: document.querySelectorAll('[inert]:not(.x-wrap)').length, report: !!document.querySelector('a[href^=\"/recommendations/report\"]') })")
             assert l["gate"] == 0 and l["rows"] >= 6 and l["fade"] == 0 and l["report"], l
+            pg.get_by_role("button", name="1번 공고 펼치기", exact=True).click()
             pg.click("[data-review=off]"); pg.wait_for_selector("[data-review=on]"); pg.wait_for_timeout(500)
             assert pg.evaluate("getComputedStyle(document.querySelector('[data-sheet-row]'), '::before').transform") != "matrix(1, 0, 0, 0, 0, 0)"  # scaleY(1)
             pg.screenshot(path=str(OUT / "_shot_results_reviewed.png"), full_page=True)

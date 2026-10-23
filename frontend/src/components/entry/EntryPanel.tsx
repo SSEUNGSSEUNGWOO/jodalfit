@@ -4,20 +4,13 @@
 import Link from "next/link";
 import type { EntryData } from "@/lib/entry";
 import { cn } from "@/lib/utils";
+import { dLeft } from "@/lib/format";
 
 const nf = new Intl.NumberFormat("ko-KR");
 
 function won(v: number | null): string {
   if (!v) return "—";
   return v >= 100_000_000 ? `${(v / 100_000_000).toFixed(1)}억` : `${nf.format(Math.round(v / 10_000))}만`;
-}
-
-/** 마감까지 남은 날. 한국 시각 기준 날짜 차이 — 시각은 공고마다 없고 날짜만 있다. */
-function dLeft(clse: string | null, today: Date): number | null {
-  if (!clse) return null;
-  const a = Date.parse(`${clse}T00:00:00+09:00`);
-  const b = Date.parse(`${today.toISOString().slice(0, 10)}T00:00:00+09:00`);
-  return Number.isNaN(a) ? null : Math.round((a - b) / 86400_000);
 }
 
 export function EntryPanel({ d }: { d: EntryData }) {
@@ -32,7 +25,7 @@ export function EntryPanel({ d }: { d: EntryData }) {
       <div className="flex gap-[34px] max-sm:flex-wrap max-sm:gap-x-6 max-sm:gap-y-3">
         {stats.map((s) => (
           <div key={s.label} className="flex flex-col gap-[3px]">
-            <b className={cn("num text-[24px] font-[650] tracking-[-0.03em]", s.hot ? "text-orange" : "text-ink")}>
+            <b className={cn("num text-[24px] font-[650] tracking-[-0.03em]", s.hot ? "text-orange-ink" : "text-ink")}>
               {nf.format(s.n)}
             </b>
             <span className="text-[12.5px] text-ink-g">{s.label}</span>
@@ -48,7 +41,7 @@ export function EntryPanel({ d }: { d: EntryData }) {
           </span>
           <ul className="mt-2">
             {d.fresh.map((r) => {
-              const dl = dLeft(r.clse, today);
+              const dl = dLeft(r.clse, today)?.days ?? null;
               return (
                 <li
                   key={`${r.nm}|${r.instt}`}
@@ -59,7 +52,7 @@ export function EntryPanel({ d }: { d: EntryData }) {
                     <span className="ml-2 text-[12.5px] text-ink-g">{r.instt || "—"}</span>
                   </span>
                   <span className="min-w-[76px] text-right text-[13px] text-ink-g">
-                    마감 <b className={cn("font-[650]", dl != null && dl <= 3 ? "text-orange" : "text-ink")}>
+                    마감 <b className={cn("font-[650]", dl != null && dl <= 3 ? "text-orange-ink" : "text-ink")}>
                       {dl == null ? "—" : `D-${dl}`}
                     </b>
                   </span>

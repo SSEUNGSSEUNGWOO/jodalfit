@@ -116,7 +116,7 @@ export function AwardsPanel({ rows, summary }: { rows: AwardRow[]; summary: Awar
                   {r.bid_rate == null ? (
                     <span className="text-ink-mute">—</span>
                   ) : (
-                    <span className={cn("font-[650]", summary.avg_rate != null && r.bid_rate < summary.avg_rate ? "text-orange" : "text-ink")}>
+                    <span className={cn("font-[650]", summary.avg_rate != null && r.bid_rate < summary.avg_rate ? "text-orange-ink" : "text-ink")}>
                       {r.bid_rate.toFixed(1)}%
                     </span>
                   )}

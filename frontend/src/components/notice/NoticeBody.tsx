@@ -40,7 +40,7 @@ export function WorkSection({ n, insight }: { n: BidNotice; insight: NoticeInsig
           <ul className="mt-2.5 text-[13.5px]">
             {files.slice(0, 8).map((f, i) => (
               <li key={f.url} className="border-b border-rule-2 py-1.5 last:border-0">
-                <a href={f.url} className="break-all text-ink underline-offset-2 hover:text-orange hover:underline" rel="nofollow noopener">
+                <a href={f.url} className="break-all text-ink underline-offset-2 hover:text-orange-ink hover:underline" rel="nofollow noopener">
                   {f.name || `첨부 ${f.seq ?? i + 1}`}
                 </a>
               </li>
@@ -159,7 +159,7 @@ export function InstitutionSection({ n }: { n: BidNotice }) {
       <ul className="mt-2.5">
         {rows.map(([k, v]) => (
           <li key={k} className="grid grid-cols-[88px_minmax(0,1fr)] items-baseline gap-3 border-b border-rule py-2 text-[13.5px] last:border-0">
-            <span className="text-ink-g">{k}</span>
+            <span className="break-keep text-ink-g">{k}</span>
             <span className="min-w-0 break-words text-ink">{v}</span>
           </li>
         ))}

@@ -1,5 +1,5 @@
 // frontend/src/app/(renewal)/saved/NoticeRows.tsx
-// 검토함 공고 표. 격자는 시안 gen_saved.py:34 (제목 / 마감 84 / 추정가 84 / 해제 64), 390 은 제목 / 마감 72 만.
+// 검토함 공고 표. 390 은 제목 / 마감 아래에 추정가와 해제 버튼을 둔다.
 // 해제는 행이 흐려지고 "되돌리기"로 바뀐다 — 즉시 사라지지 않는다(시안). 되돌리기는 같은 값으로 다시 insert.
 // 행 토글은 router.refresh() 를 부르지 않는다 — 다시 그리면 삭제된 행이 빠져 "되돌리기" 가 사라진다. 숫자는 다음 이동 때 갱신.
 "use client";
@@ -37,20 +37,20 @@ function Row({ r, past }: { r: ReviewedNoticeRow; past: boolean }) {
         </span>
         <span className="mt-1 block text-[13.5px] text-ink-dim max-sm:text-[13px]">
           {r.via && (
-            <span className={cn("before:mr-1 before:text-[11px] before:content-['★']", past ? "before:text-[#b8b6b0]" : "before:text-orange")}>{r.via.name}</span>
+            <span className={cn("before:mr-1 before:text-[11px] before:content-['★']", past ? "before:text-[#b8b6b0]" : "before:text-orange-ink")}>{r.via.name}</span>
           )}
           {r.via && <span className="mx-[7px] text-[#c9c9c4]">·</span>}
           <span>{r.org}</span>
           {r.why && !past && <span className="ml-[7px] rounded-[4px] border border-hair px-1.5 py-px text-[12px] text-ink-g">{r.why}</span>}
         </span>
       </span>
-      <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot && "text-orange", past && "font-medium")}>
+      <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot && "text-orange-ink", past && "font-medium")}>
         {r.d ? (r.d.days < 0 ? "마감" : `D-${r.d.days}`) : "—"}
         {r.d && <small className={cn("block text-[12px] font-normal", past ? "text-[#9b9a95]" : "text-ink-mute")}>{r.d.month}.{String(r.d.day).padStart(2, "0")}</small>}
       </span>
-      <span className="num pt-0.5 text-right text-[15px] max-sm:hidden">{won(r.price)}</span>
-      <span className="pt-1 text-right text-[13px] max-sm:hidden">
-        <button type="button" onClick={toggle} data-unreview className={cn("cursor-pointer border-b", removed ? "border-ink text-ink" : "border-[#d8d6d0] text-ink-g hover:border-orange")}>
+      <span className="num pt-0.5 text-right text-[15px] max-sm:pt-3 max-sm:text-left max-sm:text-[13px]"><span className="hidden max-sm:inline">추정가 </span>{won(r.price)}</span>
+      <span className="pt-1 text-right text-[13px] max-sm:pt-3">
+        <button type="button" onClick={toggle} disabled={busy} data-unreview className={cn("cursor-pointer border-b", removed ? "border-ink text-ink" : "border-[#d8d6d0] text-ink-g hover:border-orange")}>
           {removed ? "되돌리기" : "해제"}
         </button>
       </span>

@@ -1,5 +1,5 @@
 // frontend/src/components/results/LeadsLine.tsx
-// 검토할 공고 표 **위**의 접히는 줄 — 사전규격(골든타임)과 발주계획.
+// 공고 목록 다음의 접히는 줄 — 사전규격(골든타임)과 발주계획.
 //
 // 왜 공고 목록에 섞지 않나: 추천되는 공고는 이미 본공고라 의견 창이 닫힌 뒤다.
 // 2026-10-23 확인 — 활성 공고 10,382건 중 사전규격과 이어지고 의견 접수가 아직 열린 건 53건(0.5%).
@@ -42,18 +42,18 @@ export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommend
 
   const soon = preSpecs.filter((p) => when(p.opnin_rgst_clse_dt, now).hot).length;
   return (
-    <div data-leads className="mb-4 border-b border-rule pb-3.5">
+    <div data-leads className="mt-6 border-t border-hair pt-5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full cursor-pointer items-baseline gap-3 text-left"
+        className="flex w-full cursor-pointer items-baseline gap-3 text-left max-sm:flex-wrap max-sm:gap-y-1"
       >
-        <span className="text-[14px] font-[650] text-ink">
+        <span className="shrink-0 text-[14px] font-[650] text-ink">
           공고 전 단계 {nf.format(preSpecs.length + orderPlans.length)}건
         </span>
-        <span className="text-[12.5px] text-ink-g">
-          {preSpecs.length > 0 && <>의견 접수 중인 사전규격 {preSpecs.length}건{soon > 0 && <> (<b className="font-[650] text-orange">{soon}건 곧 마감</b>)</>}</>}
+        <span className="break-keep text-[12.5px] text-ink-g max-sm:order-last max-sm:basis-full">
+          {preSpecs.length > 0 && <>의견 접수 중인 사전규격 {preSpecs.length}건{soon > 0 && <> (<b className="font-[650] text-orange-ink">{soon}건 곧 마감</b>)</>}</>}
           {preSpecs.length > 0 && orderPlans.length > 0 && " · "}
           {orderPlans.length > 0 && <>앞으로 나올 공고 {orderPlans.length}건</>}
         </span>
@@ -76,7 +76,7 @@ export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommend
                         {p.prdct_clsfc_no_nm || "—"}
                         <span className="ml-2 text-[12px] text-ink-g">{p.rl_dminstt_nm || p.order_instt_nm || "—"}</span>
                       </span>
-                      <span className={cn("min-w-[88px] text-right text-[13px] font-[650]", w.hot ? "text-orange" : "text-ink")}>{w.text}</span>
+                      <span className={cn("min-w-[88px] text-right text-[13px] font-[650]", w.hot ? "text-orange-ink" : "text-ink")}>{w.text}</span>
                       <span className="num min-w-[62px] text-right text-[13px] text-ink-g max-sm:hidden">{won(p.asign_bdgt_amt)}</span>
                     </li>
                   );

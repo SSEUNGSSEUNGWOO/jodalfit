@@ -93,7 +93,7 @@ export default async function CompaniesBrowsePage({ params }: Props) {
 
   return (
     <>
-      <main>
+      <div>
         <section className="mx-auto max-w-[1080px] px-5 sm:px-8 pt-10 sm:pt-12 pb-16">
           <nav className="text-[12.5px] text-ink-3" aria-label="브레드크럼">
             <Link href="/companies" className="hover:text-ink font-semibold">
@@ -185,7 +185,7 @@ export default async function CompaniesBrowsePage({ params }: Props) {
             {p < totalPages && <PageLink sido={parsed.sido} page={p + 1} label="다음 →" />}
           </nav>
         </section>
-      </main>
+      </div>
     </>
   );
 }

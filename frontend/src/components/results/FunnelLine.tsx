@@ -1,46 +1,30 @@
-// frontend/src/components/results/FunnelLine.tsx
-// 걸러낸 경로(숫자 + 단계 라벨) 왼쪽, 종류 탭·마감 요약 오른쪽. 장면이 접힌 뒤(open) 펼쳐진다. 0건이면 탭·마감 요약 숨김(12건 기준 계산이라 거짓).
+// 선별 과정은 접힌 한 줄로 두고, 단계 설명은 펼쳐서 확인한다.
 import { cn } from "@/lib/utils";
 import { FUNNEL_LABELS, type SceneCounts } from "./Scene";
 
 const fmt = (n: number | null) => (n == null ? "…" : n.toLocaleString("ko-KR"));
 
-export function FunnelLine({ counts, open, tabs, due }: {
-  counts: SceneCounts; open: boolean;
-  tabs: { notices: number; preSpecs: number; orderPlans: number } | null;
-  due: { week: number; soonest: { days: number; month: number; day: number } | null } | null;
-}) {
+export function FunnelLine({ counts, open }: { counts: SceneCounts; open: boolean }) {
   const nums = [counts.total, counts.candidates, counts.passed, counts.results];
   return (
-    <div data-funnel className={cn("grid grid-cols-[1fr_auto] items-start gap-6 overflow-hidden transition-[grid-template-rows,padding,opacity] duration-[450ms] [transition-timing-function:var(--ease-sheet)] max-sm:grid-cols-1 max-sm:gap-y-2.5", open ? "grid-rows-[1fr] pt-4 opacity-100" : "grid-rows-[0fr] opacity-0")}>
-      <div className="flex min-h-0 items-start gap-3 overflow-hidden">
-        <span className="t-k pt-[3px] max-sm:hidden">걸러낸 경로</span>
-        {FUNNEL_LABELS.map((l, i) => (
-          <div key={l} className="contents">
-            {i > 0 && <i className="pt-0.5 text-[16px] not-italic text-ink-mute">→</i>}
-            <div className="flex flex-col">
-              <span className="num flex items-baseline">
-                <b className={cn("text-[28px] leading-[1.15] max-sm:text-[20px]", i === 3 && "text-[34px] text-orange max-sm:text-[24px]")} data-n={i}>{fmt(nums[i])}</b>
-                {i === 3 && <span className="ml-1 text-[11.5px] text-ink-mute">건</span>}
-              </span>
-              <span className="mt-[3px] text-[12.5px] leading-[1.3] text-ink-mute max-sm:text-[10.5px]">{l}</span>
-            </div>
-          </div>
+    <details data-funnel hidden={!open} className="group border-b border-hair text-[13px] text-ink-g">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 py-2 [&::-webkit-details-marker]:hidden">
+        <span className="font-medium">선별 과정</span>
+        <span className="num flex items-center gap-2.5" aria-label="전체 공고, 유사 후보, 자격 통과, 추천 결과 순">
+          {nums.map((n, i) => (
+            <span key={i} className="flex items-center gap-2.5">
+              {i > 0 && <span aria-hidden="true" className="text-ink-off">→</span>}
+              <b data-n={i} className={cn("font-semibold", i === 3 ? "text-orange-ink" : "text-ink-g")}>{fmt(n)}</b>
+            </span>
+          ))}
+        </span>
+        <span className="ml-auto text-[12px] text-ink-dim"><span className="group-open:hidden">과정 보기 +</span><span className="hidden group-open:inline">접기 −</span></span>
+      </summary>
+      <ol className="mb-3 grid grid-cols-4 gap-4 border-t border-hair pt-3 max-sm:grid-cols-2">
+        {FUNNEL_LABELS.map((label, i) => (
+          <li key={label}><span className="mb-1 block text-[11px] text-ink-mute">0{i + 1}</span><span className="block break-keep text-[12px]">{label}</span><strong className="num mt-1 block text-[17px] font-semibold text-ink">{fmt(nums[i])}</strong></li>
         ))}
-      </div>
-      {tabs && due && (
-        <div className="min-h-0 overflow-hidden text-right text-[14px] leading-[1.9] text-ink-g max-sm:text-left" data-tabs>
-          <div>
-            <em className="border-b border-ink pb-px font-[650] not-italic text-ink">공고 {tabs.notices}</em>
-            <span className="before:mx-2 before:text-[#c9c9c4] before:content-['·']">사전규격 {tabs.preSpecs}</span>
-            <span className="before:mx-2 before:text-[#c9c9c4] before:content-['·']">발주계획 {tabs.orderPlans}</span>
-          </div>
-          <div>
-            이번 주 마감 {due.week}건 · 가장 빠른 마감{" "}
-            {due.soonest ? <><span className={cn("font-[650]", due.soonest.days <= 7 ? "text-orange" : "text-ink")}>D-{due.soonest.days}</span> ({due.soonest.month}.{String(due.soonest.day).padStart(2, "0")})</> : "—"}
-          </div>
-        </div>
-      )}
-    </div>
+      </ol>
+    </details>
   );
 }

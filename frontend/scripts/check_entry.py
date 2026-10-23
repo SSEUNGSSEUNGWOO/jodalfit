@@ -6,6 +6,7 @@
 캡처: scripts/_shot_entry_{desk,typed,390}.png
 """
 import os, re, sys
+from urllib.parse import parse_qs, urlsplit
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -59,13 +60,29 @@ def main() -> None:
         pg.wait_for_timeout(120)
         assert pg.evaluate("() => document.querySelectorAll('[role=option]').length") == 0, "Esc 로 안 닫힌다"
 
-        pg.keyboard.type("링")  # 다시 입력하면 열린다
+        pg.fill("[data-suggest] input", "한종")  # 다른 회사명을 입력하면 열린다
         pg.wait_for_function("() => document.querySelectorAll('[role=option]').length >= 2", timeout=10000)
         pg.keyboard.press("ArrowDown")
         pg.keyboard.press("Enter")
         pg.wait_for_url(re.compile(r"/recommendations\?(company|q)="), timeout=15000)
         picked = pg.url
         assert "company=" in picked or "q=" in picked, picked
+
+        # 이전 후보가 남아 있어도 새 검색어를 제출해야 한다.
+        pg.goto(URL, wait_until="networkidle", timeout=30000)
+        pg.fill("[data-suggest] input", "한종")
+        pg.wait_for_function("document.querySelectorAll('[role=option]').length >= 2", timeout=10000)
+        pg.fill("[data-suggest] input", "전기")
+        pg.keyboard.press("Enter")
+        pg.wait_for_url(re.compile(r"/recommendations\?q="), timeout=15000)
+        assert parse_qs(urlsplit(pg.url).query)["q"] == ["전기"], pg.url
+
+        # 자동완성의 두 글자 문턱과 검색 제출은 별개다.
+        pg.goto(URL, wait_until="networkidle", timeout=30000)
+        pg.fill("[data-suggest] input", "물")
+        pg.click("[data-suggest] button[type=submit]")
+        pg.wait_for_url(re.compile(r"/recommendations\?q="), timeout=15000)
+        assert parse_qs(urlsplit(pg.url).query)["q"] == ["물"], pg.url
 
         pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
         pg2.goto(URL, wait_until="networkidle", timeout=30000)

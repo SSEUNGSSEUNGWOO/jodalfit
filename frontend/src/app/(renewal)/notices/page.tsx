@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Pagination } from "@/components/Pagination";
-import { BoardSearch } from "@/components/board/BoardSearch";
+import { SearchSuggest } from "@/components/entry/SearchSuggest";
 import { SlimNoticeRow } from "@/components/SlimNoticeRow";
 import {
   fetchBrowsePage,
@@ -165,7 +165,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
 
   return (
     <>
-      <main>
+      <div>
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-12">
             <h1 className="font-[650] text-[28px] sm:text-[36px] tracking-[-0.02em] text-ink">
@@ -176,7 +176,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
               공고를 클릭하면 발주계획부터 낙찰까지 전 과정을 한 페이지에서 확인할 수 있어요.
             </p>
             <div className="mt-6 max-w-[560px]">
-              <BoardSearch />
+              <SearchSuggest />
             </div>
           </div>
         </section>
@@ -303,7 +303,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
             </>
           )}
         </section>
-      </main>
+      </div>
     </>
   );
 }

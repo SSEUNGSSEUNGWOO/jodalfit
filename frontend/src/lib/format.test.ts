@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { won, wonFull, dLeft, ymd, rgnBase } from "./format.ts";
+import { won, wonFull, dLeft, kstDate, ymd, rgnBase } from "./format.ts";
 
 test("won — 억·만 축약, 없으면 —", () => {
   assert.equal(won(5025454546), "50.3억");
@@ -29,6 +29,15 @@ test("dLeft — 없거나 깨진 날짜는 null", () => {
   assert.equal(dLeft(null), null);
   assert.equal(dLeft("", today), null);
   assert.equal(dLeft("not-a-date", today), null);
+});
+
+test("한국 자정을 지나면 UTC 날짜와 무관하게 기준일과 D-day가 바뀐다", () => {
+  const before = new Date("2026-10-23T14:59:59Z");
+  const after = new Date("2026-10-23T15:00:00Z");
+  assert.equal(kstDate(before), "2026-10-23");
+  assert.equal(kstDate(after), "2026-10-24");
+  assert.equal(dLeft("2026-10-24", before)?.days, 1);
+  assert.equal(dLeft("2026-10-24", after)?.days, 0);
 });
 
 test("ymd — 2026.10.16", () => {

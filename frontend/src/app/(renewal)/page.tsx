@@ -11,6 +11,10 @@ import { EntryPanel } from "@/components/entry/EntryPanel";
 import { RecentChips } from "@/components/entry/RecentChips";
 import { getEntryData } from "@/lib/entry";
 
+// 입구는 요청마다 DB 를 다섯 번 쳤다 — Lighthouse 에서 서버 응답 1.69초, LCP 4.9초로 걸렸다
+// (2026-10-23, 운영 빌드). 수치는 분 단위로 바뀌는 값이 아니다. 5분마다 다시 읽는다.
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "조달핏 — 우리 회사가 검토할 만한 입찰공고",
   description:

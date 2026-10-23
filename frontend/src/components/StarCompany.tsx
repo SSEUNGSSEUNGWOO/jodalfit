@@ -9,7 +9,7 @@ import { Btn } from "@/components/Btn";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 
-export function StarCompany({ bizrnoNorm, saved, loggedIn, className }: { bizrnoNorm: string; saved: boolean; loggedIn: boolean; className?: string }) {
+export function StarCompany({ bizrnoNorm, saved, loggedIn, className, next: returnTo }: { bizrnoNorm: string; saved: boolean; loggedIn: boolean; className?: string; next?: string }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
   const [on, setOn] = useState(saved);
@@ -18,7 +18,7 @@ export function StarCompany({ bizrnoNorm, saved, loggedIn, className }: { bizrno
 
   if (!loggedIn) {
     return (
-      <Btn href={`/login?next=${encodeURIComponent(pathname)}`} className={className} data-star="guest">
+      <Btn href={`/login?next=${encodeURIComponent(returnTo ?? pathname)}`} className={className} data-star="guest">
         <span className="mr-1 text-ink-mute">☆</span>회사 저장
       </Btn>
     );
@@ -40,7 +40,7 @@ export function StarCompany({ bizrnoNorm, saved, loggedIn, className }: { bizrno
 
   return (
     <Btn variant={on ? "review" : "line"} onClick={toggle} aria-pressed={on} className={className} data-star={on ? "on" : "off"}>
-      <span className={cn("mr-1", on ? "text-orange" : "text-ink-mute")}>{on ? "★" : "☆"}</span>
+      <span className={cn("mr-1", on ? "text-orange-ink" : "text-ink-mute")}>{on ? "★" : "☆"}</span>
       {on ? "저장됨" : "회사 저장"}
     </Btn>
   );

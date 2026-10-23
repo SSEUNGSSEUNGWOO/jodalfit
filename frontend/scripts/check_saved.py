@@ -6,7 +6,7 @@
 
 비로그인: /saved 안내 판(버튼 2, 탭 0), 금지어 0, 주황 면 0, 인주 0, 바닥색, 390 가로 넘침 없음.
 로그인(키 있을 때만): Admin API 로 사용자 생성 → /login 폼 → /dev/foundation 에서 ☆·검토 → /saved 공고 1(★ 칩·근거)·회사 1(★)
-→ 해제 → 흐림+되돌리기 → 되돌리기 → 390 에서 추정가·해제 열 숨김 → 사용자 삭제.
+→ 해제 → 흐림+되돌리기 → 되돌리기 → 390 에서 추정가·해제·회사 결과 확인 → 사용자 삭제.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -90,7 +90,7 @@ def main():
                 past: !!document.querySelector('#pane-n [data-saved-past] [data-saved-row]'),
                 why: !!document.querySelector('#pane-n [data-saved-row] [class*="rounded-"]') })""")
             assert s["rows"] == 1 and s["tabs"][1] == "1", s
-            assert s["past"] or (s["tabs"][0] == "1" and s["star"] == "rgb(249, 115, 22)" and s["why"]), s  # 마감 지남이면 ★ 회색·live 0·근거 칩 없음이 정상
+            assert s["past"] or (s["tabs"][0] == "1" and s["star"] == "rgb(184, 85, 16)" and s["why"]), s  # 마감 지남이면 ★ 회색·live 0·근거 칩 없음이 정상
             pg.screenshot(path=str(OUT / "_shot_saved_notices.png"), full_page=True)
             pg.click("[data-unreview]"); pg.wait_for_timeout(300)
             u = pg.evaluate("""() => { const r = document.querySelector('#pane-n [data-saved-row]'); return { op: getComputedStyle(r).opacity, t: r.querySelector('[data-unreview]').textContent } }""")
@@ -100,14 +100,24 @@ def main():
 
             pg.click("#tab-c"); pg.wait_for_timeout(200)
             c = pg.evaluate("""() => ({ shown: !document.getElementById('pane-c').hidden, rows: document.querySelectorAll('#pane-c [data-saved-company]').length,
-                name: document.querySelector('#pane-c [data-saved-company] span span').textContent, result: !!document.querySelector('#pane-c a[href="/companies/1248177731"]') })""")
+                name: document.querySelector('#pane-c [data-saved-company] a').textContent, result: !!document.querySelector('#pane-c a[href="/companies/1248177731"]') })""")
             assert c["shown"] and c["rows"] == 1 and "한종산업개발" in c["name"] and c["result"], c
             pg.screenshot(path=str(OUT / "_shot_saved_companies.png"), full_page=True)
 
             pg.set_viewport_size({"width": 390, "height": 844}); goto(pg, "/saved"); rules(pg)
             m = pg.evaluate("""() => { const r = document.querySelector('#pane-n [data-saved-row]'); const ch = r.children;
                 return { price: getComputedStyle(ch[2]).display, un: getComputedStyle(ch[3]).display } }""")
-            assert m["price"] == "none" and m["un"] == "none", m
+            assert m["price"] != "none" and m["un"] != "none", m
+            pg.click("[data-unreview]"); pg.wait_for_timeout(500)
+            assert pg.locator("[data-unreview]").inner_text() == "되돌리기"
+            pg.click("[data-unreview]"); pg.wait_for_timeout(500)
+            pg.click("#tab-c")
+            assert pg.locator("#pane-c a").first.is_visible()
+            assert pg.locator("[data-unstar]").is_visible()
+            pg.click("[data-unstar]"); pg.wait_for_timeout(500)
+            assert pg.locator("[data-unstar]").inner_text() == "되돌리기"
+            pg.click("[data-unstar]"); pg.wait_for_timeout(500)
+            pg.click("#tab-n"); rules(pg)
             pg.screenshot(path=str(OUT / "_shot_saved_390.png"), full_page=True)
 
             # 메뉴 ★ 목록·검토 건수 (Nav)
@@ -116,10 +126,13 @@ def main():
             n = pg.evaluate("""() => ({ star: document.querySelectorAll('[data-menu] a[href^="/companies/1248177731"]').length,
                 cnt: [...document.querySelectorAll('[data-menu] small')].map(e => e.textContent).find(t => t.includes('검토한 공고')) })""")
             assert n["star"] == 1 and n["cnt"] == "검토한 공고 1건", n
+            assert pg.locator('[data-menu] a[href="/settings"]').count() == 0
+            goto(pg, "/companies/1248177731")
+            assert pg.locator("[data-star=on]").is_visible(), "회사 상세에 저장 상태가 반영되지 않았다"
         finally:
             admin(url, srv, "DELETE", f"/admin/users/{user['id']}")
         b.close()
-        print("ok saved: guest gate · login · ☆ · 검토 · notices 1(★·why) · 해제/되돌리기 · companies 1 · nav ★ 1/검토 1건 · 390 cols hidden · banned 0")
+        print("ok saved: guest gate · login · ☆ · 검토 · notices 1(★·why) · 해제/되돌리기 · companies 1 · nav ★ 1/검토 1건 · 390 actions · banned 0")
         return 0
 
 if __name__ == "__main__":

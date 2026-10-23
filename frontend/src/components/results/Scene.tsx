@@ -167,7 +167,7 @@ export function Scene({
             <span
               className={cn(
                 "num mt-[5px] block text-[26px] font-[650] tracking-[-0.04em] max-sm:text-[18px]",
-                i === 3 ? "text-orange" : "text-ink",
+                i === 3 ? "text-orange-ink" : "text-ink",
               )}
             >
               <span className="cnt" data-to={cnt[i]} />

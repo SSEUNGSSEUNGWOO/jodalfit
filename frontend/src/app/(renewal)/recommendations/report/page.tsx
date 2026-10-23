@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Tile } from "@/components/Logo";
 import { getRecommendations } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
-import { dLeft, rgnBase, won } from "@/lib/format";
+import { dLeft, kstDate, rgnBase, won } from "@/lib/format";
 import { qualLines, whyLines } from "@/lib/why";
 import { PrintButton } from "./PrintButton";
 
@@ -22,8 +22,8 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
   const d = await getRecommendations({ query: company, mode: "company", limit: 12, candidate_pool: 200, with_explanation: false });
   if (!d.company) redirect(`/recommendations?company=${encodeURIComponent(company)}`);
   // Vercel 은 UTC — 기준일·D-day 는 KST 로
-  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-  const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const today = new Date();
+  const ymd = kstDate(today);
   const f = d.funnel ?? null; const res = d.results;
   // 비스트림 응답은 후보·자격 통과 수를 모른다 — 두 칸만(지금 입찰 가능 → 검토할 공고).
   // 0057 에서 업종 허용 수를 뺐다(깔때기의 칸이 아니었다). 캐시 히트로 funnel 자체가 없으면 띠를 안 그린다.
@@ -43,7 +43,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
           <div className="mt-2.5 flex items-start gap-3 border-b border-hair pb-2">
             <span className="t-k pt-0.5">걸러낸 경로</span>
             {nums.map((n, i) => (
-              <div key={LABELS[i]} className="flex items-center gap-3"><div><b className={`num text-[13px] ${i === nums.length - 1 ? "text-orange" : ""}`}>{n == null ? "—" : n.toLocaleString("ko-KR")}</b><div className="text-[9px] text-ink-mute">{LABELS[i]}</div></div>{i < nums.length - 1 && <span className="text-ink-mute">→</span>}</div>
+              <div key={LABELS[i]} className="flex items-center gap-3"><div><b className={`num text-[13px] ${i === nums.length - 1 ? "text-orange-ink" : ""}`}>{n == null ? "—" : n.toLocaleString("ko-KR")}</b><div className="text-[9px] text-ink-mute">{LABELS[i]}</div></div>{i < nums.length - 1 && <span className="text-ink-mute">→</span>}</div>
             ))}
           </div>
         )}
@@ -56,7 +56,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
               <span className="num text-ink-mute">{String(i + 1).padStart(2, "0")}</span>
               <div>
                 <div className="flex items-baseline justify-between gap-3"><b className="text-[10.5px]">{b.bid_ntce_nm}</b>
-                  <span className="num shrink-0">마감 <span className={dl && dl.days <= 7 ? "font-semibold text-orange" : "font-semibold"}>{dl ? `D-${dl.days}` : "—"}</span>{dl && ` (${dl.month}.${String(dl.day).padStart(2, "0")})`} · 추정가 {won(b.presmpt_prce)}</span></div>
+                  <span className="num shrink-0">마감 <span className={dl && dl.days <= 7 ? "font-semibold text-orange-ink" : "font-semibold"}>{dl ? `D-${dl.days}` : "—"}</span>{dl && ` (${dl.month}.${String(dl.day).padStart(2, "0")})`} · 추정가 {won(b.presmpt_prce)}</span></div>
                 <div className="text-ink-g">{org}{b.bid_ntce_url && <> · <span className="text-ink-mute">{b.bid_ntce_url.replace("https://www.", "")}</span></>}</div>
                 <div><span className="text-ink-mute">참가 자격</span> {q}</div>
                 <div><span className="text-ink-mute">추천 근거</span> {whyLines(b.score_breakdown, org).slice(0, 2).join(" · ")}</div>

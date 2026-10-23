@@ -2,7 +2,9 @@
 // 입구 화면(04)의 판에 들어가는 수치·목록. 서버에서만 읽는다(service_role).
 // 시안 docs/design/scripts/gen_entry_v2.py::fetch 와 같은 정의 — 숫자가 시안과 화면에서 달라지면 안 된다.
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
+import { kstDate } from "./format";
 
 export type EntryNotice = { nm: string; instt: string; clse: string | null; amt: number | null };
 export type EntryData = {
@@ -19,9 +21,17 @@ const ROWS = 5;
 // (2026-10-23 실측 9건 — ingest_bid_notices 타임아웃). 숫자를 꾸미지 않으면서 화면이 안 비게.
 const TODAY_MIN = 20;
 
-const ymd = (d: Date) => d.toISOString().slice(0, 10);
+const ymd = kstDate;
 
-export async function getEntryData(): Promise<EntryData> {
+// 입구는 모든 사람이 거치는 화면이고 nav 가 로그인 상태를 읽어 페이지 자체는 정적이 될 수 없다.
+// 그래서 **데이터만** 캐시한다 — 요청마다 DB 를 다섯 번 치면 서버 응답이 1.7~1.9초가 된다
+// (2026-10-23 Lighthouse, 운영 빌드). 수치는 분 단위로 바뀌는 값이 아니다.
+export const getEntryData = unstable_cache(getEntryDataUncached, ["entry-data-v1"], {
+  revalidate: 300,
+  tags: ["entry-data"],
+});
+
+async function getEntryDataUncached(): Promise<EntryData> {
   const sb = getServerSupabase();
   const today = new Date();
   const horizon = new Date(today.getTime() + 90 * 86400_000);

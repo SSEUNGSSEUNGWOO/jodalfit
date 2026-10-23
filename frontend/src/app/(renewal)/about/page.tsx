@@ -2,7 +2,6 @@
 // 서비스 소개 — 09 전환에서 리뉴얼 껍데기로 옮겼다. nav·footer 는 레이아웃이 준다.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BoardSeal } from "@/components/board/BoardSeal";
 import { fetchAboutStats, type AboutStats } from "@/lib/notice";
 
 export const metadata: Metadata = {
@@ -24,7 +23,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <main>
+      <div>
         <Masthead stats={stats} />
         <SampleBoard />
         <Process />
@@ -32,7 +31,7 @@ export default async function AboutPage() {
         <Ledger stats={stats} />
         <Limits />
         <Contact />
-      </main>
+      </div>
     </>
   );
 }
@@ -100,7 +99,6 @@ function Masthead({ stats }: { stats: AboutStats }) {
               도구입니다.
             </p>
           </div>
-          <BoardSeal size={72} className="hidden sm:block shrink-0 mt-2" />
         </div>
 
         {/* 규모 — 데이터가 곧 제품이므로 건수를 숨기지 않는다 */}

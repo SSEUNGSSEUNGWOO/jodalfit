@@ -8,9 +8,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { Btn } from "@/components/Btn";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 
-export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed, loggedIn, onChange, className }: {
+export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed, loggedIn, onChange, className, next: returnTo }: {
   no: string; ord?: string; via?: string | null; why?: string | null; reviewed: boolean; loggedIn: boolean;
-  onChange?: (reviewed: boolean) => void; className?: string;
+  onChange?: (reviewed: boolean) => void; className?: string; next?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
@@ -19,7 +19,7 @@ export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed
   const [, start] = useTransition();
 
   if (!loggedIn) {
-    return <Btn variant="review" href={`/login?next=${encodeURIComponent(pathname)}`} className={className} data-review="guest">검토</Btn>;
+    return <Btn variant="review" href={`/login?next=${encodeURIComponent(returnTo ?? pathname)}`} className={className} data-review="guest">검토</Btn>;
   }
 
   async function toggle() {

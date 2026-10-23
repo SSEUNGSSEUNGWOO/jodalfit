@@ -3,6 +3,7 @@
 // 서버 컴포넌트. 자격 판정은 백엔드 /qualifications/check 와 같은 규칙을 쓰고, 회사를 모르면 판정하지 않는다.
 import type { BidNotice } from "@/lib/notice";
 import { cn } from "@/lib/utils";
+import { dLeft } from "@/lib/format";
 
 const nf = new Intl.NumberFormat("ko-KR");
 
@@ -13,15 +14,8 @@ function won(v: number | null | undefined): string {
   return v >= 100_000_000 ? `${(v / 100_000_000).toFixed(1)}억` : `${nf.format(Math.round(v / 10_000))}만`;
 }
 
-function dLeft(clse: string | null | undefined, today: Date): number | null {
-  if (!clse) return null;
-  const a = Date.parse(`${clse.slice(0, 10)}T00:00:00+09:00`);
-  const b = Date.parse(`${today.toISOString().slice(0, 10)}T00:00:00+09:00`);
-  return Number.isNaN(a) ? null : Math.round((a - b) / 86400_000);
-}
-
 export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[]; today: Date }) {
-  const d = dLeft(n.bid_clse_date, today);
+  const d = dLeft(n.bid_clse_date, today)?.days ?? null;
   const closed = d != null && d < 0;
   const files = (n.attachments ?? []) as { seq?: number; name?: string; url: string }[];
 
@@ -33,7 +27,7 @@ export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[
           {closed ? (
             <b className="text-[22px] font-[650] text-ink-mute">마감</b>
           ) : (
-            <b className={cn("num text-[26px] font-[650] tracking-[-0.03em]", d != null && d <= 7 ? "text-orange" : "text-ink")}>
+            <b className={cn("num text-[26px] font-[650] tracking-[-0.03em]", d != null && d <= 7 ? "text-orange-ink" : "text-ink")}>
               {d == null ? "—" : `D-${d}`}
             </b>
           )}
@@ -84,7 +78,7 @@ export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[
           <ul className="mt-1.5 text-[13.5px]">
             {files.slice(0, 8).map((f, i) => (
               <li key={f.url} className="border-b border-rule-2 py-1.5 last:border-0">
-                <a href={f.url} className="break-all text-ink underline-offset-2 hover:text-orange hover:underline" rel="nofollow noopener">
+                <a href={f.url} className="break-all text-ink underline-offset-2 hover:text-orange-ink hover:underline" rel="nofollow noopener">
                   {f.name || `첨부 ${f.seq ?? i + 1}`}
                 </a>
               </li>

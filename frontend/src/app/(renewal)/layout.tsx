@@ -11,7 +11,9 @@ export default async function RenewalLayout({ children }: { children: ReactNode 
     <div className="rn min-h-screen bg-paper text-ink">
       <div className="mx-auto max-w-[1120px] px-5 pb-[120px]">
         <Nav user={user} />
-        {children}
+        {/* 본문 랜드마크 — 화면 낭독기가 nav·footer 를 건너뛰고 본문으로 갈 수 있어야 한다.
+            Lighthouse 접근성 'Document does not have a main landmark' 로 걸렸다(2026-10-23). */}
+        <main id="main">{children}</main>
         <SiteFooter />
       </div>
     </div>

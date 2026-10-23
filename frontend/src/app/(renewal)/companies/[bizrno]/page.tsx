@@ -12,6 +12,7 @@ import { Suspense } from "react";
 import { AwardsPanel, ContractsPanel, Panel, PeersPanel } from "@/components/company/CompanyPanels";
 import { JsonLd } from "@/components/JsonLd";
 import { ResultRows } from "@/components/results/ResultRows";
+import { StarCompany } from "@/components/StarCompany";
 import { getRecommendations } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import {
@@ -24,7 +25,7 @@ import {
   summarizeContracts,
 } from "@/lib/company";
 import { companyOrganizationJsonLd } from "@/lib/jsonld";
-import { getReviewedKeys } from "@/lib/saved";
+import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";
 import { maskBizrno } from "@/lib/utils";
 
 type Props = { params: Promise<{ bizrno: string }> };
@@ -91,6 +92,7 @@ export default async function CompanyPage({ params }: Props) {
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 className="text-[30px] font-[650] tracking-[-0.03em] text-ink max-sm:text-[22px]">{company.corp_nm}</h1>
           <span className="num text-[13px] text-ink-mute">{maskBizrno(company.bizrno)}</span>
+          <Suspense fallback={null}><CompanyStar bizrnoNorm={normalized} /></Suspense>
           {closed && <span className="rounded-full border border-field px-2 py-0.5 text-[12px] text-ink-mute">국세청 기준 폐업</span>}
         </div>
         <p className="mt-1.5 text-[13.5px] text-ink-g">
@@ -136,6 +138,12 @@ export default async function CompanyPage({ params }: Props) {
   );
 }
 
+async function CompanyStar({ bizrnoNorm }: { bizrnoNorm: string }) {
+  const user = await getSessionUser();
+  const saved = user ? await getSavedCompanyKeys() : new Set<string>();
+  return <StarCompany bizrnoNorm={bizrnoNorm} saved={saved.has(bizrnoNorm)} loggedIn={!!user} />;
+}
+
 /** 추천 판 — 비스트림 경로(캐시 read-through). 머리 장면 없이 걸러낸 경로 한 줄만. */
 async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: string; corpNm: string; hasEmbedding: boolean }) {
   if (!hasEmbedding) {
@@ -156,7 +164,15 @@ async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: str
     getRecommendations({ query: bizrnoNorm, mode: "company", limit: 20, candidate_pool: 200, with_explanation: false }).catch(() => null),
     getSessionUser(),
   ]);
-  const results = d?.results ?? [];
+  if (!d || d.error) {
+    return (
+      <Panel title="검토할 공고">
+        <p role="alert" className="mt-3 text-[14px] leading-[1.75] text-ink-g">추천 결과를 불러오지 못했습니다.</p>
+        <a href={`/recommendations?company=${bizrnoNorm}`} className="mt-3 inline-block border-b border-field text-[13px] text-ink hover:border-orange">다시 시도</a>
+      </Panel>
+    );
+  }
+  const results = d.results;
   const reviewed = user ? await getReviewedKeys().catch(() => new Set<string>()) : new Set<string>();
   const f = d?.funnel ?? null;
 
@@ -167,7 +183,7 @@ async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: str
         f ? (
           <>
             걸러낸 경로 <b className="num font-[650] text-ink">{nf.format(f.total)}</b> → 비슷한 순서로 추린 공고 200 → 검토할 공고{" "}
-            <b className="num font-[650] text-orange">{results.length}</b>
+            <b className="num font-[650] text-orange-ink">{results.length}</b>
           </>
         ) : (
           "적합 순"
@@ -176,7 +192,7 @@ async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: str
     >
       {results.length === 0 ? (
         <p className="mt-3 text-[14px] leading-[1.75] text-ink-g">
-          지금 입찰 가능한 공고 중에서는 이 회사가 참가 자격을 갖춘 것이 없습니다. 자격은 공고의 면허·지역 제한으로만 판정합니다.
+          현재 추천 기준으로 검토할 공고가 없습니다. 업종이나 품목으로도 검색할 수 있습니다.
         </p>
       ) : (
         <div className="mt-1">
