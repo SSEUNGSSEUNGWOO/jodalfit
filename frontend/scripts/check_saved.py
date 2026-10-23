@@ -60,11 +60,12 @@ def main():
         assert g["btns"] == 2 and g["tabs"] == 0 and g["h1"] == "검토함", g
         pg.screenshot(path=str(OUT / "_shot_saved_guest.png"))
         goto(pg, "/dev/foundation")
-        assert pg.evaluate("!!document.querySelector('[data-star=guest][href^=\"/login?next=\"]') && !!document.querySelector('[data-review=guest][href^=\"/login?next=\"]')")
+        assert pg.evaluate("!!document.querySelector('[data-star=guest][href^=\"/login?next=\"]') && !!document.querySelector('[data-review=guest][href^=\"/login?next=\"]')"), "foundation guest links"
         pg.set_viewport_size({"width": 390, "height": 844}); goto(pg, "/saved"); rules(pg)
         pg.set_viewport_size({"width": 1280, "height": 900})
 
         if not (url and anon and srv):
+            b.close()
             print("ok saved(guest): gate 2 buttons · tabs 0 · foundation guest links · 390 — 로그인 검사 건너뜀(키 없음)")
             return 0
 
@@ -85,8 +86,11 @@ def main():
             goto(pg, "/saved"); rules(pg)
             s = pg.evaluate("""() => ({ tabs: [...document.querySelectorAll('[role=tab] small')].map(e => e.textContent),
                 rows: document.querySelectorAll('#pane-n [data-saved-row]').length,
-                star: getComputedStyle(document.querySelector('#pane-n [data-saved-row] span span span'), '::before').color })""")
-            assert s["tabs"] == ["1", "1"] and s["rows"] == 1 and s["star"] == "rgb(249, 115, 22)", s
+                star: getComputedStyle(document.querySelector('#pane-n [data-saved-row] span span span'), '::before').color,
+                past: !!document.querySelector('#pane-n [data-saved-past] [data-saved-row]'),
+                why: !!document.querySelector('#pane-n [data-saved-row] [class*="rounded-"]') })""")
+            assert s["rows"] == 1 and s["tabs"][1] == "1", s
+            assert s["past"] or (s["tabs"][0] == "1" and s["star"] == "rgb(249, 115, 22)" and s["why"]), s  # 마감 지남이면 ★ 회색·live 0·근거 칩 없음이 정상
             pg.screenshot(path=str(OUT / "_shot_saved_notices.png"), full_page=True)
             pg.click("[data-unreview]"); pg.wait_for_timeout(300)
             u = pg.evaluate("""() => { const r = document.querySelector('#pane-n [data-saved-row]'); return { op: getComputedStyle(r).opacity, t: r.querySelector('[data-unreview]').textContent } }""")
@@ -114,6 +118,7 @@ def main():
             assert n["star"] == 1 and n["cnt"] == "검토한 공고 1건", n
         finally:
             admin(url, srv, "DELETE", f"/admin/users/{user['id']}")
+        b.close()
         print("ok saved: guest gate · login · ☆ · 검토 · notices 1(★·why) · 해제/되돌리기 · companies 1 · nav ★ 1/검토 1건 · 390 cols hidden · banned 0")
         return 0
 
