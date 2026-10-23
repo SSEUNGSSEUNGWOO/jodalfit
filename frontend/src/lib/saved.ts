@@ -23,7 +23,8 @@ const reviewedRows = cache(async (): Promise<ReviewedKey[]> => {
   const { data, error } = await sb
     .from("reviewed_notices")
     .select("bid_ntce_no,bid_ntce_ord,via_bizrno_norm,why,created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(300); // ponytail: .in(bid_ntce_no, …) GET URL 길이 보호. pg_cron 정리가 상한을 두지만 활발한 사용자면 수백 건 가능
   return error ? [] : ((data ?? []) as ReviewedKey[]);
 });
 
@@ -72,6 +73,7 @@ export async function getSavedCompanies(today: Date = new Date()): Promise<Saved
   const [cos, ind, reco] = await Promise.all([
     companiesByNorm(norms),
     pub.from("company_industries").select("bizrno").in("bizrno", norms), // companies.bizrno 는 10자리 그대로라 norm 과 같다
+    // ponytail: payload 가 회사당 ~45KB(0019) — ★ 수십 곳이면 무겁다. 아프면 마감일만 돌려주는 RPC 로.
     pub.from("company_recommendations").select("bizrno_norm,payload").in("bizrno_norm", norms),
   ]);
   const indCount = new Map<string, number>();
