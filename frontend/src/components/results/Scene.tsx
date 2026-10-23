@@ -40,6 +40,7 @@ export function Scene({
   const rsns = useRef<(HTMLSpanElement | null)[]>([]);
   const eng = useRef<Engine | null>(null);
   const xRef = useRef(0);
+  const settledRef = useRef(false); // onSettled 는 한 번만 — 상태는 렌더용
   const [settled, setSettled] = useState(false);
   const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -64,10 +65,10 @@ export function Scene({
     );
     eng.current = e;
     e.setup();
-    e.paint(0, false);
+    e.paint(0);
     const onResize = () => {
       e.setup();
-      e.paint(xRef.current, settled);
+      e.paint(xRef.current);
     };
     addEventListener("resize", onResize);
     return () => removeEventListener("resize", onResize);
@@ -76,7 +77,7 @@ export function Scene({
 
   useEffect(() => {
     eng.current?.setCounts(cnt);
-    eng.current?.paint(xRef.current, settled);
+    eng.current?.paint(xRef.current);
   }, [cnt.join(","), settled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -85,7 +86,8 @@ export function Scene({
       if (target >= SCENE.W) finish();
       return;
     }
-    let raf = 0;
+    let raf = 0,
+      end = 0;
     const from = xRef.current,
       t0 = performance.now();
     const dist = Math.max(0, target - from);
@@ -93,19 +95,23 @@ export function Scene({
     const tick = (now: number) => {
       const p = Math.min(1, (now - t0) / dur);
       xRef.current = from + dist * (1 - Math.pow(1 - p, 2.2));
-      eng.current?.paint(xRef.current, false);
+      eng.current?.paint(xRef.current);
       if (p < 1) raf = requestAnimationFrame(tick);
-      else if (target >= SCENE.W) setTimeout(finish, 150);
+      else if (target >= SCENE.W) end = window.setTimeout(finish, 150);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(end); // 오류로 넘어간 뒤 장면을 접지 않도록
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, settled, state]);
 
   function finish() {
-    if (settled) return;
+    if (settledRef.current || state === "error") return;
+    settledRef.current = true;
     xRef.current = SCENE.W;
-    eng.current?.paint(SCENE.W, true);
+    eng.current?.paint(SCENE.W);
     setSettled(true);
     onSettled();
   }
@@ -187,10 +193,10 @@ export function Scene({
             data-x={SCENE.XS[i + 1] + 14}
             data-rsn={i + 1}
             className={cn(
-              "absolute text-[11.5px] text-ink-mute opacity-0 transition-opacity duration-[400ms] max-sm:hidden",
+              "absolute bg-paper px-[5px] py-px text-[11.5px] text-ink-g opacity-0 transition-opacity duration-[400ms] max-sm:hidden",
               i === 2 && counts.passed === 0 && "hidden",
             )}
-            style={{ right: `${100 - (SCENE.XS[i + 1] / SCENE.W) * 100}%`, top: 346, marginRight: 8 }}
+            style={{ right: `${100 - (SCENE.XS[i + 1] / SCENE.W) * 100}%`, top: SCENE.RSN_Y, marginRight: 8 }}
           >
             {r}
           </span>

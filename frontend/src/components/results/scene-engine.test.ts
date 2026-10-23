@@ -13,6 +13,8 @@ test("캔버스 밖으로 새지 않는다", () => {
   const { CY, HH, FAN_SP, H } = SCENE;
   assert.ok(CY + HH[0] <= H && CY - HH[0] >= 0);
   assert.ok(CY + FAN_SP <= H && CY - FAN_SP >= 0);
+  const { RSN_Y } = SCENE; // 탈락 이유 캡션은 통로 안, 캔버스 안
+  assert.ok(CY - HH[0] < RSN_Y && RSN_Y < CY + HH[0] && RSN_Y + 20 <= H, String(RSN_Y));
 });
 
 test("간격이 '셀 수 없음 → 셀 수 있음'을 넘어간다", () => {

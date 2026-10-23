@@ -12,6 +12,7 @@ export const SCENE = {
   HH: [180, 160, 150, 100],
   CONV: 44,
   PRESS: 44,
+  RSN_Y: 346, // 탈락 이유 캡션 y
 } as const;
 
 const { W, H, CY, XS, FAN_X, FAN_SP, HH, CONV, PRESS } = SCENE;
@@ -30,7 +31,7 @@ export function gaps(cnt: readonly number[]): number[] {
 
 export type Engine = {
   setup(): void;
-  paint(x: number, settled: boolean): void;
+  paint(x: number): void;
   setCounts(cnt: number[]): void;
   counts(): number[];
 };
@@ -192,14 +193,12 @@ export function createEngine(
     render();
   }
 
-  // 왼쪽은 체(off), 오른쪽은 behind(있으면) 아니면 빈 캔버스.
-  function draw(front: number, behind?: HTMLCanvasElement | null) {
+  // 왼쪽(x 까지)만 체(off)에서 떠 온다 — 오른쪽은 빈 캔버스.
+  function draw(front: number) {
     if (!off) return;
     const fw = Math.max(1, Math.round(front * sx * (devicePixelRatio || 1)));
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(off, 0, 0, fw, canvas.height, 0, 0, fw, canvas.height);
-    if (behind && fw < canvas.width)
-      ctx.drawImage(behind, fw, 0, canvas.width - fw, canvas.height, fw, 0, canvas.width - fw, canvas.height);
   }
 
   // 전진선 x 기준 라벨·글자: 벽을 지나 150px 동안 카운트업, 글자는 제 폭을 다 지나야 뜬다.
