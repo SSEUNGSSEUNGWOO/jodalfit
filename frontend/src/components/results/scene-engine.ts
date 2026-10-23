@@ -53,6 +53,13 @@ const PEN: readonly [number, number, number, number][] = [
   [0.34, 0.65, 0.09, 0.35],
 ];
 
+/** 숫자가 아직 안 온 칸의 '선 몇 개를 그릴지'만 메우는 값 — 기하 전용이다.
+ *  화면에 뜨는 숫자는 라벨이 data-to 로 따로 쥐고 있고(모르면 "…"), 여기 값이 사용자에게 보이는 일은 없다.
+ *  없으면 N=0 이라 첫 1초가 빈 캔버스다 — 머리 장면은 계산 대기 가림막이니 처음부터 덩어리가 있어야 한다. */
+const FALLBACK_GEOM = [9400, 850, 90, 12] as const;
+
+export const geom = (c: readonly number[]) => c.map((n, i) => (n < 0 ? (FALLBACK_GEOM[i] ?? 0) : n));
+
 export function createEngine(
   canvas: HTMLCanvasElement,
   labels: HTMLElement[],
@@ -60,7 +67,7 @@ export function createEngine(
   counts: number[],
 ): Engine {
   const ctx = canvas.getContext("2d")!;
-  let cnt = counts.map((n) => (n < 0 ? 0 : n));
+  let cnt = geom(counts);
   let paths: Path2D[] = [];
   let off: HTMLCanvasElement | null = null;
   let sx = 1;
@@ -228,7 +235,7 @@ export function createEngine(
       paintLabels(x);
     },
     setCounts(next: number[]) {
-      const c = next.map((n) => (n < 0 ? 0 : n));
+      const c = geom(next);
       if (c.length === cnt.length && c.every((n, i) => n === cnt[i])) return;
       cnt = c;
       build();

@@ -53,7 +53,8 @@ export function Scene({
       ? Math.min(xRef.current, SCENE.XS[3] - 30)
       : counts.results != null || firstUnknown < 0
         ? SCENE.W
-        : Math.max(0, SCENE.XS[firstUnknown] - 30);
+        : // 0번 칸 앞에는 벽이 없다 — 숫자를 몰라도 1번 벽까지는 간다(선 개수는 기하 기본값, 라벨은 "…").
+          SCENE.XS[Math.max(1, firstUnknown)] - 30;
 
   useEffect(() => {
     if (!cv.current) return;
