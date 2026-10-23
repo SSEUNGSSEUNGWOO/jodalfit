@@ -27,14 +27,15 @@ export type SheetRowProps = {
   defaultOpen?: boolean;
   children?: ReactNode;    // SheetExpand
   href?: string;           // 제목 링크(공고 상세). 없으면 행 클릭 = 펼침
+  onOpen?: () => void;     // 닫힘→열림으로 바뀔 때 한 번 호출
 };
 
 /** 표 행 — 번호 · 제목/둘째 줄 · 마감 · 추정가. 번호 칸의 버튼이 펼침 토글(키보드·AT), 행 클릭은 마우스 편의. 검토한 행은 왼쪽에 주황 괘선 2px. */
-export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href }: SheetRowProps) {
+export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href, onOpen }: SheetRowProps) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
   const hot = !!dLeft && dLeft.days >= 0 && dLeft.days <= 7;
-  const toggle = () => setOpen((v) => !v);
+  const toggle = () => { if (!open) onOpen?.(); setOpen((v) => !v); };
   return (
     <>
       <div data-sheet-row onClick={children ? toggle : undefined}
