@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import queue
 import threading
 import time
@@ -28,6 +29,8 @@ from app.core.traffic_source import classify_source
 from app.services.notice_events import log_impressions
 from app.services.recommend import recommend
 from app.services.search_log import log_search
+
+logger = logging.getLogger(__name__)
 
 RATE_LIMIT = "15/minute;100/day"
 
@@ -209,7 +212,7 @@ def post_recommendations(
 def post_recommendations_stream(
     request: Request,
     req: RecommendRequest,
-    background: BackgroundTasks,
+    background: BackgroundTasks,  # 시그니처 유지 — 스트림 안에서는 못 쓴다(로그는 스레드로)
 ):
     """ndjson streaming — 추천 결과 즉시 전송 + LLM 설명 도착 순서대로 push.
 
@@ -258,7 +261,9 @@ def post_recommendations_stream(
                 break
             yield _line(item)
         if "error" in box:
-            raise box["error"]
+            logger.exception("stream recommend 실패", exc_info=box["error"])
+            yield _line({"type": "error", "message": "결과를 불러오지 못했습니다", "status": 500})
+            return
         result = box["result"]
 
         has_any_results = bool(result.get("results") or result.get("keyword_results"))
