@@ -1,11 +1,11 @@
 // frontend/src/app/(renewal)/saved/NoticeRows.tsx
 // 검토함 공고 표. 격자는 시안 gen_saved.py:34 (제목 / 마감 84 / 추정가 84 / 해제 64), 390 은 제목 / 마감 72 만.
 // 해제는 행이 흐려지고 "되돌리기"로 바뀐다 — 즉시 사라지지 않는다(시안). 되돌리기는 같은 값으로 다시 insert.
+// 행 토글은 router.refresh() 를 부르지 않는다 — 다시 그리면 삭제된 행이 빠져 "되돌리기" 가 사라진다. 숫자는 다음 이동 때 갱신.
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { ReviewedNoticeRow } from "@/lib/saved";
 import { won } from "@/lib/format";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
@@ -14,17 +14,19 @@ import { cn } from "@/lib/utils";
 const GRID = "grid grid-cols-[minmax(0,1fr)_84px_84px_64px] gap-x-3 items-start max-sm:grid-cols-[minmax(0,1fr)_72px]";
 
 function Row({ r, past }: { r: ReviewedNoticeRow; past: boolean }) {
-  const router = useRouter();
   const [removed, setRemoved] = useState(false);
+  const [busy, setBusy] = useState(false);
   async function toggle() {
+    if (busy) return;
     const sb = getBrowserSupabase();
     const next = !removed;
     setRemoved(next);
+    setBusy(true);
     const { error } = next
       ? await sb.from("reviewed_notices").delete().eq("bid_ntce_no", r.no).eq("bid_ntce_ord", r.ord)
       : await sb.from("reviewed_notices").insert({ bid_ntce_no: r.no, bid_ntce_ord: r.ord, via_bizrno_norm: r.via?.bizrnoNorm ?? null, why: r.why });
+    setBusy(false);
     if (error && error.code !== "23505") { setRemoved(!next); return; }
-    router.refresh();
   }
   const hot = !past && !!r.d && r.d.days <= 7;
   return (

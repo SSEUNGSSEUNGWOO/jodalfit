@@ -17,7 +17,7 @@ export function SavedTabs({ counts, notices, companies }: { counts: Record<TabId
   return (
     <>
       <PageHead title="검토함" className="pb-0">
-        <div role="tablist" aria-label="검토함" className="flex gap-6 text-[15px] max-sm:gap-[18px] max-sm:text-[14px]">
+        <div role="tablist" aria-label="검토함" className="mt-3.5 flex gap-6 text-[15px] max-sm:gap-[18px] max-sm:text-[14px]">
           {TABS.map((t) => {
             const on = tab === t.id;
             return (

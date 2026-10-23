@@ -1,11 +1,11 @@
 // frontend/src/app/(renewal)/saved/CompanyRows.tsx
 // 검토함 저장한 회사 표. 격자 시안 gen_saved.py:46 (회사 / 오늘 150 / 마감 110 / 결과·해제 110), 390 은 회사 / 오늘 만.
 // "오늘 N건 검토할 공고"는 추천 캐시 기준 — 캐시가 없으면 "—"와 "결과" 링크만.
+// 행 토글은 router.refresh() 를 부르지 않는다 — 다시 그리면 삭제된 행이 빠져 "되돌리기" 가 사라진다. 숫자는 다음 이동 때 갱신.
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { SavedCompanyRow } from "@/lib/saved";
 import { rgnBase } from "@/lib/format";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
@@ -14,17 +14,19 @@ import { cn } from "@/lib/utils";
 const GRID = "grid grid-cols-[minmax(0,1fr)_150px_110px_110px] gap-x-3 items-start max-sm:grid-cols-[minmax(0,1fr)_auto]";
 
 function Row({ c }: { c: SavedCompanyRow }) {
-  const router = useRouter();
   const [removed, setRemoved] = useState(false);
+  const [busy, setBusy] = useState(false);
   async function toggle() {
+    if (busy) return;
     const sb = getBrowserSupabase();
     const next = !removed;
     setRemoved(next);
+    setBusy(true);
     const { error } = next
       ? await sb.from("saved_companies").delete().eq("bizrno_norm", c.bizrnoNorm)
       : await sb.from("saved_companies").insert({ bizrno_norm: c.bizrnoNorm });
+    setBusy(false);
     if (error && error.code !== "23505") { setRemoved(!next); return; }
-    router.refresh();
   }
   const s = c.stats;
   const hot = !!s?.soonest && s.soonest.days <= 7;
