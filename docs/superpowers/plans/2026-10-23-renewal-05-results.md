@@ -60,7 +60,7 @@
 **Files:**
 - Create: `supabase/migrations/0056_funnel_counts.sql`
 
-- [ ] **Step 1: 마이그레이션**
+- [x] **Step 1: 마이그레이션**
 
 ```sql
 -- supabase/migrations/0056_funnel_counts.sql
@@ -86,7 +86,7 @@ grant execute on function public.funnel_counts(text[], int) to service_role;
 revoke execute on function public.funnel_counts(text[], int) from anon, authenticated;
 ```
 
-- [ ] **Step 2: 적용·측정** — Dashboard 또는 `backend/.env` 의 `DATABASE_URL` 로 실행(0053·0054 와 같은 방법: 스크래치패드에 psycopg 스크립트). 확인:
+- [x] **Step 2: 적용·측정** — Dashboard 또는 `backend/.env` 의 `DATABASE_URL` 로 실행(0053·0054 와 같은 방법: 스크래치패드에 psycopg 스크립트). 확인:
 
 ```sql
 explain analyze select * from public.funnel_counts(array['환경전문공사업','전기공사업','엔지니어링사업'], 90);
@@ -94,7 +94,7 @@ explain analyze select * from public.funnel_counts(array['환경전문공사업'
 select * from public.funnel_counts(array[]::text[], 90);  -- industry = 0
 ```
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add supabase/migrations/0056_funnel_counts.sql && git commit -m "feat(db): 0056 funnel_counts — 입찰 가능·등록업종 허용 공고 수 집계"
@@ -108,7 +108,7 @@ cd C:/Dev/personal/jodalfit && git add supabase/migrations/0056_funnel_counts.sq
 - Create: `backend/app/core/progress.py`
 - Modify: `backend/app/services/recommend.py`(`_recommend_by_company` ThreadPool 블록, `_search_with_embedding` 끝), `backend/app/recommender/pipeline.py`(`rank_v2`), `backend/app/api/recommendations.py`(`post_recommendations_stream`)
 
-- [ ] **Step 1: `progress.py`**
+- [x] **Step 1: `progress.py`**
 
 ```python
 # backend/app/core/progress.py
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
 Run `cd C:/Dev/personal/jodalfit/backend && uv run --no-sync python -m app.core.progress` → `ok progress: …`.
 
-- [ ] **Step 2: 발행 지점 셋 + funnel** — `backend/app/services/recommend.py`:
+- [x] **Step 2: 발행 지점 셋 + funnel** — `backend/app/services/recommend.py`:
 
 (a) 상단 import 에 `from app.core.progress import emit` 추가.
 
@@ -209,7 +209,7 @@ def _fetch_funnel(client, names: list[str]) -> dict[str, int] | None:
 
 로.
 
-- [ ] **Step 3: 스트림 경로** — `backend/app/api/recommendations.py` 상단에 `import queue, threading` 과 `from app.core import progress` 를 추가하고, `post_recommendations_stream` 본문을 바꾼다(`t0 = time.time()` 부터 `return StreamingResponse(...)` 까지). 매개변수 `background: BackgroundTasks` 는 남겨 두되 안 쓴다(시그니처 유지):
+- [x] **Step 3: 스트림 경로** — `backend/app/api/recommendations.py` 상단에 `import queue, threading` 과 `from app.core import progress` 를 추가하고, `post_recommendations_stream` 본문을 바꾼다(`t0 = time.time()` 부터 `return StreamingResponse(...)` 까지). 매개변수 `background: BackgroundTasks` 는 남겨 두되 안 쓴다(시그니처 유지):
 
 ```python
     t0 = time.time()
@@ -305,7 +305,7 @@ def _fetch_funnel(client, names: list[str]) -> dict[str, int] | None:
 
 404 를 HTTP 404 대신 `error` 줄로 바꾼 이유: funnel 줄이 먼저 나간 뒤라 상태 코드를 바꿀 수 없다. 비스트림 `POST /recommendations` 는 손대지 않는다. docstring 의 줄 형식 목록에 `{"type":"funnel","total":N,"industry":N}` · `{"type":"stage","stage":"search|qualify|rank",…}` · `{"type":"error","message":…,"status":404}` 를 추가한다.
 
-- [ ] **Step 4: 자체 점검** — 백엔드를 띄우고(`cd backend && uv run uvicorn app.main:app --port 8000`, 이미 떠 있으면 재시작) 스트림 첫 줄들을 본다:
+- [x] **Step 4: 자체 점검** — 백엔드를 띄우고(`cd backend && uv run uvicorn app.main:app --port 8000`, 이미 떠 있으면 재시작) 스트림 첫 줄들을 본다:
 
 ```bash
 curl -s -N -X POST http://localhost:8000/recommendations/stream -H "Content-Type: application/json" \
@@ -314,7 +314,7 @@ curl -s -N -X POST http://localhost:8000/recommendations/stream -H "Content-Type
 
 기대: `{"type":"funnel",…}` / `{"type":"stage","stage":"search",…}` / `{"type":"stage","stage":"qualify",…}` / `{"type":"stage","stage":"rank","results":12}` 가 `{"type":"results",…` 앞에(funnel 과 search 의 순서는 바뀔 수 있다 — 프론트가 순서에 의존하지 않는다). 키워드 모드(`"mode":"keywords","query":"하수처리"`)는 `stage search` → `results`(qualify·rank 없음). 회사 못 찾는 질의(`"query":"존재하지않는회사명zzz"`)는 `results` 에 `"fallback":"keywords"`. `uv run --no-sync python -m app.core.progress` 통과.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add backend/app/core/progress.py backend/app/services/recommend.py backend/app/recommender/pipeline.py backend/app/api/recommendations.py && git commit -m "feat(api): /recommendations/stream 에 funnel·stage 진행 이벤트 — recommend 를 워커에서 돌리고 ContextVar 콜백으로 흘림, 404 는 error 줄"
@@ -328,7 +328,7 @@ cd C:/Dev/personal/jodalfit && git add backend/app/core/progress.py backend/app/
 - Modify: `frontend/src/types/recommendations.ts`
 - Create: `frontend/src/lib/stream.ts`, `frontend/src/lib/why.ts`, `frontend/src/lib/why.test.ts`
 
-- [ ] **Step 1: 타입** — `types/recommendations.ts` 끝에 추가. `RecommendationResponse` 에 `funnel?: FunnelCounts | null;` 한 줄도 넣는다.
+- [x] **Step 1: 타입** — `types/recommendations.ts` 끝에 추가. `RecommendationResponse` 에 `funnel?: FunnelCounts | null;` 한 줄도 넣는다.
 
 ```ts
 export type FunnelCounts = { total: number; industry: number };
@@ -345,7 +345,7 @@ export type StreamEvent =
   | { type: "done" };
 ```
 
-- [ ] **Step 2: `lib/stream.ts`**
+- [x] **Step 2: `lib/stream.ts`**
 
 ```ts
 // frontend/src/lib/stream.ts
@@ -383,7 +383,7 @@ export async function streamRecommendations(body: StreamBody, onEvent: (e: Strea
 }
 ```
 
-- [ ] **Step 3: `why.test.ts` (실패부터)**
+- [x] **Step 3: `why.test.ts` (실패부터)**
 
 ```ts
 // frontend/src/lib/why.test.ts
@@ -429,7 +429,7 @@ test("qualLines: reasons 를 세 상태로, 규모 줄은 항상 끝에", () => 
 
 Run `cd C:/Dev/personal/jodalfit/frontend && node --experimental-strip-types --test src/lib/why.test.ts` → 모듈 없음으로 실패.
 
-- [ ] **Step 4: `lib/why.ts`**
+- [x] **Step 4: `lib/why.ts`**
 
 ```ts
 // frontend/src/lib/why.ts
@@ -472,7 +472,7 @@ export function qualLines(q: Qualification | undefined): QualLine[] {
 
 `QualLine` 은 `components/Sheet.tsx:83` 의 `{ state: "ok" | "none" | "warn" | "todo"; text: string }`. `import type` 은 `node --experimental-strip-types` 가 지우므로 `@/` 경로여도 node 에서 문제없다(`ScoreSignal` 도 type import).
 
-- [ ] **Step 5: 통과·커밋** — `node --experimental-strip-types --test src/lib/why.test.ts` → pass 2. `npx tsc --noEmit -p tsconfig.json; echo $?` → 0.
+- [x] **Step 5: 통과·커밋** — `node --experimental-strip-types --test src/lib/why.test.ts` → pass 2. `npx tsc --noEmit -p tsconfig.json; echo $?` → 0.
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/types/recommendations.ts frontend/src/lib/stream.ts frontend/src/lib/why.ts frontend/src/lib/why.test.ts && git commit -m "feat(renewal): 스트림 이벤트 타입·NDJSON 리더, 근거 문장·자격 줄 순수 함수 + 테스트"
@@ -485,7 +485,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/types/recommendations.ts fro
 **Files:**
 - Create: `frontend/src/components/SearchBox.tsx`, `frontend/src/app/api/companies/[bizrno]/profile/route.ts`
 
-- [ ] **Step 1: `SearchBox`** (입구 04 와 "다른 회사"가 같이 쓴다. 시안 `gen_results_final.py:50-56` `.box` CSS)
+- [x] **Step 1: `SearchBox`** (입구 04 와 "다른 회사"가 같이 쓴다. 시안 `gen_results_final.py:50-56` `.box` CSS)
 
 ```tsx
 // frontend/src/components/SearchBox.tsx
@@ -534,7 +534,7 @@ export function SearchBox({ defaultValue = "", autoFocus = false, className, onS
 
 `modeOf` 는 `lib/` 로 빼지 않는다(여기서만 쓴다).
 
-- [ ] **Step 2: 프로필 route handler** — 왼쪽 단이 쓰는 공개 데이터. `lib/company.ts::fetchCompanyProfile(bizrno)`(`industries: string[]` 대표 먼저, `industryLinks`, `products: string[]`)와 `fetchCompanyByBizrno(bizrnoNorm)`(`CompanyDetail`: `contract_count`, `biz_status_cd`, `is_restricted`, 상태 확인 시각 컬럼)를 쓴다 — 실제 필드명은 `lib/company.ts:5-21`·`172-238` 에서 확인해 맞춘다.
+- [x] **Step 2: 프로필 route handler** — 왼쪽 단이 쓰는 공개 데이터. `lib/company.ts::fetchCompanyProfile(bizrno)`(`industries: string[]` 대표 먼저, `industryLinks`, `products: string[]`)와 `fetchCompanyByBizrno(bizrnoNorm)`(`CompanyDetail`: `contract_count`, `biz_status_cd`, `is_restricted`, 상태 확인 시각 컬럼)를 쓴다 — 실제 필드명은 `lib/company.ts:5-21`·`172-238` 에서 확인해 맞춘다.
 
 ```ts
 // frontend/src/app/api/companies/[bizrno]/profile/route.ts
@@ -574,7 +574,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ bizrno: st
 
 `industryLinks` 의 대표 표시 필드명(`rep`?)은 `lib/company.ts` 를 읽고 맞춘다; 없으면 `repCount: 1`(대표는 보통 하나, `fetchCompanyProfile` 이 대표를 맨 앞에 둔다) 로 두고 보고. `biz_status_checked_at` 이 `CompanyDetail` 에 없으면 `fetchCompanyByBizrno` 의 select 에 그 컬럼(0028 `biz_status_checked_at`)을 한 단어 추가한다.
 
-- [ ] **Step 3: 확인·커밋** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0. 개발 서버에서 `curl -s http://localhost:3000/api/companies/1248177731/profile` → JSON(한종산업개발, industries 15개 안팎).
+- [x] **Step 3: 확인·커밋** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0. 개발 서버에서 `curl -s http://localhost:3000/api/companies/1248177731/profile` → JSON(한종산업개발, industries 15개 안팎).
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/components/SearchBox.tsx "frontend/src/app/api/companies/[bizrno]/profile/route.ts" frontend/src/lib/company.ts && git commit -m "feat(renewal): SearchBox(주황 상자 검색창, 회사/키워드 판별) + 회사 프로필 route handler"
@@ -588,7 +588,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/SearchBox.tsx "fr
 - Create: `frontend/src/components/results/scene-engine.ts`, `frontend/src/components/results/Scene.tsx`
 - Modify: `frontend/src/app/globals.css`(`[data-lab].on`·`[data-rsn].on`)
 
-- [ ] **Step 1: 엔진 포팅** — `docs/design/scripts/gen_flow.py` 의 `ENGINE_JS`(139~285행: `rng`·좌표·`Path2D` 코호트·`fade`·벽·오프스크린 blit·`labels`·`paint`)를 **동작 그대로** TypeScript 모듈로 옮긴다. 바꾸는 것은 넷뿐: ① 전역 `document.querySelector` 대신 생성자가 캔버스·라벨·이유 엘리먼트를 받는다 ② `cfg` JSON 대신 상수(`W,H,CY,XS,FAN_X,FAN_SP,HH,CONV,PRESS` — 값은 `gen_flow.py:33-40` 그대로)와 `CNT` 를 인자로 ③ 공고명 `.ttl`(`T` 배열) 자리에 탈락 이유 엘리먼트(`data-x` 를 지나면 `.on`)를 넣는다 ④ `paint` 가 `document.body.classList.toggle('done')` 하던 것은 **하지 않는다**(React 가 `done` 을 든다). 모듈 API:
+- [x] **Step 1: 엔진 포팅** — `docs/design/scripts/gen_flow.py` 의 `ENGINE_JS`(139~285행: `rng`·좌표·`Path2D` 코호트·`fade`·벽·오프스크린 blit·`labels`·`paint`)를 **동작 그대로** TypeScript 모듈로 옮긴다. 바꾸는 것은 넷뿐: ① 전역 `document.querySelector` 대신 생성자가 캔버스·라벨·이유 엘리먼트를 받는다 ② `cfg` JSON 대신 상수(`W,H,CY,XS,FAN_X,FAN_SP,HH,CONV,PRESS` — 값은 `gen_flow.py:33-40` 그대로)와 `CNT` 를 인자로 ③ 공고명 `.ttl`(`T` 배열) 자리에 탈락 이유 엘리먼트(`data-x` 를 지나면 `.on`)를 넣는다 ④ `paint` 가 `document.body.classList.toggle('done')` 하던 것은 **하지 않는다**(React 가 `done` 을 든다). 모듈 API:
 
 ```ts
 // frontend/src/components/results/scene-engine.ts
@@ -605,7 +605,7 @@ export function createEngine(canvas: HTMLCanvasElement, labels: HTMLElement[], r
 
 `labels[i]` 는 `data-x`(=XS[i]) 와 안쪽 `.cnt`(data-to) 를 가진 엘리먼트 — 원본 `labels(x)` 가 그대로 돌아가게 같은 구조를 Scene.tsx 가 만든다. 숫자 카운트업(벽 지나 150px 동안 ease-out cubic)·`toLocaleString('ko-KR')` 유지, `data-to` 가 `-1` 이면 `…`.
 
-- [ ] **Step 2: `Scene.tsx`** — 러너. 규칙(README "실제 진행에 묶는다"): 관문 i 는 `counts` 의 i번째 값을 알아야 통과, 모르면 관문 30px 앞에서 기다린다, 전부 알면 남은 구간을 구간당 260ms 로 마무리, 클릭·Esc = 건너뛰기, reduced-motion 이면 결과 오는 순간 즉시 접힘.
+- [x] **Step 2: `Scene.tsx`** — 러너. 규칙(README "실제 진행에 묶는다"): 관문 i 는 `counts` 의 i번째 값을 알아야 통과, 모르면 관문 30px 앞에서 기다린다, 전부 알면 남은 구간을 구간당 260ms 로 마무리, 클릭·Esc = 건너뛰기, reduced-motion 이면 결과 오는 순간 즉시 접힘.
 
 ```tsx
 // frontend/src/components/results/Scene.tsx
@@ -716,9 +716,9 @@ export function Scene({ counts, state, onSettled }: { counts: SceneCounts; state
 
 `globals.css` 에 두 줄: `[data-lab].on, [data-rsn].on { opacity: 1; }` — 엔진이 `classList.toggle('on')` 으로 켠다(Tailwind 클래스 토글은 엔진이 모른다). 390 에서는 라벨이 4칸 격자(`max-sm:` 클래스), 캔버스 220px(원본 `setup()` 의 `sy` 세로 배율 유지).
 
-- [ ] **Step 3: 확인** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint` 통과(페이지 연결은 Task 7 에서 눈으로 본다).
+- [x] **Step 3: 확인** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint` 통과(페이지 연결은 Task 7 에서 눈으로 본다).
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/components/results/scene-engine.ts frontend/src/components/results/Scene.tsx frontend/src/app/globals.css && git commit -m "feat(renewal): 머리 장면 — gen_flow 엔진 포팅 + funnel/stage 이벤트 구동 러너(관문 앞 대기·짧은 마무리·건너뛰기·reduced-motion)"
@@ -732,7 +732,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/results/scene-eng
 - Create: `frontend/src/components/results/FunnelLine.tsx`, `CompanySide.tsx`, `ResultRows.tsx`
 - Modify: `frontend/src/components/Sheet.tsx`(`SheetRow` 에 `onOpen?: () => void`)
 
-- [ ] **Step 1: `FunnelLine`** (시안 `.chain` + `.tabs`, 판 스킨 숫자 28 / 마지막 34)
+- [x] **Step 1: `FunnelLine`** (시안 `.chain` + `.tabs`, 판 스킨 숫자 28 / 마지막 34)
 
 ```tsx
 // frontend/src/components/results/FunnelLine.tsx
@@ -786,7 +786,7 @@ export function FunnelLine({ counts, open, tabs, due }: {
 
 `due` 는 `companyStats(results.map(r => r.bid_clse_date))`(03 `lib/saved-stats.ts`)로 호출자가 만든다 — 12건 전체 기준(README 결정).
 
-- [ ] **Step 2: `CompanySide`** (시안 `gen_split.py:107-124` 문구 그대로, 720 이하 `<details>` 접힘)
+- [x] **Step 2: `CompanySide`** (시안 `gen_split.py:107-124` 문구 그대로, 720 이하 `<details>` 접힘)
 
 ```tsx
 // frontend/src/components/results/CompanySide.tsx
@@ -846,9 +846,9 @@ function Sec({ k, children }: { k: string; children: ReactNode }) {
 
 "확인"은 회사 페이지로, "수정 요청"은 개인정보처리방침의 요청 절로(09 에서 전용 폼이 생기면 바꾼다) — 시안의 `#` 링크를 실제 목적지로 채운 것.
 
-- [ ] **Step 3: `Sheet.tsx` 에 `onOpen`** — `SheetRowProps` 에 `onOpen?: () => void;` 추가, 펼침 토글이 닫힘→열림으로 바뀔 때 한 번 호출. `check_foundation.py` 영향 없음.
+- [x] **Step 3: `Sheet.tsx` 에 `onOpen`** — `SheetRowProps` 에 `onOpen?: () => void;` 추가, 펼침 토글이 닫힘→열림으로 바뀔 때 한 번 호출. `check_foundation.py` 영향 없음.
 
-- [ ] **Step 4: `ResultRows`** (표 + 게이트 + 흐림 + 0건)
+- [x] **Step 4: `ResultRows`** (표 + 게이트 + 흐림 + 0건)
 
 ```tsx
 // frontend/src/components/results/ResultRows.tsx
@@ -918,7 +918,7 @@ export function ZeroBlock({ reason, viaBizrno }: { reason: "qualify" | "rank"; v
 
 `emitNoticeEvent` 시그니처는 `lib/events.ts:35-39` 를 읽고 맞춘다(필드명 `rank_position`·`algorithm_version`·`score`·`target_bizrno`). 0건 블록의 "키워드로 공고 검색"은 입구(`/recommendations` 빈 질의 = SearchBox)로.
 
-- [ ] **Step 5: 확인·커밋** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint`.
+- [x] **Step 5: 확인·커밋** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint`.
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/components/results frontend/src/components/Sheet.tsx && git commit -m "feat(renewal): 결과 페이지 부품 — 걸러낸 경로·종류 탭·마감 요약, 회사 정보 단, 표(게이트·흐림·검토·0건)"
@@ -933,7 +933,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/results frontend/
 - Modify: `frontend/src/components/Panel.tsx`(`data-*` 통과)
 - Delete: `frontend/src/app/recommendations/page.tsx`, `frontend/src/app/recommendations/loading.tsx`
 
-- [ ] **Step 1: `ResultsView`**
+- [x] **Step 1: `ResultsView`**
 
 ```tsx
 // frontend/src/components/results/ResultsView.tsx
@@ -1073,7 +1073,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
 
 `starting:` 변형(`@starting-style`)이 Tailwind v4 에 있다 — 없으면 `useEffect` 로 마운트 뒤 클래스를 바꾸는 두 줄로 대신한다. `Panel` 이 `data-*` 를 받지 않으면 `Panel.tsx` props 를 `{ children, className } & ComponentProps<"section">` 로 넓히고 `...rest` 를 펼친다. `explain_top: 0` — LLM 설명·총평은 이 페이지에서 쓰지 않는다(카드 = 근거 칩). `getSessionId` 는 `lib/events.ts:8-20`. `maskBizrno`·`cn` 은 `lib/utils.ts`.
 
-- [ ] **Step 2: 페이지** — 옛 `app/recommendations/page.tsx` 의 URL 계약을 그대로 옮긴다.
+- [x] **Step 2: 페이지** — 옛 `app/recommendations/page.tsx` 의 URL 계약을 그대로 옮긴다.
 
 ```tsx
 // frontend/src/app/(renewal)/recommendations/page.tsx
@@ -1122,7 +1122,7 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
 
 옛 페이지 삭제: `git rm -r frontend/src/app/recommendations`(같은 경로가 둘이면 Next 가 빌드에서 막는다). `components/board/*`·`BoardSearch` 는 남긴다(09 삭제) — `grep -rn "components/board" frontend/src` 로 다른 import 가 남아 있으면(랜딩 `app/page.tsx` 등) 그대로 둔다(04 가 랜딩을 바꾼다).
 
-- [ ] **Step 3: 눈으로 확인** — 백엔드(:8000, Task 2 반영)와 프론트 개발 서버를 띄우고:
+- [x] **Step 3: 눈으로 확인** — 백엔드(:8000, Task 2 반영)와 프론트 개발 서버를 띄우고:
   - `http://localhost:3000/recommendations?company=1248177731` — 장면이 이벤트 따라 진행·접힘 → 걸러낸 경로 숫자 넷 → 흰 판 두 단, 표 5 + 게이트 + 흐림 7(비로그인), 로그인하면 12 전부. 행 펼침에 자격 3줄·근거·나라장터 원문·검토.
   - `?q=하수처리` — 장면 없이 표.
   - `?company=존재하지않는회사zzz` — 키워드로 넘어감(`from=company`).
@@ -1131,7 +1131,7 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
   - 390 폭에서 가로 넘침 없음, 회사 정보가 접힌 한 줄.
   `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint`, `npm run build 2>&1 | tail -5` 성공.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add -A frontend/src/app/recommendations "frontend/src/app/(renewal)/recommendations" frontend/src/components/results/ResultsView.tsx frontend/src/components/Panel.tsx && git commit -m "feat(renewal): /recommendations 교체 — 머리(☆·다른 회사)·이벤트 구동 장면·걸러낸 경로·두 단 표·네 상태, 옛 보드 페이지 삭제"
@@ -1145,7 +1145,7 @@ cd C:/Dev/personal/jodalfit && git add -A frontend/src/app/recommendations "fron
 - Create: `frontend/src/app/(renewal)/recommendations/report/page.tsx`, `frontend/src/app/(renewal)/recommendations/report/PrintButton.tsx`
 - Modify: `frontend/src/app/globals.css`(`@page`·`.report` 인쇄 규칙)
 
-- [ ] **Step 1: 페이지** — 로그인 사용자만(아니면 `/login?next=`). 비스트림 `getRecommendations`(서버 self-call, `X-Internal-Token` 자동, 캐시 read-through)로 12건. 시안 `gen_report.py:97-107` 구성·문구 그대로.
+- [x] **Step 1: 페이지** — 로그인 사용자만(아니면 `/login?next=`). 비스트림 `getRecommendations`(서버 self-call, `X-Internal-Token` 자동, 캐시 read-through)로 12건. 시안 `gen_report.py:97-107` 구성·문구 그대로.
 
 ```tsx
 // frontend/src/app/(renewal)/recommendations/report/page.tsx
@@ -1228,7 +1228,7 @@ export function PrintButton() {
 
 `Tile` 은 `Logo.tsx:23`. 비스트림 응답의 `funnel` 은 Task 2(c) 에서 넣었다 — 캐시된 옛 payload 에는 없으니 `—` 로 degrade. `getRecommendations` 의 `RecommendInput` 에 `candidate_pool`·`with_explanation` 이 있는지 `lib/api.ts:19` 에서 확인.
 
-- [ ] **Step 2: 인쇄 CSS** — `globals.css` 끝에:
+- [x] **Step 2: 인쇄 CSS** — `globals.css` 끝에:
 
 ```css
 /* 추천 공고 보고서(/recommendations/report) — A4 한 장 */
@@ -1246,7 +1246,7 @@ export function PrintButton() {
 
 `.rn nav`·`footer` 선택자는 `(renewal)/layout.tsx` 의 실제 요소에 맞춘다(`Nav` 가 `<nav>` 인지, `SiteFooter` 가 `<footer>` 인지 확인해 그 태그·클래스로).
 
-- [ ] **Step 3: 확인·커밋** — 로그인한 브라우저에서 `/recommendations/report?company=1248177731` → 12행, 인쇄 미리보기에서 1장. `npx tsc`, `npm run lint`.
+- [x] **Step 3: 확인·커밋** — 로그인한 브라우저에서 `/recommendations/report?company=1248177731` → 12행, 인쇄 미리보기에서 1장. `npx tsc`, `npm run lint`.
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/recommendations/report" frontend/src/app/globals.css && git commit -m "feat(renewal): 추천 공고 보고서(/recommendations/report) — A4 한 장 인쇄 뷰"
@@ -1261,7 +1261,7 @@ cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/recommendatio
 
 전제: 백엔드 :8000(Task 2 반영) + 프론트 :3000. 로그인 흐름은 `check_saved.py` 와 같은 Admin API 사용자로.
 
-- [ ] **Step 1: 스크립트**
+- [x] **Step 1: 스크립트**
 
 ```python
 # frontend/scripts/check_results.py
@@ -1373,9 +1373,9 @@ if __name__ == "__main__":
 
 선택자(`[data-scene]`·`[data-done]`·`[data-funnel] b[data-n]`·`[data-res]`·`[data-side]`·`[data-rows]`·`[data-search]`·`[data-searchbox]`·`[data-other]`·`[data-err]`·`.x-wrap[data-open=true]`·`[data-sheet-row]`·`[inert]`·`.hairline a`)는 Task 5~8 의 마크업과 맞춘다 — 다르면 스크립트가 아니라 **마크업의 data 속성을 추가**한다(스타일 변경 없이). PDF 가 2장이면 행 패딩·글자 크기를 시안 값(10px·1.3)으로 되돌린다. 스크린샷·PDF 는 `frontend/.gitignore` 의 `scripts/_shot_*.png` 규칙대로 커밋하지 않는다(`scripts/_report.pdf` 도 ignore 에 한 줄 추가).
 
-- [ ] **Step 2: 실행** — 백엔드·프론트 띄운 채 `cd C:/Dev/personal/jodalfit/backend && PYTHONIOENCODING=utf-8 uv run --no-sync python ../frontend/scripts/check_results.py` → `ok results: …`.
+- [x] **Step 2: 실행** — 백엔드·프론트 띄운 채 `cd C:/Dev/personal/jodalfit/backend && PYTHONIOENCODING=utf-8 uv run --no-sync python ../frontend/scripts/check_results.py` → `ok results: …`.
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_results.py frontend/.gitignore && git commit -m "test(renewal): 결과 페이지 Playwright 검증 — 장면·깔때기·표·게이트·다른 회사·390·키워드·로그인·검토·보고서"
@@ -1388,7 +1388,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_results.py fronten
 **Files:**
 - Modify: `docs/design/README.md`, `docs/recommender/changelog.md`, `docs/superpowers/plans/2026-10-23-renewal-05-results.md`
 
-- [ ] **Step 1: README** 끝에:
+- [x] **Step 1: README** 끝에:
 
 ```markdown
 ## 구현 — 05 results (2026-10-2x, 브랜치 `renewal`)
@@ -1397,9 +1397,9 @@ cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_results.py fronten
 검증: `scripts/check_results.py`, `lib/why.test.ts`, `app/core/progress` 자체 점검.
 ```
 
-- [ ] **Step 2: changelog 한 줄** — `docs/recommender/changelog.md` 맨 위 항목(기존 항목 형식대로, 사용자 언어): "결과 페이지가 계산 단계(후보 검색 → 참가 자격 → 순서 매기기)를 실제 진행대로 보여 준다. 숫자는 그 요청에서 실제로 센 값이다."
+- [x] **Step 2: changelog 한 줄** — `docs/recommender/changelog.md` 맨 위 항목(기존 항목 형식대로, 사용자 언어): "결과 페이지가 계산 단계(후보 검색 → 참가 자격 → 순서 매기기)를 실제 진행대로 보여 준다. 숫자는 그 요청에서 실제로 센 값이다."
 
-- [ ] **Step 3: 체크박스·커밋·푸시**
+- [x] **Step 3: 체크박스·커밋·푸시**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add docs/design/README.md docs/recommender/changelog.md docs/superpowers/plans/2026-10-23-renewal-05-results.md && git commit -m "docs(design): 구현 05 results 기록" && git push origin renewal
