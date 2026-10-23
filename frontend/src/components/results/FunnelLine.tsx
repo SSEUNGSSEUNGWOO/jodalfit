@@ -10,7 +10,7 @@ export function FunnelLine({ counts, open, tabs, due }: {
   tabs: { notices: number; preSpecs: number; orderPlans: number } | null;
   due: { week: number; soonest: { days: number; month: number; day: number } | null } | null;
 }) {
-  const nums = [counts.total, counts.industry, counts.passed, counts.results];
+  const nums = [counts.total, counts.candidates, counts.passed, counts.results];
   return (
     <div data-funnel className={cn("grid grid-cols-[1fr_auto] items-start gap-6 overflow-hidden transition-[grid-template-rows,padding,opacity] duration-[450ms] [transition-timing-function:var(--ease-sheet)] max-sm:grid-cols-1 max-sm:gap-y-2.5", open ? "grid-rows-[1fr] pt-4 opacity-100" : "grid-rows-[0fr] opacity-0")}>
       <div className="flex min-h-0 items-start gap-3 overflow-hidden">

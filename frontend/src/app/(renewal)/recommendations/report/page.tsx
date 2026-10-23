@@ -10,7 +10,7 @@ import { qualLines, whyLines } from "@/lib/why";
 import { PrintButton } from "./PrintButton";
 
 export const metadata: Metadata = { title: "추천 공고 보고서 | 조달핏", robots: { index: false, follow: false } };
-const LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "검토할 공고"];
+const LABELS = ["지금 입찰 가능한 공고", "검토할 공고"];
 
 export default async function ReportPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const p = await searchParams;
@@ -25,8 +25,9 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
   const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
   const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const f = d.funnel ?? null; const res = d.results;
-  // 비스트림 응답은 자격 통과 수를 모른다 — 세 칸만(전체 → 업종 허용 → 검토할 공고). 캐시 히트로 funnel 자체가 없으면 띠를 안 그린다.
-  const nums = [f?.total ?? null, f?.industry ?? null, res.length];
+  // 비스트림 응답은 후보·자격 통과 수를 모른다 — 두 칸만(지금 입찰 가능 → 검토할 공고).
+  // 0057 에서 업종 허용 수를 뺐다(깔때기의 칸이 아니었다). 캐시 히트로 funnel 자체가 없으면 띠를 안 그린다.
+  const nums = [f?.total ?? null, res.length];
   return (
     <div className="report mx-auto w-[210mm] max-sm:w-auto">
       <div className="report-nav flex items-center justify-between py-[18px] pb-3 text-[13px] text-ink-g">
@@ -42,7 +43,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
           <div className="mt-2.5 flex items-start gap-3 border-b border-hair pb-2">
             <span className="t-k pt-0.5">걸러낸 경로</span>
             {nums.map((n, i) => (
-              <div key={LABELS[i]} className="flex items-center gap-3"><div><b className={`num text-[13px] ${i === 2 ? "text-orange" : ""}`}>{n == null ? "—" : n.toLocaleString("ko-KR")}</b><div className="text-[9px] text-ink-mute">{LABELS[i]}</div></div>{i < 2 && <span className="text-ink-mute">→</span>}</div>
+              <div key={LABELS[i]} className="flex items-center gap-3"><div><b className={`num text-[13px] ${i === nums.length - 1 ? "text-orange" : ""}`}>{n == null ? "—" : n.toLocaleString("ko-KR")}</b><div className="text-[9px] text-ink-mute">{LABELS[i]}</div></div>{i < nums.length - 1 && <span className="text-ink-mute">→</span>}</div>
             ))}
           </div>
         )}

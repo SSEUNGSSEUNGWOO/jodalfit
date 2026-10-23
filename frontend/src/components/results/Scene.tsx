@@ -6,12 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { createEngine, SCENE, type Engine } from "./scene-engine";
 import { cn } from "@/lib/utils";
 
-export const FUNNEL_LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"] as const;
-const REASONS = ["등록업종 미허용", "면허·지역 제한 미충족", "회사와의 유사도 낮음"] as const;
+// 네 칸은 앞 칸의 부분집합이어야 한다 — 그래야 깔때기로 그려도 거짓이 아니다.
+// "등록업종 허용 공고"(0056 의 845)를 둘째 칸으로 두던 건 거짓이었다: 후보 풀은 그 집합에서 꺼내는 게
+// 아니라 전체 공고에서 유사도 순으로 뽑는다. 2026-10-23 확인(한종산업개발 최종 20건) — 업종 허용 9건 /
+// 업종 제한 없음 3건 / 업종 불일치 8건. 그래서 둘째 칸을 후보 풀(candidates)로 바꾸고 0057 에서 그 수를 지웠다.
+export const FUNNEL_LABELS = ["지금 입찰 가능한 공고", "비슷한 순서로 추린 공고", "참가 자격 통과 공고", "검토할 공고"] as const;
+const REASONS = ["회사와 비슷하지 않음", "면허·지역 제한 미충족", "점수 순위에 밀림"] as const;
 
 export type SceneCounts = {
   total: number | null;
-  industry: number | null;
   candidates: number | null;
   passed: number | null;
   results: number | null;
@@ -20,9 +23,10 @@ export type SceneCounts = {
 function subOf(c: SceneCounts, i: number): string {
   const pct = (a: number | null, b: number | null, d = 1) => (a != null && b ? `${((a / b) * 100).toFixed(d)}%` : "…");
   if (i === 0) return " · 마감 90일 이내";
-  if (i === 1) return ` · 전체의 ${pct(c.industry, c.total)}`;
+  // 둘째 칸은 "왜 이만큼인가"가 숫자만으로 설명되지 않는다 — 전체의 몇 %인지 같이 적는다.
+  if (i === 1) return ` · 전체의 ${pct(c.candidates, c.total)}`;
   if (i === 2)
-    return c.passed === 0 ? " · 면허·지역 0% 통과" : ` · 후보 ${c.candidates ?? "…"}건 중 ${pct(c.passed, c.candidates, 0)} 통과`;
+    return c.passed === 0 ? " · 면허·지역 0% 통과" : ` · 앞 단계의 ${pct(c.passed, c.candidates, 0)}`;
   return c.results === 0 ? " · 없음" : ` · 앞 단계의 ${pct(c.results, c.passed)}`;
 }
 
@@ -44,8 +48,8 @@ export function Scene({
   const [settled, setSettled] = useState(false);
   const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const cnt = [counts.total ?? -1, counts.industry ?? -1, counts.passed ?? -1, counts.results ?? -1];
-  const known = [counts.total != null, counts.industry != null, counts.passed != null, counts.results != null];
+  const cnt = [counts.total ?? -1, counts.candidates ?? -1, counts.passed ?? -1, counts.results ?? -1];
+  const known = [counts.total != null, counts.candidates != null, counts.passed != null, counts.results != null];
   const firstUnknown = known.findIndex((k) => !k);
   // results 를 알면 종점이다 — 0056 미적용·v1 경로면 앞 칸이 비어도 선은 끝까지 간다(라벨은 "…" 유지).
   const target =

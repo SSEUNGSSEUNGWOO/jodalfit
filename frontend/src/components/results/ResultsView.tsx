@@ -22,7 +22,7 @@ const TIMEOUT_MS = 8000;
 // 20 건 — 채점표 K 곡선(12→20 은 낙찰 포함률이 크게 오르고 20→30 은 거의 안 는다)과 실사용 로그(13~20위에서 저장의 27%)를 같이 보고 정했다. 2026-10-23.
 // 공개 5 + 흐림 15. 인쇄 보고서는 A4 한 장에 맞춰 12 건으로 따로 간다(report/page.tsx).
 const RESULT_LIMIT = 20;
-const EMPTY: SceneCounts = { total: null, industry: null, candidates: null, passed: null, results: null };
+const EMPTY: SceneCounts = { total: null, candidates: null, passed: null, results: null };
 const OTHER = "ml-3.5 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange";
 
 export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, savedKeys, reviewedKeys, next, initialCompany }: {
@@ -46,7 +46,8 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
     streamRecommendations(
       { query, mode, keywords, algorithm, session_id: getSessionId(), limit: RESULT_LIMIT, candidate_pool: 200, explain_top: 0, with_explanation: false },
       (e) => {
-        if (e.type === "funnel") setCounts((c) => ({ ...c, total: e.total, industry: e.industry }));
+        // 0057 부터 funnel 은 total 하나만 준다 — 등록업종 허용 수는 깔때기의 칸이 아니었다(Scene.tsx 주석).
+        if (e.type === "funnel") setCounts((c) => ({ ...c, total: e.total }));
         else if (e.type === "stage" && e.stage === "search") setCounts((c) => ({ ...c, candidates: e.candidates }));
         else if (e.type === "stage" && e.stage === "qualify") setCounts((c) => ({ ...c, candidates: e.candidates, passed: e.passed }));
         else if (e.type === "stage" && e.stage === "rank") setCounts((c) => ({ ...c, results: e.results }));

@@ -167,10 +167,11 @@ export interface RecommendationResponse {
   funnel?: FunnelCounts | null;
 }
 
-export type FunnelCounts = { total: number; industry: number };
+// 0057: industry(등록업종 허용 공고 수)를 뺐다 — 깔때기의 칸이 아니었다(Scene.tsx 주석 참조).
+export type FunnelCounts = { total: number };
 
 export type StreamEvent =
-  | { type: "funnel"; total: number; industry: number }
+  | { type: "funnel"; total: number }
   | { type: "stage"; stage: "search"; candidates: number }
   | { type: "stage"; stage: "qualify"; candidates: number; passed: number }
   | { type: "stage"; stage: "rank"; results: number }

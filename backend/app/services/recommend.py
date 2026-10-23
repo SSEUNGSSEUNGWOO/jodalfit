@@ -610,19 +610,22 @@ def _search_with_embedding(
 
 
 def _fetch_funnel(client, names: list[str]) -> dict[str, int] | None:
-    """걸러낸 경로 앞 두 칸(0056). 미적용·실패면 None — 머리 장면은 두 칸 없이 간다."""
+    """걸러낸 경로 첫 칸(0057) — 지금 입찰 가능한 공고 수. 미적용·실패면 None(머리 장면은 그 칸 없이 간다).
+
+    0056 의 industry(등록업종 허용 공고 수) 칸은 0057 에서 지웠다. 깔때기의 한 칸이 아니었다 —
+    후보 풀은 그 집합에서 꺼내는 게 아니라 전체 공고에서 유사도 순으로 뽑는다. 2026-10-23 확인
+    (한종산업개발 최종 20건): 업종 허용 9 / 업종 제한 없음 3 / 업종 불일치 8 — 40%가 집합 밖이다.
+    names 는 0057 이 안 쓰지만 시그니처 호환을 위해 그대로 넘긴다.
+    """
     try:
         res = client.rpc(
             "funnel_counts", {"p_names": names, "p_days": MAX_CLSE_HORIZON_DAYS}
         ).execute()
         row = (res.data or [{}])[0]
-        out = {
-            "total": int(row.get("total") or 0),
-            "industry": int(row.get("industry") or 0),
-        }
+        out = {"total": int(row.get("total") or 0)}
         emit("funnel", **out)
         return out
-    except Exception as e:  # 0056 미적용 등
+    except Exception as e:  # 0057/0056 미적용 등
         logger.warning("funnel_counts 실패: %s", e)
         return None
 
