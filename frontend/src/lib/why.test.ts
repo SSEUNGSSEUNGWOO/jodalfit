@@ -35,5 +35,12 @@ test("qualLines: reasons 를 세 상태로, 규모 줄은 항상 끝에", () => 
     { state: "todo", text: "규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력" },
   ]);
   assert.deepEqual(qualLines(undefined), [{ state: "todo", text: "규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력" }]);
-  assert.equal(qualLines({ passed: false, unverified: false, reasons: ["면허 미충족(a, b)"], failures: ["면허 미충족(a, b)"] })[0].state, "warn");
+  assert.deepEqual(
+    qualLines({ passed: false, unverified: false, reasons: ["지역 제한 없음"], failures: ["면허 미충족(a, b)"] }),
+    [
+      { state: "none", text: "지역 — 제한 없음" },
+      { state: "warn", text: "면허 — 미충족(a, b)" },
+      { state: "todo", text: "규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력" },
+    ],
+  );
 });

@@ -28,7 +28,8 @@ const SIZE_LINE: QualLine = { state: "todo", text: "규모 — 중소기업 확�
 
 export function qualLines(q: Qualification | undefined): QualLine[] {
   const fails = new Set(q?.failures ?? []);
-  const lines: QualLine[] = (q?.reasons ?? []).map((t) => ({
+  // reasons·failures 는 상호 배타 — 미충족은 failures 에만 온다
+  const lines: QualLine[] = [...(q?.reasons ?? []), ...(q?.failures ?? [])].map((t) => ({
     state: fails.has(t) ? "warn" : t.includes("제한 없음") ? "none" : "ok",
     text: t.replace(/^면허 /, "면허 — ").replace(/^지역 /, "지역 — "),
   }));
