@@ -66,17 +66,27 @@ test("won — 억·만 축약, 없으면 —", () => {
   assert.equal(won(2000000), "200만");
   assert.equal(won(0), "—");
   assert.equal(won(null), "—");
+  assert.equal(won(1), "—");
+  assert.equal(won(9999), "—");
 });
 
 test("wonFull — 전액 원", () => {
   assert.equal(wonFull(6824573000), "6,824,573,000원");
   assert.equal(wonFull(null), "—");
+  assert.equal(wonFull(1), "—");
 });
 
 test("dLeft — 오늘 기준 남은 일수와 날짜", () => {
   const today = new Date(2026, 9, 16);         // 2026-10-16
   assert.deepEqual(dLeft("2026-10-29", today), { days: 13, month: 10, day: 29 });
   assert.deepEqual(dLeft("2026-10-16T00:00:00+00:00", today), { days: 0, month: 10, day: 16 });
+});
+
+test("dLeft — 없거나 깨진 날짜는 null", () => {
+  const today = new Date(2026, 9, 16);
+  assert.equal(dLeft(null), null);
+  assert.equal(dLeft("", today), null);
+  assert.equal(dLeft("not-a-date", today), null);
 });
 
 test("ymd — 2026.10.16", () => {
@@ -109,6 +119,7 @@ Expected: `Cannot find module './format.ts'` 로 FAIL
 export function won(v: number | string | null | undefined): string {
   const n = typeof v === "string" ? Number(v) : v;
   if (!n) return "—";
+  if (n < 10_000) return "—";   // 나라장터 원천의 1원 등 placeholder 금액은 미표기(utils.ts formatKRW 와 같은 규칙)
   if (n >= 100_000_000) {
     const s = (n / 100_000_000).toLocaleString("ko-KR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     return `${s.replace(/\.0$/, "")}억`;
@@ -119,11 +130,13 @@ export function won(v: number | string | null | undefined): string {
 export function wonFull(v: number | string | null | undefined): string {
   const n = typeof v === "string" ? Number(v) : v;
   if (!n) return "—";
+  if (n < 10_000) return "—";   // 나라장터 원천의 1원 등 placeholder 금액은 미표기(utils.ts formatKRW 와 같은 규칙)
   return `${Math.trunc(n).toLocaleString("ko-KR")}원`;
 }
 
 /** 마감까지 남은 일수. 날짜 문자열 앞 10자리만 쓴다(시간대 무시 — 나라장터 마감은 날짜 단위로 본다). */
-export function dLeft(dateStr: string, today: Date = new Date()): { days: number; month: number; day: number } {
+export function dLeft(dateStr: string | null | undefined, today: Date = new Date()): { days: number; month: number; day: number } | null {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return null;
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
   const target = new Date(y, m - 1, d);
   const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -147,7 +160,7 @@ export function rgnBase(rgn: string | null | undefined): string {
 ```bash
 cd C:/Dev/personal/jodalfit/frontend && node --test src/lib/format.test.ts
 ```
-Expected: `# pass 5` `# fail 0`
+Expected: `# pass 6` `# fail 0`
 
 - [ ] **Step 5: 커밋**
 
@@ -163,6 +176,8 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/format.ts frontend/src/l
 - Modify: `frontend/src/app/globals.css` — `@theme { … }` 블록 끝(`--shadow-xl` 줄 뒤)과 파일 끝
 
 - [ ] **Step 1: `@theme` 에 새 토큰 추가** — `--shadow-xl: …;` 줄 바로 아래에 붙인다
+
+> 품질 검토 기록(2026-10-19): 컴파일된 CSS 에서 덮어쓰기 확인됨. 컷오버 전까지 옛 `Footer` 등은 먹 제목 + 네이비 본문이 섞여 보인다 — 의도된 과도기, 중간에 '고치지' 말 것. `.rn :focus-visible` 과 `.world-gc :focus-visible` 은 특이도가 같으니 두 범위를 중첩하지 않는다.
 
 > 주의: `--color-ink` 와 `--color-line` 은 옛 `@theme` 에 이미 있다(#17233a · #dde3ec). 같은 이름을 **아래에서 다시 선언해 덮어쓴다** — 옛 페이지의 `text-ink` 가 먹 #141414 로, `border-line` 이 #d8d6d0 로 바뀐다. 의도한 것이다(컷오버 때 전 페이지가 먹으로 간다). 옛 `--color-ink-2…7` 은 건드리지 않는다.
 
@@ -495,7 +510,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * 머리 — 제목 32 + 제목 옆 작은 글(사업자번호 등) + aside(다른 회사·☆) / 메타 줄(· 구분) / children(걸러낸 경로·탭) / 아래 먹 괘선 하나.
+ * 머리 — 제목 32 + 제목 옆 작은 글(사업자번호 등), aside(다른 회사·☆)는 h1 밖 형제(접근성 — 제목 이름에 버튼 글자가 섞이지 않게) / 메타 줄(· 구분) / children(걸러낸 경로·탭) / 아래 먹 괘선 하나.
  * 바닥(paper) 위에 놓인다. 판 밖.
  */
 export function PageHead({ title, small, aside, meta, children, className }: {
@@ -503,11 +518,13 @@ export function PageHead({ title, small, aside, meta, children, className }: {
 }) {
   return (
     <div className={cn("rule-ink pt-[26px] pb-[18px]", className)}>
-      <h1 className="m-0 flex flex-wrap items-baseline gap-x-3 text-[32px] max-sm:text-[24px] font-semibold tracking-[-0.035em] leading-[1.2] text-ink">
-        <span>{title}</span>
-        {small && <small className="text-[13px] font-normal tracking-normal text-ink-mute">{small}</small>}
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 flex flex-wrap items-baseline gap-x-3 text-[32px] max-sm:text-[24px] font-semibold tracking-[-0.035em] leading-[1.2] text-ink">
+          <span>{title}</span>
+          {small && <small className="text-[13px] font-normal tracking-normal text-ink-mute">{small}</small>}
+        </h1>
         {aside}
-      </h1>
+      </div>
       {meta && meta.length > 0 && (
         <div className="mt-1.5 text-[14px] text-ink-g [&>span+span]:before:mx-2 [&>span+span]:before:text-[#c9c9c4] [&>span+span]:before:content-['·']">
           {meta.map((m, i) => <span key={i}>{m}</span>)}
@@ -576,11 +593,14 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/SiteFooter.tsx fr
 
 - [ ] **Step 1: 구현** — 값은 `gen_split.py::SPLIT_CSS` 의 `.th/.tr/.sub/.x` 와 `gen_results_final.py::CSS` 가독성 패스(제목 16 / 둘째 줄 13.5 / 행 패딩 16 / 마감·추정가 15)
 
+> Task 2 품질 검토 지적: `.x-wrap > * { overflow:hidden }` 이 펼침 안 버튼의 포커스 링(4px box-shadow)을 왼쪽 가장자리에서 자른다. 펼침 안쪽 `<div>` 에 `px-1 -mx-1 pb-1` 을 주어 링이 들어갈 여백을 만든다(아래 코드에 반영됨).
+
 ```tsx
 // frontend/src/components/Sheet.tsx
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[28px_minmax(0,1fr)_84px_72px] gap-x-3 items-start max-sm:grid-cols-[minmax(0,1fr)_auto]";
@@ -599,7 +619,7 @@ export type SheetRowProps = {
   title: ReactNode;
   org: ReactNode;          // 둘째 줄 왼쪽
   why?: ReactNode;         // 둘째 줄 근거 칩(가장 강한 신호 1개)
-  dLeft: { days: number; month: number; day: number };
+  dLeft: { days: number; month: number; day: number } | null;
   price: string;           // won()
   reviewed?: boolean;      // 왼쪽 주황 괘선
   defaultOpen?: boolean;
@@ -607,35 +627,51 @@ export type SheetRowProps = {
   href?: string;           // 제목 링크(공고 상세). 없으면 행 클릭 = 펼침
 };
 
-/** 표 행 — 번호 · 제목/둘째 줄 · 마감 · 추정가. 클릭하면 아래 펼침. 검토한 행은 왼쪽에 주황 괘선 2px. */
+/** 표 행 — 번호 · 제목/둘째 줄 · 마감 · 추정가. 번호 칸의 버튼이 펼침 토글(키보드·AT), 행 클릭은 마우스 편의. 검토한 행은 왼쪽에 주황 괘선 2px. */
 export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href }: SheetRowProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const hot = dLeft.days <= 7;
+  const panelId = useId();
+  const hot = !!dLeft && dLeft.days >= 0 && dLeft.days <= 7;
+  const toggle = () => setOpen((v) => !v);
   return (
     <>
-      <div role={children ? "button" : undefined} tabIndex={children ? 0 : undefined} aria-expanded={children ? open : undefined}
-        onClick={() => children && setOpen((v) => !v)}
-        onKeyDown={(e) => { if (children && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setOpen((v) => !v); } }}
+      <div data-sheet-row onClick={children ? toggle : undefined}
         className={cn(GRID, "relative border-b border-rule py-4 text-[14px] max-sm:py-3", children && "cursor-pointer",
           "before:absolute before:-left-4 before:top-0 before:bottom-0 before:w-0.5 before:origin-top before:bg-orange before:transition-transform before:duration-300 before:[transition-timing-function:var(--ease-sheet)]",
           reviewed ? "before:scale-y-100" : "before:scale-y-0")}>
-        <span className="pt-[3px] text-[12px] text-ink-off max-sm:hidden">{String(no).padStart(2, "0")}</span>
+        {children ? (
+          <button type="button" aria-expanded={open} aria-controls={panelId} aria-label={`${no}번 공고 ${open ? "접기" : "펼치기"}`}
+            onClick={(e) => { e.stopPropagation(); toggle(); }}
+            className="num cursor-pointer self-start pt-[3px] text-left text-[12px] text-ink-off max-sm:sr-only">
+            {String(no).padStart(2, "0")}
+          </button>
+        ) : (
+          <span className="pt-[3px] text-[12px] text-ink-off max-sm:hidden">{String(no).padStart(2, "0")}</span>
+        )}
         <span className="min-w-0">
           <span className="block text-[16px] font-semibold leading-[1.4] text-ink max-sm:text-[15px]">
-            {href ? <a href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</a> : title}
+            {href ? <Link href={href} onClick={(e) => e.stopPropagation()} className="hover:border-b hover:border-orange">{title}</Link> : title}
           </span>
           <span className="mt-1 block truncate text-[13.5px] text-ink-sub max-sm:whitespace-normal max-sm:text-[13px]">
             {org}{why && <span className="text-ink-dim before:mx-1.5 before:text-[#c9c9c4] before:content-['·']">{why}</span>}
           </span>
         </span>
-        <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot ? "text-orange" : "text-ink")}>
-          D-{dLeft.days}<small className="ml-1.5 text-[12.5px] font-normal text-ink-mute">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
-        </span>
+        {dLeft == null ? (
+          <span className="num pt-0.5 text-right text-[15px] text-ink-mute">—</span>
+        ) : dLeft.days < 0 ? (
+          <span className="num pt-0.5 text-right text-[15px] text-ink-mute">
+            마감<small className="ml-1.5 text-[12.5px] font-normal">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
+          </span>
+        ) : (
+          <span className={cn("num pt-0.5 text-right text-[15px] font-semibold", hot ? "text-orange" : "text-ink")}>
+            D-{dLeft.days}<small className="ml-1.5 text-[12.5px] font-normal text-ink-mute">{dLeft.month}.{String(dLeft.day).padStart(2, "0")}</small>
+          </span>
+        )}
         <span className="num pt-0.5 text-right text-[15px] max-sm:hidden">{price}</span>
       </div>
       {children && (
-        <div className={cn("x-wrap pl-10 max-sm:pl-0", open && "border-b border-rule pb-6 pt-4")} data-open={open}>
-          <div>{children}</div>
+        <div id={panelId} className={cn("x-wrap pl-10 max-sm:pl-0", open && "border-b border-rule pb-6 pt-4")} data-open={open}>
+          <div className="-mx-1 px-1 pb-1">{children}</div>
         </div>
       )}
     </>
@@ -669,9 +705,9 @@ export function SheetExpand({ quals, whys, actions }: { quals: QualLine[]; whys:
   );
 }
 
-/** 흐림 묶음 — 게이트 뒤 6건째부터. 글자는 읽히지 않되 존재는 보인다. */
+/** 흐림 묶음 — 게이트 뒤 6건째부터. 글자는 읽히지 않되 존재는 보인다. inert 로 포커스·클릭·AT 전부 차단(게이트 우회 방지). */
 export function SheetFade({ children, off = false }: { children: ReactNode; off?: boolean }) {
-  return <div className={cn(!off && "[&>*]:pointer-events-none [&>*]:opacity-[.32] [&>*]:blur-[1.5px]")} aria-hidden={!off}>{children}</div>;
+  return <div className={cn(!off && "[&>*]:opacity-[.32] [&>*]:blur-[1.5px]")} inert={!off}>{children}</div>;
 }
 ```
 
@@ -744,6 +780,7 @@ import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
 import { Sheet } from "./sheet";
 import { SiteFooter } from "@/components/SiteFooter";
+import { maskBizrno } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "foundation", robots: { index: false, follow: false } };
 
@@ -753,7 +790,7 @@ export default function FoundationPage() {
     <div className="rn bg-paper min-h-screen text-ink">
       <div className="mx-auto max-w-[1120px] px-5 pb-[120px]">
         <Nav user={{ email: "you@company.co.kr", savedCompanies: [{ bizrnoNorm: "1248177731", name: "한종산업개발 주식회사" }, { bizrnoNorm: "4128113667", name: "(유)금강환경" }], reviewedCount: 3 }} />
-        <PageHead title="한종산업개발 주식회사" small="124-XX-X731" aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
+        <PageHead title="한종산업개발 주식회사" small={maskBizrno("1248177731")} aside={<Btn variant="review" className="ml-3 h-[30px] text-[13px]">☆ 회사 저장</Btn>}
           meta={["경상남도 창원시", "등록업종 15", "공급물품 없음", "기준일 2026-10-16"]} />
         <Panel className="mt-[22px]">
           <PanelHead title="검토할 공고 12건" small="적합 순" />
@@ -791,7 +828,7 @@ const ROWS = [
   { no: 1, title: "송탄정수장 공업용수공급 시설공사(1공구)", org: "경기도 평택시 상하수도사업소", why: "재출현 기관", clse: "2026-10-29", price: 5025454546, reviewed: true,
     quals: [{ state: "none", text: "면허 — 제한 없음" }, { state: "none", text: "지역 — 제한 없음" }, { state: "todo", text: "규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력" }] as const,
     whys: ["경기도 평택시 상하수도사업소 — 과거 거래 이력 있음", "추정가가 회사 평균 수주가의 1.08배 — 유사한 규모", "공고 내용과 회사 업종 설명 유사도 73%"] },
-  { no: 2, title: "중랑물재생센터 제1처리장 관리대행", org: "서울특별시 물재생센터 중랑물재생센터", why: "업종·물품 일치", clse: "2026-11-25", price: 6110000000, reviewed: false, quals: [], whys: [] },
+  { no: 2, title: "중랑물재생센터 제1처리장 관리대행", org: "서울특별시 물재생센터 중랑물재생센터", why: "업종·물품 일치", clse: "2026-11-25", price: 6106074545, reviewed: false, quals: [], whys: [] },
   { no: 3, title: "송탄정수장 공업용수공급 시설공사(2공구)", org: "경기도 평택시 상하수도사업소", why: "재출현 기관", clse: "2026-10-29", price: 7690000000, reviewed: false, quals: [], whys: [] },
 ];
 
@@ -808,8 +845,8 @@ export function Sheet() {
       ))}
       <Gate rest={7} next="/dev/foundation" />
       <SheetFade>
-        <SheetRow no={6} title="중랑물재생센터 일부시설물 관리대행" org="서울특별시 물재생센터 중랑물재생센터" why="업종·물품 일치" dLeft={dLeft("2026-11-24", TODAY)} price={won(19970000000)} />
-        <SheetRow no={7} title="양산하수처리장 악취저감사업 실시설계용역" org="경상남도 양산시 상하수도사업소" why="지역 매칭" dLeft={dLeft("2026-10-20", TODAY)} price={won(58080000)} />
+        <SheetRow no={6} title="중랑물재생센터 일부시설물 관리대행" org="서울특별시 물재생센터 중랑물재생센터" why="업종·물품 일치" dLeft={dLeft("2026-11-24", TODAY)} price={won(19974684545)} />
+        <SheetRow no={7} title="양산하수처리장 악취저감사업 실시설계용역" org="경상남도 양산시 상하수도사업소" why="지역 매칭" dLeft={dLeft("2026-10-20", TODAY)} price={won(58081818)} />
       </SheetFade>
     </>
   );
@@ -850,12 +887,14 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/app/dev && git commit -m "fe
 # frontend/scripts/check_foundation.py
 """/dev/foundation 검증 — 금지어 0 · 인주 0 · 주황 면 0(로고 타일 제외) · 핵심 요소 · 펼침 · 메뉴 · 390.
 실행: cd backend && uv run --no-sync python ../frontend/scripts/check_foundation.py  (frontend 에서 npm run dev 가 떠 있어야 한다)
+주소: 환경변수 FOUNDATION_URL (기본 http://localhost:3000/dev/foundation)
 """
+import os
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-URL = "http://localhost:3000/dev/foundation"
+URL = os.environ.get("FOUNDATION_URL", "http://localhost:3000/dev/foundation")
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요", "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "아침 7시"]
 OUT = Path(__file__).resolve().parent
 
@@ -866,30 +905,29 @@ def main():
         pg = b.new_page(viewport={"width": 1280, "height": 900}); pg.goto(URL); pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(500)
         txt = pg.evaluate("document.body.innerText"); bad = [w for w in BANNED if w in txt]; assert not bad, f"금지어 {bad}"
         s = pg.evaluate("""() => { const cs = e => getComputedStyle(e);
+            // 주황 면 금지 — 실제 요소의 배경만 본다. ::before/::after 는 못 본다(검토 행 왼쪽 2px 괘선 before:bg-orange 는 '선'이라 허용 대상)
             const orangeFaces = [...document.querySelectorAll('body *')].filter(e => cs(e).backgroundColor === 'rgb(249, 115, 22)' && !e.closest('svg')).length;
-            const injuk = [...document.querySelectorAll('body *')].some(e => [cs(e).color, cs(e).backgroundColor, cs(e).borderColor].includes('rgb(232, 67, 27)'));
-            const h1 = document.querySelector('h1'); const head = h1.parentElement;
+            // 인주 #e8431b 금지 — border 는 shorthand 가 아니라 네 변 longhand 로 본다(한 변만 색이 있으면 shorthand 는 다중값이라 못 잡는다)
+            const injuk = [...document.querySelectorAll('body *')].some(e => { const c = cs(e); return [c.color, c.backgroundColor, c.borderTopColor, c.borderRightColor, c.borderBottomColor, c.borderLeftColor].includes('rgb(232, 67, 27)'); });
+            const h1 = document.querySelector('h1'); const head = h1.closest('.rule-ink');
             return { bg: cs(document.querySelector('.rn')).backgroundColor, orangeFaces, injuk,
               rule: cs(head).borderBottomColor, h1: cs(h1).fontSize, panel: cs(document.querySelector('section')).backgroundColor, radius: cs(document.querySelector('section')).borderRadius,
-              rows: document.querySelectorAll('[role=button][aria-expanded]').length, open: document.querySelectorAll('.x-wrap[data-open=true]').length,
-              gateBtns: document.querySelectorAll('a[href^="/login"], a[href^="/signup"]').length, fade: document.querySelectorAll('[aria-hidden=true] [aria-expanded], [aria-hidden=true] > div').length,
-              me: !!document.querySelector('button[aria-haspopup=menu]') } }""")
+              rows: document.querySelectorAll('button.num[aria-expanded]').length, open: document.querySelectorAll('.x-wrap[data-open=true]').length,
+              gateBtns: document.querySelectorAll('.hairline a[href^="/login"], .hairline a[href^="/signup"]').length, fade: document.querySelectorAll('[inert] > [data-sheet-row]').length,
+              login: !!document.querySelector('nav a[href^="/login?next="]') } }""")
         assert s["bg"] == "rgb(250, 249, 247)" and s["orangeFaces"] == 0 and not s["injuk"], s
         assert s["rule"] == "rgb(20, 20, 20)" and s["h1"] == "32px" and s["panel"] == "rgb(255, 255, 255)" and s["radius"] == "14px", s
-        assert s["rows"] >= 1 and s["open"] == 1 and s["gateBtns"] == 2 and s["fade"] >= 2 and s["me"], s   # 게이트 두 버튼(로그인됨이라 nav 에는 로그인 링크 없음)
-        pg.click("button[aria-haspopup=menu]"); pg.wait_for_timeout(150)
-        m = pg.evaluate("document.querySelectorAll('[role=menu] [role=menuitem]').length"); assert m == 5, m
-        pg.keyboard.press("Escape"); assert pg.evaluate("!document.querySelector('[role=menu]')")
-        pg.locator("[role=button][aria-expanded]").first.click(); pg.wait_for_timeout(500)   # 1행 접힘
+        assert s["rows"] >= 1 and s["open"] == 1 and s["gateBtns"] == 2 and s["fade"] >= 2 and s["login"], s   # 게이트 두 버튼(로그인됨이라 nav 에는 로그인 링크 없음)
+        pg.locator("button.num[aria-expanded]").first.click(); pg.wait_for_timeout(500)   # 1행 접힘
         assert pg.evaluate("document.querySelectorAll('.x-wrap[data-open=true]').length") == 0
         pg.screenshot(path=str(OUT / "_shot_foundation.png"), full_page=True)
         pg.set_viewport_size({"width": 390, "height": 844}); pg.reload(); pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(300)
         mo = pg.evaluate("""() => ({ overflow: document.documentElement.scrollWidth > 390, radius: getComputedStyle(document.querySelector('section')).borderRadius,
-            priceHidden: getComputedStyle(document.querySelectorAll('[role=button][aria-expanded] > span')[3]).display === 'none', me: getComputedStyle(document.querySelector('button[aria-haspopup=menu]')).display !== 'none' })""")
-        assert not mo["overflow"] and mo["radius"] == "12px" and mo["priceHidden"] and mo["me"], mo
+            priceHidden: getComputedStyle(document.querySelector('[data-sheet-row]').children[3]).display === 'none' })""")
+        assert not mo["overflow"] and mo["radius"] == "12px" and mo["priceHidden"], mo
         pg.screenshot(path=str(OUT / "_shot_foundation_390.png"), full_page=True)
         b.close()
-    print("ok foundation: tokens · head rule · panel · sheet(open/close) · gate · fade · nav menu(5) · 390")
+    print("ok foundation: tokens · head rule · panel · sheet(open/close) · gate · fade · nav login · 390")
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -53,6 +53,8 @@ def prune(payload: dict, today: date | None = None) -> dict:
     """마감 지난 항목을 걷어낸 사본 반환. 발주계획은 마감 개념이 없어 그대로 둔다."""
     today = today or date.today()
     out = dict(payload)
+    # funnel 은 그 시점 집계 — 며칠 묵은 수를 "지금 입찰 가능한 공고"로 보이면 거짓이라 캐시 히트엔 싣지 않는다
+    out.pop("funnel", None)
 
     results = [r for r in (payload.get("results") or []) if _alive(r.get("bid_clse_date"), today)]
     out["results"] = results

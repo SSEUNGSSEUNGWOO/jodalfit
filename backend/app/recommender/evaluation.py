@@ -53,9 +53,11 @@ def stage_lost(stage_ranks: dict[str, list[Key]], positive: Key, pool: int, limi
 
 def aggregate(per_company: list[dict]) -> dict:
     """per_company: {tier, bsns_div, r_dense, r_qual, r_scored30, r_final30, mrr, n_pos}.
+    r_final5·r_final20 은 있으면 같이 집계한다 (운영 화면 조건 — 5건 공개 / 20건 표시).
     macro(회사 평균)와 군별 평균, micro(정답 가중)를 돌려준다."""
     out: dict = {"n_companies": len(per_company)}
-    metrics = ("r_dense", "r_qual", "r_scored30", "r_final30", "mrr")
+    ALL_METRICS = ("r_dense", "r_qual", "r_scored30", "r_final30", "r_final5", "r_final20", "mrr")
+    metrics = tuple(m for m in ALL_METRICS if per_company and m in per_company[0])
 
     def mean(rows: list[dict], m: str) -> float:
         return sum(r[m] for r in rows) / len(rows) if rows else 0.0

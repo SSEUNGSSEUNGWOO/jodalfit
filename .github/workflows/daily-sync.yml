@@ -107,6 +107,14 @@ jobs:
         timeout-minutes: 15
         continue-on-error: true
 
+      # 발주계획 임베딩이 어느 워크플로에도 없었다 — 2026-06-14 수동 1회가 마지막이고 수집만 매일
+      # 돌아서 6,132건 중 벡터가 20건(0.3%)이었다. 발주계획은 결과 화면(OrderPlanSection)에
+      # 쓰이는데 사실상 빈 섹션이었다. 2026-10-23 등록.
+      - name: 발주계획 임베딩 (신규)
+        run: uv run python -m jobs.embed_order_plans --limit 1000 --batch 50
+        timeout-minutes: 10
+        continue-on-error: true
+
       - name: sitemap warm-up (Google이 신선한 sitemap 보도록 강제 히트)
         # generateSitemaps로 쪼갠 뒤 /sitemap.xml은 404다. 세그먼트를 각각 쳐야 한다.
         # 세그먼트 수는 frontend/src/lib/sitemap-segments.ts의 TOTAL_SEGMENTS와 맞출 것.

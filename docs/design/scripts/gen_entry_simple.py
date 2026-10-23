@@ -277,7 +277,7 @@ if __name__ == "__main__":
     out = sys.argv[1].rstrip("/\\")
     conn = connect()
     d = fetch(conn); d["today"] = fetch_today(conn)
-    with open(f"{out}/entry-simple.html", "w", encoding="utf-8") as f:
+    with open(f"{out}/final/entry-simple.html", "w", encoding="utf-8") as f:
         f.write(page(d))
     lg = d["log"]
     print(f'active={d["active"]:,}  7d user searches={lg["tot"]} unresolved={lg["miss"]} ({lg["miss"] / lg["tot"] * 100:.1f}%)  {d["today"]["label"]} {d["today"]["n"]} rows={len(d["today"]["rows"])}')

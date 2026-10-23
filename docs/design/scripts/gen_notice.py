@@ -300,20 +300,38 @@ def lifecycle(d):
             f'<div class="lcb">{stages(d)}</div></details>')
 
 
+def files_block(n):
+    """첨부 원본 직링크 — 요약이 없을수록 원문이 더 필요하다. 주소는 수집 때 이미 받아 둔 것이다
+    (bid_notices.attachments 의 name/url). 나라장터 원문 페이지를 거치지 않고 바로 내려받는다."""
+    fs = n.get("attachments") or []
+    if not fs:
+        return ""
+    li = "".join(f'<li><a href="{esc(f["url"])}">{esc(f.get("name") or f"첨부 {f["seq"]}")}</a></li>' for f in fs[:8])
+    more = f'<span class="mute"> 외 {len(fs) - 8}건</span>' if len(fs) > 8 else ""
+    return f'<div class="att inline"><span class="k">첨부 원본</span><ul>{li}</ul>{more}</div>'
+
+
 def work_block(d):
     ins = d["insight"]
     if not ins or not ins.get("summary"):
         att = len(d["n"]["attachments"] or [])
+        # 기준은 파일 종류가 아니다 — 0058 기준으로 '경쟁입찰이고 마감이 안 지난 공고'다.
+        # 예전 문구("제안요청서·공고문이 붙은 건에만")는 파일 이름을 보지 않으므로 성립할 수 없었다.
+        # 수의계약은 앞으로도 안 읽는다 — 기다려도 안 되는 것과 순서를 기다리는 것은 다르게 말해야 한다.
+        never = (d["n"].get("cntrct_cncls_mthd_nm") or "") == "수의계약"
+        why = ("수의계약 공고는 문서를 읽지 않습니다 — 경쟁입찰만 분석합니다."
+               if never else "순서를 기다리는 중입니다. 경쟁입찰 공고는 마감 전까지 차례로 읽습니다.")
         return ('<div class="empty"><b>첨부문서를 아직 읽지 않았습니다.</b>'
-                f'<p>이 공고의 첨부 {att}건은 분석 대기 중입니다. 과업 내용·범위·필수 조건은 원문에서 확인하세요. '
+                f'<p>이 공고의 첨부 {att}건은 {why} 과업 내용·범위·필수 조건은 아래 원문에서 확인하세요. '
                 f'문서를 읽은 공고에서는 이 자리에 요약과 범위, 필수/우대 조건이 들어갑니다.</p>'
-                f'<span class="mute">첨부문서 분석은 공고 전체가 아니라 제안요청서·공고문이 붙은 건에만 돌아갑니다.</span></div>')
+                + files_block(d["n"]) + '</div>')
     scope = "".join(f"<li>{esc(s)}</li>" for s in (ins.get("scope") or []))
     kw = " · ".join(esc(k) for k in (ins.get("keywords") or [])[:6])
     return (f'<p class="sum">{esc(ins["summary"])}</p>'
             + (f'<ul class="scope">{scope}</ul>' if scope else "")
             + (f'<div class="kw"><span class="k">문서에서 뽑은 말</span>{kw}</div>' if kw else "")
-            + '<div class="src mute">첨부 제안요청서·공고문을 읽어 정리한 것입니다. 원문 확인은 필수.</div>')
+            + files_block(d["n"])
+            + '<div class="src mute">첨부 문서를 읽어 정리한 것입니다. 원문 확인은 필수.</div>')
 
 
 def cond_block(d):
@@ -590,7 +608,7 @@ def l2(d, prof, login):
     n = d["n"]
     return (f'<div class="head reveal"><div class="tags">{h["tags"]}</div><h1 class="t">{h["h1"]}</h1>'
             f'<div class="meta">{h["meta"]}</div></div>'
-            + sec("과업 내용", "다른 데는 없는 것 — 첨부 제안요청서·공고문을 읽어 정리했습니다.", work_block(d))
+            + sec("과업 내용", "다른 데는 없는 것 — 첨부 문서를 읽어 정리했습니다.", work_block(d))
             + sec("참가 자격", "", qual_block(d, prof, login))
             + sec("참가 조건", "", cond_block(d))
             + sec("일정·진행", "", f'<div class="nums">{h["nums"]}</div>' + stages(d))

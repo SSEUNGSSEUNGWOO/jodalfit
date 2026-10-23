@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.config import get_settings
 from app.services.embedding import embed_texts
@@ -41,8 +41,13 @@ def build_text(r: dict) -> str:
 
 
 def pending_query(client, space: str, select: str, count: str | None = None):
+    # 의견 마감이 늦은 것부터 — 아직 접수 중인(= 추천에 쓸 수 있는) 사전규격이 먼저 처리돼야 한다.
+    # 정렬이 없던 동안 적재 순서대로(사실상 옛날 것부터) 집어갔다. 2026-10-23 확인: 접수 중 2,549건 중
+    # 벡터가 있는 건 20건(0.8%)뿐이었고, 밀린 54,943건을 하루 1,000건으로 소화하면 55일 — 평균 공개
+    # 기간 6.2일인 사전규격은 영원히 못 따라잡는다. 입찰공고 쪽은 마감 조건이 있어 같은 문제가 없었다.
     q = client.table("pre_specs").select(select, count=count)
-    return q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+    q = q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+    return q.order("opnin_rgst_clse_dt", desc=True, nullsfirst=False)
 
 
 def run(
@@ -69,7 +74,7 @@ def run(
                 break
             texts = [build_text(r) for r in rows]
             embeddings = embed_texts(texts, space)
-            now_iso = datetime.now().isoformat()
+            now_iso = datetime.now(timezone.utc).isoformat()  # tz 없는 지역시각을 쓰면 Postgres 가 UTC 로 해석해 KST PC 에서 9시간 밀린다
             updates = [
                 {
                     "bf_spec_rgst_no": r["bf_spec_rgst_no"],

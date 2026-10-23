@@ -1,0 +1,487 @@
+<!doctype html><html lang="ko" class="v-panel"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>조달핏 결과</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>
+* { box-sizing:border-box } body { margin:0; background:#fff; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased }
+a { color:inherit; text-decoration:none } .dim { color:#6b6b67 } .mute { color:#8f8f8b } .acc { color:#f97316 }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:22px 0; font-size:13px; color:#55554f } .brand { display:flex; align-items:center; gap:8px; color:#141414; font-weight:700; font-size:14.5px } .brand i { width:7px; height:7px; border-radius:50%; background:#f97316; display:inline-block }
+.nav .links { display:flex; gap:22px } .nav .links b { color:#141414; font-weight:600 } .nav .cta { border-bottom:1px solid #141414; color:#141414 }
+.k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#737370; font-weight:600 }
+.ok::after { content:"✓"; color:#1f5f3a; font-weight:700; margin-left:6px } .warn::after { content:"!"; color:#f97316; font-weight:700; margin-left:6px }
+.bt { display:inline-flex; align-items:center; height:36px; padding:0 14px; border-radius:8px; border:1px solid #e3e1dc; font-size:13px; font-weight:600; background:#fff } .bt.dark { background:#141414; color:#fff; border-color:#141414 } .bt.txt { border:0; padding:0 4px; color:#55554f; font-weight:500 } .bt.txt u { text-decoration:none; border-bottom:1px solid #d8d6d0 }
+
+.wrap { width:1120px; margin:0 auto; padding:0 0 120px }
+.head { padding:28px 0 22px; border-bottom:1px solid #141414 }
+.head h1 { margin:0; font-size:30px; letter-spacing:-0.035em; font-weight:650; line-height:1.15 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head .meta { margin-top:8px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.head .ind { margin-top:14px; font-size:13.5px; line-height:1.7; max-width:880px } .head .ind b { font-weight:600 } .head .ind .k { margin-right:10px }
+.head .act { margin-top:14px; display:flex; align-items:center; gap:14px; font-size:13px; color:#55554f } .head .act .q { color:#f97316; font-weight:600 }
+.count { display:flex; align-items:flex-end; justify-content:space-between; padding:26px 0 14px }
+.count .n { font-size:44px; letter-spacing:-0.04em; font-weight:650; line-height:1 } .count .n small { font-size:14px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:10px }
+.count .f { display:flex; gap:20px; font-size:13px; color:#6b6b67 } .count .f b { color:#141414; font-weight:600; border-bottom:1px solid #141414; padding-bottom:2px }
+.th, .tr { display:grid; grid-template-columns:36px minmax(0,1fr) 200px 180px 92px 88px 60px; gap:0 16px; align-items:baseline }
+.th { padding:10px 0 8px; border-bottom:1px solid #141414; font-size:11px; letter-spacing:.06em; color:#737370; font-weight:600 }
+.tr { padding:15px 0; border-bottom:1px solid #ececea; font-size:14px; cursor:pointer } .tr:hover .t { color:#f97316 }
+.tr .no { font-size:12px; color:#8f8f8b } .tr .t { font-weight:550; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em }
+.tr .org, .tr .why { font-size:13px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .why { color:#6b6b67 }
+.tr .r { text-align:right } .tr .d { font-weight:600 } .tr .d.hot { color:#f97316 } .tr .d small { color:#737370; font-weight:450; margin-left:6px }
+.tr .fit { font-weight:600 } .tr .fit i { display:inline-block; width:56px; height:4px; background:#dedbd4; margin-right:8px; vertical-align:middle; position:relative } .tr .fit i b { position:absolute; left:0; top:0; height:100%; background:#141414 }
+.x { padding:22px 0 26px 52px; border-bottom:1px solid #ececea; display:grid; grid-template-columns:1.1fr 1.2fr .8fr; gap:40px }
+.x .k { display:block; margin-bottom:10px } .x ul { margin:0; padding:0; list-style:none } .x li { font-size:13.5px; line-height:1.65; padding:4px 0; color:#333 } .x li.todo { color:#737370 }
+.x .life { display:flex; gap:0; margin-top:4px } .x .life span { flex:1; font-size:11.5px; color:#8f8f8b; padding-top:8px; border-top:2px solid #ececea } .x .life span.on { color:#141414; border-top-color:#141414 }
+.x .acts { margin-top:18px; display:flex; gap:8px; flex-wrap:wrap }
+.fade .tr { opacity:.32; filter:blur(1.5px); pointer-events:none }
+.gateline { display:flex; align-items:center; gap:14px; padding:22px 0; border-bottom:1px solid #141414; font-size:14px } .gateline b { font-weight:650 } .gateline .sp { flex:1 } .gateline .in { display:flex; gap:6px } .gateline .in span:first-child { width:260px; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
+.foot { margin-top:28px; font-size:12px; color:#737370 }
+
+.crit { display:grid; border-top:1px solid #141414; border-bottom:1px solid #e6e4df; padding:16px 0 14px; grid-template-columns:1.35fr 1fr 1fr auto; gap:26px; align-items:start }
+.crit .k { display:block; margin-bottom:6px } .crit .txt { font-size:13px; line-height:1.7; color:#333 } .crit .txt b { font-weight:600 } .crit .txt .dim { color:#737370 }
+.crit .k + .k { margin-top:10px }
+.crit .act { display:flex; flex-direction:column; gap:8px; align-items:flex-end } .crit .act .mute { font-size:11.5px }
+@media screen and (max-width:900px){ .crit { grid-template-columns:1fr 1fr; gap:18px } .crit .act { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-start } }
+
+.wrap { width:auto; max-width:1120px; padding:0 20px 120px }
+.brand { font-weight:800; font-size:16px; letter-spacing:-0.035em; gap:8px } .brand svg { display:block }
+.ok::after { color:#141414 }   /* ✓ 는 먹 — 초록 폐기(공고 시안 결정) */
+.q { padding:26px 0 0; font-size:13.5px; color:#55554f } .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px }
+.stage { margin-top:20px; border-top:1px solid #141414; cursor:pointer } .done .stage, .st-err .stage { cursor:auto }
+.labs { position:relative; height:56px; overflow:hidden; transition:height .5s cubic-bezier(.3,.7,.2,1) }
+.field { position:relative; height:392px; overflow:hidden; transition:height .55s cubic-bezier(.3,.7,.2,1) }
+.field canvas { display:block; width:100%; height:392px; transition:transform .55s cubic-bezier(.3,.7,.2,1) }
+.lab { position:absolute; top:4px; opacity:0; transition:opacity .4s ease } .lab.on { opacity:1 }
+.lab.g { border-left:1px solid #d8d6d0; padding-left:12px }
+.lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; line-height:1.3 }
+.lab .n { margin-top:5px; font-size:26px; letter-spacing:-0.04em; font-weight:650; line-height:1; font-variant-numeric:tabular-nums; color:#141414 }
+.lab .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:5px }
+.lab.last .n { color:#f97316 }
+/* 덩어리 위에 글자를 얹으려면 판을 깔아야 읽힌다 — 흰 판 + 회색 글자(대비 5.1:1) */
+.ttl { position:absolute; font-size:11.5px; line-height:1.45; color:#6b6b67; letter-spacing:-0.015em; white-space:nowrap;
+       overflow:hidden; text-overflow:ellipsis; background:#fff; padding:1px 5px; opacity:0; transition:opacity .35s ease }
+.ttl.on { opacity:1 }
+/* 탈락 이유는 같은 흰 판을 쓰지만 벽에 오른쪽을 붙이고 한 톤 진하다 — 공고명과 섞이지 않게 */
+.ttl.rsn { text-align:right; color:#55554f } .st-zero .rsn[data-w="3"] { display:none }
+.chain { display:flex; align-items:baseline; flex-wrap:wrap; gap:10px; font-size:13px; color:#737370; height:0; opacity:0; overflow:hidden; transition:opacity .4s ease .15s, height .4s ease }
+.chain b { font-size:17px; font-weight:650; color:#141414; letter-spacing:-0.02em; font-variant-numeric:tabular-nums } .chain b.acc { color:#f97316 } .chain i { font-style:normal; color:#c9c9c4 }
+.done .field, .done .labs { height:0 } .done .field canvas { transform:translateY(-150px) }
+.done .chain { height:48px; opacity:1; padding-top:16px }
+.res { opacity:0; max-height:0; overflow:hidden; transition:opacity .5s ease .2s } .done .res { opacity:1; max-height:none }
+/* 오류·지연 — 머리는 셋째 관문 앞에서 멈추고, 받은 숫자는 남긴다 */
+.err { display:none; align-items:center; gap:14px; padding:16px 0; border-top:1px solid #141414; font-size:13.5px; color:#141414 } .err .sp { flex:1 }
+.st-err .err { display:flex }
+/* 0건 — 깔때기 마지막 0 + 기준 띠 + 다음 단계 한 줄 */
+.zero { display:none; padding:30px 0 34px; border-bottom:1px solid #141414 }
+.zero b { display:block; font-size:17px; font-weight:650; letter-spacing:-0.015em } .zero .dim { display:block; margin-top:6px; font-size:13.5px }
+.zero .acts { display:flex; gap:8px; align-items:center; margin-top:18px; flex-wrap:wrap } .zero .in { display:flex; gap:6px }
+.zero .in span:first-child { width:300px; max-width:100%; height:36px; border:1px solid #e3e1dc; border-radius:8px; display:flex; align-items:center; padding:0 12px; color:#737370; font-size:13px }
+.st-zero .zero { display:block } .st-zero .sheet, .st-zero .okline { display:none }
+/* 이메일 뒤 — 게이트 없음, 12건 전부, 확인 한 줄(다음 방문부터 표시하지 않음) */
+.okline { display:none; padding:13px 0; border-bottom:1px solid #ececea; font-size:13.5px; color:#55554f } .okline b { color:#141414; font-weight:650 }
+.st-email .okline { display:block } .st-email .fade .tr { opacity:1; filter:none; pointer-events:auto } .st-email .gateline { display:none }
+.st-email .nav .cta { border:0; color:#55554f }
+/* 검토 — 버튼은 주황 헤어라인, 누르면 행 왼쪽 괘선 + "검토함" + 조용한 안내 한 줄 */
+.tr { position:relative } .tr.rvd::before { content:""; position:absolute; left:-20px; top:0; bottom:0; width:2px; background:#f97316 }
+.rvm { font-style:normal; font-size:11px; font-weight:600; color:#141414; margin-left:8px; letter-spacing:.02em; vertical-align:2px }
+.bt.rv { border-color:#f97316 } .bt.rv.on { color:#55554f; border-color:#e3e1dc; cursor:default }
+.rvn { padding:9px 0 10px 52px; border-bottom:1px solid #ececea; font-size:12.5px; color:#6b6b67 } .rvn a { color:#141414; border-bottom:1px solid #141414 }
+.tr .fit i { margin-right:0 }
+.ctl { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; background:#fff; border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; white-space:nowrap }
+.ctl span { padding:6px 14px; border-radius:999px; color:#55554f; cursor:pointer } .ctl span.on { background:#141414; color:#fff } .ctl i { width:1px; background:#e6e4df; margin:4px 4px }
+.foot { max-width:880px; line-height:1.6 }
+@media (prefers-reduced-motion: reduce) { .field, .field canvas, .labs, .lab, .ttl, .chain, .res { transition:none !important } }
+/* 390 — 번호·근거·추정가·적합 열 생략, 제목 / 기관·마감 두 줄. 머리는 220px */
+@media screen and (max-width:520px){
+  .wrap { padding:0 16px 90px } .nav .links { gap:14px } .nav .links span:not(.cta) { display:none }
+  .q { font-size:12.5px } .q b { font-size:15px; display:block; margin-bottom:2px }
+  .labs { height:auto; display:grid; grid-template-columns:repeat(4,1fr); gap:0 10px; padding:10px 0 8px } .lab { position:static; border-left:0; padding-left:0 }
+  .lab .k { white-space:normal; font-size:11px } .lab .k .sub { display:none } .lab .n { font-size:18px } .lab .n small { font-size:10.5px; margin-left:3px }
+  .done .labs { padding:0 } .field, .field canvas { height:220px } .ttl { display:none }
+  .chain { font-size:12px; gap:7px } .chain b { font-size:15px }
+  .th { display:none } .tr { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"t t" "o d"; gap:3px 12px; padding:12px 0 }
+  .tr .no, .tr .why, .tr .r:not(.d) { display:none } .tr .t { grid-area:t; white-space:normal; font-size:14px; line-height:1.4 } .tr .org { grid-area:o } .tr .d { grid-area:d; font-size:13px }
+  .tr.rvd::before { left:-16px }
+  .x { padding-left:0; grid-template-columns:1fr; gap:18px } .rvn { padding-left:0 }
+  .gateline { flex-wrap:wrap; gap:10px } .gateline .in { width:100%; flex-wrap:wrap } .gateline .in span:first-child { flex:1; width:auto }
+  .crit { grid-template-columns:1fr; gap:14px } .crit .act { flex-direction:row; align-items:center }
+  .ctl { font-size:11.5px; padding:2px; white-space:normal; flex-wrap:wrap; justify-content:center; width:calc(100% - 24px); border-radius:16px } .ctl span { padding:5px 8px } .ctl i { display:none }
+}
+
+.wrap { width:auto; max-width:1120px; margin:0 auto; padding:0 20px 120px }
+.brand { font-weight:800; font-size:16px; letter-spacing:-0.035em; gap:8px } .brand svg { display:block }
+.ok::after { color:#141414 }
+/* 머리 — 회사 이름 + 한 줄 + 걸러낸 경로. 전체 폭 */
+.head { padding:26px 0 18px; border-bottom:1px solid #141414 }
+.head h1 { margin:0; font-size:24px; letter-spacing:-0.03em; font-weight:650; line-height:1.2 } .head h1 small { font-size:13px; color:#737370; font-weight:450; letter-spacing:0; margin-left:12px }
+.head .meta { margin-top:6px; font-size:13.5px; color:#55554f } .head .meta span + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.sum { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-top:16px }
+.chain { display:flex; align-items:flex-start; gap:12px; font-size:13px; color:#737370 } .chain .k { padding-top:3px; margin-right:4px }
+.chain .n { font-size:20px; font-weight:650; color:#141414; letter-spacing:-0.02em; line-height:1.15 } .chain .n.acc { color:#f97316 } .chain .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:4px }
+.chain .l { font-size:11.5px; color:#737370; margin-top:3px; line-height:1.3 } .chain i { font-style:normal; color:#c9c9c4; font-size:16px; padding-top:2px }
+.tabs { text-align:right; font-size:13px; color:#55554f; line-height:1.9 } .tabs b { color:#141414; font-weight:650; border-bottom:1px solid #141414; padding-bottom:1px } .tabs span + span::before, .tabs b + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+.tabs .due .d { font-weight:650; color:#141414 } .tabs .due .d.hot { color:#f97316 }
+/* 두 단 */
+.cols { display:grid; grid-template-columns:240px minmax(0,1fr); gap:0 44px; align-items:start }
+.side { position:sticky; top:0; padding:22px 0 20px; font-size:13px }
+.side summary { list-style:none; cursor:default } .side summary::-webkit-details-marker { display:none }
+.side summary .k { display:block } .side summary .h { display:none }
+.side .sec { padding:14px 0 0 } .side .sec .k { display:block; margin-bottom:6px }
+.side .txt { font-size:13px; line-height:1.65; color:#333 } .side .txt b { font-weight:600 } .side .txt .dim { color:#737370 }
+.side ul { margin:0; padding:0; list-style:none } .side li { padding:2px 0; line-height:1.5; color:#333; border-bottom:1px solid #f1f0ec }
+.side li.rep { font-weight:600 } .side li.rep::after { content:"대표"; font-size:10.5px; color:#737370; font-weight:500; margin-left:6px; letter-spacing:.02em }
+.side .act { display:flex; gap:10px; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid #141414 } .side .act .bt { height:32px }
+.side .mute { display:block; margin-top:10px; font-size:11.5px }
+/* 오른쪽 머리 + 스위치 */
+.main { padding-top:22px }
+.mh { display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #141414 }
+.mh .k { display:block } .mh .k b { color:#141414; font-size:13px; font-weight:650; letter-spacing:0; text-transform:none; margin-right:6px }
+.sw { display:flex; gap:2px; border:1px solid #e3e1dc; border-radius:999px; padding:2px; font-size:12px } .sw span { padding:4px 12px; border-radius:999px; color:#55554f; cursor:pointer } .sw span.on { background:#141414; color:#fff }
+.v-table, [data-v="table"] .v-block { display:none } [data-v="table"] .v-table { display:block }
+/* 블록 — 보고서 행을 화면 크기로 */
+.bk { display:grid; grid-template-columns:28px 1fr; gap:0 10px; padding:14px 0 15px; border-bottom:1px solid #ececea; font-size:13.5px }
+.bk .no { font-size:12px; color:#8f8f8b; padding-top:3px }
+.bk .t { font-weight:600; font-size:15px; letter-spacing:-0.01em; line-height:1.4 }
+.bk .m { margin-top:3px; color:#55554f; font-size:13px } .bk .m .d { font-weight:650; color:#141414 } .bk .m .d.hot { color:#f97316 }
+.bk .q, .bk .w { display:grid; grid-template-columns:58px 1fr; gap:0 8px; margin-top:7px; line-height:1.6; color:#333 } .bk .q { margin-top:9px }
+.bk .q b, .bk .w b { font-weight:650; font-size:12.5px; color:#141414 }
+.bk .acts { display:flex; gap:14px; align-items:center; margin-top:10px; font-size:12.5px } .bk .acts a.u { color:#55554f; border-bottom:1px solid #d8d6d0 }
+.bt.rv { border-color:#f97316; height:30px; padding:0 12px; font-size:12.5px }
+/* 표 — 번호·공고(2줄: 제목 / 기관 · 근거)·마감·추정가. 근거는 열이 아니라 제목 아래 둘째 줄 — 폭을 안 쓰고 늘 보인다 */
+.th, .tr { grid-template-columns:28px minmax(0,1fr) 84px 72px; gap:0 12px }
+.tr { padding:12px 0; align-items:start } .tr .no { padding-top:3px } .tr .t { font-size:14.5px; display:block }
+.tr .sub { display:block; margin-top:3px; font-size:12.5px; color:#55554f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .tr .sub .why { color:#6b6b67 } .tr .sub .why::before { content:"·"; margin:0 6px; color:#c9c9c4 }
+.tr .d, .tr .r { padding-top:2px }
+/* 펼침 — display 토글 대신 grid-template-rows 0fr → 1fr. 높이를 모르는 내용을 부드럽게 여는 유일한 CSS 방법 */
+.x { display:grid; grid-template-rows:0fr; grid-template-columns:1fr; gap:0; padding:0 0 0 40px; border-bottom:0; opacity:0;
+     transition:grid-template-rows .4s cubic-bezier(.3,.7,.2,1), padding .4s cubic-bezier(.3,.7,.2,1), opacity .3s ease }
+.x.on { grid-template-rows:1fr; padding:16px 0 20px 40px; border-bottom:1px solid #ececea; opacity:1; transition-delay:0s, 0s, .1s }
+.x > .xi { min-height:0; overflow:hidden; display:grid; grid-template-columns:1fr 1.2fr; gap:28px }
+.x li { font-size:13px; line-height:1.6; padding:3px 0 } .x .acts { grid-column:1/-1; margin-top:0 }
+.tr .t { transition:color .15s ease } .bt { transition:background .15s ease, border-color .15s ease, color .15s ease }
+@media (prefers-reduced-motion: reduce) { .x, .tr .t, .bt { transition:none !important } }
+.fade .bk { opacity:.32; filter:blur(1.5px); pointer-events:none }
+.gateline { font-size:13.5px; flex-wrap:wrap } .gateline .in span:first-child { width:220px }
+.foot { margin-top:28px; font-size:12px; color:#737370; line-height:1.6; max-width:880px }
+/* 390 — 한 단. 회사 정보는 접힌 한 줄, 공고는 블록만 */
+@media screen and (max-width:720px){
+  .wrap { padding:0 16px 90px } .nav .links span:not(.cta) { display:none }
+  .head h1 { font-size:20px } .head h1 small { display:block; margin:4px 0 0 } .sum { flex-direction:column; align-items:flex-start; gap:10px }
+  .chain { gap:8px } .chain .k { display:none } .chain .n { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
+  .cols { grid-template-columns:1fr } .side { position:static; padding:14px 0; border-bottom:1px solid #ececea }
+  .side summary { cursor:pointer; display:flex; justify-content:space-between; align-items:center } .side summary .h { display:inline; font-size:12.5px; color:#55554f; border-bottom:1px solid #d8d6d0 }
+  .side[open] summary .h.o, .side:not([open]) summary .h.c { display:none }
+  .main { padding-top:14px } .sw { display:none } .v-table { display:none !important } .v-block { display:block !important }
+  .bk .q, .bk .w { grid-template-columns:1fr; gap:0 } .bk .m { line-height:1.5 }
+  .gateline .in { width:100%; flex-wrap:wrap } .gateline .in span:first-child { flex:1; width:auto }
+}
+
+/* 머리 — split 의 .head 를 캔버스 위에. 괘선은 .stage 가 긋는다 */
+.head { padding:26px 0 0; border-bottom:0 }
+/* 걸러낸 경로 — flow 의 접힘(height 0 → 보임)은 유지하고 모양은 split: 숫자 + 단계 라벨, 오른쪽 종류 탭·마감 요약 */
+.chain { justify-content:space-between; align-items:flex-start; gap:24px } .chain .k { padding-top:3px }
+.chain .fun { display:flex; align-items:flex-start; gap:12px } .chain .fun > div { display:flex; flex-direction:column }
+.chain b { font-size:20px; line-height:1.15 } .chain b.acc { color:#f97316 } .chain .l { font-size:11.5px; color:#737370; margin-top:3px; line-height:1.3 }
+.chain i { font-size:16px; padding-top:2px } .chain .nl { display:flex; align-items:baseline } .chain .un { font-size:11.5px; color:#6b6b67; margin-left:4px }
+.st-zero .tabs { display:none }   /* 0건이면 종류 탭·마감 요약은 거짓말이 된다(결과 12건 기준 계산) */
+/* 가독성(2026-10-16 승우님 "가독성 좋게") — 글자 한 단계 ↑, 행 간격 ↑, 회색 대비 ↑. 한글 라벨에 자간·대문자 처리는 의미 없어 뺀다 */
+.k { font-size:12px; letter-spacing:0; text-transform:none; color:#6b6b67 } .mute { color:#7a7a76 }
+.head .meta { font-size:14px } .chain b { font-size:22px } .chain .l { font-size:12.5px } .tabs { font-size:14px }
+.side { font-size:14px } .side li { padding:4px 0 } .side .txt { font-size:14px; line-height:1.7 } .side .sec { padding-top:16px }
+.mh .k b { font-size:14px }
+.tr { padding:16px 0 } .tr .t { font-size:16px; font-weight:600 } .tr .sub { font-size:13.5px; color:#4a4a46; margin-top:4px } .tr .sub .why { color:#6b6b67 }
+.tr .d, .tr .r { font-size:15px } .tr .d small { font-size:12.5px }
+.x.on { padding:20px 0 24px 40px } .x > .xi { gap:32px } .x .k { margin-bottom:8px } .x li { font-size:14px; line-height:1.7; padding:4px 0 }
+/* 이펙트(승우님 "부드럽게") — 한 곡선(.3,.7,.2,1)으로. 본문은 투명도만이 아니라 10px 떠오르고, 경로 줄은 height:auto 점프 대신 grid 행 0fr → 1fr, 검토 괘선은 위에서 아래로 그어진다 */
+.res { transform:translateY(10px); transition:opacity .5s ease .2s, transform .55s cubic-bezier(.3,.7,.2,1) .2s } .done .res { transform:none }
+.chain { display:grid; grid-template-columns:1fr auto; grid-template-rows:0fr; align-items:start; transition:grid-template-rows .45s cubic-bezier(.3,.7,.2,1), opacity .4s ease .15s, padding .45s cubic-bezier(.3,.7,.2,1) }
+.chain > * { min-height:0 } .done .chain { grid-template-rows:1fr; height:auto }
+.tr::before { content:""; position:absolute; left:-16px; top:0; bottom:0; width:2px; background:#f97316; transform:scaleY(0); transform-origin:top; transition:transform .3s cubic-bezier(.3,.7,.2,1) }
+.tr.rvd::before { transform:scaleY(1) }
+@media (prefers-reduced-motion: reduce) { .res, .chain, .tr::before { transition:none !important } }
+/* 참가 자격 — 충족(먹 600 + ✓) > 제한 없음(회색, 표식 없음). 같은 ✓ 두 개로 보이던 것을 가른다 */
+.x li.ok { font-weight:600 } .x li.none { color:#737370 }
+/* 다른 회사 — 회사 이름이 곧 검색창(입구 결정 "검색창 하나"를 결과 페이지에서도). 누르면 머리가 입구 상자로 바뀌고 결과는 흐려진다 */
+.sw-co { font-size:13px; font-weight:500; color:#55554f; margin-left:14px; letter-spacing:0; border-bottom:1px solid #d8d6d0; vertical-align:middle; transition:border-color .15s } .sw-co:hover { border-bottom-color:#f97316 }
+.search { display:none; padding:2px 0 4px } .st-search .search { display:block } .st-search .head h1, .st-search .head .meta { display:none }
+.box { display:flex; align-items:stretch; border:2px solid #f97316; border-radius:6px; background:#fff; max-width:720px; transition:box-shadow .15s } .box:focus-within { box-shadow:0 0 0 4px rgba(249,115,22,.18) }
+.box input { flex:1; min-width:0; border:0; background:transparent; padding:14px 18px; font:inherit; font-size:20px; letter-spacing:-0.02em; font-weight:500; color:#141414; outline:none } .box input::placeholder { color:#8f8f8b; font-weight:450 }
+.box .go { border:0; border-left:1px solid #ececea; background:#fff; color:#141414; font:inherit; font-size:15px; font-weight:650; padding:0 20px; cursor:pointer; border-radius:0 4px 4px 0 } .box .go .t { border-bottom:2px solid #f97316; padding-bottom:1px }
+.search .rc { display:flex; gap:14px; align-items:center; margin-top:10px; font-size:13px; color:#55554f; max-width:720px } .rc a { color:#141414; border-bottom:1px solid #d8d6d0 } .rc .esc { margin-left:auto; color:#737370; border:0 }
+.st-search .stage, .st-search .err, .st-search .res, .st-search.done .res { opacity:.22; filter:blur(1px); pointer-events:none }
+.stage, .err { transition:opacity .3s ease, filter .3s ease }
+@media screen and (max-width:720px){ .sw-co { display:inline-block; margin:6px 0 0 } .box input { font-size:17px; padding:12px 14px } .box .go { padding:0 14px } }
+/* 판(승우님 "밋밋하다") — 장식이 아니라 바닥과 크기. 따뜻한 회색 바닥 위에 머리·캔버스, 결과는 흰 판 하나. 먹 괘선은 머리 아래 하나만. 회사 이름 32 / 경로 숫자 28 / 마지막 12 는 34 */
+.v-panel, .v-panel body { background:#faf9f7 }
+.v-panel .head h1 { font-size:32px; letter-spacing:-0.035em } .v-panel .chain b { font-size:28px } .v-panel .chain b.acc { font-size:34px } .v-panel .chain .l { font-size:12.5px }
+.v-panel .ttl { background:#faf9f7 }
+.v-panel .res .cols { background:#fff; border:1px solid #e6e4df; border-radius:14px; padding:6px 28px 28px; margin-top:22px }
+.v-panel .side { top:0 } .v-panel .mh, .v-panel .th, .v-panel .gateline, .v-panel .side .act { border-color:#e6e4df }
+.v-panel .err { border-top-color:#e6e4df } .v-panel .ctl { background:#fff }
+@media screen and (max-width:720px){ .v-panel .head h1 { font-size:24px } .v-panel .chain b { font-size:20px } .v-panel .chain b.acc { font-size:24px } .v-panel .res .cols { padding:0 16px 20px; border-radius:12px } .v-panel .tr.rvd::before, .v-panel .tr::before { left:-10px } }
+.gateline { font-size:14.5px; padding:24px 0 } .gateline .dim { font-size:13.5px }
+.zero b { font-size:18px } .zero .dim { font-size:14px } .okline { font-size:14px }
+@media screen and (max-width:720px){ .tr .t { font-size:15px } .tr .sub { font-size:13px } .side { font-size:13.5px } }
+.done .chain { height:auto; padding-top:16px }
+.tabs em { font-style:normal; color:#141414; font-weight:650; border-bottom:1px solid #141414; padding-bottom:1px } .tabs em + span::before { content:"·"; margin:0 8px; color:#c9c9c4 }
+/* 본문은 두 단. 0건이면 오른쪽 단만 비고 왼쪽은 그대로 — 기준이 곧 이유 */
+.res .cols { border-top:0 }
+.st-zero .sheet, .st-zero .mh { display:none } .zero { border-bottom:0; padding-top:22px }
+.okline { padding:13px 0 } .st-email .fade .tr { cursor:pointer }
+.rvn { padding-left:40px } .tr.rvd::before { left:-16px }
+@media screen and (max-width:720px){
+  .head h1 { font-size:20px } .chain { grid-template-columns:1fr; grid-template-rows:0fr 0fr; gap:10px 0 } .done .chain { grid-template-rows:1fr 1fr } .chain .k { display:none } .chain b { font-size:16px } .chain .l { font-size:10.5px } .tabs { text-align:left }
+  /* flow 의 390 표 규칙(.org/.why 열)은 두 줄 표에 안 맞는다 — 제목 묶음 + 마감만 */
+  .tr { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:none; gap:0 12px; padding:12px 0 } .tr .no, .tr .r:not(.d) { display:none } .tr .t { white-space:normal; font-size:14px }
+  .tr .d { grid-area:auto }                 /* flow 의 grid-area:d 는 areas 가 없으면 새 줄로 밀린다 */
+  .tr .sub { white-space:normal } .tr .sub .why { display:inline }   /* flow 의 .tr .why{display:none} 은 열용 — 둘째 줄 칩은 보인다 */
+  .x, .x.on { padding-left:0 } .rvn { padding-left:0 } .tr.rvd::before { left:-16px }
+}
+</style></head><body><div class="wrap"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><div class="links"><b>추천</b><span>검토함</span><span>개선 기록</span><span class="cta">이메일 구독</span></div></div><div class="head"><h1>한종산업개발 주식회사<small>124-81*****</small><a class="sw-co" href="#">다른 회사</a></h1><div class="meta"><span>경상남도 창원시</span><span>등록업종 15</span><span>공급물품 없음</span><span>기준일 2026-10-16</span></div><div class="search"><div class="box"><input type="text" autocomplete="off" spellcheck="false" placeholder="회사명 · 사업자등록번호 · 업종 또는 품목"><button class="go" type="button"><span class="t">찾기</span></button></div><div class="rc"><span class="k">최근 조회</span><a href="#">한종산업개발 주식회사</a><a class="esc" href="#">취소 · Esc</a></div></div></div><div class="stage"><div class="labs"><div class="lab  " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub" data-k=" · 마감 90일 이내"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">비슷한 순서로 추린 공고<span class="sub" data-k=" · 전체의 2.0%"> · 전체의 2.0%</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub" data-k=" · 앞 단계의 41% 통과"> · 앞 단계의 41% 통과</span></span><div class="n"><span class="cnt" data-to="82">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub" data-k=" · 앞 단계의 24.4%"> · 앞 단계의 24.4%</span></span><div class="n"><span class="cnt" data-to="20">0</span><small>건</small></div></div></div><div class="field"><canvas id="cv" height="392" aria-hidden="true"></canvas><div class="ttl" data-x="272" style="left:1.429%;top:58px;max-width:22.857%">2026년 수산자원 조성사업 종자 구입(낙지)-263</div><div class="ttl" data-x="272" style="left:1.429%;top:108px;max-width:22.857%">2027학년도 울산외국어고등학교 학교주관 교복구매 2단계입찰공고 사전규격 공개</div><div class="ttl" data-x="272" style="left:1.429%;top:158px;max-width:22.857%">주택건설공사 감리자(전기) 모집 공고(갈매역세권 S-1BL)</div><div class="ttl" data-x="272" style="left:1.429%;top:208px;max-width:22.857%">레이다 수신 냉각 실험을 위한 압축기 및 냉각 펌프</div><div class="ttl" data-x="272" style="left:1.429%;top:258px;max-width:22.857%">AAU LMS용 AI챗봇 솔루션 도입</div><div class="ttl" data-x="272" style="left:1.429%;top:308px;max-width:22.857%">고휘도, 고출력용 구동IC 개발을 위한  반도체 포토마스크</div><div class="ttl" data-x="560" style="left:27.143%;top:96px;max-width:22.857%">2027/28 밸런스케어 프로그램 위탁운영 용역</div><div class="ttl" data-x="560" style="left:27.143%;top:188px;max-width:22.857%">태양광 보안등 전기 인입공사(삼기저수지 일원 대장 누락분)</div><div class="ttl" data-x="560" style="left:27.143%;top:280px;max-width:22.857%">부림지구 배수개선사업 전기공사</div><div class="ttl rsn" data-w="1" data-x="302" style="right:74.286%;top:346px">등록업종 미허용</div><div class="ttl rsn" data-w="2" data-x="590" style="right:48.571%;top:346px">면허·지역 제한 미충족</div><div class="ttl rsn" data-w="3" data-x="878" style="right:22.857%;top:346px">회사와의 유사도 낮음</div></div><div class="chain"><div class="fun"><span class="k">걸러낸 경로</span><div><span class="nl"><b class="">9,900</b></span><span class="l">지금 입찰 가능한 공고</span></div><i>→</i><div><span class="nl"><b class="">200</b></span><span class="l">비슷한 순서로 추린 공고</span></div><i>→</i><div><span class="nl"><b class="">82</b></span><span class="l">참가 자격 통과 공고</span></div><i>→</i><div><span class="nl"><b class="acc">20</b><span class=un>건</span></span><span class="l">검토할 공고</span></div></div><div class="tabs"><div><em>공고 20</em><span>사전규격 4</span><span>발주계획 20</span></div><div class="due">이번 주 마감 0건 · 가장 빠른 마감 <span class="d ">D-10</span> (10.26)</div></div></div></div><div class="err"><span>결과를 불러오지 못했습니다</span><span class="sp"></span><a class="bt" href="#">다시 시도</a></div><div class="res"><div class="cols"><details class="side" open><summary><span class="k">회사 정보 <span class="h o">펼치기</span><span class="h c">접기</span></span></summary><div class="sec"><span class="k">등록업종 15</span><ul><li class="rep">기타자유업종</li><li>가축분뇨시설관리업</li><li>건설엔지니어링업</li><li>공공하수도 관리대행업</li><li>산업·환경설비공사업</li><li>시설물관리를 전문으로 하는 자</li><li>엔지니어링사업</li><li>유독물관리대행기관</li><li>전기공사업</li><li>전문소방시설공사업</li><li>환경전문공사업</li></ul></div><div class="sec"><span class="k">공급물품</span><div class="txt"><span class="dim">등록 없음</span> — 물품 공고 추천에는 등록 필요</div></div><div class="sec"><span class="k">지역</span><div class="txt">본사 <b>경상남도 창원시</b><br><span class="dim">제한 공고가 적은 단위(시·도 또는 시·군·구)까지 판정</span></div></div><div class="sec"><span class="k">면허</span><div class="txt">공고 요구 면허 그룹마다 등록업종 중 하나 포함 시 통과</div></div><div class="sec"><span class="k">규모</span><div class="txt"><span class="dim">미입력</span> — 소기업·중소기업 제한 공고 판정 기준</div></div><div class="sec"><span class="k">사업자 상태</span><div class="txt">계속사업자 · 제재 없음</div></div><div class="act"><a class="bt dark" href="#">확인</a><a class="bt txt" href="#"><u>수정 요청</u></a></div><span class="mute">나라장터 업체정보 · 10.14 갱신</span></details><div class="main"><div class="mh"><span class="k"><b>검토할 공고 20건</b>적합 순</span></div><div class="okline"><b>이메일 등록 완료</b> · 전체 결과 공개</div><div class="zero"><b>참가 자격이 있는 공고가 없습니다</b><span class="dim">기준 확인 또는 키워드 검색</span><div class="acts"><span class="in"><span>키워드 · 업종 또는 품목</span><span class="bt dark">키워드로 공고 검색</span></span><a class="bt" href="#">업종·물품 수정 요청</a></div></div><div class="sheet"><div class="th"><span>#</span><span>공고 · 발주기관 · 근거</span><span class="r">마감</span><span class="r">추정가</span></div><div class="tr" data-no="R26BK01782077"><span class="no">01</span><span><span class="t">고창 덕산지구 하·폐수처리수 재이용 공급시설 기본 및 실시설계 용역 입찰공고</span><span class="sub">전북개발공사<span class="why">지역 매칭</span></span></span><span class="r d ">D-12<small>10.28</small></span><span class="r">7,610만</span></div><div class="x on"><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="ok">지역 — 자격 충족</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>공고의 지역 제한이 본사 소재지 경상남도와 일치</li><li>추정가가 회사 평균 수주가의 0.02배 — 규모 차이 큼</li><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리, 일반)</li><li>공고 내용과 회사 업종 설명 유사도 70%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01782077&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01771325"><span class="no">02</span><span><span class="t">중랑물재생센터 제1처리장 관리대행</span><span class="sub">서울특별시 물재생센터 중랑물재생센터<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-40<small>11.25</small></span><span class="r">61.1억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 1.31배 — 유사한 규모</li><li>등록업종 표현이 허용업종과 중복 — 000㎥, 10, 공공하수도</li><li>공고 내용과 회사 업종 설명 유사도 74%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01771325&amp;bidPbancOrd=001">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01751505"><span class="no">03</span><span><span class="t">국가소유(여수 4단계) 공공폐수처리시설 관리대행</span><span class="sub">한국환경공단<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-26<small>11.11</small></span><span class="r">41.2억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 0.88배 — 유사한 규모</li><li>등록업종 표현이 허용업종과 중복 — 000㎥, 10, 공공하수도</li><li>공고 내용과 회사 업종 설명 유사도 74%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01751505&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01770287"><span class="no">04</span><span><span class="t">중랑물재생센터 총인처리시설 관리대행</span><span class="sub">서울특별시 물재생센터 중랑물재생센터<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-41<small>11.26</small></span><span class="r">36.8억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 0.79배 — 유사한 규모</li><li>등록업종 표현이 허용업종과 중복 — 000㎥, 10, 공공하수도</li><li>공고 내용과 회사 업종 설명 유사도 74%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01770287&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01787440"><span class="no">05</span><span><span class="t">죽고 풍수해생활권 종합정비사업 기본 및 실시설계 건설사업관리용역</span><span class="sub">경상남도 합천군<span class="why">지역 매칭</span></span></span><span class="r d ">D-12<small>10.28</small></span><span class="r">1.4억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="ok">지역 — 자격 충족</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>공고의 지역 제한이 본사 소재지 경상남도와 일치</li><li>추정가가 회사 평균 수주가의 0.03배 — 규모 차이 큼</li><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리, 설계등용역</li><li>공고 내용과 회사 업종 설명 유사도 67%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01787440&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="gateline"><b>나머지 15건은 이메일 등록 후 공개</b><span class="dim">상위 5건은 등록 없이 공개 · 비밀번호 없음</span><span class="sp"></span><span class="in"><span>you@company.co.kr</span><span class="bt dark">이메일 등록</span></span></div><div class="fade"><div class="tr" data-no="R26BK01784247"><span class="no">06</span><span><span class="t">난지물재생센터 일부시설물 관리대행</span><span class="sub">서울특별시 물재생센터 난지물재생센터<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-46<small>12.01</small></span><span class="r">190.4억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>등록업종 표현이 허용업종과 중복 — 000㎥, 10, 공공하수도</li><li>공고 내용과 회사 업종 설명 유사도 75%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01784247&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01771266"><span class="no">07</span><span><span class="t">중랑물재생센터 일부시설물 관리대행</span><span class="sub">서울특별시 물재생센터 중랑물재생센터<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-39<small>11.24</small></span><span class="r">199.7억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>등록업종 표현이 허용업종과 중복 — 000㎥, 10, 공공하수도</li><li>공고 내용과 회사 업종 설명 유사도 75%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01771266&amp;bidPbancOrd=001">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01786391"><span class="no">08</span><span><span class="t">고덕산단 2차 용수공급시설공사(2공구)-투수아스콘</span><span class="sub">경기도 평택시 상하수도사업소<span class="why">재출현 기관</span></span></span><span class="r d ">D-10<small>10.26</small></span><span class="r">9,040만</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="none">면허 — 제한 없음</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>경기도 평택시 상하수도사업소 — 과거 거래 이력 있음</li><li>추정가가 회사 평균 수주가의 0.02배 — 규모 차이 큼</li><li>공고 내용과 회사 업종 설명 유사도 71%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01786391&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01751300"><span class="no">09</span><span><span class="t">합천군 생활폐기물 소각시설 설치사업(총괄)</span><span class="sub">경상남도 합천군<span class="why">지역 매칭</span></span></span><span class="r d ">D-13<small>10.29</small></span><span class="r">100.4억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="ok">지역 — 자격 충족</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>공고의 지역 제한이 본사 소재지 경상남도와 일치</li><li>등록업종 표현이 허용업종과 중복 — 산업, 환경설비공사업</li><li>공고 내용과 회사 업종 설명 유사도 66%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01751300&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01772155"><span class="no">10</span><span><span class="t">안양시 광역공공하수처리시설 관리대행 용역(2027년~2029년)</span><span class="sub">경기도 안양시<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-33<small>11.18</small></span><span class="r">650.7억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 13.92배 — 규모 차이 큼</li><li>등록업종 표현이 허용업종과 중복 — 000㎥, 10, 공공하수도</li><li>공고 내용과 회사 업종 설명 유사도 74%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01772155&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01782898"><span class="no">11</span><span><span class="t">거제 도시관리계획(용도지역,시설문화시설,도로)결정 용역</span><span class="sub">경상남도 거제시<span class="why">지역 매칭</span></span></span><span class="r d ">D-11<small>10.27</small></span><span class="r">7,090만</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="ok">지역 — 자격 충족</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>해당 기관 최근 낙찰의 70%를 같은 회사가 수주</li><li>공고의 지역 제한이 본사 소재지 경상남도와 일치</li><li>추정가가 회사 평균 수주가의 0.02배 — 규모 차이 큼</li><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리, 설계등용역</li><li>공고 내용과 회사 업종 설명 유사도 68%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01782898&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01768563"><span class="no">12</span><span><span class="t">고덕공공하수처리시설 총인처리시설 설치 전기공사-프로세스제어반</span><span class="sub">경기도 평택시 상하수도사업소<span class="why">재출현 기관</span></span></span><span class="r d ">D-11<small>10.27</small></span><span class="r">3.7억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="none">면허 — 제한 없음</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>경기도 평택시 상하수도사업소 — 과거 거래 이력 있음</li><li>추정가가 회사 평균 수주가의 0.08배 — 규모 차이 큼</li><li>공고 내용과 회사 업종 설명 유사도 70%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01768563&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01761696"><span class="no">13</span><span><span class="t">양산시 공공하수도시설 관리대행용역(협상)</span><span class="sub">경상남도 양산시<span class="why">재출현 기관</span></span></span><span class="r d ">D-25<small>11.10</small></span><span class="r">277.3억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="none">면허 — 제한 없음</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>경상남도 양산시 — 과거 거래 이력 있음</li><li>해당 기관 최근 낙찰의 56%를 같은 회사가 수주</li><li>공고 내용과 회사 업종 설명 유사도 69%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01761696&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01752112"><span class="no">14</span><span><span class="t">신길동 일원 하수관로 정비공사(1단계) 건설사업관리용역</span><span class="sub">경기도 안산시 상하수도사업소<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-12<small>10.28</small></span><span class="r">13.5억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리</li><li>공고 내용과 회사 업종 설명 유사도 72%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01752112&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01736096"><span class="no">15</span><span><span class="t">인천국제공항 제2정비계류장 1-2단계 및 2-1단계 시설공사 건설사업관리용역</span><span class="sub">인천국제공항공사<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-18<small>11.03</small></span><span class="r">65.3억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 1.4배 — 유사한 규모</li><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리, 일반)</li><li>공고 내용과 회사 업종 설명 유사도 66%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01736096&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01740690"><span class="no">16</span><span><span class="t">국가 핵심광물 전용 비축기지 구축사업 건설사업관리용역(감독권한대행)</span><span class="sub">한국광해광업공단<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-20<small>11.05</small></span><span class="r">62.5억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 1.34배 — 유사한 규모</li><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리</li><li>공고 내용과 회사 업종 설명 유사도 69%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01740690&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01751860"><span class="no">17</span><span><span class="t">상활 소규모 공공하수처리시설 설치공사 외 3개소 통합 건설사업관리용역</span><span class="sub">경기도 여주시 하수사업소<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-12<small>10.28</small></span><span class="r">26.5억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리</li><li>공고 내용과 회사 업종 설명 유사도 71%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01751860&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01718563"><span class="no">18</span><span><span class="t">성남낙생 A-2BL 아파트 건설공사 시공단계 감독권한대행 등 건설사업관리용역</span><span class="sub">한국토지주택공사<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-11<small>10.27</small></span><span class="r">144억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리</li><li>공고 내용과 회사 업종 설명 유사도 70%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01718563&amp;bidPbancOrd=001">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01767847"><span class="no">19</span><span><span class="t">평택~시흥고속도로 민간투자사업 관리운영위수탁</span><span class="sub">제이서해안고속도로주식회사<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-14<small>10.30</small></span><span class="r">462.3억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>등록업종 표현이 허용업종과 중복 — 전기공사업, 전문으로</li><li>공고 내용과 회사 업종 설명 유사도 70%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01767847&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div><div class="tr" data-no="R26BK01751418"><span class="no">20</span><span><span class="t">인천남동도시첨단 A-1BL 아파트 건설공사 시공단계 감독권한대행 등 건설사업관리용역</span><span class="sub">한국토지주택공사<span class="why">업종·물품 일치</span></span></span><span class="r d ">D-33<small>11.18</small></span><span class="r">45.2억</span></div><div class="x "><div class="xi"><div><span class="k">참가 자격</span><ul><li class="ok">면허 — 충족</li><li class="none">지역 — 제한 없음</li><li class="todo">규모 — 중소기업 확인서 요구 여부는 문서 조건에서, 회사 규모 미입력</li></ul></div><div><span class="k">추천 근거</span><ul><li>추정가가 회사 평균 수주가의 0.97배 — 유사한 규모</li><li>등록업종 표현이 허용업종과 중복 — 건설엔지니어링업(설계, 사업관리</li><li>공고 내용과 회사 업종 설명 유사도 68%</li></ul></div><div class="acts"><a class="bt dark" href="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK01751418&amp;bidPbancOrd=000">나라장터 원문</a><a class="bt rv" href="#">검토</a></div></div></div></div></div></div></div></div><div class="foot">결과 페이지 최종 시안 — flow 의 머리 장면(계산 대기 가림막)·네 상태 + split 의 두 단 표형. 화면은 표, 메일·인쇄는 블록(report.html). 게이트는 5건 바로 뒤. 0건은 오른쪽 단만 비고 왼쪽 회사 정보가 이유. 숫자·공고명은 2026-10-16 실제 추천 결과(data/).</div></div><div class="ctl"><span data-run="full">처음 방문</span><span data-run="fast">재방문</span><span data-run="still">움직임 줄이기</span><i></i><span data-st="zero">0건</span><span data-st="err">오류·지연</span><span data-st="email">이메일 뒤</span><span data-st="reviewed">검토 뒤</span><i></i><span data-skin="panel" class="on">판</span><span data-skin="flat">평면</span></div><script type="application/json" id="cfg">{"W": 1120, "H": 392, "CY": 196, "XS": [0, 288, 576, 864], "HH": [180, 160, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44, "CNT": [9900, 200, 82, 20]}</script><script>
+/* Engine(C, cv, L, T, mat): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl)
+   mat(선택) = { nb: 불투명도 버킷 수, of(i): 선 i 의 버킷, pen(g, c, b, dflt): 코호트 c·버킷 b 의 [strokeStyle, lineWidth] }
+   — entry-flow 가 상태 0 의 재료(선마다 다른 불투명도)를 체에도 그대로 쓰기 위한 것. 없으면 flow.html 과 같은 그림. */
+function Engine(C, cv, L, T, mat){
+const {W, H, CY, XS, HH, CNT, FAN_X, FAN_SP, CONV, PRESS} = C;
+const NW = XS.length - 1, S = NW + 1, N = CNT[0];   // 벽 수 / 구간 수(=코호트 수) / 선 수
+const NB = mat && mat.nb || 1, bucketOf = mat && mat.of || (() => 0);
+const ctx = cv.getContext('2d');
+
+/* ---- 선 기하: 한 번만 계산한다 ---------------------------------------- */
+function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// 살아남는 선은 씨앗 고정으로 고른다 — 그림이 매번 같아야 비교가 된다.
+// 뒤섞은 뒤 앞에서 835 / 372 / 12 를 잘라 쓰면 자동으로 부분집합이 된다. (어느 칸이 0 이어도 된다 — 0건 상태)
+const rnd = rng(7), idx = new Int32Array(N);
+for (let i=0;i<N;i++) idx[i]=i;
+for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+
+const fate = new Uint8Array(N).fill(1);          // 1=1번 벽에서 막힘 … S=끝까지 통과
+const alive = [];
+for (let s=1;s<=NW;s++){
+  const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
+  for (const i of a) fate[i] = s+1;
+  alive.push(a);
+}
+
+// Y[i*S+s] = s 구간에서의 y. 각 구간마다 생존자를 통로 전체에 고르게 다시 편다 —
+// 간격이 벌어지는 것이 곧 '몇 개가 남았나'이다.
+// 간격이 1px 아래로 내려가면 '고르게 배치'가 장치 픽셀 격자와 맞물려 굵은 무아레 띠를 만든다.
+// 0.45px 지터로 위상을 흩는다 — 공고가 실제로 고른 간격일 리도 없다.
+const Y = new Float32Array(N*S);
+const jit = p => p < 1.2 ? (rnd()*2-1)*0.45 : 0;
+const pitch = s => 2*HH[s] / Math.max(1, CNT[s]-1);
+for (let i=0;i<N;i++) Y[i*S] = CY + (i/(N-1)*2-1)*HH[0] + jit(pitch(0));
+for (let s=1;s<=NW;s++){
+  const a = alive[s-1], m = a.length, pj = pitch(s);
+  for (let r=0;r<m;r++) Y[a[r]*S+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
+}
+
+// 코호트(×버킷)별 Path2D. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
+// mat.wander(i, x) 가 있으면 직선 구간이 결 있는 폴리라인이 된다(entry-flow — 체 안의 선이 자유 구간과 같은 재료여야 이음새가 없다).
+const wand = mat && mat.wander, STEP = 22.5;
+function run(p, i, x0, x1, y){
+  if (!wand){ p.lineTo(x1, y); return y; }
+  for (let x = x0 + STEP*((i*0.618034)%1); x < x1; x += STEP) p.lineTo(x, y + wand(i, x));   // 꺾이는 x 를 선마다 어긋나게
+  const ye = y + wand(i, x1); p.lineTo(x1, ye); return ye;
+}
+const P = Array.from({length: S}, () => Array.from({length: NB}, () => new Path2D()));
+for (let i=0;i<N;i++){
+  const f = fate[i], p = P[f-1][bucketOf(i)];
+  let y = Y[i*S], x = 0;
+  p.moveTo(0, y + (wand ? wand(i, 0) : 0));
+  for (let s=1;s<f;s++){                          // 통과한 벽마다 통로 폭으로 모인다
+    const g = XS[s], ny = Y[i*S+s], ye = run(p, i, x, g-CONV, y);
+    p.bezierCurveTo(g-20, ye, g-16, ny, g, ny);
+    y = ny; x = g;
+  }
+  if (f < S) run(p, i, x, XS[f], y);              // 벽까지 가서 멈춘다 (아래로 새지 않는다)
+  else {
+    const ye = run(p, i, x, FAN_X, y), row = CY + (y-CY)/HH[NW]*FAN_SP;
+    p.bezierCurveTo(FAN_X+70, ye, W-70, row, W, row);
+  }
+}
+
+/* ---- 그리기 ------------------------------------------------------------ */
+// 막힌 코호트는 '벽 앞에서 눌렸다 벽면에서 흩어진다'. 벽면에서 0 이 아니라 옅게 남겨야
+// 잉크가 벽에 닿아 '막혔다'로 읽힌다 — 벽 앞에서 끊기면 그냥 사라진 것이 된다.
+function fade(c, x1, a, pressed, tail){
+  const g = c.createLinearGradient(0,0,x1,0);
+  g.addColorStop(0, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-PRESS)/x1, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-6)/x1, `rgba(20,20,20,${pressed})`);
+  g.addColorStop(1, `rgba(20,20,20,${tail})`);
+  return g;
+}
+// 벽 1·2·3 에서 막히는 코호트의 (불투명도, 눌림, 꼬리, 굵기). 남은 선이 적을수록 진하게 — 372개가 하나씩 보여야 한다.
+// (알려진 결함: 이 차이가 덩어리 안에 가로 얼룩을 만든다 — README '머리 장면' 참조)
+const PEN = [[.055, .16, .03, .30], [.30, .60, .08, .35], [.34, .65, .09, .35]];
+// 9,000여 개를 매 프레임 다시 래스터화하면 소프트웨어 래스터라이저에서 70ms 가 넘는다.
+// 그림 자체는 움직이지 않고 '어디까지 보이나'만 움직이므로, 한 번 그려서 오프스크린에
+// 넣어두고 매 프레임은 왼쪽 일부만 blit 한다 — 선은 하나도 줄이지 않는다.
+let off = null, sx = 1, sy = 1, ms = 0;
+
+function defaultPen(g, c){
+  if (c < NW){ const a = PEN[c]; return [fade(g, XS[c+1], a[0], a[1], a[2]), a[3]]; }
+  const last = g.createLinearGradient(0,0,W,0);   // 마지막 12개만 주황
+  last.addColorStop(0, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]-20)/W, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]+30)/W, 'rgba(249,115,22,.9)');
+  last.addColorStop(1, 'rgba(249,115,22,.9)');
+  return [last, .9];
+}
+// 벽 k. dy 만큼 위에서 내려오는 중일 수 있다(entry-flow 의 '벽이 떨어진다').
+function wall(g, k, dy){
+  const x = XS[k]; dy = dy || 0;
+  g.strokeStyle = '#141414';
+  for (const sg of [-1, 1]){
+    g.lineWidth = 2.5; g.beginPath();              // 벽은 화면 끝까지, 통로만 뚫려 있다
+    g.moveTo(x, (sg<0 ? 0 : CY+HH[k]) + dy); g.lineTo(x, (sg<0 ? CY-HH[k] : H) + dy); g.stroke();
+    g.lineWidth = 1.5; g.beginPath();              // 통로 입술 — 구멍임을 분명히
+    g.moveTo(x-7, CY+sg*HH[k]+dy); g.lineTo(x+7, CY+sg*HH[k]+dy); g.stroke();
+  }
+}
+
+function render(){
+  const g = off.getContext('2d'), dpr = devicePixelRatio || 1;
+  g.setTransform(sx*dpr, 0, 0, sy*dpr, 0, 0);     // 설계 좌표 그대로 쓰고 레티나는 dpr 로. sy 는 390px 의 낮은 머리
+  g.clearRect(0, 0, W, H);
+  g.lineCap = 'butt';
+  for (let c=0;c<S;c++) for (let b=0;b<NB;b++){
+    const d = defaultPen(g, c), pen = mat && mat.pen ? mat.pen(g, c, b, d) : d;
+    g.strokeStyle = pen[0]; g.lineWidth = pen[1]; g.stroke(P[c][b]);
+  }
+  for (let k=1;k<=NW;k++) wall(g, k, 0);
+}
+
+function setup(){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  sx = r.width / W; sy = r.height ? r.height / H : 1;
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(H*sy*dpr);
+  off = Object.assign(document.createElement('canvas'), {width: cv.width, height: cv.height});
+  ctx.setTransform(1, 0, 0, 1, 0, 0);              // blit 는 장치 픽셀로
+  render();
+}
+
+// front 왼쪽은 체(off), 오른쪽은 behind(있으면 — entry-flow 의 멈춘 덩어리) 아니면 빈 캔버스.
+function draw(front, behind){
+  const t0 = performance.now();
+  const fw = Math.max(1, Math.round(front * sx * (devicePixelRatio || 1)));
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(off, 0, 0, fw, cv.height, 0, 0, fw, cv.height);
+  if (behind && fw < cv.width) ctx.drawImage(behind, fw, 0, cv.width-fw, cv.height, fw, 0, cv.width-fw, cv.height);
+  ms = ms ? ms*.85 + (performance.now()-t0)*.15 : performance.now()-t0;
+  window.__ms = ms;
+}
+
+// 전진선 x 기준 라벨·글자: 벽을 지나 150px 동안 카운트업, 글자는 제 폭을 다 지나야 뜬다.
+function labels(x){
+  T.forEach(t => t.classList.toggle('on', x >= +t.dataset.x));
+  L.forEach(g => {
+    g.classList.toggle('on', x >= +g.dataset.x);
+    const span = g.querySelector('.cnt'), to = +span.dataset.to;
+    const p = Math.min(1, Math.max(0, (x - g.dataset.x) / 150));
+    span.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString('ko-KR');
+  });
+}
+function paint(x, settled, behind){
+  draw(x, behind);
+  labels(x);
+  document.body.classList.toggle('done', settled);
+}
+
+return {setup, draw, paint, labels, wall, Y, alive, N, S, NW, get sx(){ return sx; }, get off(){ return off; }, get ms(){ return ms; }};
+}
+
+const C = JSON.parse(document.getElementById('cfg').textContent), W = C.W;
+const cv = document.getElementById('cv'), $ = s => document.querySelector(s);
+const L = [...document.querySelectorAll('.lab')], T = [...document.querySelectorAll('.ttl')];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let E = Engine(C, cv, L, T), cnt = C.CNT;
+
+/* ---- 깔때기 숫자 바꾸기(0건 상태) — 엔진을 다시 만든다. 라벨·경로 줄도 같이 ---- */
+function setCounts(c){
+  if (c === cnt) return;
+  cnt = c; E = Engine(Object.assign({}, C, {CNT: c}), cv, L, T); E.setup();
+  L.forEach((g, i) => { g.querySelector('.cnt').dataset.to = c[i]; const s = g.querySelector('.sub'); s.textContent = c[i] === 0 ? (i === 3 ? ' · 없음' : ' · 면허·지역 0% 통과') : s.dataset.k; });
+  document.querySelectorAll('.chain b').forEach((b, i) => b.textContent = c[i].toLocaleString('ko-KR'));
+}
+
+/* ---- 진행 -------------------------------------------------------------- */
+let raf = 0, tmo = 0;
+function finish(){ E.paint(W, true); document.body.classList.remove('running'); }
+function run(mode){
+  cancelAnimationFrame(raf); clearTimeout(tmo);
+  document.body.classList.remove('done', 'st-err'); document.body.classList.add('running');
+  document.querySelectorAll('.ctl [data-run]').forEach(s => s.classList.toggle('on', s.dataset.run === mode));
+  if (mode === 'still') { finish(); return; }
+  const dur = mode === 'fast' ? 1100 : 3600, t0 = performance.now();
+  const stop = mode === 'err' ? C.XS[3] - 30 : W;      // 오류·지연: 셋째 관문 앞에서 멈춘다 — 받은 숫자(둘)는 남는다
+  const tick = now => {
+    const p = Math.min(1, (now - t0) / dur), x = Math.min(stop, W * (1 - Math.pow(1 - p, 2.2)));
+    E.paint(x, false);
+    if (x >= stop && mode === 'err'){ tmo = setTimeout(() => { document.body.classList.add('st-err'); document.body.classList.remove('running'); }, 1200); return; }
+    if (p < 1) raf = requestAnimationFrame(tick);
+    else tmo = setTimeout(finish, mode === 'fast' ? 150 : 480);
+  };
+  raf = requestAnimationFrame(tick);
+}
+
+// 스테이지 아무 곳이나 누르면(키 아무거나도) 끝 상태로 건너뛴다 — 사용자는 애니메이션이 아니라
+// 공고를 보러 왔다. 이미 끝났거나 오류면 아무 일도 하지 않는다. .ctl 은 .stage 밖(fixed)이라 안 걸린다.
+function settle(){
+  if (document.body.classList.contains('done') || document.body.classList.contains('st-err')) return;
+  cancelAnimationFrame(raf); clearTimeout(tmo);
+  finish();
+}
+
+/* ---- 검토 — 브라우저에 저장(localStorage). 로그인하면 기기 간 유지 ---- */
+const RK = 'jf_reviewed';
+const reviewed = () => { try { return JSON.parse(localStorage.getItem(RK) || '[]'); } catch (e) { return []; } };
+function mark(no){
+  const tr = $('.tr[data-no="' + no + '"]'); if (!tr || tr.classList.contains('rvd')) return;
+  tr.classList.add('rvd'); tr.querySelector('.t').insertAdjacentHTML('beforeend', '<em class="rvm">검토함</em>');
+  const x = tr.nextElementSibling; if (!x || !x.classList.contains('x')) return;
+  const b = x.querySelector('.bt.rv'); b.textContent = '검토함'; b.classList.add('on');
+  x.insertAdjacentHTML('afterend', '<div class="rvn">검토함은 브라우저에 저장됩니다 · <a href="#">로그인</a> 시 기기 간 유지</div>');
+}
+function unmark(){
+  document.querySelectorAll('.tr.rvd').forEach(tr => { tr.classList.remove('rvd'); tr.querySelector('.rvm').remove(); });
+  document.querySelectorAll('.rvn').forEach(n => n.remove());
+  document.querySelectorAll('.bt.rv.on').forEach(b => { b.textContent = '검토'; b.classList.remove('on'); });
+}
+document.querySelectorAll('.bt.rv').forEach(b => b.onclick = e => {
+  e.preventDefault(); const no = b.closest('.x').previousElementSibling.dataset.no;
+  mark(no); try { localStorage.setItem(RK, JSON.stringify([...new Set([...reviewed(), no])])); } catch (e) {}
+});
+
+/* ---- 상태 알약 ---------------------------------------------------------- */
+const ST = ['st-zero', 'st-err', 'st-email'];
+function setState(st){
+  document.body.classList.remove(...ST); document.querySelectorAll('.ctl [data-st]').forEach(s => s.classList.toggle('on', s.dataset.st === st));
+  $('.nav .cta').textContent = '이메일 구독';
+  if (st !== 'reviewed'){ unmark(); try { localStorage.removeItem(RK); } catch (e) {} }
+  setCounts(st === 'zero' ? [C.CNT[0], C.CNT[1], 0, 0] : C.CNT);
+  if (st === 'zero'){ document.body.classList.add('st-zero'); run('full'); }
+  else if (st === 'err') run('err');
+  else if (st === 'email'){ document.body.classList.add('st-email'); $('.nav .cta').textContent = 'you@company.co.kr'; run('still'); }
+  else if (st === 'reviewed'){ run('still'); mark($('.tr[data-no]').dataset.no); }
+  if (st) document.querySelectorAll('.ctl [data-run]').forEach(s => s.classList.remove('on'));   // 상태 알약이 켜지면 진행 알약은 끈다
+}
+
+E.setup();
+$('.stage').onclick = settle;
+addEventListener('keydown', e => { if (!e.target.closest('.ctl')) settle(); });
+document.querySelectorAll('.ctl [data-run]').forEach(s => s.onclick = () => { setState(null); run(s.dataset.run); });
+document.querySelectorAll('.ctl [data-st]').forEach(s => s.onclick = () => setState(s.dataset.st));
+$('.err .bt').onclick = e => { e.preventDefault(); setState(null); run('full'); };
+addEventListener('resize', () => { E.setup(); E.paint(document.body.classList.contains('st-err') ? C.XS[3] - 30 : W, document.body.classList.contains('done')); });
+reviewed().forEach(mark);
+run(reduce ? 'still' : 'full');
+
+document.querySelectorAll('.sheet .tr').forEach(t => t.addEventListener('click', () => t.nextElementSibling.classList.toggle('on')));
+if (matchMedia('(max-width:720px)').matches) document.querySelector('details.side').open = false;
+const hd = document.querySelector('.head');
+function openSearch(){ document.body.classList.add('st-search'); const i = hd.querySelector('.box input'); i.value = ''; i.focus(); }
+function closeSearch(){ document.body.classList.remove('st-search'); }
+hd.querySelector('.sw-co').onclick = e => { e.preventDefault(); openSearch(); };
+hd.querySelector('.rc .esc').onclick = e => { e.preventDefault(); closeSearch(); };
+addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+document.querySelectorAll('.ctl [data-skin]').forEach(s => s.onclick = () => { document.documentElement.classList.toggle('v-panel', s.dataset.skin === 'panel');
+  document.querySelectorAll('.ctl [data-skin]').forEach(x => x.classList.toggle('on', x === s)); });
+</script></body></html>

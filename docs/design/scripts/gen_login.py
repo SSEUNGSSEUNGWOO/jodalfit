@@ -1,4 +1,4 @@
-"""로그인·회원가입 흐름 최종 시안(`prototypes/login-final.html`) — 이메일 + 비밀번호.
+"""로그인·회원가입 흐름 최종 시안(`prototypes/final/login-final.html`) — 이메일 + 비밀번호.
 결정(2026-10-17 승우님): 비밀번호 있어야 한다 · 회사 연결 대신 **저장한 회사**(즐겨찾기, 여러 곳) · nav 라벨 '로그인' · 흐름 전체.
 
 가입 = 이메일 + 비밀번호(8자 이상) + 이용약관(필수)·개인정보(필수)·알림 수신(선택) → 확인 메일 1회 → 로그인됨.
@@ -8,8 +8,8 @@
 장면: 1 로그인 → 2 회원가입 → 3 확인 메일 보냄 → 4 메일 → 5 가입 완료·로그인됨(☆ 회사 저장) → 6 재설정(6a 보냄 · 6b 메일 · 6c 새 비밀번호)
    → 게이트(결과·회사 페이지 표 안: 로그인 / 회원가입 두 버튼) → 7 로그아웃.
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_login.py ../docs/design/data/sample.json ../docs/design/prototypes/login-final.html
-검증: gen_login.py --check ../docs/design/prototypes/login-final.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_login.py ../docs/design/data/sample.json ../docs/design/prototypes/final/login-final.html
+검증: gen_login.py --check ../docs/design/prototypes/final/login-final.html
 """
 import json
 import sys
