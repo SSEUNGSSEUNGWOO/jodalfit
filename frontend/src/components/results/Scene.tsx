@@ -162,7 +162,8 @@ export function Scene({
             )}
             style={{ left: `${(SCENE.XS[i] / SCENE.W) * 100}%` }}
           >
-            <span className="block text-[12px] text-ink-g">{k}</span>
+            {/* 390 은 네 칸이 한 줄이라 라벨 폭이 ~90px 다 — break-keep 이 없으면 "지금 입찰 가/능한 공고"로 단어 중간이 잘린다 */}
+            <span className="block break-keep text-[12px] text-ink-g">{k}</span>
             <span
               className={cn(
                 "num mt-[5px] block text-[26px] font-[650] tracking-[-0.04em] max-sm:text-[18px]",
