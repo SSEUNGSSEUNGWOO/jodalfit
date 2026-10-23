@@ -37,7 +37,7 @@ from gen_flow import ENGINE_JS, TILE, W, H, CY, XS, HH as HH_A, FAN_X, FAN_SP, C
 from gen_results_v3 import FONT  # noqa: E402
 
 # 2026-10-23 실측 — 한종산업개발 주식회사
-TOTAL, IND, POOL, PASSED, RESULT = 9900, 845, 200, 85, 12
+TOTAL, IND, POOL, PASSED, RESULT = 9900, 845, 200, 85, 20
 LABS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"]
 SUBS = ["마감 90일 이내", "전체의 8.5%", "후보 풀 200건 중", "자격 통과분의 14.1%"]
 POOL_LAB = "후보 풀 추출"
@@ -52,7 +52,8 @@ def loghh(counts, lo, hi):
 
 
 CNT4 = [TOTAL, IND, PASSED, RESULT]
-HH_B = loghh(CNT4, 48, 180)                         # ≈ 180 / 131 / 86 / 48
+# 마지막 통로 하한은 결과 건수에서 나온다 — 결과를 하나씩 셀 수 있어야(간격 8px) 통로 노릇을 한다. 20건이면 76.
+HH_B = loghh(CNT4, max(48, 4 * (RESULT - 1) + 1), 180)
 # C 띠 — 다섯 구간(모수가 바뀌는 200 이 제 칸을 갖는다). 같은 로그 비례를 얇은 범위로 눌렀다.
 CXS = [0, 240, 470, 700, 930, W]
 CCNT = [TOTAL, IND, POOL, PASSED, RESULT]
@@ -61,13 +62,13 @@ CCY, CDROP = 140, 312                               # 띠 중심 / 떨어져 나
 # D 점 격자 — 공고 하나 = 점 하나. 칸마다 열 수·간격만 정하면 점 수가 곧 크기다.
 DBLK = [{"cx": 130, "cols": 80, "pitch": 2.6}, {"cx": 390, "cols": 24, "pitch": 4.2},
         {"cx": 565, "cols": 14, "pitch": 6.6}, {"cx": 720, "cols": 9, "pitch": 8.4},
-        {"cx": 1010, "cols": 1, "pitch": 26}]
+        {"cx": 1010, "cols": 1, "pitch": 18}]
 DGATE = [292, 480, 647, 880]
 # D-2 / D-3 — 같은 pitch 를 네 덩어리에 그대로 쓴다. 그래야 점유 면적이 건수에 비례한다.
 # 후보 풀 200 은 제 칸을 갖지 않고 845 덩어리 안에서 진한 점으로 남는다(모수가 바뀐 게 아니라 추출이다).
 DCNT = [TOTAL, IND, PASSED, RESULT]
 DSUBS = ["마감 90일 이내", "전체의 8.5%<br>· 200건 추출 후 자격 판정", "후보 200건 중", "통과분의 14.1%"]
-DLABX = [0, 27, 54, 78]     # 라벨은 등간격 — 작은 덩어리 폭(40px·12px)에 라벨이 들어가지 않는다
+DLABX = [0, 27, 54, 78]     # 라벨은 등간격 — 작은 덩어리 폭(40px·28px)에 라벨이 들어가지 않는다
 PITCHES = [8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.5]
 
 
@@ -120,15 +121,15 @@ NOTES = {
     "c": "보이는 것 — 회색 띠 하나가 관문마다 얇아지고, 떨어져 나가는 몫이 아래로 가는 선들로 흩어진다(이유는 그 아래). "
          "모수 — 둘째 관문은 벽이 아니라 점선이고, 띠가 845 두께에서 후보 200 두께로 줄 때 떨어지는 선을 그리지 않는다. 탈락이 아니라 추출임을 형태로 구분한다. "
          "약한 곳 — 면을 쓰므로 가는 괘선 기조에서 혼자 무겁고, 띠는 공고 하나를 가리키지 않는다(건수는 글자로만 믿어야 한다).",
-    "d": "보이는 것 — 공고 하나가 점 하나. 9,900점 격자가 관문마다 통과분만 다음 칸으로 옮겨 가고, 마지막 12점이 표 행 간격으로 내려앉는다(오른쪽 주황 눈금). "
+    "d": "보이는 것 — 공고 하나가 점 하나. 9,900점 격자가 관문마다 통과분만 다음 칸으로 옮겨 가고, 마지막 결과 점이 표 행 간격으로 내려앉는다(오른쪽 주황 눈금). "
          "모수 — 둘째 관문에서 선택되지 않은 645점은 떨어지지 않고 흐린 채 제자리에 남는다. 후보 200 은 '걸러낸 것'이 아니라 '꺼내 본 것'이다. "
          "약한 곳 — 점 크기가 건수에 비례하지 않아(칸마다 간격이 다르다) 면적으로 비율을 읽을 수 없다. 390px 에서 9,900 칸은 회색 얼룩이 된다.",
-    "d2": "보이는 것 — 네 덩어리가 모두 같은 점 간격이다. 9,900 덩어리 옆에서 845 는 12분의 1, 85 는 손톱만 한 조각, 12 는 점 열둘로 남는다. "
-          "숫자를 읽지 않아도 줄어든 정도가 면적으로 읽힌다. 마지막 12점은 표 행 간격으로 펼쳐지고 오른쪽에 주황 눈금이 붙는다. "
+    "d2": "보이는 것 — 네 덩어리가 모두 같은 점 간격이다. 9,900 덩어리 옆에서 845 는 12분의 1, 85 는 손톱만 한 조각, 20 은 점 스무 개로 남는다. "
+          "숫자를 읽지 않아도 줄어든 정도가 면적으로 읽힌다. 마지막 20점은 표 행 간격으로 펼쳐지고 오른쪽에 주황 눈금이 붙는다. "
           "모수 — 후보 풀 200 은 제 칸을 세우지 않고 845 덩어리 안에서 진한 점으로 남는다. 모수가 바뀐 것이 아니라 같은 덩어리에서 추출한 것임을 형태가 말한다. "
           "설명 글 없이 덩어리만으로 성립한다. "
           "약한 곳 — 탈락분이 제자리에 흐리게 남으므로 첫 덩어리가 끝까지 캔버스의 절반을 차지한다. "
-          "칸 라벨은 덩어리 왼쪽 모서리에 맞췄으나 셋째·넷째 덩어리는 폭이 40px·12px 이라 라벨이 덩어리보다 넓고, "
+          "칸 라벨은 덩어리 왼쪽 모서리에 맞췄으나 셋째·넷째 덩어리는 폭이 40px·28px 이라 라벨이 덩어리보다 넓고, "
           "첫 라벨과 둘째 라벨 사이가 520px 비어 라벨 줄이 성기다.",
     "d3": "보이는 것 — 칸을 나누지 않는다. 덩어리 하나가 제자리에서 줄어든다. 탈락분이 그 자리에서 사라져 구멍이 나고, 남은 점이 다져져 더 작은 네모가 된다. "
           "지나온 크기는 가는 회색 외곽선으로 남는다. 끝에서는 흐린 탈락 점을 걷어내 외곽선 셋과 12행만 남긴다 "
@@ -371,7 +372,7 @@ function dots(){
       B[b].rect(x - sz/2, y - sz/2, sz, sz);
     }
     for (let b=1;b<NB;b++){ ctx.fillStyle = 'rgba(20,20,20,' + (b/(NB-1)*.85).toFixed(3) + ')'; ctx.fill(B[b]); }
-    // 마지막 12점은 표 행 자리에 앉는다 — 오른쪽에 주황 눈금(면이 아니라 선)
+    // 마지막 결과 점들이 표 행 자리에 앉는다 — 오른쪽에 주황 눈금(면이 아니라 선)
     if (done >= NT){
       ctx.strokeStyle = 'rgba(249,115,22,.9)'; ctx.lineWidth = 1.5;
       for (let i=0;i<N;i++){
@@ -461,9 +462,11 @@ function fixedDots(key, mode){
         pos[(i*NS+s)*2] = x0 + (q % c)*p; pos[(i*NS+s)*2+1] = y0 + Math.floor(q/c)*p;
       }
     }
-    unf = new Float32Array(N*2);                             // 마지막 12점 — 표 행 간격 26px
-    // D-3 은 펼친 12점을 가장 큰 외곽선 바깥에 세운다. 안에 세우면 눈금이 외곽선을 가로지른다.
-    const rg = 26*hd/C.H, ux = mode === 'place' ? px + (lay.shp[0][0]-1)*lay.p/2 + 40*dpr : lay.cxs[NS-1];
+    unf = new Float32Array(N*2);                             // 마지막 결과 점 — 표 행 간격(건수가 많으면 좁힌다)
+    // D-3 은 펼친 결과 점을 가장 큰 외곽선 바깥에 세운다. 안에 세우면 눈금이 외곽선을 가로지른다.
+    // 행 간격은 26px 가 기본이되 캔버스를 넘으면 좁힌다 — 결과 건수는 회사마다 다르고(최대 20) 20×26 은 392px 를 넘는다.
+    const rg = Math.min(26*hd/C.H, (hd - 2*lay.pad)/Math.max(1, CNT[NT]-1));
+    const ux = mode === 'place' ? px + (lay.shp[0][0]-1)*lay.p/2 + 40*dpr : lay.cxs[NS-1];
     for (let i=0;i<N;i++){
       const q = rank[i*NS+NT]; if (q < 0) continue;
       unf[i*2] = ux; unf[i*2+1] = hd/2 + (q - (CNT[NT]-1)/2)*rg;
@@ -673,8 +676,8 @@ def demo():
     # B 의 전부: 벽 사이가 눈에 띄게 좁아지고, 마지막 통로에서 12선을 셀 수 있어야 한다
     gap = [2 * HH_B[i] / (CNT4[i] - 1) for i in range(4)]
     assert HH_B[0] > HH_B[1] > HH_B[2] > HH_B[3], HH_B
-    assert gap[3] > 8, f"마지막 12개를 눈으로 셀 수 없다 {gap[3]}"
-    assert HH_B[3] / HH_B[0] < 0.3, HH_B                      # 현행 0.56 → 깔때기로 읽히는 비율
+    assert gap[3] > 8, f"마지막 {RESULT}개를 눈으로 셀 수 없다 {gap[3]}"
+    assert HH_B[3] / HH_B[0] < 0.45, HH_B                     # 현행 0.56 → 깔때기로 읽히는 비율(결과 20건이면 하한이 올라 0.42)
     assert HH_A[3] / HH_A[0] > 0.5                            # 현행이 실제로 안 좁아진다는 것
     assert CY + HH_B[0] <= H and CY - HH_B[0] >= 0
     # C 띠 — 다섯 칸이 단조 감소하고 떨어지는 선이 캔버스 안에 있다
@@ -722,7 +725,7 @@ def check(path):
     from playwright.sync_api import sync_playwright
     p = Path(path).resolve(); out = p.parent
     exe = next(Path.home().glob("AppData/Local/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-win64/chrome-headless-shell.exe"), None)
-    want = ["9,900", "845", "85", "12"]
+    want = [f"{n:,}" for n in (TOTAL, IND, PASSED, RESULT)]   # 상수에서 — 건수를 바꿔도 단정이 따라온다
     rules = """() => { const cs = e => getComputedStyle(e); const all = [...document.querySelectorAll('body *')];
       return { orange: all.filter(e => cs(e).backgroundColor === 'rgb(249, 115, 22)' && !e.closest('svg')).length,
         injuk: all.some(e => { const c = cs(e); return [c.color, c.backgroundColor, c.borderTopColor, c.borderBottomColor, c.borderLeftColor, c.borderRightColor].includes('rgb(232, 67, 27)'); }),
