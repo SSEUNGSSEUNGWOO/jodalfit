@@ -27,16 +27,32 @@ dependencies = [
 
 # 정확한 임베딩이 필요한 쪽만(매일 배치·GPU 백필) — Railway 는 기본 deps 만 깔아서 가볍게 둔다.
 # 설치: uv sync --extra embed-cpu  (local_embed.py 의 KURE_BACKEND=torch)
+# 로컬 GPU(RTX 5060 Ti = cu128 필요) 백필: uv sync --extra embed-gpu — embed-cpu 로 sync 하면 CUDA torch 가 CPU 휠로 덮인다.
 [project.optional-dependencies]
 embed-cpu = [
     "sentence-transformers>=3",
     "torch",
 ]
+embed-gpu = [
+    "sentence-transformers>=3",
+    "torch",
+]
+
+[tool.uv]
+conflicts = [[{ extra = "embed-cpu" }, { extra = "embed-gpu" }]]
 
 [tool.uv.sources]
-torch = [{ index = "pytorch-cpu" }]
+torch = [
+    { index = "pytorch-cpu", extra = "embed-cpu" },
+    { index = "pytorch-cu128", extra = "embed-gpu" },
+]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
