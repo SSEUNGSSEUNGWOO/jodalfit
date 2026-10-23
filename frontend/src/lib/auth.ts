@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import type { NavUser } from "@/components/Nav";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { getNavSaved } from "@/lib/saved";
 
 export type SessionUser = { id: string; email: string };
 
@@ -21,8 +22,10 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   return user?.email ? { id: user.id, email: user.email } : null;
 });
 
-/** Nav 가 받는 모양. 저장한 회사·검토 건수는 03 에서 채운다. */
+/** Nav 가 받는 모양. */
 export async function getNavUser(): Promise<NavUser | null> {
   const u = await getSessionUser();
-  return u ? { email: u.email, savedCompanies: [], reviewedCount: 0 } : null;
+  if (!u) return null;
+  const { savedCompanies, reviewedCount } = await getNavSaved();
+  return { email: u.email, savedCompanies, reviewedCount };
 }
