@@ -202,6 +202,7 @@ foot{display:block;border-top:1px solid #ececea;margin-top:48px;padding:16px 0 2
  margin:26px auto 0;width:100%;max-width:760px}
 .pane .stat{padding-top:0;margin:0;max-width:none}
 .pane .gold{margin:22px 0 0;max-width:none}
+.pane .list{margin:20px 0 0;max-width:none;border-top:1px solid #141414;padding-top:14px}
 /* 묻는 줄 — 검색창의 머리다. 15px 로는 안내문처럼 읽혀 아무것도 묻지 않는 것 같았다. */
 .ask{margin:0 auto 18px;width:100%;max-width:760px;font-size:26px;line-height:1.35;
  font-weight:650;letter-spacing:-.03em;color:#141414}
@@ -306,12 +307,13 @@ def variant_b(d: dict) -> str:
 
 
 def variant_d(d: dict) -> str:
-    """B 에 판을 씌우고 검색창 위에 가벼운 한 줄. 2026-10-23 승우님 요청.
-    "입력해 주세요"는 쓸 수 없다 — 금지어 "하세요"에 걸린다. 공문 톤으로 묻는 형태를 쓴다."""
+    """판 + 묻는 줄. 2026-10-23 승우님 요청.
+    판 안은 현황 숫자 + 최근 등록된 공고. 사전규격(골든타임)은 입구에서 뺀다 — 결과 화면에서
+    보여줄 것이라는 피드백. "입력해 주세요"는 금지어 "하세요"에 걸려 묻는 형태로 쓴다."""
     ask = '<div class="ask">어느 <b>회사</b>의 공고를 찾습니까</div>'
     hint = "회사명 · 사업자등록번호 · 업종 또는 품목 중 아는 것 하나면 됩니다"
     return (f'<div class="v" data-v="d"><div class="mid">{ask}{box_html(hint)}'
-            f'<div class="pane">{stat_html(d)}{gold_html(d)}</div>{fresh_html(d)}</div>{foot_html()}</div>')
+            f'<div class="pane">{stat_html(d)}{fresh_html(d)}</div></div>{foot_html()}</div>')
 
 
 def variant_c(d: dict) -> str:
