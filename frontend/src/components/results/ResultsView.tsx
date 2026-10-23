@@ -15,6 +15,7 @@ import { companyStats } from "@/lib/saved-stats";
 import type { CompanyDigest, RecommendationResponse } from "@/types/recommendations";
 import { Scene, type SceneCounts } from "./Scene";
 import { FunnelLine } from "./FunnelLine";
+import { LeadsLine } from "./LeadsLine";
 import { CompanySide } from "./CompanySide";
 import { ResultRows, ZeroBlock } from "./ResultRows";
 
@@ -128,6 +129,11 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           <div className={cn("grid items-start gap-x-11", mode === "company" ? "grid-cols-[240px_minmax(0,1fr)] max-sm:grid-cols-1" : "grid-cols-1")}>
             {mode === "company" && bizrno && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
             <div className="pt-[22px] max-sm:pt-3.5">
+              {/* 공고 전 단계(사전규격·발주계획)는 표 위에 접힌 줄로. 0건이면 그려지지 않는다.
+                  지금까지는 숫자만 띄우고 누를 데가 없었다 — 목록을 서버가 만들어 버렸다. */}
+              {mode === "company" && (
+                <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
+              )}
               {!zero && (
                 <div className="flex items-center justify-between border-b border-ink pb-2.5">
                   <span className="t-k"><b className="mr-1.5 text-[14px] font-[650] text-ink">검토할 공고 {results.length}건</b>{mode === "company" ? "적합 순" : "유사도 순"}</span>
