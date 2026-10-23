@@ -14,14 +14,12 @@ import { noticeJsonLd } from "@/lib/jsonld";
 import { fetchLifecycle } from "@/lib/notice";
 import { formatDateKR, formatKRW } from "@/lib/utils";
 
+// 정적 생성을 하지 않는다. 리뉴얼 레이아웃의 nav 가 로그인 상태를 읽어 쿠키를 쓰기 때문에
+// 빌드 때 미리 만들 수 없다 — generateStaticParams 를 두면 운영에서 DYNAMIC_SERVER_USAGE 로 500 이 난다
+// (2026-10-23 배포 직후 확인). ISR 비용 이점은 포기한다.
+
 type Props = { params: Promise<{ bid_ntce_no: string }> };
 
-export const revalidate = 3600;
-
-// 빈 배열이라도 있어야 동적 라우트가 요청마다 SSR 이 아니라 ISR 로 빌드된다.
-export async function generateStaticParams() {
-  return [];
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bid_ntce_no } = await params;
