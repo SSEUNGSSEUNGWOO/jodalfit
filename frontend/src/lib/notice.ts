@@ -153,11 +153,15 @@ export async function fetchLifecycle(
   // 매번 다시 쓴다 (company.ts fetchCompanyProfile 주석 참조).
   const [insightRes, versionsRes, preSpecsRes, orderPlansRes, awardsRes, contractsRes] =
     await Promise.all([
+      // 차수로 좁히지 않는다 — 정정 공고(001)는 원공고(000)에 붙은 요약을 못 찾아
+      // "아직 읽지 않았습니다"가 떴다(2026-10-23 확인: R26BK01759885 는 000 에만 요약이 있다).
+      // 첨부문서 요약은 사업 단위라 차수가 달라도 같은 내용이다. 차수 큰 것부터 하나.
       c
         .from("bid_notice_insights")
         .select("summary,scope,requirements,evaluation,schedule,keywords")
         .eq("bid_ntce_no", notice.bid_ntce_no)
-        .eq("bid_ntce_ord", notice.bid_ntce_ord)
+        .order("bid_ntce_ord", { ascending: false })
+        .limit(1)
         .maybeSingle(),
       notice.bid_ntce_ord !== "000"
         ? c
