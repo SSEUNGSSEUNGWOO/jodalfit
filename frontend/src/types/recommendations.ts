@@ -163,4 +163,19 @@ export interface RecommendationResponse {
   /** auto 모드 — 키워드 매칭 결과 (메인이 company여도 함께 노출) */
   keyword_query?: string;
   keyword_results?: BidRecommendation[];
+  /** v2 스트림 — funnel 단계 카운트 (키워드 모드 등 스트림 미사용 시 없음) */
+  funnel?: FunnelCounts | null;
 }
+
+export type FunnelCounts = { total: number; industry: number };
+
+export type StreamEvent =
+  | { type: "funnel"; total: number; industry: number }
+  | { type: "stage"; stage: "search"; candidates: number }
+  | { type: "stage"; stage: "qualify"; candidates: number; passed: number }
+  | { type: "stage"; stage: "rank"; results: number }
+  | { type: "results"; data: RecommendationResponse }
+  | { type: "summary"; text: string; error?: string }
+  | { type: "explanation"; scope: "primary" | "keyword"; bid_ntce_no: string; bid_ntce_ord: string; text: string }
+  | { type: "error"; message: string; status?: number }
+  | { type: "done" };
