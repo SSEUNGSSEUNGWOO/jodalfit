@@ -14,6 +14,7 @@
         ../docs/design/scripts/gen_entry_v2.py ../docs/design/prototypes/entry-v2.html
 검증: 같은 환경에서 gen_entry_v2.py --check ../docs/design/prototypes/entry-v2.html
 """
+import json
 import sys
 from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
@@ -78,8 +79,17 @@ def fetch(conn) -> dict:
             order by bid_ntce_nm, instt""", (fresh_today,)).fetchall()
     fresh = [dict(nm=r[0], instt=r[1], posted=r[2], clse=r[3], amt=r[4]) for r in rows]
     fresh.sort(key=lambda r: (r["posted"] or date.min), reverse=True)
+    # 자동완성에 쓸 회사 표본. 실제 행이다 — 꾸며낸 회사를 시안에 넣지 않는다.
+    # 사업자번호는 싣지 않는다(README §12 마스킹) — 고르는 데 필요 없다.
+    cos = [dict(nm=r[0], rgn=r[1], n=r[2]) for r in conn.execute(
+        """select c.corp_nm, coalesce(c.rgn_nm,''), count(i.indstryty_cd)
+             from companies c left join company_industries i on i.bizrno = c.bizrno
+            where c.embedding_k is not null and c.optout_at is null and c.corp_nm is not null
+            group by 1,2 having count(i.indstryty_cd) > 0
+            order by count(i.indstryty_cd) desc, c.corp_nm limit 600""")]
     return dict(active=active, spec_open=spec_open, spec_soon=spec_soon, companies=companies,
-                specs=specs, soon=soon, fresh=fresh[:5], today_n=today_n, fresh_today=fresh_today)
+                specs=specs, soon=soon, fresh=fresh[:5], today_n=today_n, fresh_today=fresh_today,
+                cos=cos)
 
 
 # ---------------------------------------------------------------- 표현 도우미
@@ -208,6 +218,20 @@ foot{display:block;border-top:1px solid #ececea;margin-top:48px;padding:16px 0 2
  font-weight:650;letter-spacing:-.03em;color:#141414}
 .ask b{font-weight:650;border-bottom:2px solid #f97316;padding-bottom:2px}
 
+/* 자동완성 — 입력란 바로 아래로 자란다. 원본 entry-simple 의 동작을 같은 문법으로. */
+.box{position:relative}
+.ac{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #d8d6d0;
+ border-radius:3px;box-shadow:0 6px 20px rgba(20,20,20,.07);z-index:5;overflow:hidden}
+.ac[hidden]{display:none}
+.ac div{display:flex;align-items:baseline;gap:10px;padding:10px 16px;cursor:pointer;font-size:14.5px}
+.ac div+div{border-top:1px solid #f1efeb}
+.ac div.on{background:#f6f4f0}
+.ac .nm{font-weight:600}
+.ac .rg{color:#8a8a85;font-size:12.5px}
+.ac .ix{margin-left:auto;color:#8a8a85;font-size:12.5px}
+.ac .kw .nm{font-weight:400;color:#55554f}
+.sent{margin-top:11px;font-size:13px;color:#55554f;min-height:19px}
+
 .ctl{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:2px;background:#fff;
  border:1px solid #e6e4df;border-radius:999px;padding:3px;font-size:12.5px;z-index:9;white-space:nowrap;
  box-shadow:0 2px 10px rgba(20,20,20,.06)}
@@ -235,9 +259,11 @@ def nav_html() -> str:
 
 def box_html(hint: str) -> str:
     return ('<div class="box"><div class="f">'
-            '<input placeholder="회사명 · 사업자등록번호 · 업종 또는 품목" aria-label="회사 검색">'
+            '<input placeholder="회사명 · 사업자등록번호 · 업종 또는 품목" aria-label="회사 검색"'
+            ' role="combobox" aria-expanded="false" aria-autocomplete="list">'
             '<span class="go"><u>찾기</u></span></div>'
-            f'<div class="hint">{hint}</div></div>')
+            '<div class="ac" role="listbox" hidden></div>'
+            f'<div class="hint">{hint}</div><div class="sent"></div></div>')
 
 
 def stat_html(d: dict) -> str:
@@ -325,6 +351,54 @@ def variant_c(d: dict) -> str:
 
 
 JS = r"""
+/* 자동완성 — 실제 회사 표본에서 이름으로 거른다. 원본 entry-simple 과 같은 조작:
+   입력하면 아래로 자라고 ↑↓ 로 옮기고 Enter·클릭으로 고른다. Esc 로 닫는다.
+   회사가 없으면 '그대로 찾기' 한 줄(키워드 모드) — 입력의 절반 이상이 회사명이 아니다. */
+const CO = __COS__;
+function wire(v){
+  const inp = v.querySelector('.box input'), ac = v.querySelector('.ac'),
+        sent = v.querySelector('.sent'), go = v.querySelector('.go');
+  if (!inp || !ac) return;
+  let items = [], act = -1;
+  const close = () => { ac.hidden = true; act = -1; inp.setAttribute('aria-expanded','false'); };
+  function render(){
+    const q = inp.value.trim();
+    if (q.length < 2) return close();
+    const hit = CO.filter(c => c.nm.includes(q)).slice(0, 6);
+    items = hit.map(c => ({co: c})).concat([{kw: q}]);
+    ac.innerHTML = items.map((it, i) => it.co
+      ? `<div role="option" data-i="${i}"><span class="nm">${it.co.nm}</span>`
+        + `<span class="rg">${it.co.rg}</span><span class="ix">등록업종 ${it.co.n}</span></div>`
+      : `<div role="option" class="kw" data-i="${i}"><span class="nm">"${it.kw}" 그대로 찾기</span>`
+        + `<span class="ix">업종·품목으로</span></div>`).join('');
+    ac.hidden = false; inp.setAttribute('aria-expanded','true'); setAct(0);
+  }
+  function setAct(i){
+    act = i; [...ac.children].forEach((e, k) => e.classList.toggle('on', k === i));
+  }
+  function choose(i){
+    const it = items[i]; if (!it) return;
+    inp.value = it.co ? it.co.nm : it.kw;
+    sent.textContent = it.co
+      ? `${it.co.nm} · ${it.co.rg || '지역 미상'} — 결과 페이지로 이동합니다`
+      : `"${it.kw}" — 회사 없이 업종·품목으로 찾습니다`;
+    close();
+  }
+  inp.addEventListener('input', render);
+  inp.addEventListener('keydown', e => {
+    if (ac.hidden){ if (e.key === 'Enter') { e.preventDefault(); render(); } return; }
+    if (e.key === 'ArrowDown'){ e.preventDefault(); setAct((act + 1) % items.length); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); setAct((act - 1 + items.length) % items.length); }
+    else if (e.key === 'Escape'){ close(); }
+    else if (e.key === 'Enter'){ e.preventDefault(); choose(act); }
+  });
+  ac.addEventListener('mousedown', e => {
+    const o = e.target.closest('[role=option]'); if (o){ e.preventDefault(); choose(+o.dataset.i); } });
+  go.addEventListener('click', () => { inp.focus(); ac.hidden ? render() : choose(act); });
+  document.addEventListener('click', e => { if (!v.querySelector('.box').contains(e.target)) close(); });
+}
+document.querySelectorAll('.v').forEach(wire);
+
 const vs = [...document.querySelectorAll('.v')], ps = [...document.querySelectorAll('.ctl span')];
 function pick(k){ vs.forEach(v => v.classList.toggle('on', v.dataset.v === k));
   ps.forEach(p => p.classList.toggle('on', p.dataset.v === k)); }
@@ -342,7 +416,7 @@ def build(d: dict) -> str:
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>입구 화면 재설계 — A 현행 / B 골든타임 / C 머리 세움</title>{FONT}'
             f'<style>{CSS}</style></head><body><div class="wrap">{nav_html()}'
-            f'{variant_a(d)}{variant_b(d)}{variant_c(d)}{variant_d(d)}</div>{ctl}<script>{JS}</script></body></html>')
+            f'{variant_a(d)}{variant_b(d)}{variant_c(d)}{variant_d(d)}</div>{ctl}<script>{JS.replace("__COS__", json.dumps([{"nm": c["nm"], "rg": c["rgn"], "n": c["n"]} for c in d["cos"]], ensure_ascii=False))}</script></body></html>')
 
 
 def check(path: str) -> None:
@@ -371,7 +445,21 @@ def check(path: str) -> None:
             # 마감이 지난 공고가 목록에 섞이면 'D--1' 로 찍힌다 — 재공고·정정 건이 그렇다.
             assert "D--" not in txt, (k, "마감 지난 공고가 목록에 있다")
             pg.screenshot(path=str(out / f"_shot_entry_v2_{k}.png"), full_page=True)
-            print(f"  {k}: 높이 {s['h']}px · 줄 {s['rows']}개 · 주황 면 {s['orangeFaces']}")
+            # 굴러가는가 — 입력하면 목록이 뜨고 방향키·Enter 로 고를 수 있어야 한다.
+            box = f'.v[data-v="{k}"] .box'
+            pg.click(f"{box} input")
+            pg.type(f"{box} input", "엔지니어링", delay=10)
+            pg.wait_for_timeout(120)
+            n = pg.evaluate(f"() => document.querySelectorAll('{box} .ac [role=option]').length")
+            assert n >= 2, (k, f"자동완성이 안 뜬다 ({n}행)")
+            pg.keyboard.press("ArrowDown")
+            pg.keyboard.press("Enter")
+            pg.wait_for_timeout(120)
+            sent = pg.evaluate(f"() => document.querySelector('{box} .sent').textContent.trim()")
+            assert sent, (k, "고른 뒤 안내가 없다")
+            pg.screenshot(path=str(out / f"_shot_entry_v2_{k}_typed.png"))
+            pg.fill(f"{box} input", "")
+            print(f"  {k}: 높이 {s['h']}px · 줄 {s['rows']}개 · 주황 면 {s['orangeFaces']} · 자동완성 {n}행")
         pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
         pg2.goto(Path(path).resolve().as_uri())
         pg2.click('.ctl [data-v="c"]')
