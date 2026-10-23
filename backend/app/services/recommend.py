@@ -452,6 +452,39 @@ def _search_pre_specs(
     return out
 
 
+def _trim_leads(
+    pre_specs: list[dict], order_plans: list[dict], ranked: list[dict], limit: int
+) -> tuple[list[dict], list[dict]]:
+    """사전규격·발주계획을 '그 회사에게 의미 있는 것'만 남긴다. 2026-10-23.
+
+    문제 셋을 한 번에 고친다.
+      1) 발주계획이 늘 요청한 수만큼 나왔다 — 유사도 문턱이 없어 상위 N 을 무조건 채웠다.
+         숫자가 아니라 상수였다. 바닥을 **그 회사에게 보여준 공고 중 가장 낮은 유사도**로 둔다.
+         회사마다 유사도 척도가 달라(상위 20위가 0.540~0.755) 고정값을 못 쓴다.
+         실측: 이 규칙에서 회사별 0·2·20건으로 갈린다 — 비로소 세는 값이 된다.
+      2) 같은 사업이 사전규격과 발주계획에 둘 다 나왔다. 사업명으로 접는다(사전규격이 더 구체적이라 우선).
+      3) 추천이 0건인 회사에게도 발주계획이 20건 떴다. 바닥이 없으니 아무것도 안 남는다 — 그게 맞다.
+    """
+    sims = [r.get("base_similarity") or r.get("similarity") or 0 for r in ranked]
+    floor = min(sims) if sims else None
+    def norm(t: str | None) -> str:
+        return "".join((t or "").split())
+    seen = {norm(r.get("prdct_clsfc_no_nm") or r.get("bid_ntce_nm")) for r in pre_specs}
+    seen.discard("")
+    out: list[dict] = []
+    for r in order_plans:
+        if floor is None or (r.get("similarity") or 0) < floor:
+            continue
+        key = norm(r.get("prdct_clsfc_no_nm") or r.get("biz_nm"))
+        if key and key in seen:
+            continue
+        seen.add(key)
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return pre_specs, out
+
+
 def _search_order_plans(
     embedding_str: str, limit: int, candidate_pool: int
 ) -> list[dict]:
@@ -1081,6 +1114,8 @@ def _recommend_by_company(
         pre_specs = f_pre.result()
         order_plans = f_ord.result()
         funnel = f_funnel.result()
+    # 랭킹이 끝나야 바닥을 알 수 있다 — 선행지표 다듬기는 여기서.
+    pre_specs, order_plans = _trim_leads(pre_specs, order_plans, ranked, limit)
 
     # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영.
     # v2 는 MMR 이 상위 40개 벡터를 이미 가져왔고 viz 상위 10개는 그 안에 있다 — 재사용한다.
