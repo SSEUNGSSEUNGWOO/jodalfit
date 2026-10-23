@@ -35,7 +35,7 @@
 **Files:**
 - Create: `supabase/migrations/0054_saved.sql`
 
-- [ ] **Step 1: 마이그레이션 파일**
+- [x] **Step 1: 마이그레이션 파일**
 
 ```sql
 -- supabase/migrations/0054_saved.sql
@@ -94,7 +94,7 @@ select cron.schedule('purge-reviewed-notices-expired', '0 19 * * 6', $$
 $$);
 ```
 
-- [ ] **Step 2: 적용** — Supabase Dashboard → SQL Editor 에 파일 내용을 붙여 실행한다(0053 처럼 `backend/.env` 의 `DATABASE_URL` 로 psycopg 에서 실행해도 같다). 확인 쿼리:
+- [x] **Step 2: 적용** — Supabase Dashboard → SQL Editor 에 파일 내용을 붙여 실행한다(0053 처럼 `backend/.env` 의 `DATABASE_URL` 로 psycopg 에서 실행해도 같다). 확인 쿼리:
 
 ```sql
 select tablename, rowsecurity from pg_tables where tablename in ('saved_companies','reviewed_notices');
@@ -103,7 +103,7 @@ select jobname, schedule from cron.job where jobname = 'purge-reviewed-notices-e
 -- 1행
 ```
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add supabase/migrations/0054_saved.sql && git commit -m "feat(db): 0054 saved_companies·reviewed_notices + RLS + 마감 30일 지난 검토 행 주 1회 정리"
@@ -117,7 +117,7 @@ cd C:/Dev/personal/jodalfit && git add supabase/migrations/0054_saved.sql && git
 - Create: `frontend/src/lib/saved-stats.ts`
 - Test: `frontend/src/lib/saved-stats.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트**
+- [x] **Step 1: 실패하는 테스트**
 
 ```ts
 // frontend/src/lib/saved-stats.test.ts
@@ -152,9 +152,9 @@ test("strongestWhy: 양수 신호가 없으면 null", () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — `cd C:/Dev/personal/jodalfit/frontend && node --experimental-strip-types --test src/lib/saved-stats.test.ts` → `Cannot find module` 로 실패.
+- [x] **Step 2: 실패 확인** — `cd C:/Dev/personal/jodalfit/frontend && node --experimental-strip-types --test src/lib/saved-stats.test.ts` → `Cannot find module` 로 실패.
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 ```ts
 // frontend/src/lib/saved-stats.ts
@@ -184,9 +184,9 @@ export function strongestWhy(breakdown: ScoreSignalLike[] | null | undefined): s
 }
 ```
 
-- [ ] **Step 4: 통과** — `node --experimental-strip-types --test src/lib/saved-stats.test.ts` → `# pass 4`. (`@/lib/format` 경로가 node 에서 안 풀리면 `../lib/format.ts` 가 아니라 `./format.ts` 로 상대 import 로 바꾼다 — `format.test.ts` 가 쓰는 방식을 따른다.)
+- [x] **Step 4: 통과** — `node --experimental-strip-types --test src/lib/saved-stats.test.ts` → `# pass 4`. (`@/lib/format` 경로가 node 에서 안 풀리면 `../lib/format.ts` 가 아니라 `./format.ts` 로 상대 import 로 바꾼다 — `format.test.ts` 가 쓰는 방식을 따른다.)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/lib/saved-stats.ts frontend/src/lib/saved-stats.test.ts && git commit -m "feat(renewal): saved-stats — 회사 행 숫자(companyStats)·근거 칩(strongestWhy) 순수 함수 + 테스트"
@@ -200,7 +200,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/saved-stats.ts frontend/
 - Create: `frontend/src/lib/saved.ts`
 - Modify: `frontend/src/lib/auth.ts:25-29` (`getNavUser`)
 
-- [ ] **Step 1: `lib/saved.ts`**
+- [x] **Step 1: `lib/saved.ts`**
 
 ```ts
 // frontend/src/lib/saved.ts
@@ -344,7 +344,7 @@ export async function getReviewedNotices(today: Date = new Date()): Promise<{ li
 
 `NoticeSummary` 의 필드명(`bid_ntce_nm`, `dmnd_instt_nm`, `ntce_instt_nm`, `bid_clse_date`, `presmpt_prce`, `asign_bdgt_amt`)은 `lib/notice.ts:356-371` 그대로다. 타입이 `string | null` 이 아니라 `string | undefined` 면 `?? null` 이 그대로 처리한다.
 
-- [ ] **Step 2: `getNavUser` 채우기** — `frontend/src/lib/auth.ts` 의 `getNavUser` 를 다음으로 교체한다(상단에 `import { getNavSaved } from "@/lib/saved";` 추가).
+- [x] **Step 2: `getNavUser` 채우기** — `frontend/src/lib/auth.ts` 의 `getNavUser` 를 다음으로 교체한다(상단에 `import { getNavSaved } from "@/lib/saved";` 추가).
 
 ```ts
 export async function getNavUser(): Promise<NavUser | null> {
@@ -355,9 +355,9 @@ export async function getNavUser(): Promise<NavUser | null> {
 }
 ```
 
-- [ ] **Step 3: 타입** — `cd C:/Dev/personal/jodalfit/frontend && npx tsc --noEmit -p tsconfig.json; echo $?` → 0. `lib/saved.ts` 가 `lib/auth.ts` 를 import 하지 않으므로 순환 없음.
+- [x] **Step 3: 타입** — `cd C:/Dev/personal/jodalfit/frontend && npx tsc --noEmit -p tsconfig.json; echo $?` → 0. `lib/saved.ts` 가 `lib/auth.ts` 를 import 하지 않으므로 순환 없음.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/lib/saved.ts frontend/src/lib/auth.ts && git commit -m "feat(renewal): lib/saved — 저장한 회사·검토한 공고 서버 읽기(세션 RLS + 공개 조인 + 추천 캐시 숫자), Nav ★ 목록·검토 건수 채움"
@@ -371,7 +371,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/lib/saved.ts frontend/src/li
 - Create: `frontend/src/components/StarCompany.tsx`, `frontend/src/components/ReviewButton.tsx`
 - Modify: `frontend/src/app/(renewal)/dev/foundation/page.tsx:15,26`, `frontend/src/app/(renewal)/dev/foundation/sheet.tsx`
 
-- [ ] **Step 1: `StarCompany`**
+- [x] **Step 1: `StarCompany`**
 
 ```tsx
 // frontend/src/components/StarCompany.tsx
@@ -423,7 +423,7 @@ export function StarCompany({ bizrnoNorm, saved, loggedIn, className }: { bizrno
 }
 ```
 
-- [ ] **Step 2: `ReviewButton`**
+- [x] **Step 2: `ReviewButton`**
 
 ```tsx
 // frontend/src/components/ReviewButton.tsx
@@ -475,7 +475,7 @@ export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed
 
 `Btn` 의 `review` 변형은 `data-on=true` 에서 `cursor-default` 가 걸리지만 클릭은 그대로 토글한다 — 결과 표에서 "검토함" 을 다시 누르면 해제. `onChange` 는 `SheetRow` 의 `reviewed`(왼쪽 주황 괘선)를 같이 바꾸려는 05 용 훅.
 
-- [ ] **Step 3: `/dev/foundation` 에 꽂기** — `page.tsx` 는 서버 컴포넌트다. 상단 import 에 `import { StarCompany } from "@/components/StarCompany";`, `import { getSessionUser } from "@/lib/auth";`, `import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";` 를 넣고, 함수를 `async` 로 바꿔 세션·키를 읽는다. 15행의 더미 ☆ 를 교체:
+- [x] **Step 3: `/dev/foundation` 에 꽂기** — `page.tsx` 는 서버 컴포넌트다. 상단 import 에 `import { StarCompany } from "@/components/StarCompany";`, `import { getSessionUser } from "@/lib/auth";`, `import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";` 를 넣고, 함수를 `async` 로 바꿔 세션·키를 읽는다. 15행의 더미 ☆ 를 교체:
 
 ```tsx
 export default async function FoundationPage() {
@@ -500,9 +500,9 @@ export default async function FoundationPage() {
 
 로 바꾼다(`import { ReviewButton } from "@/components/ReviewButton";`). `SheetRow` 의 `reviewed` prop 은 `r.reviewed || reviewed.includes(...)` 로.
 
-- [ ] **Step 4: 확인** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0. 개발 서버(`npm run dev -- --port 3000`, 3000 이 잡혀 있으면 3001)에서 `/dev/foundation` 을 열어 비로그인이면 ☆ 버튼이 `/login?next=%2Fdev%2Ffoundation` 링크, 검토 버튼도 같은 링크인지 본다. (로그인 뒤 동작은 Task 6 스크립트가 검사한다.)
+- [x] **Step 4: 확인** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0. 개발 서버(`npm run dev -- --port 3000`, 3000 이 잡혀 있으면 3001)에서 `/dev/foundation` 을 열어 비로그인이면 ☆ 버튼이 `/login?next=%2Fdev%2Ffoundation` 링크, 검토 버튼도 같은 링크인지 본다. (로그인 뒤 동작은 Task 6 스크립트가 검사한다.)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/src/components/StarCompany.tsx frontend/src/components/ReviewButton.tsx "frontend/src/app/(renewal)/dev/foundation" && git commit -m "feat(renewal): StarCompany(☆ 회사 저장)·ReviewButton(검토) — 브라우저 RLS 직접 쓰기, 비로그인은 로그인 링크, /dev/foundation 에 실제 연결"
@@ -515,7 +515,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/src/components/StarCompany.tsx f
 **Files:**
 - Create: `frontend/src/app/(renewal)/saved/page.tsx`, `SavedTabs.tsx`, `NoticeRows.tsx`, `CompanyRows.tsx`
 
-- [ ] **Step 1: `SavedTabs`** (클라이언트 — 탭 상태만. 시안대로 URL·해시 반영 없음)
+- [x] **Step 1: `SavedTabs`** (클라이언트 — 탭 상태만. 시안대로 URL·해시 반영 없음)
 
 ```tsx
 // frontend/src/app/(renewal)/saved/SavedTabs.tsx
@@ -561,7 +561,7 @@ export function SavedTabs({ counts, notices, companies }: { counts: Record<TabId
 
 `PageHead` 의 `children` 이 먹 괘선 바로 위에 놓이는 자리다(01). 탭 밑줄 2px 가 그 괘선 위에 앉도록 `-mb-px` 를 쓴다 — `PageHead` 가 children 아래에 padding 을 두면 `className="pb-0"` 이 그것을 지운다는 전제이니, 01 의 `PageHead` 구현에서 children 래퍼의 padding 클래스를 확인해 같은 효과가 나게 맞춘다(렌더 결과: 선택 탭의 먹 밑줄이 머리 괘선과 겹쳐 보여야 한다. 시안 `.tabs2 a { margin-bottom:-1px }`).
 
-- [ ] **Step 2: `NoticeRows`** (클라이언트 — 해제/되돌리기)
+- [x] **Step 2: `NoticeRows`** (클라이언트 — 해제/되돌리기)
 
 ```tsx
 // frontend/src/app/(renewal)/saved/NoticeRows.tsx
@@ -648,7 +648,7 @@ export function NoticeRows({ live, past }: { live: ReviewedNoticeRow[]; past: Re
 }
 ```
 
-- [ ] **Step 3: `CompanyRows`** (클라이언트 — ★ 해제/되돌리기)
+- [x] **Step 3: `CompanyRows`** (클라이언트 — ★ 해제/되돌리기)
 
 ```tsx
 // frontend/src/app/(renewal)/saved/CompanyRows.tsx
@@ -729,7 +729,7 @@ export function CompanyRows({ rows }: { rows: SavedCompanyRow[] }) {
 }
 ```
 
-- [ ] **Step 4: `page.tsx`**
+- [x] **Step 4: `page.tsx`**
 
 ```tsx
 // frontend/src/app/(renewal)/saved/page.tsx
@@ -780,9 +780,9 @@ export default async function SavedPage() {
 }
 ```
 
-- [ ] **Step 5: 확인** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint` 통과. 개발 서버에서 비로그인 `/saved` 가 안내 판 + 버튼 둘(로그인 → `/login?next=%2Fsaved`)로 뜨는지, 탭이 없는지 본다.
+- [x] **Step 5: 확인** — `npx tsc --noEmit -p tsconfig.json; echo $?` → 0, `npm run lint` 통과. 개발 서버에서 비로그인 `/saved` 가 안내 판 + 버튼 둘(로그인 → `/login?next=%2Fsaved`)로 뜨는지, 탭이 없는지 본다.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/saved" && git commit -m "feat(renewal): /saved 검토함 — 비로그인 안내 판, 공고(마감 순·마감 지남 묶음·해제/되돌리기)·저장한 회사(오늘·마감·★ 해제) 두 탭"
@@ -797,7 +797,7 @@ cd C:/Dev/personal/jodalfit && git add "frontend/src/app/(renewal)/saved" && git
 
 비로그인 검사는 항상 돈다. 로그인 검사는 `frontend/.env.local` 의 `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_ANON_KEY` 와 `backend/.env` 의 `SUPABASE_SERVICE_ROLE_KEY` 가 있고 0054 가 적용돼 있을 때만 돈다(없으면 "로그인 검사 건너뜀" 을 찍고 0 으로 끝난다 — 02 Task 2 가 끝나기 전에도 스크립트는 통과해야 한다). 테스트 사용자는 Admin API 로 만들고(`email_confirm: true`, 확인 메일 없이), 끝나면 지운다(cascade 로 저장 행도 사라진다).
 
-- [ ] **Step 1: 스크립트**
+- [x] **Step 1: 스크립트**
 
 ```python
 # frontend/scripts/check_saved.py
@@ -926,11 +926,11 @@ if __name__ == "__main__":
 
 Nav 트리거 버튼의 선택자(`nav button[aria-controls=nav-user-menu]`)는 `Nav.tsx:58-61` 의 실제 속성으로 맞춘다 — 트리거에 `aria-controls="nav-user-menu"` 가 없으면 Nav 에 그 속성을 추가한다(접근성상도 맞다). `/login` 폼의 입력 선택자는 `LoginForm.tsx` 의 실제 `type`·`name` 으로 맞춘다.
 
-- [ ] **Step 2: 실행** — 개발 서버를 띄운 채 `cd C:/Dev/personal/jodalfit/backend && uv run --no-sync python ../frontend/scripts/check_saved.py` → 키가 없으면 `ok saved(guest): …`, 있으면 `ok saved: …`. 실패하면 원인을 고치고 다시 돈다(단정값을 맞추려고 스크립트를 느슨하게 하지 않는다).
+- [x] **Step 2: 실행** — 개발 서버를 띄운 채 `cd C:/Dev/personal/jodalfit/backend && uv run --no-sync python ../frontend/scripts/check_saved.py` → 키가 없으면 `ok saved(guest): …`, 있으면 `ok saved: …`. 실패하면 원인을 고치고 다시 돈다(단정값을 맞추려고 스크립트를 느슨하게 하지 않는다).
 
-- [ ] **Step 3: lint · build** — `cd C:/Dev/personal/jodalfit/frontend && npm run lint && npm run build 2>&1 | tail -3` → 성공(`/saved` 가 `ƒ` 동적으로 잡힌다).
+- [x] **Step 3: lint · build** — `cd C:/Dev/personal/jodalfit/frontend && npm run lint && npm run build 2>&1 | tail -3` → 성공(`/saved` 가 `ƒ` 동적으로 잡힌다).
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_saved.py frontend/scripts/_shot_saved_*.png frontend/src/components/Nav.tsx && git commit -m "test(renewal): 검토함 Playwright 검증 — 비로그인 판, (키 있으면) 가입·로그인·☆·검토·해제·390·Nav ★"
@@ -943,7 +943,7 @@ cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_saved.py frontend/
 **Files:**
 - Modify: `docs/design/README.md` (끝에 절 추가), `docs/superpowers/plans/2026-10-23-renewal-03-saved.md` (체크박스)
 
-- [ ] **Step 1: README 기록** — `docs/design/README.md` 맨 끝에 추가:
+- [x] **Step 1: README 기록** — `docs/design/README.md` 맨 끝에 추가:
 
 ```markdown
 ## 구현 — 03 saved (2026-10-23, 브랜치 `renewal`)
@@ -952,9 +952,9 @@ cd C:/Dev/personal/jodalfit && git add frontend/scripts/check_saved.py frontend/
 남은 것: 결과·회사·공고 페이지에 부품 꽂기는 05·06·07. 마감 지난 공고의 "낙찰 · 2위" 칸(README 시안 메모)은 넣지 않았다.
 ```
 
-- [ ] **Step 2: 계획 체크박스** — 이 문서의 끝난 Step 을 `- [x]` 로.
+- [x] **Step 2: 계획 체크박스** — 이 문서의 끝난 Step 을 `- [x]` 로.
 
-- [ ] **Step 3: 커밋 · 푸시**
+- [x] **Step 3: 커밋 · 푸시**
 
 ```bash
 cd C:/Dev/personal/jodalfit && git add docs/design/README.md docs/superpowers/plans/2026-10-23-renewal-03-saved.md && git commit -m "docs(design): 구현 03 saved 기록" && git push origin renewal
