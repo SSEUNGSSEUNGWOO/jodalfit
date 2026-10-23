@@ -5,7 +5,7 @@
 -- 브라우저가 anon 키 + 세션 쿠키로 직접 insert/delete 한다. user_id 는 기본값 auth.uid() — 클라이언트는
 -- user_id 를 보내지 않는다. 정책은 전부 auth.uid() = user_id. update 는 없다(토글은 insert/delete).
 -- reviewed_notices.why 는 검토를 누른 순간의 근거 칩 한 개(예: "재출현 기관") — 검토함 둘째 줄에 그대로 보여 준다.
--- 마감 30일 지난 검토 행은 pg_cron 이 주 1회 지운다(시안 문구 "마감 30일 뒤 자동 정리"). (공고 행이 없거나 마감일이 없는 검토 행은 1년 뒤)
+-- 마감 30일 지난 검토 행은 pg_cron 이 주 1회 지운다(시안 문구 "마감 30일 뒤 자동 정리"). 공고 행이 없는 검토 행(수집 안 된 키)은 1년 뒤.
 -- Dashboard SQL Editor 에서 실행 (CLI 아님).
 -- ====================================================================
 
@@ -19,8 +19,8 @@ comment on table public.saved_companies is '사용자가 ☆ 로 저장한 회�
 
 create table if not exists public.reviewed_notices (
   user_id         uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  bid_ntce_no     text not null,
-  bid_ntce_ord    text not null default '000',
+  bid_ntce_no     text not null check (length(bid_ntce_no) between 1 and 40),
+  bid_ntce_ord    text not null default '000' check (length(bid_ntce_ord) between 1 and 5),
   via_bizrno_norm text check (via_bizrno_norm is null or via_bizrno_norm ~ '^\d{10}$'),
   -- why 의 인라인 check 는 새로 만드는 환경용 — 테이블이 이미 있는 환경에서는 create table if not exists 가 반영하지 않으므로
   -- 아래 alter table 두 줄(멱등)로 따로 붙인다.
@@ -33,6 +33,7 @@ comment on table public.reviewed_notices is '사용자가 검토 표시한 공�
 -- 이미 만들어진 환경(테이블이 위 create table if not exists 를 건너뛴 경우)에도 why 길이 제한을 붙인다.
 alter table public.reviewed_notices drop constraint if exists reviewed_notices_why_check;
 alter table public.reviewed_notices add constraint reviewed_notices_why_check check (why is null or length(why) <= 60);
+alter table public.reviewed_notices drop constraint if exists reviewed_notices_bid_ntce_no_check;alter table public.reviewed_notices add constraint reviewed_notices_bid_ntce_no_check check (length(bid_ntce_no) between 1 and 40);alter table public.reviewed_notices drop constraint if exists reviewed_notices_bid_ntce_ord_check;alter table public.reviewed_notices add constraint reviewed_notices_bid_ntce_ord_check check (length(bid_ntce_ord) between 1 and 5);
 
 alter table public.saved_companies  enable row level security;
 alter table public.reviewed_notices enable row level security;
@@ -61,8 +62,10 @@ select cron.unschedule(jobid) from cron.job where jobname = 'purge-reviewed-noti
 select cron.schedule('purge-reviewed-notices-expired', '0 19 * * 6', $$
   set statement_timeout = 0;
   delete from public.reviewed_notices r
-   where r.created_at < now() - interval '1 year'
-      or exists (select 1 from public.bid_notices n
+   where exists (select 1 from public.bid_notices n
                   where n.bid_ntce_no = r.bid_ntce_no and n.bid_ntce_ord = r.bid_ntce_ord
-                    and n.bid_clse_date < current_date - 30);
+                    and n.bid_clse_date < current_date - 30)
+      or (r.created_at < now() - interval '1 year'
+          and not exists (select 1 from public.bid_notices n
+                           where n.bid_ntce_no = r.bid_ntce_no and n.bid_ntce_ord = r.bid_ntce_ord));
 $$);

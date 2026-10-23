@@ -24,7 +24,7 @@ function Row({ r, past }: { r: ReviewedNoticeRow; past: boolean }) {
     setBusy(true);
     const { error } = next
       ? await sb.from("reviewed_notices").delete().eq("bid_ntce_no", r.no).eq("bid_ntce_ord", r.ord)
-      : await sb.from("reviewed_notices").insert({ bid_ntce_no: r.no, bid_ntce_ord: r.ord, via_bizrno_norm: r.via?.bizrnoNorm ?? null, why: r.why });
+      : await sb.from("reviewed_notices").insert({ bid_ntce_no: r.no, bid_ntce_ord: r.ord, via_bizrno_norm: r.via?.bizrnoNorm ?? null, why: r.why?.slice(0, 60) ?? null });
     setBusy(false);
     if (error && error.code !== "23505") { setRemoved(!next); return; }
   }

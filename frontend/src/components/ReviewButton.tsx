@@ -30,7 +30,7 @@ export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed
     setBusy(true);
     const sb = getBrowserSupabase();
     const { error } = next
-      ? await sb.from("reviewed_notices").insert({ bid_ntce_no: no, bid_ntce_ord: ord, via_bizrno_norm: via, why })
+      ? await sb.from("reviewed_notices").insert({ bid_ntce_no: no, bid_ntce_ord: ord, via_bizrno_norm: via, why: why?.slice(0, 60) ?? null }) // why 는 DB check 60자
       : await sb.from("reviewed_notices").delete().eq("bid_ntce_no", no).eq("bid_ntce_ord", ord);
     setBusy(false);
     if (error && error.code !== "23505") { setOn(!next); onChange?.(!next); return; }
