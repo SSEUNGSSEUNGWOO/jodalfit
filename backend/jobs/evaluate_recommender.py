@@ -261,7 +261,8 @@ def fetch_limits(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], dic
 
 def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict, instts: set[str],
            median: float | None, instt_stats: dict, t: date, pool: int, limit: int,
-           retrieval: str = "dense", features_out: list[dict] | None = None) -> dict[str, list[tuple[str, str]]]:
+           retrieval: str = "dense", features_out: list[dict] | None = None,
+           ablate: set[str] | None = None) -> dict[str, list[tuple[str, str]]]:
     """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환.
     retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지)
     / hybrid(dense 와 prefilter 교대 합침) / hybrid+prd(hybrid + 물품분류 코드 채널, 0048)."""
@@ -317,6 +318,9 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
     for r in passed:
         raw, bd = score_notice(r, company_rgn=prof["rgn"], company_terms=prof["terms"], company_institutions=instts,
                                company_amt_median=median, today=t, peer_instt_counts={}, instt_stats=instt_stats)
+        # ablate 된 보너스는 합에서 뺀다 — breakdown 은 그대로 둬서 features.csv 로 기여도를 볼 수 있게.
+        if ablate:
+            raw = sum(b["points"] for b in bd if b["key"] not in ablate)
         r["score_raw"] = round(raw, 1)
         if features_out is not None:  # 점수 재보정용 특징 덤프 (운영 경로와 무관)
             allowed = r.get("bidprc_psbl_indstryty_nm") or ""
@@ -349,6 +353,27 @@ K_CURVE = (3, 5, 8, 12, 16, 20, 25, 30)
 # 하네스는 전수 코사인을 정렬하므로 이 천장이 없어 pool>=500 에서 운영보다 낙관적이었다.
 CHANNEL_MAX_ROWS = 1000
 
+# 점수 분해(ablation)용 — score_notice 가 내는 보너스 key 전부. 'vector'(유사도)는 기준선이라 뺄 수 없다.
+# 코덱스 리뷰 2번: scored 단계가 최대 손실이라는 사실만으로 가중치가 틀렸다고 단정할 수 없다.
+# 유사도 단독 기준선을 만들고 보너스를 하나씩 켜서 정답의 순위 이동을 봐야 한다.
+BONUS_KEYS = ("institution", "peer_institution", "instt_closed", "region",
+              "budget", "budget_mismatch", "industry_tokens", "deadline_urgent")
+
+
+def resolve_ablate(spec: str) -> set[str]:
+    """--ablate 문자열을 뺄 key 집합으로. 'bonuses' = 유사도 외 전부(= 유사도 단독 기준선)."""
+    keys: set[str] = set()
+    for tok in (x.strip() for x in spec.split(",")):
+        if not tok:
+            continue
+        if tok == "bonuses":
+            keys |= set(BONUS_KEYS)
+        elif tok in BONUS_KEYS:
+            keys.add(tok)
+        else:
+            sys.exit(f"--ablate 에 모르는 key: {tok} (가능: bonuses, {', '.join(BONUS_KEYS)})")
+    return keys
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -358,10 +383,14 @@ def main() -> None:
     ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid", "hybrid+prd"], default=get_settings().reco_retrieval,
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
     ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
+    ap.add_argument("--ablate", default="", metavar="KEYS",
+                    help="점수에서 뺄 보너스 key(쉼표). 'bonuses' 는 유사도 외 전부 = 유사도 단독 기준선. "
+                         f"가능: bonuses, {','.join(BONUS_KEYS)}")
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
     ap.add_argument("--space", choices=["openai", "kure"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045 적용 후)")
     ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
     args = ap.parse_args()
+    ablate = resolve_ablate(args.ablate)
     global EMB_STORE, EMB_SPACE, EMB_COL
     EMB_SPACE = args.space; EMB_COL = "embedding_k" if args.space == "kure" else "embedding"
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
@@ -390,7 +419,7 @@ def main() -> None:
         if vec is None:
             skipped += 1; continue
         feats: list[dict] | None = [] if args.dump_features else None
-        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval, feats)
+        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval, feats, ablate)
         # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
@@ -427,7 +456,8 @@ def main() -> None:
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
     agg["positives_dropped"] = positives_dropped
     manifest = {"as_of": t.isoformat(), "positives": args.positives, "space": args.space, "embeddings": args.embeddings, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
-                "retrieval": args.retrieval, "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
+                "retrieval": args.retrieval, "ablate": sorted(ablate), "channel_max_rows": CHANNEL_MAX_ROWS,
+                "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
                           "peer_instt_counts 비활성(운영과 동일), 기관통계는 t 이전 2년 계약으로 재계산",
@@ -441,7 +471,8 @@ def main() -> None:
         w = csv.DictWriter(f, fieldnames=["biz", "tier", "bid_ntce_no", "title", "lost_at", "dense_rank", "qual_failures"]); w.writeheader(); w.writerows(failures)
     m, lines = agg["macro"], []
     lines += [f"# 추천 평가 baseline — t={t} (run {run_id})", "",
-              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit} · retrieval {args.retrieval}", "",
+              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit} · retrieval {args.retrieval}"
+              + (f" · ablate {','.join(sorted(ablate))}" if ablate else ""), "",
               "| 지표 | macro | micro |", "|---|---|---|"]
     lines += [f"| {k} | {m[k]:.3f} | {agg['micro'][k]:.3f} |" for k in m]
     # 군별 표는 운영 화면 조건(@5·@20)을 같이 싣는다 — final@30 은 파이프라인 상한이라 체감과 다르다.
