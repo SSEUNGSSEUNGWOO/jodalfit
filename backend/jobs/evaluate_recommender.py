@@ -40,6 +40,16 @@ HORIZON_DAYS = 90          # recommend.py MAX_CLSE_HORIZON_DAYS 와 동일
 HALF_LIFE = 365.0          # compute_company_vectors 와 동일
 PARTICIPATION_WEIGHT = 0.4
 
+CHANNEL_MAX_ROWS = 1000
+
+
+def _cap(pool: int, chan_max: int) -> int:
+    """채널 하나가 실제로 받는 행 수. chan_max=0 이면 천장 없음(페이지 분할로 전부 가져오는 경우).
+    REST 는 한 요청에 1,000행이 끝이지만 range 로 쪽을 나누면 더 받을 수 있다 — 2026-10-23 실측:
+    0~999 / 1000~1999 두 번에 2,000행, 겹침 0건, 1.37초. 그래서 이 천장은 고칠 수 있는 제약이고,
+    고칠 값이 있는지 먼저 재려고 끌 수 있게 둔다."""
+    return pool * 2 if chan_max <= 0 else min(pool * 2, chan_max)
+
 
 def connect() -> psycopg.Connection:
     if not DATABASE_URL:
@@ -262,7 +272,7 @@ def fetch_limits(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], dic
 def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict, instts: set[str],
            median: float | None, instt_stats: dict, t: date, pool: int, limit: int,
            retrieval: str = "dense", features_out: list[dict] | None = None,
-           ablate: set[str] | None = None) -> dict[str, list[tuple[str, str]]]:
+           ablate: set[str] | None = None, chan_max: int = CHANNEL_MAX_ROWS) -> dict[str, list[tuple[str, str]]]:
     """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환.
     retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지)
     / hybrid(dense 와 prefilter 교대 합침) / hybrid+prd(hybrid + 물품분류 코드 채널, 0048)."""
@@ -272,7 +282,7 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
         mask = np.array([any(n in (r["bidprc_psbl_indstryty_nm"] or "") for n in prof["names"]) for r in notices])
         if retrieval == "soft":  # 허용업종이 없는 공고는 버리지 않는다
             mask |= np.array([not (r["bidprc_psbl_indstryty_nm"] or "").strip() for r in notices])
-        ind = [i for i in order if mask[i]][: min(pool * 2, CHANNEL_MAX_ROWS)]
+        ind = [i for i in order if mask[i]][: _cap(pool, chan_max)]
         if retrieval in ("prefilter", "soft"):
             order = ind
         else:  # hybrid: 채널들을 번갈아(동률 RRF 와 같은 효과). 운영 _interleave 와 같은 채널 순서여야 한다.
@@ -282,12 +292,12 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
                     for i in group:
                         if i is not None and i not in seen_i: seen_i.add(i); out.append(i)
                 return out
-            channels = [ind, list(order[: min(pool * 2, CHANNEL_MAX_ROWS)])]
+            channels = [ind, list(order[: _cap(pool, chan_max)])]
             if retrieval == "hybrid+prd" and prof.get("codes"):
                 # 물품 채널(0048): 세 채널을 나란히(각 1/3). 업종 채널과 한 자리를 나누는 중첩 방식은 업종 몫이 1/4 로 줄어
                 # 9/1 에서 rich −0.06·공사 −0.04 로 전부 나빠졌다(2026-10-15 prd2-0901, 7/1·8/1 은 네트워크 단절로 미완). 평면은 공사 −0.01, 물품 +0.04~0.07, 전체 3/3 상승.
                 pmask = np.array([bool(r["prdct_clsfc_nos"] & prof["codes"]) for r in notices])
-                channels.insert(0, [i for i in order if pmask[i]][: min(pool * 2, CHANNEL_MAX_ROWS)])
+                channels.insert(0, [i for i in order if pmask[i]][: _cap(pool, chan_max)])
             order = rr(*channels)
     order = order[: pool * 2]
     dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
@@ -351,7 +361,6 @@ K_CURVE = (3, 5, 8, 12, 16, 20, 25, 30)
 # 요청하지만 실제로 받는 건 min(pool*2, 1000) 이다. 2026-10-23 실측: pool 2000/3000 을
 # 요청해도 후보가 890~1,331 에서 포화했고 dense 채널 원본이 정확히 1,000 에서 멈췄다.
 # 하네스는 전수 코사인을 정렬하므로 이 천장이 없어 pool>=500 에서 운영보다 낙관적이었다.
-CHANNEL_MAX_ROWS = 1000
 
 # 점수 분해(ablation)용 — score_notice 가 내는 보너스 key 전부. 'vector'(유사도)는 기준선이라 뺄 수 없다.
 # 코덱스 리뷰 2번: scored 단계가 최대 손실이라는 사실만으로 가중치가 틀렸다고 단정할 수 없다.
@@ -383,6 +392,9 @@ def main() -> None:
     ap.add_argument("--retrieval", choices=["dense", "prefilter", "soft", "hybrid", "hybrid+prd"], default=get_settings().reco_retrieval,
                      help="기본값은 운영 설정 RECO_RETRIEVAL")
     ap.add_argument("--dump-features", action="store_true", help="자격 통과 후보별 점수 특징 + 정답 여부를 features.csv 로 저장(점수 재보정용)")
+    ap.add_argument("--channel-max-rows", type=int, default=CHANNEL_MAX_ROWS, metavar="N",
+                    help="채널 하나가 받는 최대 행 수(운영 REST 천장 재현). 0 이면 천장 없음 — "
+                         "페이지 분할로 전부 가져왔을 때의 상한을 재는 데 쓴다.")
     ap.add_argument("--ablate", default="", metavar="KEYS",
                     help="점수에서 뺄 보너스 key(쉼표). 'bonuses' 는 유사도 외 전부 = 유사도 단독 기준선. "
                          f"가능: bonuses, {','.join(BONUS_KEYS)}")
@@ -419,7 +431,8 @@ def main() -> None:
         if vec is None:
             skipped += 1; continue
         feats: list[dict] | None = [] if args.dump_features else None
-        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval, feats, ablate)
+        st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval, feats, ablate,
+                    args.channel_max_rows)
         # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
@@ -456,7 +469,7 @@ def main() -> None:
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
     agg["positives_dropped"] = positives_dropped
     manifest = {"as_of": t.isoformat(), "positives": args.positives, "space": args.space, "embeddings": args.embeddings, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
-                "retrieval": args.retrieval, "ablate": sorted(ablate), "channel_max_rows": CHANNEL_MAX_ROWS,
+                "retrieval": args.retrieval, "ablate": sorted(ablate), "channel_max_rows": args.channel_max_rows,
                 "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
