@@ -417,3 +417,5 @@ body {
 .x-wrap[data-open="true"] { grid-template-rows: 1fr; opacity: 1; transition-delay: 0s, 0s, .1s; }
 .x-wrap > * { min-height: 0; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .x-wrap { transition: none; } }
+/* 머리 장면 — 엔진이 classList 로 켠다(Tailwind 클래스는 엔진이 모른다) */
+[data-lab].on, [data-rsn].on { opacity: 1; }
