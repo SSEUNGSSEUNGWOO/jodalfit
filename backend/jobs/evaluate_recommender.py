@@ -319,6 +319,11 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
     return {"dense": dense, "dedup": dedup, "qualified": qualified, "scored": scored, "final": final}
 
 
+# 결과를 몇 건 보여줄지 정하려고 같은 랭킹에서 여러 K 로 잰다 — 표시 수 결정용이고 기존 지표(final@30)와 무관하다.
+# --limit 보다 큰 K 는 limit 에서 잘린 목록을 재므로 의미가 없다(항상 --limit 30 이상으로 돌릴 것).
+K_CURVE = (3, 5, 8, 12, 16, 20, 25, 30)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--as-of", required=True); ap.add_argument("--companies", type=int, default=300)
@@ -372,7 +377,8 @@ def main() -> None:
         per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos),
                     "r_dense": recall_at_k(st_nos["dedup"], pos_nos, args.pool), "r_qual": recall_at_k(st_nos["qualified"], pos_nos, args.pool),
                     "r_scored30": recall_at_k(st_nos["scored"], pos_nos, args.limit), "r_final30": recall_at_k(st_nos["final"], pos_nos, args.limit),
-                    "mrr": mrr(st_nos["final"], pos_nos)})
+                    "mrr": mrr(st_nos["final"], pos_nos),
+                    "k_curve": [recall_at_k(st_nos["final"], pos_nos, k) for k in K_CURVE]})
         title_by_no = {no: nidx[(no, od)]["bid_ntce_nm"] for no, od in sorted(pos)}
         for p in sorted(pos_nos):
             lost = stage_lost(st_nos, p, args.pool, args.limit)
@@ -383,6 +389,7 @@ def main() -> None:
     if not per:
         sys.exit("평가된 회사가 0곳 — 날짜/표본 조건을 확인하세요 (보고서 미생성)")
     agg = aggregate(per)
+    agg["k_curve"] = {str(k): round(sum(p["k_curve"][i] for p in per) / len(per), 4) for i, k in enumerate(K_CURVE)}
     lost_counts = defaultdict(int)
     for f in failures: lost_counts[f["lost_at"]] += 1
     agg["lost_at"] = dict(lost_counts); agg["skipped"] = skipped
@@ -412,6 +419,12 @@ def main() -> None:
     lines += ["", "## 정답이 사라진 단계", "",
               "- dense: dense 상위 pool×2 밖 · dedup: 후보 풀 pool 컷(지문 중복 제거 포함) · qualified: 자격 하드 제외 · scored: 점수 순위 limit 밖 · final: MMR 에 밀림",
               "", "| 단계 | 건수 |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(lost_counts.items(), key=lambda x: -x[1])]
+    lines += ["", "## K 곡선 — 결과를 몇 건 보여줄까 (macro, 같은 랭킹)", "", "| K | final@K | 직전 K 대비 |", "|---|---|---|"]
+    prev = 0.0
+    for k in K_CURVE:
+        v = agg["k_curve"][str(k)]
+        lines.append(f"| {k} | {v:.3f} | +{v - prev:.3f} |")
+        prev = v
     (out_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     if all_feats:
         cols = sorted({k for f in all_feats for k in f}, key=lambda k: (k not in ("biz", "tier", "bid_ntce_no", "bid_ntce_ord", "is_pos"), k))

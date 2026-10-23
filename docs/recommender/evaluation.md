@@ -11,7 +11,8 @@
 - 후보 집합 = t 에 활성이고 임베딩 있는 공고 전부 (운영 RPC 조건과 동일). dense 는 정확 코사인.
 - 파이프라인은 운영 함수(`score_notice`, `check_qualifications`, `mmr_diversify`) 를 그대로 import. DB 는 읽기 전용 세션.
 - 지표: dense@pool(dedup 후), qual@pool(자격 후), scored@30(MMR 전), final@30, MRR. 회사 macro 평균 + 정답 가중 micro. 군: cold/small/rich, 업무구분.
-- 운영 프론트는 pool 100 / top 5 를 요청한다. final@30 은 파이프라인 상한이고 사용자 체감은 --pool 100 --limit 5 로 따로 잰다(limit=30 에서는 MMR 손실이 구조적으로 거의 측정되지 않는다).
+- 운영 프론트(결과 페이지)는 **pool 200 / limit 20** 을 요청한다(2026-10-23 결정 — K 곡선과 실사용 로그 근거는 changelog 참조). final@30 은 파이프라인 상한이고, 사용자 체감은 --limit 20 으로 잰다(limit=30 에서는 MMR 손실이 구조적으로 거의 측정되지 않는다).
+- `--limit 30` 으로 돌리면 보고서에 **K 곡선**(final@3·5·8·12·16·20·25·30)이 같이 나온다. 몇 건을 보여줄지 다시 논할 때 쓴다.
 - 손실 단계(failures.csv `lost_at`): dense = dense 상위 pool×2 밖 · dedup = 후보 풀 pool 컷(지문 중복 제거 포함) · qualified = 자격 하드 제외 · scored = 점수 순위 limit 밖 · final = MMR 에 밀림.
 - 한계: 업종·물품·지역은 현재 값. 낙찰 라벨은 기존 거래처 편향. "낙찰 확률"이 아니라 "검토할 공고를 놓치지 않는가"를 잰다.
 - 운영과 알려진 차이: 회사 업종·물품은 같은 사업자번호의 모든 행 합침(운영은 한 행). 참가 이력 시점은 개찰일 기준. 게시일 = t 공고 제외. 정답·순위 비교는 공고번호 단위(차수 무시). 기관 통계는 t 이전 2년 계약.

@@ -4,7 +4,7 @@
 사용: cd backend && uv run --no-sync python ../frontend/scripts/check_results.py   (RESULTS_BASE 기본 http://localhost:3000)
 회사 1248177731(한종산업개발): 장면 → 건너뛰기 → done, 숫자 넷(… 아님), 표 5 + 게이트 2버튼 + 흐림 ≥1, 행 펼침에 자격·근거 줄,
 다른 회사 → 상자·흐림 → Esc 복귀, 금지어·주황 면·인주 0, 바닥색·판 14px, 390 한 단·넘침 없음.
-키워드(하수처리): 장면 없음, 표 ≥1. 로그인(키 있으면): 게이트 없음·12행, 검토 → 괘선, 보고서.
+키워드(하수처리): 장면 없음, 표 ≥1. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -99,7 +99,7 @@ def main():
             pg.screenshot(path=str(OUT / "_shot_results_report.png"), full_page=True)
         finally:
             admin(url, srv, "DELETE", f"/admin/users/{user['id']}")
-        print("ok results: guest · login(no gate, 12 rows) · review rule · report"); b.close(); return 0
+        print("ok results: guest · login(no gate, 20 rows) · review rule · report"); b.close(); return 0
 
 if __name__ == "__main__":
     sys.exit(main())

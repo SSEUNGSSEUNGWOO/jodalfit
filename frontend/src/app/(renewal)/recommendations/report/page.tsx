@@ -18,6 +18,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
   if (!company) redirect("/recommendations");
   const user = await getSessionUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/recommendations/report?company=${encodeURIComponent(company)}`)}`);
+    // 화면은 20 건이지만 보고서는 12 건 — A4 한 장이 상한이고(행 20 개는 두 장), 상사에게 건네는 요약이라 역할이 다르다.
   const d = await getRecommendations({ query: company, mode: "company", limit: 12, candidate_pool: 200, with_explanation: false });
   if (!d.company) redirect(`/recommendations?company=${encodeURIComponent(company)}`);
   // Vercel 은 UTC — 기준일·D-day 는 KST 로
