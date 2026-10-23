@@ -60,8 +60,26 @@ def fetch(conn) -> dict:
               order by bid_clse_date, bid_ntce_no desc
               limit 200) t
             order by bid_ntce_nm, instt, bid_clse_date""")][:5]
-    return dict(active=active, spec_open=spec_open, spec_soon=spec_soon,
-                companies=companies, specs=specs, soon=soon)
+    # 오늘 등록된 공고. 수집이 한 번 밀리면 한 자리로 떨어지므로(2026-10-23: 9건) 그대로 쓰면
+    # 입구가 무너진다 — 오늘 치가 얇으면 최근 등록으로 바꿔 단다. 라벨도 같이 바뀐다.
+    today_n = one("select count(*) from bid_notices where bid_ntce_date = current_date")
+    fresh_today = today_n >= 20
+    rows = conn.execute(
+        """select distinct on (bid_ntce_nm, instt) bid_ntce_nm, instt, bid_ntce_date, bid_clse_date, amt from (
+             select bid_ntce_nm, coalesce(dmnd_instt_nm, ntce_instt_nm) instt,
+                    bid_ntce_date, bid_clse_date, coalesce(presmpt_prce, asign_bdgt_amt) amt
+               from bid_notices
+              where bid_ntce_date >= current_date - (case when %s then 0 else 3 end)
+                and bid_ntce_nm is not null and embedding_k is not null
+                -- 갓 올라왔는데 이미 마감인 공고가 있다(재공고·정정). 거르지 않으면 'D--1' 이 찍힌다.
+                and bid_clse_date >= current_date
+                and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > now())
+              order by bid_ntce_date desc, bid_ntce_no desc limit 300) t
+            order by bid_ntce_nm, instt""", (fresh_today,)).fetchall()
+    fresh = [dict(nm=r[0], instt=r[1], posted=r[2], clse=r[3], amt=r[4]) for r in rows]
+    fresh.sort(key=lambda r: (r["posted"] or date.min), reverse=True)
+    return dict(active=active, spec_open=spec_open, spec_soon=spec_soon, companies=companies,
+                specs=specs, soon=soon, fresh=fresh[:5], today_n=today_n, fresh_today=fresh_today)
 
 
 # ---------------------------------------------------------------- 표현 도우미
@@ -184,8 +202,10 @@ foot{display:block;border-top:1px solid #ececea;margin-top:48px;padding:16px 0 2
  margin:26px auto 0;width:100%;max-width:760px}
 .pane .stat{padding-top:0;margin:0;max-width:none}
 .pane .gold{margin:22px 0 0;max-width:none}
-.ask{margin:0 auto 14px;width:100%;max-width:760px;font-size:15px;color:#55554f}
-.ask b{color:#141414;font-weight:650}
+/* 묻는 줄 — 검색창의 머리다. 15px 로는 안내문처럼 읽혀 아무것도 묻지 않는 것 같았다. */
+.ask{margin:0 auto 18px;width:100%;max-width:760px;font-size:26px;line-height:1.35;
+ font-weight:650;letter-spacing:-.03em;color:#141414}
+.ask b{font-weight:650;border-bottom:2px solid #f97316;padding-bottom:2px}
 
 .ctl{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:2px;background:#fff;
  border:1px solid #e6e4df;border-radius:999px;padding:3px;font-size:12.5px;z-index:9;white-space:nowrap;
@@ -195,6 +215,7 @@ foot{display:block;border-top:1px solid #ececea;margin-top:48px;padding:16px 0 2
 
 @media (max-width:860px){
  .wrap{padding:0 16px}
+ .ask{font-size:20px}
  .lede{font-size:25px;margin-top:48px}
  .box input{font-size:17px;padding:16px}
  .stat{gap:22px;flex-wrap:wrap}
@@ -254,6 +275,19 @@ def list_html(d: dict, kind: str) -> str:
     return f'<div class="list"><span class="k">{k}</span><ul>{li}</ul><span class="more">전체 보기 →</span></div>'
 
 
+def fresh_html(d: dict) -> str:
+    """오늘(또는 최근) 등록된 공고. 라벨이 실제 상태를 따라간다 — 숫자를 꾸미지 않는다."""
+    if not d["fresh"]:
+        return ""
+    k = f'오늘 등록된 공고 {d["today_n"]:,}건' if d["fresh_today"] else "최근 등록된 공고"
+    li = "".join(
+        f'<li><span class="t">{esc(r["nm"])}<span class="o">{esc(r["instt"] or "—")}</span></span>'
+        f'<span class="d">마감 <b class="{"hot" if (dleft(r["clse"]) or 9) <= 3 else ""}">'
+        f'D-{dleft(r["clse"])}</b></span>'
+        f'<span class="a num">{won(r["amt"])}</span></li>' for r in d["fresh"])
+    return f'<div class="list"><span class="k">{k}</span><ul>{li}</ul><span class="more">전체 보기 →</span></div>'
+
+
 def foot_html() -> str:
     return ('<foot><span>나라장터(국가종합전자조달) 공공데이터 기반 · 매일 05:00 갱신</span>'
             '<span>추천은 검토 순서이며 낙찰을 예측하지 않습니다.</span></foot>')
@@ -277,7 +311,7 @@ def variant_d(d: dict) -> str:
     ask = '<div class="ask">어느 <b>회사</b>의 공고를 찾습니까</div>'
     hint = "회사명 · 사업자등록번호 · 업종 또는 품목 중 아는 것 하나면 됩니다"
     return (f'<div class="v" data-v="d"><div class="mid">{ask}{box_html(hint)}'
-            f'<div class="pane">{stat_html(d)}{gold_html(d)}</div></div>{foot_html()}</div>')
+            f'<div class="pane">{stat_html(d)}{gold_html(d)}</div>{fresh_html(d)}</div>{foot_html()}</div>')
 
 
 def variant_c(d: dict) -> str:
@@ -332,6 +366,8 @@ def check(path: str) -> None:
             txt = pg.evaluate("document.body.innerText")
             bad = [w for w in BANNED if w in txt]
             assert not bad, (k, bad)
+            # 마감이 지난 공고가 목록에 섞이면 'D--1' 로 찍힌다 — 재공고·정정 건이 그렇다.
+            assert "D--" not in txt, (k, "마감 지난 공고가 목록에 있다")
             pg.screenshot(path=str(out / f"_shot_entry_v2_{k}.png"), full_page=True)
             print(f"  {k}: 높이 {s['h']}px · 줄 {s['rows']}개 · 주황 면 {s['orangeFaces']}")
         pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
