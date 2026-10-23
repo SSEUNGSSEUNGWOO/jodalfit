@@ -1,4 +1,4 @@
-"""회사 페이지 최종 시안(`prototypes/company-final.html`) — `/companies/[bizrno]` 를 결과 페이지 문법으로.
+"""회사 페이지 최종 시안(`prototypes/final/company-final.html`) — `/companies/[bizrno]` 를 결과 페이지 문법으로.
 
 결정(2026-10-17 승우님): 추천 먼저, 머리 장면(선 캔버스) 없음. 회사 페이지는 SSR 문서이고 추천은 대부분 캐시 히트라
 "계산이 안 걸리면 안 보여준다" 원칙상 캔버스가 설 자리가 없다. 걸러낸 경로는 숫자 한 줄로만 남긴다.
@@ -10,8 +10,8 @@
  C 인서트유(벡터·업종·이력 없음 → 색인 제외 대상) / D 늘푸른임업(국세청 폐업). 상태: 비로그인 / 이메일 뒤 / 계산 중.
 
 데이터: cd backend && KURE_BACKEND=torch PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_company.py --data ../docs/design/data
-생성:   cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_company.py ../docs/design/data ../docs/design/prototypes/company-final.html
-검증:   gen_company.py --check ../docs/design/prototypes/company-final.html
+생성:   cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_company.py ../docs/design/data ../docs/design/prototypes/final/company-final.html
+검증:   gen_company.py --check ../docs/design/prototypes/final/company-final.html
 """
 import json
 import sys
@@ -59,9 +59,17 @@ def fetch_case(conn, biz, with_reco):
                awards=aws, n_participations=n_part, peers=peers, reco=None, funnel=None)
     if with_reco:
         from gen_data import funnel, strip
+        from app.core import progress
         from app.services.recommend import recommend
-        d = strip(json.loads(json.dumps(recommend(co["corp_nm"], limit=12, candidate_pool=100, mode="company", algorithm="v2"), default=str)))
-        f, _ = funnel(conn, prof, len(d["results"]))
+        # 운영 결과 페이지와 같은 조건(ResultsView.tsx: limit 20 / pool 200) + 머리 장면 이벤트를 그대로 받는다.
+        events: list[dict] = []
+        tok = progress.set_callback(events.append)
+        try:
+            raw = recommend(co["corp_nm"], limit=20, candidate_pool=200, mode="company", algorithm="v2")
+        finally:
+            progress.reset(tok)
+        d = strip(json.loads(json.dumps(raw, default=str)))
+        f, _ = funnel(conn, prof, events, len(d["results"]))
         out["reco"], out["funnel"] = d, f
     return out
 
@@ -354,7 +362,11 @@ def check(path):
             tr: v.querySelectorAll('.sheet .tr').length, fade: v.querySelectorAll('.fade .tr').length, gate: cs(v.querySelector('.gateline')).display, nums: [...v.querySelectorAll('.chain b')].map(e => e.textContent),
             chainH: v.querySelector('.chain').getBoundingClientRect().height, resOp: cs(v.querySelector('.res')).opacity, ct: v.querySelectorAll('.ct.ht:not(.th)').length, aw: v.querySelectorAll('.aw.ht:not(.th)').length } }""")
         assert s["bg"] == "rgb(250, 249, 247)" and s["canvas"] == 0 and s["panel"] == "rgb(255, 255, 255)" and s["panes"] == 2 and s["sticky"] == "sticky" and s["rule"] == "rgb(20, 20, 20)", s
-        assert s["tr"] == 12 and s["fade"] == 7 and s["gate"] != "none" and s["nums"][-1] == "12" and s["chainH"] > 30 and s["resOp"] == "1" and s["ct"] == 7 and s["aw"] == 5, s
+        # 20건 — 운영 결과 페이지와 같다(ResultsView.tsx RESULT_LIMIT, 공개 5 + 흐림 15). 2026-10-23.
+        # 깔때기 네 칸은 앞 칸의 부분집합이어야 한다 — "등록업종 허용"은 단계가 아니었다(gen_report.LABELS 주석).
+        nums = [int(x.replace(",", "")) for x in s["nums"]]
+        assert all(nums[i] >= nums[i + 1] for i in range(3)), nums
+        assert s["tr"] == 20 and s["fade"] == 15 and s["gate"] != "none" and s["nums"][-1] == "20" and s["chainH"] > 30 and s["resOp"] == "1" and s["ct"] == 7 and s["aw"] == 5, s
         pg.screenshot(path=str(out / "_shot_cfinal_a_guest.png"), full_page=True)
         pg.click('.cases [data-st="email"]'); pg.wait_for_timeout(300)
         assert pg.evaluate("getComputedStyle(document.querySelector('.vw.on .gateline')).display") == "none"
@@ -365,7 +377,8 @@ def check(path):
         pg.click('.cases [data-st="guest"]'); pg.click('.cases [data-c="b"]'); pg.wait_for_timeout(400)
         bb = pg.evaluate("""() => { const v = document.querySelector('.vw.on'), cs = e => getComputedStyle(e); return { hist: !!v.querySelector('.hist'), bars: v.querySelectorAll('.bars .b').length, avg: cs(v.querySelector('.bars .avg')).backgroundColor,
             peers: v.querySelectorAll('.pr.ht:not(.th)').length, prods: v.querySelectorAll('.side .sec:nth-child(3) li').length, tr: v.querySelectorAll('.sheet .tr').length, more: v.querySelectorAll('.more').length } }""")
-        assert bb["hist"] and bb["bars"] == 9 and bb["avg"] == "rgb(249, 115, 22)" and bb["peers"] >= 2 and bb["prods"] >= 1 and bb["tr"] == 12 and bb["more"] == 2, bb
+        # 추천 건수는 회사마다 다르다 — limit 20 을 요청해도 자격·다양성에서 줄어든다(B 금강환경은 17).
+        assert bb["hist"] and bb["bars"] == 9 and bb["avg"] == "rgb(249, 115, 22)" and bb["peers"] >= 2 and bb["prods"] >= 1 and 1 <= bb["tr"] <= 20 and bb["more"] == 2, bb
         pg.screenshot(path=str(out / "_shot_cfinal_b_guest.png"), full_page=True)
         pg.click('.cases [data-c="c"]'); pg.wait_for_timeout(300)
         cc = pg.evaluate("""() => { const v = document.querySelector('.vw.on'); return { none: !!v.querySelector('.none-reco'), sheet: v.querySelectorAll('.sheet').length, panes: v.querySelectorAll('.pane').length, chain: v.querySelectorAll('.chain').length } }""")

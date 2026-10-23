@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.config import get_settings
 from app.services.embedding import embed_texts
@@ -43,8 +43,11 @@ def build_text(r: dict) -> str:
 
 
 def pending_query(client, space: str, select: str, count: str | None = None):
+    # 공고 예정일이 늦은 것부터 — 발주계획은 '앞으로 나올 공고'라 최근 것이 쓸모 있다.
+    # embed_pre_specs 와 같은 이유(2026-10-23): 정렬이 없으면 적재 순서대로 집어가 오래된 것만 채운다.
     q = client.table("order_plans").select(select, count=count)
-    return q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+    q = q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+    return q.order("ntice_dt", desc=True, nullsfirst=False)
 
 
 def run(
@@ -71,7 +74,7 @@ def run(
                 break
             texts = [build_text(r) for r in rows]
             embeddings = embed_texts(texts, space)
-            now_iso = datetime.now().isoformat()
+            now_iso = datetime.now(timezone.utc).isoformat()  # tz 없는 지역시각을 쓰면 Postgres 가 UTC 로 해석해 KST PC 에서 9시간 밀린다
             updates = [
                 {
                     "order_plan_unty_no": r["order_plan_unty_no"],

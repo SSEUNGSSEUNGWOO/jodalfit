@@ -34,7 +34,7 @@ export function DDayBadge({
     label = `D-${days}`;
   } else if (days <= 5) {
     variant = "secondary";
-    tint = "bg-orange-100 text-orange-700 border-orange-200";
+    tint = "bg-orange-100 text-orange-ink-700 border-orange-200";
   }
 
   return (

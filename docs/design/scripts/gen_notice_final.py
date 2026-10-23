@@ -1,12 +1,12 @@
-"""공고 상세 최종 시안(`prototypes/notice-final.html`) — notice-rail(10-15 선택안)을 결과 페이지 최종 시안과 같은 문법으로.
+"""공고 상세 최종 시안(`prototypes/final/notice-final.html`) — notice-rail(10-15 선택안)을 결과 페이지 최종 시안과 같은 문법으로.
 
 같은 문법 = 주황 #f97316(선으로만) · 로고 lockup · 공문 톤 · 바닥 #faf9f7 위에 머리, 본문+레일은 흰 판 하나(14px) · 먹 괘선은 머리 아래 하나 ·
 글자 단계 12 / 13.5 / 14 / 16 · 한글 라벨 자간·uppercase 없음 · 전환 곡선 (.3,.7,.2,1) · 참가 자격 충족(✓ 먹 600) > 제한 없음(회색 무표식) ·
 지역은 기초자치단체까지, 판정은 운영 코드(app.recommender.qualifications.region_allows)와 같은 규칙.
 본문 블록(과업·조건·단계·기관·정정)과 레일 구성은 gen_notice.l3 그대로 쓴다 — 판만 바꾼다.
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_notice_final.py ../docs/design/prototypes/notice-final.html
-검증: gen_notice_final.py --check ../docs/design/prototypes/notice-final.html → 금지어·인주 0, 판 배경, 레일 sticky, 캡처 4장(A 로그인·B 비로그인·C 로그인·390).
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_notice_final.py ../docs/design/prototypes/final/notice-final.html
+검증: gen_notice_final.py --check ../docs/design/prototypes/final/notice-final.html → 금지어·인주 0, 판 배경, 레일 sticky, 캡처 4장(A 로그인·B 비로그인·C 로그인·390).
 """
 import sys
 from pathlib import Path

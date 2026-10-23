@@ -4,7 +4,7 @@
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://jodalfit.co.kr";
 
-type Json = Record<string, unknown>;
+export type Json = Record<string, unknown>;
 
 /** <script type="application/ld+json"> 의 안전한 직렬화 (XSS 방어). */
 export function serializeJsonLd(data: Json | Json[]): string {

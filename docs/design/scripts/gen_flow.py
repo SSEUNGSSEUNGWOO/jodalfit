@@ -1,4 +1,4 @@
-"""결과 페이지(`prototypes/flow.html`) — 머리 장면 "흐름" + 걸러낸 기준 띠 + 표, 그리고 네 상태(0건 / 오류·지연 / 이메일 뒤 / 검토 뒤).
+"""결과 페이지(`prototypes/final/flow.html`) — 머리 장면 "흐름" + 걸러낸 기준 띠 + 표, 그리고 네 상태(0건 / 오류·지연 / 이메일 뒤 / 검토 뒤).
 
 머리 장면: 공고 하나가 선 하나. 지금 입찰 가능한 공고 전부를 그린다.
 핵심은 '셀 수 없음 → 셀 수 있음'으로 넘어가는 순간이다.
@@ -16,7 +16,7 @@
 
 2026-10-16 결정 반영: 주황 #f97316(선으로만, 로고 타일 예외) · 공문 톤 · 로고 lockup(brand/) · 기준 띠 상시 노출.
 원천 JSON 은 `data/`(gen_data.py 가 만든다 — 임시 파일에 두지 않는다).
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_flow.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/data/scene_titles.json ../docs/design/prototypes/flow.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_flow.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/data/scene_titles.json ../docs/design/prototypes/final/flow.html
 """
 import html
 import json
@@ -381,8 +381,8 @@ def esc(s):
 
 def labels(f, n, extra=""):
     steps = [("지금 입찰 가능한 공고", "마감 90일 이내", f["total"]),
-             ("등록업종 허용 공고", f'전체의 {f["industry"] / f["total"] * 100:.1f}%', f["industry"]),
-             ("참가 자격 통과 공고", f'면허·지역 {f["qualified"] / f["industry"] * 100:.0f}% 통과', f["qualified"]),
+             ("비슷한 순서로 추린 공고", f'전체의 {f["candidate"] / f["total"] * 100:.1f}%', f["candidate"]),
+             ("참가 자격 통과 공고", f'앞 단계의 {f["qualified"] / f["candidate"] * 100:.0f}% 통과', f["qualified"]),
              ("검토할 공고", f'앞 단계의 {n / f["qualified"] * 100:.1f}%', n)]
     return '<div class="labs">' + "".join(
         f'<div class="lab {"g" if i else ""} {"last" if i == 3 else ""}" data-x="{XS[i]}" style="left:{XS[i] / W * 100:.3f}%">'
@@ -465,8 +465,8 @@ ERR = '<div class="err"><span>결과를 불러오지 못했습니다</span><span
 
 def page(d, prof, f, titles):
     res, co = d["results"], d["company"]
-    c = dict(cfg(), CNT=[f["total"], f["industry"], f["qualified"], len(res)])
-    chain = (f'<div class="chain"><span class="k">걸러낸 경로</span><b>{f["total"]:,}</b><i>→</i><b>{f["industry"]}</b><i>→</i>'
+    c = dict(cfg(), CNT=[f["total"], f["candidate"], f["qualified"], len(res)])
+    chain = (f'<div class="chain"><span class="k">걸러낸 경로</span><b>{f["total"]:,}</b><i>→</i><b>{f["candidate"]}</b><i>→</i>'
              f'<b>{f["qualified"]}</b><i>→</i><b class="acc">{len(res)}</b><span>건</span></div>')
     body = (f'<div class="wrap">{nav()}'
             f'<div class="q"><b>{esc(co["corp_nm"])}</b>{esc(co["rgn_nm"])} · 등록업종 {len(prof["industries"][0] + prof["industries"][1])} · 공급물품 없음</div>'

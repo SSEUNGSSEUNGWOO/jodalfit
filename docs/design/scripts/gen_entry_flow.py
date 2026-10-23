@@ -29,7 +29,7 @@ from gen_results_v3 import FONT, SHEET_CSS  # noqa: E402
 from gen_results_v4 import nav  # noqa: E402
 from jobs.evaluate_recommender import connect  # noqa: E402
 
-FLOW_HTML = f"{HERE}/../prototypes/flow.html"
+FLOW_HTML = f"{HERE}/../prototypes/final/flow.html"
 W, H = gen_flow.W, gen_flow.H
 LAM = 360                                 # 결의 파장(px). 띠는 W+LAM 이고 CSS 가 한 파장을 밀어 이음새 없이 돈다
 # 재료 — 상태 0 의 덩어리와 벽 사이 자유 구간, 체 안의 막힌 선이 전부 같은 함수를 쓴다(이음새 없음).

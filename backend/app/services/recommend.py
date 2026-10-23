@@ -22,6 +22,7 @@ import numpy as np
 from postgrest.exceptions import APIError
 
 from app.core.config import get_settings
+from app.core.progress import emit
 from app.core.timing import submit_timed, timed
 from app.services.embedding import embed_texts
 from app.services.openai_client import vector_to_pgvector_str
@@ -451,6 +452,39 @@ def _search_pre_specs(
     return out
 
 
+def _trim_leads(
+    pre_specs: list[dict], order_plans: list[dict], ranked: list[dict], limit: int
+) -> tuple[list[dict], list[dict]]:
+    """사전규격·발주계획을 '그 회사에게 의미 있는 것'만 남긴다. 2026-10-23.
+
+    문제 셋을 한 번에 고친다.
+      1) 발주계획이 늘 요청한 수만큼 나왔다 — 유사도 문턱이 없어 상위 N 을 무조건 채웠다.
+         숫자가 아니라 상수였다. 바닥을 **그 회사에게 보여준 공고 중 가장 낮은 유사도**로 둔다.
+         회사마다 유사도 척도가 달라(상위 20위가 0.540~0.755) 고정값을 못 쓴다.
+         실측: 이 규칙에서 회사별 0·2·20건으로 갈린다 — 비로소 세는 값이 된다.
+      2) 같은 사업이 사전규격과 발주계획에 둘 다 나왔다. 사업명으로 접는다(사전규격이 더 구체적이라 우선).
+      3) 추천이 0건인 회사에게도 발주계획이 20건 떴다. 바닥이 없으니 아무것도 안 남는다 — 그게 맞다.
+    """
+    sims = [r.get("base_similarity") or r.get("similarity") or 0 for r in ranked]
+    floor = min(sims) if sims else None
+    def norm(t: str | None) -> str:
+        return "".join((t or "").split())
+    seen = {norm(r.get("prdct_clsfc_no_nm") or r.get("bid_ntce_nm")) for r in pre_specs}
+    seen.discard("")
+    out: list[dict] = []
+    for r in order_plans:
+        if floor is None or (r.get("similarity") or 0) < floor:
+            continue
+        key = norm(r.get("prdct_clsfc_no_nm") or r.get("biz_nm"))
+        if key and key in seen:
+            continue
+        seen.add(key)
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return pre_specs, out
+
+
 def _search_order_plans(
     embedding_str: str, limit: int, candidate_pool: int
 ) -> list[dict]:
@@ -559,6 +593,7 @@ def _search_with_embedding(
         deduped.append(r)
         if len(deduped) >= candidate_pool:
             break
+    emit("stage", stage="search", candidates=len(deduped))
 
     if algorithm == "v2":
         # v2: 하드 필터 + 가중치 score + MMR (lazy import — 순환 방지)
@@ -605,6 +640,27 @@ def _search_with_embedding(
     )[:limit]
     _attach_insights(client, ranked_v1)
     return ranked_v1
+
+
+def _fetch_funnel(client, names: list[str]) -> dict[str, int] | None:
+    """걸러낸 경로 첫 칸(0057) — 지금 입찰 가능한 공고 수. 미적용·실패면 None(머리 장면은 그 칸 없이 간다).
+
+    0056 의 industry(등록업종 허용 공고 수) 칸은 0057 에서 지웠다. 깔때기의 한 칸이 아니었다 —
+    후보 풀은 그 집합에서 꺼내는 게 아니라 전체 공고에서 유사도 순으로 뽑는다. 2026-10-23 확인
+    (한종산업개발 최종 20건): 업종 허용 9 / 업종 제한 없음 3 / 업종 불일치 8 — 40%가 집합 밖이다.
+    names 는 0057 이 안 쓰지만 시그니처 호환을 위해 그대로 넘긴다.
+    """
+    try:
+        res = client.rpc(
+            "funnel_counts", {"p_names": names, "p_days": MAX_CLSE_HORIZON_DAYS}
+        ).execute()
+        row = (res.data or [{}])[0]
+        out = {"total": int(row.get("total") or 0)}
+        emit("funnel", **out)
+        return out
+    except Exception as e:  # 0057/0056 미적용 등
+        logger.warning("funnel_counts 실패: %s", e)
+        return None
 
 
 def _fetch_company_terms(client, bizrno: str) -> tuple[set[str], set[str], set[str]]:
@@ -1032,12 +1088,13 @@ def _recommend_by_company(
     # 순차로 쌓이던 구간이다 (2026-09-22 Server-Timing: 12개 구간이 각 100~500ms).
     # 사전규격·발주계획은 메인 검색 결과와 무관하므로 메인 검색과 겹쳐 돌린다.
     pool_embs: dict[tuple[str, str], list[float]] = {}
-    with ThreadPoolExecutor(max_workers=4) as ex:
+    with ThreadPoolExecutor(max_workers=5) as ex:
         f_terms = submit_timed(ex, "terms", _fetch_company_terms, client, company["bizrno"])
         f_hist = submit_timed(ex, "history", _fetch_company_history, client, bizrno_norm)
         f_pre = submit_timed(ex, "pre_specs", _search_pre_specs, embedding_str, limit, candidate_pool)
         f_ord = submit_timed(ex, "order_plans", _search_order_plans, embedding_str, limit, candidate_pool)
         company_terms, company_industry_names, company_product_codes = f_terms.result()
+        f_funnel = submit_timed(ex, "funnel", _fetch_funnel, client, sorted(company_industry_names))
         company_institutions, company_amt_median = f_hist.result()
 
         ranked = _search_with_embedding(
@@ -1056,6 +1113,9 @@ def _recommend_by_company(
         )
         pre_specs = f_pre.result()
         order_plans = f_ord.result()
+        funnel = f_funnel.result()
+    # 랭킹이 끝나야 바닥을 알 수 있다 — 선행지표 다듬기는 여기서.
+    pre_specs, order_plans = _trim_leads(pre_specs, order_plans, ranked, limit)
 
     # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영.
     # v2 는 MMR 이 상위 40개 벡터를 이미 가져왔고 viz 상위 10개는 그 안에 있다 — 재사용한다.
@@ -1079,5 +1139,6 @@ def _recommend_by_company(
         "results": ranked,
         "pre_spec_results": pre_specs,
         "order_plan_results": order_plans,
+        "funnel": funnel,
         "viz": viz,
     }

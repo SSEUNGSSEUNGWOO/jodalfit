@@ -1,11 +1,11 @@
-"""추천 공고 보고서 — A4 세로 한 장(`prototypes/report.html`). 결과 페이지의 '인쇄 / PDF 저장' 뷰이자 이메일 게이트가 보내는 첨부,
+"""추천 공고 보고서 — A4 세로 한 장(`prototypes/final/report.html`). 결과 페이지의 '인쇄 / PDF 저장' 뷰이자 이메일 게이트가 보내는 첨부,
 나중엔 아침 메일 본문. 입찰 담당자가 상사에게 그대로 건네는 문서.
 
 화면과 같은 말을 한다 — 근거·자격은 gen_flow.why_lines/qual_lines(공문 톤, flow.html 이 쓰는 것), 기준 띠는 gen_results_v6.crit 그대로.
 주황 #f97316 은 마지막 12 · D-day ≤ 7 · 로고 타일뿐. 먹/회색 + 헤어라인. 버튼 없음(화면 모드의 '인쇄 / PDF 저장' 하나만, 인쇄에선 숨김).
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_report.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/prototypes/report.html
-검증: 같은 환경에서 gen_report.py --check ../docs/design/prototypes/report.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_report.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/prototypes/final/report.html
+검증: 같은 환경에서 gen_report.py --check ../docs/design/prototypes/final/report.html
       → 800px 화면 캡처 `_shot_report_800.png`, A4 PDF `_report.pdf`(1장이어야 통과), 인쇄 매체에서 주황 유지 확인.
 """
 import json
@@ -20,7 +20,11 @@ from gen_results_v6 import crit  # noqa: E402
 from gen_flow import TILE, why_lines, qual_lines  # noqa: E402
 
 ORANGE = "#f97316"
-LABELS = ["지금 입찰 가능한 공고", "등록업종 허용 공고", "참가 자격 통과 공고", "검토할 공고"]  # flow.html 라벨 줄과 같은 말
+# 네 칸은 앞 칸의 부분집합이어야 한다. "등록업종 허용 공고"는 파이프라인 단계가 아니었다 —
+# 후보는 그 집합이 아니라 전체에서 유사도 순으로 뽑는다(2026-10-23: 최종 20건 중 8건이 업종 불일치).
+# frontend Scene.tsx 의 FUNNEL_LABELS 와 같은 말이어야 한다.
+LABELS = ["지금 입찰 가능한 공고", "비슷한 순서로 추린 공고", "참가 자격 통과 공고", "검토할 공고"]
+REPORT_ROWS = 12  # A4 한 장 상한 — frontend report/page.tsx 의 limit 과 같아야 한다
 
 CSS = r"""
 * { box-sizing:border-box }
@@ -88,10 +92,12 @@ def row(i, r, prof):
 
 
 def page(d, prof, f):
-    res, co = d["results"], d["company"]
+    # 화면은 20건이지만 보고서는 12건 — A4 한 장이 상한이고(행 20개는 두 장) 상사에게 건네는 요약이라
+    # 역할이 다르다. 운영도 같다(report/page.tsx 가 limit 12 로 따로 요청한다). 2026-10-23.
+    res, co = d["results"][:REPORT_ROWS], d["company"]
     n_ind = len(prof["industries"][0] + prof["industries"][1])
     tile = TILE.replace('width="22" height="22"', 'width="20" height="20"')
-    vals = [f'{f["total"]:,}', str(f["industry"]), str(f["qualified"]), f'<span class="acc">{len(res)}</span>']
+    vals = [f'{f["total"]:,}', str(f["candidate"]), str(f["qualified"]), f'<span class="acc">{len(res)}</span>']
     fun = "".join((f'<div><div class="n">{v}</div><div class="l">{l}</div></div>' + ("<i>→</i>" if k < 3 else ""))
                   for k, (v, l) in enumerate(zip(vals, LABELS)))
     body = (f'<div class="nav"><a href="#">← 결과로 돌아가기</a><button class="print" type="button" onclick="window.print()">인쇄 / PDF 저장</button></div>'
@@ -120,7 +126,7 @@ def check(path):
         pg.goto(p.as_uri()); pg.wait_for_load_state("networkidle")
         s = pg.evaluate("""() => ({ title: document.title, rows: document.querySelectorAll('.row').length, btn: getComputedStyle(document.querySelector('.nav .print')).display,
             pageH: document.querySelector('.page').getBoundingClientRect().height })""")
-        assert s["title"].startswith("조달핏 추천 공고 보고서") and s["rows"] == 12 and s["btn"] != "none", s
+        assert s["title"].startswith("조달핏 추천 공고 보고서") and s["rows"] == REPORT_ROWS and s["btn"] != "none", s
         pg.screenshot(path=str(out / "_shot_report_800.png"), full_page=True)
         pg.emulate_media(media="print"); pg.set_viewport_size({"width": 673, "height": 1000})  # A4 내용 폭 178mm 에서 줄바꿈을 잰다
         pr = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { nav: cs(document.querySelector('.nav')).display, acc: cs(document.querySelector('.fun .acc')).color,

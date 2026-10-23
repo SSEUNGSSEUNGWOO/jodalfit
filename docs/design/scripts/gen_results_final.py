@@ -1,12 +1,12 @@
-"""결과 페이지 최종 시안(`prototypes/results-final.html`) = flow 의 머리 장면·네 상태 + split 의 두 단 표형 본문.
+"""결과 페이지 최종 시안(`prototypes/final/results-final.html`) = flow 의 머리 장면·네 상태 + split 의 두 단 표형 본문.
 
 - 머리: 회사 이름·사업자번호 마스킹·한 줄 → 선 캔버스(gen_flow 엔진 그대로) → 접히면 걸러낸 경로(숫자 + 단계 라벨) 와 종류 탭·마감 요약 한 줄.
 - 본문: 왼쪽 240px 회사 정보(sticky) / 오른쪽 표(제목 / 기관 · 근거 둘째 줄, 행 클릭 펼침). 블록 스위치는 split.html 에만(비교용). 화면 = 표, 메일·인쇄 = 블록(report.html).
 - 네 상태(알약): 0건 — 오른쪽 단만 비고 왼쪽 회사 정보가 이유 / 오류·지연 — 머리 정지 + 다시 시도(본문은 안 뜸) / 이메일 뒤 — 게이트 없이 12건 / 검토 뒤 — 행 왼쪽 주황 괘선.
 - 720px 이하: 한 단, 회사 정보 접힘, 표는 제목·둘째 줄 + 마감.
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_results_final.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/data/scene_titles.json ../docs/design/prototypes/results-final.html
-검증: gen_results_final.py --check ../docs/design/prototypes/results-final.html → 캡처 6장(기본·0건·오류·이메일 뒤·검토 뒤·390), 금지어·인주 0, 행 12.
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_results_final.py ../docs/design/data/sample.json ../docs/design/data/funnel.json ../docs/design/data/scene_titles.json ../docs/design/prototypes/final/results-final.html
+검증: gen_results_final.py --check ../docs/design/prototypes/final/results-final.html → 캡처 6장(기본·0건·오류·이메일 뒤·검토 뒤·390), 금지어·인주 0, 행 12.
 """
 import json
 import sys
@@ -99,7 +99,7 @@ document.querySelectorAll('.ctl [data-skin]').forEach(s => s.onclick = () => { d
 
 
 def chain(f, d, res):
-    vals = [f'{f["total"]:,}', str(f["industry"]), str(f["qualified"]), str(len(res))]
+    vals = [f'{f["total"]:,}', str(f["candidate"]), str(f["qualified"]), str(len(res))]
     # 숫자는 <b> 하나 — flow 의 setCounts 가 .chain b 의 textContent 를 갈아 끼우므로 '건' 은 b 밖에
     fun = "".join(f'<div><span class="nl"><b class="{"acc" if k == 3 else ""}">{v}</b>{"<span class=un>건</span>" if k == 3 else ""}</span><span class="l">{l}</span></div>' + ("<i>→</i>" if k < 3 else "")
                   for k, (v, l) in enumerate(zip(vals, LABELS)))
@@ -119,7 +119,7 @@ def main_col(res, prof):
 
 def page(d, prof, f, titles):
     res, co = d["results"], d["company"]
-    c = dict(cfg(), CNT=[f["total"], f["industry"], f["qualified"], len(res)])
+    c = dict(cfg(), CNT=[f["total"], f["candidate"], f["qualified"], len(res)])
     n_ind = len(prof["industries"][0] + prof["industries"][1])
     body = (f'<div class="wrap">{nav()}'
             f'<div class="head"><h1>{esc(co["corp_nm"])}<small>{co["bizrno"][:6]}*****</small><a class="sw-co" href="#">다른 회사</a></h1>'
@@ -154,7 +154,11 @@ def check(path):
         s = pg.evaluate("""() => { const cs = e => getComputedStyle(e); return { done: document.body.classList.contains('done'), tr: document.querySelectorAll('.sheet .tr').length,
             sticky: cs(document.querySelector('.side')).position, labs: document.querySelectorAll('.chain .l').length, nums: [...document.querySelectorAll('.chain b')].map(e => e.textContent),
             acc: cs(document.querySelector('.chain b.acc')).color, res: cs(document.querySelector('.res')).opacity } }""")
-        assert s["done"] and s["tr"] == 12 and s["sticky"] == "sticky" and s["labs"] == 4 and s["nums"] == ["9,374", "835", "372", "12"] and s["acc"] == "rgb(249, 115, 22)" and s["res"] == "1", s
+        # 20건 — 2026-10-23 결정(ResultsView.tsx RESULT_LIMIT). 숫자는 실제 DB 라 고정값으로 못 박지 않고
+        # 네 칸이 앞 칸의 부분집합인지만 단정한다 — 깔때기가 거짓이 되는 건 그게 깨질 때다.
+        nums = [int(x.replace(",", "")) for x in s["nums"]]
+        assert all(nums[i] >= nums[i + 1] for i in range(3)), nums
+        assert s["done"] and s["tr"] == 20 and s["sticky"] == "sticky" and s["labs"] == 4 and nums[-1] == 20 and s["acc"] == "rgb(249, 115, 22)" and s["res"] == "1", s
         pg.screenshot(path=str(out / "_shot_final_default.png"), full_page=True)
         q = pg.evaluate("""() => ({ ok: document.querySelectorAll('.x.on li.ok').length, none: document.querySelectorAll('.x.on li.none').length,
             okw: getComputedStyle(document.querySelector('.x.on li.ok, .x.on li.none')).fontWeight })""")

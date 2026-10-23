@@ -1,11 +1,11 @@
-"""개선 기록 최종 시안(`prototypes/changelog-final.html`) — `/changelog`. `docs/recommender/changelog.md` 를 그대로 렌더링하는 읽기 페이지.
+"""개선 기록 최종 시안(`prototypes/final/changelog-final.html`) — `/changelog`. `docs/recommender/changelog.md` 를 그대로 렌더링하는 읽기 페이지.
 
 - 머리: 제목 + 재는 방법(문서 첫 문단 그대로). 왼쪽 목차(날짜·제목, sticky, 스크롤 스파이) / 오른쪽 흰 판에 글 순서 그대로(처음 → 변경 → 지금).
 - 마크다운 부분집합만 변환: ## · 문단 · 표 · **굵게** · `코드` · ---. 표 숫자는 tabular, 전/후 열은 그대로(화살표·색 안 입힘 — 숫자가 말한다).
 - 로그인 무관(공개 페이지). 상태 없음. 문서가 바뀌면 다시 생성하면 된다 — 구현도 같은 방식(빌드 때 md → 페이지).
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_changelog.py ../docs/recommender/changelog.md ../docs/design/prototypes/changelog-final.html
-검증: gen_changelog.py --check ../docs/design/prototypes/changelog-final.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_changelog.py ../docs/recommender/changelog.md ../docs/design/prototypes/final/changelog-final.html
+검증: gen_changelog.py --check ../docs/design/prototypes/final/changelog-final.html
 """
 import re
 import sys
@@ -175,8 +175,8 @@ def how_panel():
     import json
     f = json.load(open(Path(__file__).resolve().parents[1] / "data" / "funnel.json"))
     steps = [("지금 입찰 가능한 공고", f["total"], "마감 90일 이내 전부", "여기서 시작합니다. 글의 뜻이 비슷한 공고, 회사 <b>등록업종을 허용하는</b> 공고, 회사 <b>공급물품 분류가 맞는</b> 공고 세 통로로 후보를 모읍니다."),
-             ("등록업종 허용 공고", f["industry"], f'전체의 {f["industry"] / f["total"] * 100:.1f}%', "공고가 요구하는 업종에 회사가 등록돼 있는 공고만 남깁니다."),
-             ("참가 자격 통과", f["qualified"], f'면허·지역 {f["qualified"] / f["industry"] * 100:.0f}% 통과', "면허(허용업종) · 지역 제한(시·도 또는 시·군·구) · 참가자격 등록 마감을 대조해 <b>낼 수 없는 공고는 뺍니다.</b>"),
+             ("비슷한 순서로 추린 공고", f["candidate"], f'전체의 {f["candidate"] / f["total"] * 100:.1f}%', "회사 등록업종·공급물품·수주 이력으로 만든 회사 벡터와 공고를 견줘 <b>비슷한 순서로</b> 추립니다."),
+             ("참가 자격 통과", f["qualified"], f'앞 단계의 {f["qualified"] / f["candidate"] * 100:.0f}%', "면허(허용업종) · 지역 제한(시·도 또는 시·군·구) · 참가자격 등록 마감을 대조해 <b>낼 수 없는 공고는 뺍니다.</b>"),
              ("검토할 공고", f["result"], "점수 순 · 다양성 반영", "아래 점수표로 줄 세우고, 비슷한 공고가 상위를 독점하지 않게 섞은 뒤 보여줍니다.")]
     st = "".join(f'<div><div class="n">{v:,}<small>건</small></div><span class="k">{k}</span><p>{d}</p><p class="dim" style="margin-top:4px;font-size:12.5px">{sub}</p></div>' for k, v, sub, d in steps)
     pos = [("공고 내용과 회사 업종 설명의 유사도", "0 ~ 100", "기본 점수"), ("과거 거래한 기관의 공고", "+12", ""), ("유사 회사가 수주한 기관", "+9", "2건 이상"), ("지역 제한이 본사와 일치", "+9", ""),

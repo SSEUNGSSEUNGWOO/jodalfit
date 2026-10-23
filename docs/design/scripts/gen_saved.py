@@ -1,12 +1,12 @@
-"""검토함 최종 시안(`prototypes/saved-final.html`) — `/saved`. 탭 둘: 공고(검토 표시, 마감 순) / 저장한 회사(★).
+"""검토함 최종 시안(`prototypes/final/saved-final.html`) — `/saved`. 탭 둘: 공고(검토 표시, 마감 순) / 저장한 회사(★).
 
 - 공고: 결과 표와 같은 격자(제목 · 기관 · 어느 회사 결과에서 검토했는지 / 마감 / 추정가) + 검토 해제. 마감 지난 공고는 아래 회색 묶음, 30일 뒤 자동 정리.
 - 저장한 회사: 회사 · 지역 · 등록업종 / 오늘 검토할 공고 N건 · 가장 빠른 마감 / 결과 보기 · ★ 해제.
 - 상태: 비로그인(로그인·회원가입 두 버튼) / 빈 상태 / 채움. 데이터는 A 한종산업개발(sample.json)·B 금강환경(company_b.json)의 실제 추천 결과, 마감 지난 건은 A 의 실제 낙찰 공고.
 - 메모·폴더·정렬 옵션 없음.
 
-사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_saved.py ../docs/design/data ../docs/design/prototypes/saved-final.html
-검증: gen_saved.py --check ../docs/design/prototypes/saved-final.html
+사용: cd backend && PYTHONPATH=".;../docs/design/scripts" uv run --no-sync python ../docs/design/scripts/gen_saved.py ../docs/design/data ../docs/design/prototypes/final/saved-final.html
+검증: gen_saved.py --check ../docs/design/prototypes/final/saved-final.html
 """
 import json
 import sys
