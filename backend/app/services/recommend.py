@@ -22,6 +22,7 @@ import numpy as np
 from postgrest.exceptions import APIError
 
 from app.core.config import get_settings
+from app.core.progress import emit
 from app.core.timing import submit_timed, timed
 from app.services.embedding import embed_texts
 from app.services.openai_client import vector_to_pgvector_str
@@ -559,6 +560,7 @@ def _search_with_embedding(
         deduped.append(r)
         if len(deduped) >= candidate_pool:
             break
+    emit("stage", stage="search", candidates=len(deduped))
 
     if algorithm == "v2":
         # v2: 하드 필터 + 가중치 score + MMR (lazy import — 순환 방지)
@@ -605,6 +607,24 @@ def _search_with_embedding(
     )[:limit]
     _attach_insights(client, ranked_v1)
     return ranked_v1
+
+
+def _fetch_funnel(client, names: list[str]) -> dict[str, int] | None:
+    """걸러낸 경로 앞 두 칸(0056). 미적용·실패면 None — 머리 장면은 두 칸 없이 간다."""
+    try:
+        res = client.rpc(
+            "funnel_counts", {"p_names": names, "p_days": MAX_CLSE_HORIZON_DAYS}
+        ).execute()
+        row = (res.data or [{}])[0]
+        out = {
+            "total": int(row.get("total") or 0),
+            "industry": int(row.get("industry") or 0),
+        }
+        emit("funnel", **out)
+        return out
+    except Exception as e:  # 0056 미적용 등
+        logger.warning("funnel_counts 실패: %s", e)
+        return None
 
 
 def _fetch_company_terms(client, bizrno: str) -> tuple[set[str], set[str], set[str]]:
@@ -1032,12 +1052,13 @@ def _recommend_by_company(
     # 순차로 쌓이던 구간이다 (2026-09-22 Server-Timing: 12개 구간이 각 100~500ms).
     # 사전규격·발주계획은 메인 검색 결과와 무관하므로 메인 검색과 겹쳐 돌린다.
     pool_embs: dict[tuple[str, str], list[float]] = {}
-    with ThreadPoolExecutor(max_workers=4) as ex:
+    with ThreadPoolExecutor(max_workers=5) as ex:
         f_terms = submit_timed(ex, "terms", _fetch_company_terms, client, company["bizrno"])
         f_hist = submit_timed(ex, "history", _fetch_company_history, client, bizrno_norm)
         f_pre = submit_timed(ex, "pre_specs", _search_pre_specs, embedding_str, limit, candidate_pool)
         f_ord = submit_timed(ex, "order_plans", _search_order_plans, embedding_str, limit, candidate_pool)
         company_terms, company_industry_names, company_product_codes = f_terms.result()
+        f_funnel = submit_timed(ex, "funnel", _fetch_funnel, client, sorted(company_industry_names))
         company_institutions, company_amt_median = f_hist.result()
 
         ranked = _search_with_embedding(
@@ -1056,6 +1077,7 @@ def _recommend_by_company(
         )
         pre_specs = f_pre.result()
         order_plans = f_ord.result()
+        funnel = f_funnel.result()
 
     # viz 좌표 — 회사 벡터(블렌딩 전 원본)와 TOP N 결과 임베딩을 anchor 좌표에 투영.
     # v2 는 MMR 이 상위 40개 벡터를 이미 가져왔고 viz 상위 10개는 그 안에 있다 — 재사용한다.
@@ -1079,5 +1101,6 @@ def _recommend_by_company(
         "results": ranked,
         "pre_spec_results": pre_specs,
         "order_plan_results": order_plans,
+        "funnel": funnel,
         "viz": viz,
     }

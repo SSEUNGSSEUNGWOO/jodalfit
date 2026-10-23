@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import queue
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Literal
@@ -11,7 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request,
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.core import timing
+from app.core import progress, timing
 from app.core.bot_guard import guard_external_traffic
 from app.core.rate_limit import limiter
 from app.services import recommendation_cache
@@ -212,6 +214,9 @@ def post_recommendations_stream(
     """ndjson streaming — 추천 결과 즉시 전송 + LLM 설명 도착 순서대로 push.
 
     응답 라인 형식 (각 줄 = 1개 JSON):
+      {"type":"funnel", "total":N, "industry":N}          ← 걸러낸 경로 앞 두 칸(결과보다 먼저)
+      {"type":"stage", "stage":"search|qualify|rank", ...} ← 파이프라인 진행
+      {"type":"error", "message":"...", "status":404}      ← 회사 못 찾음 등 (HTTP 404 대신)
       {"type":"results", "data": {...recommend 응답...}}
       {"type":"explanation", "bid_ntce_no":"...", "bid_ntce_ord":"...", "scope":"primary|keyword", "text":"..."}
       {"type":"summary", "text":"..."}   ← v2 회사 모드: 카드별 설명 대신 상단 요약 1회
@@ -219,64 +224,90 @@ def post_recommendations_stream(
     """
     t0 = time.time()
     source = classify_source(request)
-    result = recommend(
-        req.query,
-        limit=req.limit,
-        candidate_pool=req.candidate_pool,
-        mode=req.mode,
-        keywords=req.keywords,
-        algorithm=req.algorithm,
-    )
 
-    has_any_results = bool(result.get("results") or result.get("keyword_results"))
-    error_404 = (
-        result.get("error")
-        and not has_any_results
-        and not result.get("fallback")
-    )
-    if error_404:
-        raise HTTPException(status_code=404, detail=result["error"])
+    # recommend() 를 워커에서 돌리고 진행 이벤트를 큐로 받는다 — results 줄 앞에 funnel·stage 줄을 흘린다.
+    q: "queue.Queue[dict | None]" = queue.Queue()
+    box: dict = {}
 
-    # 검색 로그는 결과 단계에서 미리 (latency는 results 응답 기준)
-    company = result.get("company") or {}
-    background.add_task(
-        log_search,
-        query=req.query,
-        mode=req.mode,
-        matched_bizrno=company.get("bizrno"),
-        matched_corp_nm=company.get("corp_nm"),
-        result_count=len(result.get("results") or []),
-        kw_result_count=len(result.get("keyword_results") or []),
-        has_error=bool(result.get("error")),
-        error_msg=result.get("error"),
-        with_explanation=True,
-        ip=_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-        referer=request.headers.get("referer"),
-        latency_ms=int((time.time() - t0) * 1000),
-        source=source,
-    )
-    if result.get("results"):
-        background.add_task(
-            log_impressions,
-            result["results"],
-            session_id=req.session_id,
-            target_bizrno=company.get("bizrno"),
-            source=source,
-            algorithm_version=req.algorithm,
-        )
+    def work():
+        tok = progress.set_callback(q.put)
+        try:
+            box["result"] = recommend(
+                req.query,
+                limit=req.limit,
+                candidate_pool=req.candidate_pool,
+                mode=req.mode,
+                keywords=req.keywords,
+                algorithm=req.algorithm,
+            )
+        except Exception as e:  # 제너레이터 쪽에서 다시 던진다
+            box["error"] = e
+        finally:
+            progress.reset(tok)
+            q.put(None)
 
-    primary_top = (result.get("results") or [])[: req.explain_top]
-    keyword_top = (result.get("keyword_results") or [])[: req.explain_top]
-    use_company_ctx = bool(result.get("company"))
-    # v2 회사 모드: 카드는 rule 배지가 설명 역할 → LLM은 상단 요약 1회만 (호출 5회 → 1회)
-    use_summary = req.algorithm == "v2" and use_company_ctx and bool(primary_top)
+    threading.Thread(target=work, daemon=True).start()
 
     def _line(obj: dict) -> bytes:
         return (json.dumps(obj, ensure_ascii=False) + "\n").encode("utf-8")
 
     def stream():
+        while True:
+            item = q.get()
+            if item is None:
+                break
+            yield _line(item)
+        if "error" in box:
+            raise box["error"]
+        result = box["result"]
+
+        has_any_results = bool(result.get("results") or result.get("keyword_results"))
+        if result.get("error") and not has_any_results and not result.get("fallback"):
+            yield _line({"type": "error", "message": result["error"], "status": 404})
+            return
+
+        # 검색 로그·노출 로그 — 스트림 안에서는 BackgroundTasks 를 못 쓰므로 스레드로
+        company = result.get("company") or {}
+        threading.Thread(
+            target=log_search,
+            kwargs=dict(
+                query=req.query,
+                mode=req.mode,
+                matched_bizrno=company.get("bizrno"),
+                matched_corp_nm=company.get("corp_nm"),
+                result_count=len(result.get("results") or []),
+                kw_result_count=len(result.get("keyword_results") or []),
+                has_error=bool(result.get("error")),
+                error_msg=result.get("error"),
+                with_explanation=True,
+                ip=_client_ip(request),
+                user_agent=request.headers.get("user-agent"),
+                referer=request.headers.get("referer"),
+                latency_ms=int((time.time() - t0) * 1000),
+                source=source,
+            ),
+            daemon=True,
+        ).start()
+        if result.get("results"):
+            threading.Thread(
+                target=log_impressions,
+                args=(result["results"],),
+                kwargs=dict(
+                    session_id=req.session_id,
+                    target_bizrno=company.get("bizrno"),
+                    source=source,
+                    algorithm_version=req.algorithm,
+                ),
+                daemon=True,
+            ).start()
+
         yield _line({"type": "results", "data": result})
+
+        primary_top = (result.get("results") or [])[: req.explain_top]
+        keyword_top = (result.get("keyword_results") or [])[: req.explain_top]
+        use_company_ctx = bool(result.get("company"))
+        # v2 회사 모드: 카드는 rule 배지가 설명 역할 → LLM은 상단 요약 1회만 (호출 5회 → 1회)
+        use_summary = req.algorithm == "v2" and use_company_ctx and bool(primary_top)
 
         if req.explain_top <= 0 or (not primary_top and not keyword_top):
             yield _line({"type": "done"})

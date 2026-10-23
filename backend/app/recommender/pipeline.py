@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from app.core.progress import emit
 from app.core.timing import timed
 from app.recommender.collaborative import fetch_institution_stats
 from app.recommender.mmr import mmr_diversify
@@ -55,6 +56,7 @@ def rank_v2(
             continue
         r["qualification"] = q
         passed.append(r)
+    emit("stage", stage="qualify", candidates=len(candidates), passed=len(passed))
 
     # peer 탐색(match_companies RPC)은 껐다. 그 RPC 가 타는 companies_embedding_idx
     # (HNSW 489MB)가 shared_buffers 256MB 의 두 배여서 캐시에 못 올라가고, DB 전체를
@@ -105,4 +107,6 @@ def rank_v2(
         # 호출부(viz)가 같은 공고 벡터를 다시 읽지 않도록 넘겨준다
         embeddings_out.update(embeddings)
     diversified = mmr_diversify(pool, embeddings, k=5) + passed[MMR_POOL:]
-    return diversified[:limit]
+    out = diversified[:limit]
+    emit("stage", stage="rank", results=len(out))
+    return out
