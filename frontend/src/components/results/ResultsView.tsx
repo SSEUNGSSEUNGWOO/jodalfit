@@ -1,0 +1,136 @@
+// frontend/src/components/results/ResultsView.tsx
+// 결과 페이지 본체(클라이언트). 상태: running(장면) → done(표) / zero / error / search(다른 회사). 키워드 모드는 장면 없이 표만.
+"use client";
+
+import { useEffect, useState } from "react";
+import { PageHead } from "@/components/PageHead";
+import { Panel } from "@/components/Panel";
+import { Btn } from "@/components/Btn";
+import { SearchBox } from "@/components/SearchBox";
+import { StarCompany } from "@/components/StarCompany";
+import { streamRecommendations } from "@/lib/stream";
+import { getSessionId } from "@/lib/events";
+import { cn, maskBizrno } from "@/lib/utils";
+import { companyStats } from "@/lib/saved-stats";
+import type { RecommendationResponse } from "@/types/recommendations";
+import { Scene, type SceneCounts } from "./Scene";
+import { FunnelLine } from "./FunnelLine";
+import { CompanySide } from "./CompanySide";
+import { ResultRows, ZeroBlock } from "./ResultRows";
+
+const TIMEOUT_MS = 8000;
+const EMPTY: SceneCounts = { total: null, industry: null, candidates: null, passed: null, results: null };
+const OTHER = "ml-3.5 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange";
+
+export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, savedKeys, reviewedKeys, next }: {
+  query: string; mode: "company" | "keywords"; keywords: string | null; algorithm: "v1" | "v2"; from: string | null;
+  loggedIn: boolean; savedKeys: string[]; reviewedKeys: string[]; next: string;
+}) {
+  const [counts, setCounts] = useState<SceneCounts>(EMPTY);
+  const [data, setData] = useState<RecommendationResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [settled, setSettled] = useState(mode === "keywords");
+  const [search, setSearch] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [today] = useState(() => new Date()); // 렌더 동안 읽히는 값 — ref 가 아니라 state(react-hooks/refs)
+
+  // 질의가 바뀌면 페이지가 key 로 다시 마운트한다 — 효과 안에서 상태를 초기화하지 않는다(재시도는 버튼 핸들러가 비운다).
+  useEffect(() => {
+    const ac = new AbortController();
+    let got = false;
+    const timer = setTimeout(() => { if (!got) { ac.abort(); setError("결과를 불러오지 못했습니다"); } }, TIMEOUT_MS);
+    streamRecommendations(
+      { query, mode, keywords, algorithm, session_id: getSessionId(), limit: 12, candidate_pool: 200, explain_top: 0, with_explanation: false },
+      (e) => {
+        if (e.type === "funnel") setCounts((c) => ({ ...c, total: e.total, industry: e.industry }));
+        else if (e.type === "stage" && e.stage === "search") setCounts((c) => ({ ...c, candidates: e.candidates }));
+        else if (e.type === "stage" && e.stage === "qualify") setCounts((c) => ({ ...c, candidates: e.candidates, passed: e.passed }));
+        else if (e.type === "stage" && e.stage === "rank") setCounts((c) => ({ ...c, results: e.results }));
+        // passed 를 0 으로 메우지 않는다 — 0056 미적용·v1 이면 모르는 값이고 "면허·지역 0% 통과"는 거짓이다. Scene 은 results 만으로 끝낸다.
+        else if (e.type === "results") { got = true; clearTimeout(timer); setData(e.data); setCounts((c) => ({ ...c, results: e.data.results.length })); }
+        else if (e.type === "error") { got = true; clearTimeout(timer); setError(e.message); }
+      },
+      ac.signal,
+    ).catch((err) => { if (!ac.signal.aborted) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
+    return () => { clearTimeout(timer); ac.abort(); };
+  }, [query, mode, keywords, algorithm, attempt]);
+
+  // 회사 모드인데 회사를 못 찾았으면 키워드로 넘어간다(옛 보드와 같은 규칙)
+  useEffect(() => {
+    if (mode === "company" && data && !data.company && data.fallback === "keywords") {
+      location.replace(`/recommendations?q=${encodeURIComponent(query)}&from=company`);
+    }
+  }, [data, mode, query]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSearch(false); };
+    addEventListener("keydown", onKey); return () => removeEventListener("keydown", onKey);
+  }, []);
+
+  const co = data?.company ?? null;
+  const bizrno = co ? co.bizrno.replace(/\D/g, "") : null;
+  const results = data?.results ?? [];
+  const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";
+  const zero = state === "done" && results.length === 0;
+  const stats = results.length ? companyStats(results.map((r) => r.bid_clse_date), today) : null;
+
+  return (
+    <div className={cn(search && "[&_[data-scene]]:opacity-20 [&_[data-scene]]:blur-[1px] [&_[data-res]]:opacity-20 [&_[data-res]]:blur-[1px] [&_[data-res]]:pointer-events-none")}>
+      {search ? (
+        <div className="pb-1 pt-[26px]" data-search>
+          <SearchBox autoFocus onSubmitted={() => setSearch(false)} />
+          <div className="mt-2.5 flex max-w-[720px] items-center gap-3.5 text-[13px] text-ink-g">
+            <span className="t-k">최근 조회</span>
+            {co && <a className="border-b border-field text-ink" href={`/recommendations?company=${encodeURIComponent(co.bizrno)}`}>{co.corp_nm}</a>}
+            <button type="button" className="ml-auto cursor-pointer text-ink-mute" onClick={() => setSearch(false)}>취소 · Esc</button>
+          </div>
+        </div>
+      ) : mode === "company" ? (
+        <PageHead title={co?.corp_nm ?? query} small={co ? maskBizrno(co.bizrno) : undefined} className="border-b-0 pb-0"
+          aside={<>
+            {bizrno && <StarCompany bizrnoNorm={bizrno} saved={savedKeys.includes(bizrno)} loggedIn={loggedIn} className="ml-3 h-[30px] text-[13px]" />}
+            <button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 회사</button>
+          </>}
+          meta={co ? [co.rgn_nm ?? "—", `기준일 ${today.toISOString().slice(0, 10)}`] : undefined} />
+      ) : (
+        <PageHead title={`“${query}”`} className="border-b-0 pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
+          meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />
+      )}
+
+      {mode === "company" && <Scene counts={counts} state={state} onSettled={() => setSettled(true)} />}
+      {mode === "keywords" && <div className="mt-5 border-t border-ink" />}
+
+      {error && (
+        <div data-err className="flex items-center gap-3.5 border-t border-hair py-4 text-[13.5px] text-ink">
+          <span>결과를 불러오지 못했습니다</span><span className="flex-1" />
+          <Btn onClick={() => {
+            setCounts(EMPTY); setData(null); setError(null);
+            setSettled(mode === "keywords"); setAttempt((a) => a + 1);
+          }}>다시 시도</Btn>
+        </div>
+      )}
+
+      {mode === "company" && !error && (
+        <FunnelLine counts={counts} open={state === "done"} tabs={zero || !data ? null : { notices: results.length, preSpecs: data.pre_spec_results?.length ?? 0, orderPlans: data.order_plan_results?.length ?? 0 }} due={stats} />
+      )}
+
+      {state === "done" && data && (
+        <Panel data-res className="mt-[22px] translate-y-0 opacity-100 transition-[opacity,transform] duration-500 [transition-timing-function:var(--ease-sheet)] starting:translate-y-2.5 starting:opacity-0">
+          <div className={cn("grid items-start gap-x-11", mode === "company" ? "grid-cols-[240px_minmax(0,1fr)] max-sm:grid-cols-1" : "grid-cols-1")}>
+            {mode === "company" && bizrno && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
+            <div className="pt-[22px] max-sm:pt-3.5">
+              {!zero && (
+                <div className="flex items-center justify-between border-b border-ink pb-2.5">
+                  <span className="t-k"><b className="mr-1.5 text-[14px] font-[650] text-ink">검토할 공고 {results.length}건</b>{mode === "company" ? "적합 순" : "유사도 순"}</span>
+                  {mode === "company" && co && <a href={loggedIn ? `/recommendations/report?company=${encodeURIComponent(co.bizrno)}` : `/login?next=${encodeURIComponent(`/recommendations/report?company=${co.bizrno}`)}`} className="border-b border-field text-[13px] text-ink-g hover:border-orange">인쇄 / PDF 저장</a>}
+                </div>
+              )}
+              {zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
+                    : <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
+            </div>
+          </div>
+        </Panel>
+      )}
+    </div>
+  );
+}

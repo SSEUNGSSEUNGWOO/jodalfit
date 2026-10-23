@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** 흰 판 — 14px(390: 12px), 헤어라인. 결과·회사·검토함·로그인이 전부 이 판 하나를 반복한다. */
-export function Panel({ children, className }: { children: ReactNode; className?: string }) {
+export function Panel({ children, className, ...rest }: { children: ReactNode; className?: string } & ComponentProps<"section">) {
   return (
-    <section className={cn("rounded-[14px] max-sm:rounded-[12px] border border-hair bg-panel px-7 pb-7 pt-1.5 max-sm:px-4 max-sm:pb-5 max-sm:pt-0", className)}>
+    <section className={cn("rounded-[14px] max-sm:rounded-[12px] border border-hair bg-panel px-7 pb-7 pt-1.5 max-sm:px-4 max-sm:pb-5 max-sm:pt-0", className)} {...rest}>
       {children}
     </section>
   );
