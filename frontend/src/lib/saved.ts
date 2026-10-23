@@ -70,12 +70,13 @@ export async function getSavedCompanies(today: Date = new Date()): Promise<Saved
   if (saved.length === 0) return [];
   const norms = saved.map((r) => r.bizrno_norm);
   const pub = getPublicSupabase();
-  const [cos, ind, reco] = await Promise.all([
+  const [cos, reco] = await Promise.all([
     companiesByNorm(norms),
-    pub.from("company_industries").select("bizrno").in("bizrno", norms), // companies.bizrno 는 10자리 그대로라 norm 과 같다
     // ponytail: payload 가 회사당 ~45KB(0019) — ★ 수십 곳이면 무겁다. 아프면 마감일만 돌려주는 RPC 로.
     pub.from("company_recommendations").select("bizrno_norm,payload").in("bizrno_norm", norms),
   ]);
+  // company_industries.bizrno 는 하이픈 포함 원형("124-81-77731") — companies.bizrno 로 조인한다(norm 으로는 0건, 2026-10-23 05 Task 4 에서 확인)
+  const ind = await pub.from("company_industries").select("bizrno").in("bizrno", [...cos.values()].map((c) => c.bizrno));
   const indCount = new Map<string, number>();
   for (const r of (ind.data ?? []) as { bizrno: string }[]) indCount.set(r.bizrno, (indCount.get(r.bizrno) ?? 0) + 1);
   const stats = new Map<string, CompanyStats>();
