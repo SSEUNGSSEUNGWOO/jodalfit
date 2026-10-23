@@ -1,7 +1,7 @@
+// frontend/src/app/(renewal)/notices/page.tsx
+// 공고 목록 — 09 전환에서 리뉴얼 껍데기로. nav·footer 는 레이아웃이 준다.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import { Pagination } from "@/components/Pagination";
 import { BoardSearch } from "@/components/board/BoardSearch";
 import { SlimNoticeRow } from "@/components/SlimNoticeRow";
@@ -165,15 +165,14 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
 
   return (
     <>
-      <Header />
-      <main className="world-gc flex-1">
+      <main>
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-12">
-            <h1 className="font-gc-serif font-black text-[28px] sm:text-[36px] tracking-[-0.02em] text-gc-ink">
+            <h1 className="font-[650] text-[28px] sm:text-[36px] tracking-[-0.02em] text-ink">
               진행 중인 공공입찰
             </h1>
-            <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-muted-foreground">
-              필터 조건에 맞는 공고 <span className="font-bold text-foreground">{totalCount.toLocaleString("ko-KR")}건</span>.
+            <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-ink-mute">
+              필터 조건에 맞는 공고 <span className="font-bold text-ink">{totalCount.toLocaleString("ko-KR")}건</span>.
               공고를 클릭하면 발주계획부터 낙찰까지 전 과정을 한 페이지에서 확인할 수 있어요.
             </p>
             <div className="mt-6 max-w-[560px]">
@@ -183,7 +182,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
         </section>
 
         {/* 필터 바 */}
-        <section className="border-b border-border bg-background sticky top-16 z-30 backdrop-blur">
+        <section className="border-b border-border bg-paper sticky top-16 z-30 backdrop-blur">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-4 space-y-2.5">
             <FilterRow label="분야">
               <ChipLink
@@ -256,7 +255,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
               ))}
             </FilterRow>
             <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-border/60">
-              <span className="text-[12px] font-bold text-muted-foreground w-[44px] shrink-0">정렬</span>
+              <span className="text-[12px] font-bold text-ink-mute w-[44px] shrink-0">정렬</span>
               {SORT_OPTIONS.map((o) => (
                 <ChipLink
                   key={o.value}
@@ -266,7 +265,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
                   {o.label}
                 </ChipLink>
               ))}
-              <span className="text-[12.5px] text-muted-foreground font-medium ml-auto tabular-nums">
+              <span className="text-[12.5px] text-ink-mute font-medium ml-auto tabular-nums">
                 {safePage}/{totalPages} 페이지
               </span>
             </div>
@@ -277,10 +276,10 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
           <h2 className="sr-only">공고 목록</h2>
           {notices.length === 0 ? (
             <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
-              <h3 className="text-[18px] font-bold text-foreground">
+              <h3 className="text-[18px] font-bold text-ink">
                 해당 조건의 진행 중 공고가 없어요.
               </h3>
-              <p className="mt-2 text-[14px] text-muted-foreground">
+              <p className="mt-2 text-[14px] text-ink-mute">
                 필터를 조금 풀어보세요.
               </p>
             </div>
@@ -305,7 +304,6 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
           )}
         </section>
       </main>
-      <Footer />
     </>
   );
 }
@@ -313,7 +311,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[12px] font-bold text-muted-foreground w-[44px] shrink-0">
+      <span className="text-[12px] font-bold text-ink-mute w-[44px] shrink-0">
         {label}
       </span>
       {children}
@@ -337,7 +335,7 @@ function ChipLink({
         "px-2.5 py-1 rounded-full text-[12.5px] font-semibold transition-colors",
         active
           ? "bg-primary text-primary-foreground"
-          : "bg-background border border-border text-foreground hover:bg-muted"
+          : "bg-paper border border-border text-ink hover:bg-muted"
       )}
     >
       {children}

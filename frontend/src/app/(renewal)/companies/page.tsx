@@ -1,3 +1,5 @@
+// frontend/src/app/(renewal)/companies/page.tsx
+// 회사 디렉터리 — 09 전환에서 리뉴얼 껍데기로. nav·footer 는 레이아웃이 준다.
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -7,8 +9,6 @@ import {
   Globe,
   Calendar,
 } from "lucide-react";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import { BoardSearch } from "@/components/board/BoardSearch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,14 +40,13 @@ export default async function CompaniesIndexPage() {
 
   return (
     <>
-      <Header />
-      <main className="world-gc flex-1">
+      <main>
         <section className="border-b border-border bg-muted/30">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
-            <h1 className="font-gc-serif font-black text-[28px] sm:text-[36px] tracking-[-0.02em] text-gc-ink">
+            <h1 className="font-[650] text-[28px] sm:text-[36px] tracking-[-0.02em] text-ink">
               공공조달 활동 기업
             </h1>
-            <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-muted-foreground">
+            <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-ink-mute">
               나라장터 수주 이력이 분석된 기업 중 {companies.length}곳을 보여드려요. 회사를 선택하면
               해당 회사에 맞는 추천 공고와 과거 수주 분석을 볼 수 있어요.
             </p>
@@ -59,7 +58,7 @@ export default async function CompaniesIndexPage() {
 
         <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
           {companies.length === 0 ? (
-            <p className="text-[14.5px] text-muted-foreground">
+            <p className="text-[14.5px] text-ink-mute">
               아직 보여드릴 회사가 없어요. 잠시 후 다시 확인해 주세요.
             </p>
           ) : (
@@ -75,14 +74,14 @@ export default async function CompaniesIndexPage() {
                       {/* Header */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h2 className="text-[16.5px] font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                          <h2 className="text-[16.5px] font-bold text-ink group-hover:text-primary transition-colors line-clamp-2">
                             {c.corp_nm}
                           </h2>
-                          <div className="mt-1 text-[11.5px] tabular tabular-nums text-muted-foreground">
+                          <div className="mt-1 text-[11.5px] tabular tabular-nums text-ink-mute">
                             {maskBizrno(c.bizrno)}
                           </div>
                         </div>
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        <ArrowUpRight className="h-4 w-4 text-ink-mute group-hover:text-primary transition-colors shrink-0" />
                       </div>
 
                       {/* Sector badges */}
@@ -101,7 +100,7 @@ export default async function CompaniesIndexPage() {
                       )}
 
                       {/* Meta */}
-                      <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] text-muted-foreground">
+                      <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] text-ink-mute">
                         {/* 대표자명은 개인사업자의 경우 개인정보에 해당해 표시하지 않는다. */}
                         {c.rgn_nm && (
                           <Meta icon={<MapPin className="h-3 w-3" />}>
@@ -129,20 +128,20 @@ export default async function CompaniesIndexPage() {
                       {(c.contract_count ?? 0) > 0 && (
                         <div className="mt-4 pt-3 border-t border-border grid grid-cols-2 gap-3">
                           <div>
-                            <div className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                            <div className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink-mute">
                               누적 수주
                             </div>
                             <div className="mt-0.5 text-[18px] font-extrabold tabular tabular-nums text-primary leading-none">
                               {c.contract_count}
-                              <span className="text-[11px] ml-1 text-foreground/60">건</span>
+                              <span className="text-[11px] ml-1 text-ink/60">건</span>
                             </div>
                           </div>
                           {(c.recent_amount ?? 0) > 0 && (
                             <div>
-                              <div className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                              <div className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink-mute">
                                 누적 금액
                               </div>
-                              <div className="mt-0.5 text-[18px] font-extrabold tabular tabular-nums text-foreground leading-none">
+                              <div className="mt-0.5 text-[18px] font-extrabold tabular tabular-nums text-ink leading-none">
                                 {formatKRW(c.recent_amount)}
                               </div>
                             </div>
@@ -160,7 +159,7 @@ export default async function CompaniesIndexPage() {
         {/* 전체 목록 진입 — 사이트맵의 6만 회사 페이지로 가는 내부 링크 경로 */}
         <section className="mx-auto max-w-[1140px] px-5 sm:px-8 pb-14">
           <div className="border-t-2 border-gc-ink pt-5 flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="font-gc-serif font-black text-[20px] sm:text-[22px] tracking-[-0.02em] text-gc-ink">
+            <h2 className="font-[650] text-[20px] sm:text-[22px] tracking-[-0.02em] text-ink">
               전체 기업 목록
             </h2>
             <Link
@@ -175,7 +174,7 @@ export default async function CompaniesIndexPage() {
               <li key={s}>
                 <Link
                   href={`/companies/browse/${encodeURIComponent(s)}/1`}
-                  className="inline-flex h-7 items-center rounded-full border border-gc-rule bg-gc-sheet px-3 text-[12px] font-semibold text-gc-ink-2 hover:bg-gc-tint transition-colors"
+                  className="inline-flex h-7 items-center rounded-full border border-rule bg-gc-sheet px-3 text-[12px] font-semibold text-ink-2 hover:bg-gc-tint transition-colors"
                 >
                   {s === "all" ? "전체" : s}
                 </Link>
@@ -188,7 +187,7 @@ export default async function CompaniesIndexPage() {
         {industries.length > 0 && (
           <section className="mx-auto max-w-[1140px] px-5 sm:px-8 pb-14">
             <div className="border-t-2 border-gc-ink pt-5 flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="font-gc-serif font-black text-[20px] sm:text-[22px] tracking-[-0.02em] text-gc-ink">
+              <h2 className="font-[650] text-[20px] sm:text-[22px] tracking-[-0.02em] text-ink">
                 업종별 기업
               </h2>
               <Link
@@ -203,10 +202,10 @@ export default async function CompaniesIndexPage() {
                 <li key={ind.indstryty_cd}>
                   <Link
                     href={`/companies/industry/${ind.indstryty_cd}/1`}
-                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-gc-rule bg-gc-sheet px-3 text-[12px] font-semibold text-gc-ink-2 hover:bg-gc-tint transition-colors"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-rule bg-gc-sheet px-3 text-[12px] font-semibold text-ink-2 hover:bg-gc-tint transition-colors"
                   >
                     {ind.indstryty_nm}
-                    <span className="tabular tabular-nums text-gc-ink-3">
+                    <span className="tabular tabular-nums text-ink-3">
                       {ind.company_count.toLocaleString("ko-KR")}
                     </span>
                   </Link>
@@ -216,7 +215,6 @@ export default async function CompaniesIndexPage() {
           </section>
         )}
       </main>
-      <Footer />
     </>
   );
 }
@@ -230,8 +228,8 @@ function Meta({
 }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className="text-muted-foreground/60 shrink-0">{icon}</span>
-      <span className="text-foreground/80">{children}</span>
+      <span className="text-ink-mute/60 shrink-0">{icon}</span>
+      <span className="text-ink/80">{children}</span>
     </span>
   );
 }

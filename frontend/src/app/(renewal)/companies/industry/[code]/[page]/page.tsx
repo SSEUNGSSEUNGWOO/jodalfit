@@ -1,8 +1,8 @@
+// frontend/src/app/(renewal)/companies/industry/[code]/[page]/page.tsx
+// 업종별 회사 — 09 전환에서 리뉴얼 껍데기로. nav·footer 는 레이아웃이 준다.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import {
   INDUSTRY_PER_PAGE,
   fetchIndustry,
@@ -69,7 +69,7 @@ function PageLink({
   return (
     <Link
       href={`/companies/industry/${code}/${page}`}
-      className="inline-flex h-9 min-w-9 items-center justify-center px-2 rounded-[3px] border border-gc-rule bg-gc-sheet text-[13.5px] font-bold tabular tabular-nums text-gc-ink-2 hover:bg-gc-tint transition-colors"
+      className="inline-flex h-9 min-w-9 items-center justify-center px-2 rounded-[3px] border border-rule bg-gc-sheet text-[13.5px] font-bold tabular tabular-nums text-ink-2 hover:bg-gc-tint transition-colors"
     >
       {label}
     </Link>
@@ -95,32 +95,31 @@ export default async function IndustryCompaniesPage({ params }: Props) {
 
   return (
     <>
-      <Header />
-      <main className="world-gc flex-1">
+      <main>
         <section className="mx-auto max-w-[1080px] px-5 sm:px-8 pt-10 sm:pt-12 pb-16">
-          <nav className="text-[12.5px] text-gc-ink-3" aria-label="브레드크럼">
-            <Link href="/companies" className="hover:text-gc-ink font-semibold">
+          <nav className="text-[12.5px] text-ink-3" aria-label="브레드크럼">
+            <Link href="/companies" className="hover:text-ink font-semibold">
               공공조달 활동 기업
             </Link>
             <span className="mx-1.5">/</span>
-            <Link href="/companies/industry" className="hover:text-gc-ink font-semibold">
+            <Link href="/companies/industry" className="hover:text-ink font-semibold">
               업종별
             </Link>
             <span className="mx-1.5">/</span>
-            <span className="font-semibold text-gc-ink-2">{industry.indstryty_nm}</span>
+            <span className="font-semibold text-ink-2">{industry.indstryty_nm}</span>
           </nav>
 
           <div className="gc-double-rule mt-3 pt-4 pb-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h1 className="font-gc-serif font-black text-[24px] sm:text-[28px] tracking-[-0.02em] text-gc-ink break-keep">
+            <h1 className="font-[650] text-[24px] sm:text-[28px] tracking-[-0.02em] text-ink break-keep">
               {industry.indstryty_nm} 등록 업체
             </h1>
-            <span className="text-[12.5px] text-gc-ink-3 tabular tabular-nums">
+            <span className="text-[12.5px] text-ink-3 tabular tabular-nums">
               {industry.company_count.toLocaleString("ko-KR")}개사 · {p.toLocaleString("ko-KR")} /{" "}
               {totalPages.toLocaleString("ko-KR")}페이지
             </span>
           </div>
 
-          <p className="mt-3 max-w-[64ch] text-[14px] leading-[1.65] text-gc-ink-2 break-keep">
+          <p className="mt-3 max-w-[64ch] text-[14px] leading-[1.65] text-ink-2 break-keep">
             나라장터에 {industry.indstryty_nm}(으)로 등록된 기업 중 조달핏이 수주 이력을
             분석한 회사입니다. 회사를 선택하면 낙찰 건수와 평균 투찰률, 지금 검토할 만한
             공고를 볼 수 있습니다.
@@ -128,26 +127,26 @@ export default async function IndustryCompaniesPage({ params }: Props) {
 
           <ol className="mt-6 border-t-2 border-gc-ink">
             {rows.map((r, i) => (
-              <li key={r.bizrno_norm} className="border-b border-gc-rule">
+              <li key={r.bizrno_norm} className="border-b border-rule">
                 <Link
                   href={`/companies/${r.bizrno_norm}`}
                   className="grid items-baseline gap-x-4 px-1 py-3 grid-cols-[48px_minmax(0,1fr)] sm:grid-cols-[48px_minmax(0,1fr)_150px_90px] transition-colors hover:bg-gc-sheet"
                 >
-                  <span className="text-right pr-1 text-[13.5px] font-bold tabular tabular-nums text-gc-ink-3">
+                  <span className="text-right pr-1 text-[13.5px] font-bold tabular tabular-nums text-ink-3">
                     {((p - 1) * INDUSTRY_PER_PAGE + i + 1).toLocaleString("ko-KR")}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[15px] font-bold leading-[1.45] text-gc-ink break-keep">
+                    <span className="block text-[15px] font-bold leading-[1.45] text-ink break-keep">
                       {r.corp_nm}
                     </span>
-                    <span className="mt-0.5 block text-[12px] tabular tabular-nums text-gc-ink-3">
+                    <span className="mt-0.5 block text-[12px] tabular tabular-nums text-ink-3">
                       {maskBizrno(r.bizrno)}
                     </span>
                   </span>
-                  <span className="hidden sm:block text-[13px] text-gc-ink-2 break-keep self-start">
+                  <span className="hidden sm:block text-[13px] text-ink-2 break-keep self-start">
                     {r.rgn_nm ?? "—"}
                   </span>
-                  <span className="hidden sm:block text-right text-[13px] text-gc-ink-3 self-start">
+                  <span className="hidden sm:block text-right text-[13px] text-ink-3 self-start">
                     {r.corp_bsns_div_nm ?? "—"}
                   </span>
                 </Link>
@@ -163,7 +162,7 @@ export default async function IndustryCompaniesPage({ params }: Props) {
             {neighbors[0] > 1 && (
               <>
                 <PageLink code={parsed.code} page={1} label="1" />
-                {neighbors[0] > 2 && <span className="px-1 text-gc-ink-3">…</span>}
+                {neighbors[0] > 2 && <span className="px-1 text-ink-3">…</span>}
               </>
             )}
             {neighbors.map((x) => (
@@ -172,7 +171,7 @@ export default async function IndustryCompaniesPage({ params }: Props) {
             {neighbors[neighbors.length - 1] < totalPages && (
               <>
                 {neighbors[neighbors.length - 1] < totalPages - 1 && (
-                  <span className="px-1 text-gc-ink-3">…</span>
+                  <span className="px-1 text-ink-3">…</span>
                 )}
                 <PageLink code={parsed.code} page={totalPages} label={String(totalPages)} />
               </>
@@ -181,7 +180,6 @@ export default async function IndustryCompaniesPage({ params }: Props) {
           </nav>
         </section>
       </main>
-      <Footer className="mt-0" />
     </>
   );
 }

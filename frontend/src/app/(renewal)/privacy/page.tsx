@@ -1,6 +1,6 @@
+// frontend/src/app/(renewal)/privacy/page.tsx
+// 개인정보처리방침 — 09 전환에서 리뉴얼 껍데기로 옮겼다. nav·footer 는 레이아웃이 준다.
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import { CONTACT_EMAIL, PRIVACY_VERSION } from "@/lib/privacy";
 
 export const metadata: Metadata = {
@@ -16,13 +16,12 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <Header />
-      <main className="world-gc flex-1">
-        <article className="mx-auto max-w-[820px] px-5 sm:px-8 py-12 sm:py-16 text-[15px] leading-[1.8] text-foreground/85 break-keep">
-          <h1 className="font-gc-serif font-black text-[28px] sm:text-[34px] tracking-[-0.02em] text-gc-ink">
+      <main>
+        <article className="mx-auto max-w-[820px] px-5 sm:px-8 py-12 sm:py-16 text-[15px] leading-[1.8] text-ink-g break-keep">
+          <h1 className="font-[650] text-[28px] sm:text-[34px] tracking-[-0.02em] text-ink">
             개인정보처리방침
           </h1>
-          <p className="mt-2 text-[13.5px] text-muted-foreground">시행일 {PRIVACY_VERSION}</p>
+          <p className="mt-2 text-[13.5px] text-ink-mute">시행일 {PRIVACY_VERSION}</p>
 
           <p className="mt-6">
             조달핏(이하 &ldquo;서비스&rdquo;)은 회원가입 없이 쓸 수 있도록 만들어, 개인정보를 최소한으로만
@@ -147,7 +146,6 @@ export default function PrivacyPage() {
           </Section>
         </article>
       </main>
-      <Footer className="mt-0" />
     </>
   );
 }
@@ -155,7 +153,7 @@ export default function PrivacyPage() {
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="mt-10 scroll-mt-24">
-      <h2 className="font-gc-serif font-black text-[19px] sm:text-[21px] tracking-[-0.01em] text-gc-ink">
+      <h2 className="font-[650] text-[19px] sm:text-[21px] tracking-[-0.01em] text-ink">
         {title}
       </h2>
       <div className="mt-3">{children}</div>
@@ -167,7 +165,7 @@ function Table({ head, rows }: { head: string[]; rows: string[][] }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-background">
       <table className="w-full min-w-[520px] text-[13.5px] leading-[1.6]">
-        <thead className="bg-muted/60 text-[12.5px] font-semibold text-muted-foreground">
+        <thead className="bg-muted/60 text-[12.5px] font-semibold text-ink-mute">
           <tr>
             {head.map((h) => (
               <th key={h} className="px-4 py-2.5 text-left">

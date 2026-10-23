@@ -77,8 +77,10 @@ def main():
         goto(pg, "/recommendations?q=%ED%95%98%EC%88%98%EC%B2%98%EB%A6%AC"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
         k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]') })")
         assert not k["scene"] and k["rows"] >= 1 and not k["side"], k
-        # 빈 질의 = 입구
-        goto(pg, "/recommendations"); assert pg.query_selector("[data-searchbox]")
+        # 빈 질의 = 입구로 보낸다(입구는 루트 하나다 — 실사용자 검색의 97.7% 가 / 에서 시작)
+        goto(pg, "/recommendations")
+        assert pg.url.rstrip("/").endswith(BASE.rstrip("/").split("//")[-1]) or pg.url.rstrip("/") == BASE.rstrip("/"), pg.url
+        assert pg.query_selector("[data-suggest] input"), "입구 검색창이 없다"
 
         if not (url and anon and srv):
             print("ok results(guest): scene→done · funnel 4 · rows/gate/fade · side sticky · other company · 390 · keywords · 로그인 검사 건너뜀"); b.close(); return 0
