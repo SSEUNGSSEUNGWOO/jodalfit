@@ -1,0 +1,432 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>조달핏 — 머리 장면 깔때기 네 안</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>
+* { box-sizing:border-box }
+body { margin:0; background:#faf9f7; color:#141414; font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;
+       font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; font-size:14px }
+a { color:inherit; text-decoration:none }
+.wrap { max-width:1160px; margin:0 auto; padding:0 20px 120px }
+.nav { display:flex; align-items:center; justify-content:space-between; padding:18px 0; border-bottom:1px solid #141414 }
+.brand { display:flex; align-items:center; gap:8px; font-weight:800; font-size:16px; letter-spacing:-0.035em } .brand svg { display:block }
+.nav .r { font-size:12px; color:#6b6b67 }
+.q { padding:26px 0 2px; font-size:13.5px; color:#55554f } .q b { color:#141414; font-size:16px; font-weight:650; margin-right:10px }
+.q .src { display:block; margin-top:8px; font-size:12px; color:#7a7a76 }
+.v { display:none; margin-top:22px } .v.on { display:block }
+.vh { display:flex; align-items:baseline; gap:12px; padding-bottom:14px; border-bottom:1px solid #141414 }
+.vh b { font-size:16px; font-weight:650; letter-spacing:-0.02em } .vh span { font-size:12.5px; color:#6b6b67 }
+.labs { position:relative; height:56px }
+.lab { position:absolute; top:4px } .lab.g { border-left:1px solid #d8d6d0; padding-left:12px }
+.lab.pool { border-left:1px dashed #b8b6b0 }
+.lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; line-height:1.3 }
+.lab .k .sub { color:#8f8f8b }
+.lab .n { margin-top:5px; font-size:26px; letter-spacing:-0.04em; font-weight:650; line-height:1; color:#141414 }
+.lab .n small { font-size:11.5px; color:#6b6b67; font-weight:450; letter-spacing:0; margin-left:5px }
+.lab.last .n { color:#f97316 }
+.lab.pool .n { font-size:17px; color:#6b6b67 } .lab.pool .n small { color:#8f8f8b }
+.field { position:relative; height:392px }
+.field canvas { display:block; width:100%; height:392px }
+.rsn { position:absolute; font-size:12px; line-height:1.45; color:#4a4a46; letter-spacing:-0.015em; white-space:nowrap;
+       text-align:right; background:#faf9f7; padding:1px 5px; opacity:0; transition:opacity .35s ease }
+.rsn.on { opacity:1 } .rsn.pool { color:#6b6b67; text-align:left }
+.note { max-width:980px; margin-top:4px; padding:14px 0 0; border-top:1px solid #ececea; font-size:13px; line-height:1.75; color:#55554f }
+.foot { max-width:980px; margin-top:40px; padding-top:16px; border-top:1px solid #ececea; font-size:12px; line-height:1.7; color:#7a7a76 }
+.ctl { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; background:#fff;
+       border:1px solid #e6e4df; border-radius:999px; padding:3px; font-size:12.5px; white-space:nowrap }
+.ctl span { padding:6px 14px; border-radius:999px; color:#55554f; cursor:pointer } .ctl span.on { background:#141414; color:#fff }
+.ctl i { width:1px; background:#e6e4df; margin:4px 4px }
+@media (prefers-reduced-motion: reduce) { .rsn { transition:none !important } }
+@media screen and (max-width:520px){
+  .wrap { padding:0 16px 96px }
+  .q b { display:block; margin-bottom:2px }
+  /* 칸 수가 안(4 또는 5)마다 다르다 — 열을 고정하지 않고 항상 한 줄에 편다 */
+  .labs { height:auto; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:0 8px; padding:10px 0 8px }
+  .lab { position:static; border-left:0; padding-left:0 } .lab.pool { border-left:0 }
+  .lab .k { white-space:normal; font-size:10.5px } .lab .k .sub { display:none }
+  .lab .n { font-size:17px } .lab.pool .n { font-size:14px } .lab .n small { font-size:10px; margin-left:3px }
+  .field, .field canvas { height:220px } .rsn { display:none }
+  .ctl { font-size:11.5px; padding:2px; flex-wrap:wrap; justify-content:center; width:calc(100% - 24px); border-radius:16px }
+  .ctl span { padding:5px 9px } .ctl i { display:none }
+}
+</style></head><body><div class="wrap"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><span class="r">머리 장면 비교 — 깔때기 네 안</span></div><div class="q"><b>한종산업개발 주식회사</b>지금 입찰 가능한 공고 9,900 · 등록업종 허용 845 · 후보 풀 200 · 참가 자격 통과 85 · 검토할 공고 12<span class="src">모수가 같지 않다 — 9,900·845 는 전수 집계, 85 는 후보 풀 200건 중 자격 통과 수, 12 는 최종 결과. 845 → 85 를 그대로 기하로 그리면 거짓이 된다. 네 안이 이 지점을 어떻게 다루는지가 비교의 핵심이다.</span></div><section class="v" data-v="a"><div class="vh"><b>A 현행</b><span>통로 180 / 160 / 150 / 100 — 비교 기준(gen_flow 엔진 그대로)</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:74.286%;top:338px">등록업종 미허용</div><div class="rsn " style="right:48.571%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:22.857%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 선 다발이 벽 셋을 지난다. 통로는 180 → 100 으로 44% 만 좁아진다. 모수 — 처리하지 않는다(네 숫자를 같은 모수로 늘어놓는다). 약한 곳 — 건수가 99.9% 줄어드는데 통로가 거의 그대로여서 깔때기로 읽히지 않고, 85 를 845 와 같은 모수로 보이게 한다.</div></section><section class="v" data-v="b"><div class="vh"><b>B 비율 깔때기</b><span>통로 180 / 131 / 86 / 48 — 건수의 로그 비례</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:74.286%;top:338px">등록업종 미허용</div><div class="rsn " style="right:48.571%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:22.857%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 같은 선 다발이되 통로가 180 / 131 / 86 / 48 로 좁아진다(건수의 로그 비례). 마지막 통로에서 12선이 8.7px 간격으로 세어진다. 모수 — 처리하지 않는다. 비율만 바로잡은 안이다. 약한 곳 — 845 → 85 가 '열 배 걸러짐'으로 읽히는 거짓이 그대로 남는다. 형태는 여전히 선 다발 하나다.</div></section><section class="v" data-v="c"><div class="vh"><b>C 띠</b><span>두께 99 / 72 / 56 / 47 / 26 — 같은 로그 비례, 탈락은 아래로</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="240" style="left:21.429%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g pool" data-x="470" style="left:41.964%"><span class="k">후보 풀 추출<span class="sub"> · 845건에서 추출 · 모수 변경</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="700" style="left:62.500%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="930" style="left:83.036%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:78.571%;top:338px">등록업종 미허용</div><div class="rsn pool" style="left:41.964%;top:362px">후보 풀 200건 추출 — 여기서 모수가 바뀝니다</div><div class="rsn " style="right:37.500%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:16.964%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 회색 띠 하나가 관문마다 얇아지고, 떨어져 나가는 몫이 아래로 가는 선들로 흩어진다(이유는 그 아래). 모수 — 둘째 관문은 벽이 아니라 점선이고, 띠가 845 두께에서 후보 200 두께로 줄 때 떨어지는 선을 그리지 않는다. 탈락이 아니라 추출임을 형태로 구분한다. 약한 곳 — 면을 쓰므로 가는 괘선 기조에서 혼자 무겁고, 띠는 공고 하나를 가리키지 않는다(건수는 글자로만 믿어야 한다).</div></section><section class="v" data-v="d"><div class="vh"><b>D 점 격자</b><span>공고 하나 = 점 하나 · 9,900점 전부</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="240" style="left:21.429%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g pool" data-x="470" style="left:41.964%"><span class="k">후보 풀 추출<span class="sub"> · 845건에서 추출 · 모수 변경</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="700" style="left:62.500%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="930" style="left:83.036%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:73.929%;top:338px">등록업종 미허용</div><div class="rsn pool" style="left:42.857%;top:362px">후보 풀 200건 추출 — 여기서 모수가 바뀝니다</div><div class="rsn " style="right:42.232%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:21.429%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 공고 하나가 점 하나. 9,900점 격자가 관문마다 통과분만 다음 칸으로 옮겨 가고, 마지막 12점이 표 행 간격으로 내려앉는다(오른쪽 주황 눈금). 모수 — 둘째 관문에서 선택되지 않은 645점은 떨어지지 않고 흐린 채 제자리에 남는다. 후보 200 은 '걸러낸 것'이 아니라 '꺼내 본 것'이다. 약한 곳 — 점 크기가 건수에 비례하지 않아(칸마다 간격이 다르다) 면적으로 비율을 읽을 수 없다. 390px 에서 9,900 칸은 회색 얼룩이 된다.</div></section><div class="foot">네 안 모두 같은 실측 숫자(9,900 · 845 · 200 · 85 · 12)와 같은 2.4초 타임라인을 쓴다. 고정 타임라인은 시안 장치다 — 구현에서는 README 「머리 장면」 결정대로 실제 진행 이벤트에 묶고 가짜 진행률을 만들지 않는다. 주황은 선·글자뿐(로고 타일만 예외), 띠와 점은 회색. 움직임 줄이기 설정이면 애니메이션 없이 최종 상태만 그린다.</div></div><div class="ctl"><span data-v="a">A 현행</span><span data-v="b">B 비율</span><span data-v="c">C 띠</span><span data-v="d">D 점 격자</span><i></i><span class="again">다시 재생</span></div><script type="application/json" id="cfg">{"W": 1120, "H": 392, "CY": 196, "HH_A": [180, 160, 150, 100], "HH_B": [180, 131, 86, 48], "cnt4": [9900, 845, 85, 12], "CXS": [0, 240, 470, 700, 930, 1120], "CHH": [99, 72, 56, 47, 26], "CCY": 140, "CDROP": 312, "CCNT": [9900, 845, 200, 85, 12], "DBLK": [{"cx": 130, "cols": 80, "pitch": 2.6}, {"cx": 390, "cols": 24, "pitch": 4.2}, {"cx": 565, "cols": 14, "pitch": 6.6}, {"cx": 720, "cols": 9, "pitch": 8.4}, {"cx": 1010, "cols": 1, "pitch": 26}], "DGATE": [292, 480, 647, 880], "POOL_GATE": 1, "base": {"W": 1120, "H": 392, "CY": 196, "XS": [0, 288, 576, 864], "HH": [180, 160, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44}}</script><script>
+/* Engine(C, cv, L, T, mat): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl)
+   mat(선택) = { nb: 불투명도 버킷 수, of(i): 선 i 의 버킷, pen(g, c, b, dflt): 코호트 c·버킷 b 의 [strokeStyle, lineWidth] }
+   — entry-flow 가 상태 0 의 재료(선마다 다른 불투명도)를 체에도 그대로 쓰기 위한 것. 없으면 flow.html 과 같은 그림. */
+function Engine(C, cv, L, T, mat){
+const {W, H, CY, XS, HH, CNT, FAN_X, FAN_SP, CONV, PRESS} = C;
+const NW = XS.length - 1, S = NW + 1, N = CNT[0];   // 벽 수 / 구간 수(=코호트 수) / 선 수
+const NB = mat && mat.nb || 1, bucketOf = mat && mat.of || (() => 0);
+const ctx = cv.getContext('2d');
+
+/* ---- 선 기하: 한 번만 계산한다 ---------------------------------------- */
+function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// 살아남는 선은 씨앗 고정으로 고른다 — 그림이 매번 같아야 비교가 된다.
+// 뒤섞은 뒤 앞에서 835 / 372 / 12 를 잘라 쓰면 자동으로 부분집합이 된다. (어느 칸이 0 이어도 된다 — 0건 상태)
+const rnd = rng(7), idx = new Int32Array(N);
+for (let i=0;i<N;i++) idx[i]=i;
+for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+
+const fate = new Uint8Array(N).fill(1);          // 1=1번 벽에서 막힘 … S=끝까지 통과
+const alive = [];
+for (let s=1;s<=NW;s++){
+  const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
+  for (const i of a) fate[i] = s+1;
+  alive.push(a);
+}
+
+// Y[i*S+s] = s 구간에서의 y. 각 구간마다 생존자를 통로 전체에 고르게 다시 편다 —
+// 간격이 벌어지는 것이 곧 '몇 개가 남았나'이다.
+// 간격이 1px 아래로 내려가면 '고르게 배치'가 장치 픽셀 격자와 맞물려 굵은 무아레 띠를 만든다.
+// 0.45px 지터로 위상을 흩는다 — 공고가 실제로 고른 간격일 리도 없다.
+const Y = new Float32Array(N*S);
+const jit = p => p < 1.2 ? (rnd()*2-1)*0.45 : 0;
+const pitch = s => 2*HH[s] / Math.max(1, CNT[s]-1);
+for (let i=0;i<N;i++) Y[i*S] = CY + (i/(N-1)*2-1)*HH[0] + jit(pitch(0));
+for (let s=1;s<=NW;s++){
+  const a = alive[s-1], m = a.length, pj = pitch(s);
+  for (let r=0;r<m;r++) Y[a[r]*S+s] = CY + (m===1?0:r/(m-1)*2-1)*HH[s] + jit(pj);
+}
+
+// 코호트(×버킷)별 Path2D. 매 프레임 새로 만들지 않는다 — 이게 60fps 의 전부다.
+// mat.wander(i, x) 가 있으면 직선 구간이 결 있는 폴리라인이 된다(entry-flow — 체 안의 선이 자유 구간과 같은 재료여야 이음새가 없다).
+const wand = mat && mat.wander, STEP = 22.5;
+function run(p, i, x0, x1, y){
+  if (!wand){ p.lineTo(x1, y); return y; }
+  for (let x = x0 + STEP*((i*0.618034)%1); x < x1; x += STEP) p.lineTo(x, y + wand(i, x));   // 꺾이는 x 를 선마다 어긋나게
+  const ye = y + wand(i, x1); p.lineTo(x1, ye); return ye;
+}
+const P = Array.from({length: S}, () => Array.from({length: NB}, () => new Path2D()));
+for (let i=0;i<N;i++){
+  const f = fate[i], p = P[f-1][bucketOf(i)];
+  let y = Y[i*S], x = 0;
+  p.moveTo(0, y + (wand ? wand(i, 0) : 0));
+  for (let s=1;s<f;s++){                          // 통과한 벽마다 통로 폭으로 모인다
+    const g = XS[s], ny = Y[i*S+s], ye = run(p, i, x, g-CONV, y);
+    p.bezierCurveTo(g-20, ye, g-16, ny, g, ny);
+    y = ny; x = g;
+  }
+  if (f < S) run(p, i, x, XS[f], y);              // 벽까지 가서 멈춘다 (아래로 새지 않는다)
+  else {
+    const ye = run(p, i, x, FAN_X, y), row = CY + (y-CY)/HH[NW]*FAN_SP;
+    p.bezierCurveTo(FAN_X+70, ye, W-70, row, W, row);
+  }
+}
+
+/* ---- 그리기 ------------------------------------------------------------ */
+// 막힌 코호트는 '벽 앞에서 눌렸다 벽면에서 흩어진다'. 벽면에서 0 이 아니라 옅게 남겨야
+// 잉크가 벽에 닿아 '막혔다'로 읽힌다 — 벽 앞에서 끊기면 그냥 사라진 것이 된다.
+function fade(c, x1, a, pressed, tail){
+  const g = c.createLinearGradient(0,0,x1,0);
+  g.addColorStop(0, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-PRESS)/x1, `rgba(20,20,20,${a})`);
+  g.addColorStop((x1-6)/x1, `rgba(20,20,20,${pressed})`);
+  g.addColorStop(1, `rgba(20,20,20,${tail})`);
+  return g;
+}
+// 벽 1·2·3 에서 막히는 코호트의 (불투명도, 눌림, 꼬리, 굵기). 남은 선이 적을수록 진하게 — 372개가 하나씩 보여야 한다.
+// (알려진 결함: 이 차이가 덩어리 안에 가로 얼룩을 만든다 — README '머리 장면' 참조)
+const PEN = [[.055, .16, .03, .30], [.30, .60, .08, .35], [.34, .65, .09, .35]];
+// 9,000여 개를 매 프레임 다시 래스터화하면 소프트웨어 래스터라이저에서 70ms 가 넘는다.
+// 그림 자체는 움직이지 않고 '어디까지 보이나'만 움직이므로, 한 번 그려서 오프스크린에
+// 넣어두고 매 프레임은 왼쪽 일부만 blit 한다 — 선은 하나도 줄이지 않는다.
+let off = null, sx = 1, sy = 1, ms = 0;
+
+function defaultPen(g, c){
+  if (c < NW){ const a = PEN[c]; return [fade(g, XS[c+1], a[0], a[1], a[2]), a[3]]; }
+  const last = g.createLinearGradient(0,0,W,0);   // 마지막 12개만 주황
+  last.addColorStop(0, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]-20)/W, 'rgba(20,20,20,.8)');
+  last.addColorStop((XS[NW]+30)/W, 'rgba(249,115,22,.9)');
+  last.addColorStop(1, 'rgba(249,115,22,.9)');
+  return [last, .9];
+}
+// 벽 k. dy 만큼 위에서 내려오는 중일 수 있다(entry-flow 의 '벽이 떨어진다').
+function wall(g, k, dy){
+  const x = XS[k]; dy = dy || 0;
+  g.strokeStyle = '#141414';
+  for (const sg of [-1, 1]){
+    g.lineWidth = 2.5; g.beginPath();              // 벽은 화면 끝까지, 통로만 뚫려 있다
+    g.moveTo(x, (sg<0 ? 0 : CY+HH[k]) + dy); g.lineTo(x, (sg<0 ? CY-HH[k] : H) + dy); g.stroke();
+    g.lineWidth = 1.5; g.beginPath();              // 통로 입술 — 구멍임을 분명히
+    g.moveTo(x-7, CY+sg*HH[k]+dy); g.lineTo(x+7, CY+sg*HH[k]+dy); g.stroke();
+  }
+}
+
+function render(){
+  const g = off.getContext('2d'), dpr = devicePixelRatio || 1;
+  g.setTransform(sx*dpr, 0, 0, sy*dpr, 0, 0);     // 설계 좌표 그대로 쓰고 레티나는 dpr 로. sy 는 390px 의 낮은 머리
+  g.clearRect(0, 0, W, H);
+  g.lineCap = 'butt';
+  for (let c=0;c<S;c++) for (let b=0;b<NB;b++){
+    const d = defaultPen(g, c), pen = mat && mat.pen ? mat.pen(g, c, b, d) : d;
+    g.strokeStyle = pen[0]; g.lineWidth = pen[1]; g.stroke(P[c][b]);
+  }
+  for (let k=1;k<=NW;k++) wall(g, k, 0);
+}
+
+function setup(){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  sx = r.width / W; sy = r.height ? r.height / H : 1;
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(H*sy*dpr);
+  off = Object.assign(document.createElement('canvas'), {width: cv.width, height: cv.height});
+  ctx.setTransform(1, 0, 0, 1, 0, 0);              // blit 는 장치 픽셀로
+  render();
+}
+
+// front 왼쪽은 체(off), 오른쪽은 behind(있으면 — entry-flow 의 멈춘 덩어리) 아니면 빈 캔버스.
+function draw(front, behind){
+  const t0 = performance.now();
+  const fw = Math.max(1, Math.round(front * sx * (devicePixelRatio || 1)));
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(off, 0, 0, fw, cv.height, 0, 0, fw, cv.height);
+  if (behind && fw < cv.width) ctx.drawImage(behind, fw, 0, cv.width-fw, cv.height, fw, 0, cv.width-fw, cv.height);
+  ms = ms ? ms*.85 + (performance.now()-t0)*.15 : performance.now()-t0;
+  window.__ms = ms;
+}
+
+// 전진선 x 기준 라벨·글자: 벽을 지나 150px 동안 카운트업, 글자는 제 폭을 다 지나야 뜬다.
+function labels(x){
+  T.forEach(t => t.classList.toggle('on', x >= +t.dataset.x));
+  L.forEach(g => {
+    g.classList.toggle('on', x >= +g.dataset.x);
+    const span = g.querySelector('.cnt'), to = +span.dataset.to;
+    const p = Math.min(1, Math.max(0, (x - g.dataset.x) / 150));
+    span.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString('ko-KR');
+  });
+}
+function paint(x, settled, behind){
+  draw(x, behind);
+  labels(x);
+  document.body.classList.toggle('done', settled);
+}
+
+return {setup, draw, paint, labels, wall, Y, alive, N, S, NW, get sx(){ return sx; }, get off(){ return off; }, get ms(){ return ms; }};
+}
+
+const C = JSON.parse(document.getElementById('cfg').textContent);
+const W = C.W, H = C.H, DUR = 2400;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ez = p => 1 - Math.pow(1 - p, 2.2);            // 전진 가속 — 네 안이 같은 곡선을 쓴다
+const sstep = p => p <= 0 ? 0 : p >= 1 ? 1 : p*p*(3-2*p);
+const lerp = (a, b, p) => a + (b-a)*p;
+
+/* 칸 라벨 — 0..1 진행도를 받아 숫자를 센다. 네 안이 같은 함수를 쓴다(진행도만 제 방식으로 준다). */
+function paintLabs(L, prog){
+  L.forEach((g, i) => {
+    g.classList.toggle('on', prog[i] > 0);
+    const s = g.querySelector('.cnt'), to = +s.dataset.to, p = Math.min(1, Math.max(0, prog[i]));
+    // 아직 안 받은 칸은 0 이 아니라 '…' — 0 은 "없다"는 실제 값이다(README 숫자 규칙)
+    s.textContent = p <= 0 ? '…' : Math.round(to * (1 - Math.pow(1-p, 3))).toLocaleString('ko-KR');
+  });
+}
+function reveal(R, prog){ R.forEach((e, i) => e.classList.toggle('on', prog[i] > 0.35)); }
+
+/* ---- A·B : gen_flow 엔진 그대로. 다른 것은 통로 높이(HH)뿐 ---------------- */
+function lines(key, HH){
+  const sec = document.querySelector('.v[data-v="'+key+'"]');
+  const cv = sec.querySelector('canvas'), L = [...sec.querySelectorAll('.lab')], R = [...sec.querySelectorAll('.rsn')];
+  let E = null;
+  return {
+    setup(){ E = Engine(Object.assign({}, C.base, {HH: HH, CNT: C.cnt4}), cv, L, []); E.setup(); },
+    frame(t){
+      const x = W * ez(t);
+      E.draw(x);
+      paintLabs(L, C.base.XS.map(g => (x - g) / 150));
+      reveal(R, C.base.XS.slice(1).map(g => (x - g - 14) / 60));
+    }
+  };
+}
+
+/* ---- C 띠 : 두께가 로그 비례. 떨어져 나가는 몫은 아래로 흩어진다 ---------- */
+function band(){
+  const sec = document.querySelector('.v[data-v="c"]');
+  const cv = sec.querySelector('canvas'), L = [...sec.querySelectorAll('.lab')], R = [...sec.querySelectorAll('.rsn')];
+  const XS = C.CXS, HH = C.CHH, CY = C.CCY, DROP = C.CDROP, NS = HH.length, TAPER = 56;
+  const ctx = cv.getContext('2d');
+  let sx = 1, sy = 1;
+  function hhAt(x){
+    for (let s=0;s<NS;s++){
+      if (x > XS[s+1]) continue;
+      if (s === NS-1) return HH[s];
+      const g = XS[s+1];
+      return x > g-TAPER ? lerp(HH[s], HH[s+1], sstep((x-(g-TAPER))/TAPER)) : HH[s];
+    }
+    return HH[NS-1];
+  }
+  function setup(){
+    const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    sx = r.width / W; sy = (r.height || H) / H;
+    cv.width = Math.round(r.width*dpr); cv.height = Math.round(H*sy*dpr);
+  }
+  function frame(t){
+    const front = Math.max(2, W * ez(t)), dpr = devicePixelRatio || 1;
+    ctx.setTransform(sx*dpr, 0, 0, sy*dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    // 띠 — 윤곽을 따라 한 번에. 면은 회색이라 '주황은 선' 규칙과 무관하다.
+    ctx.beginPath();
+    for (let x=0;x<=front;x+=4) ctx.lineTo(x, CY - hhAt(x));
+    ctx.lineTo(front, CY - hhAt(front)); ctx.lineTo(front, CY + hhAt(front));
+    for (let x=front;x>=0;x-=4) ctx.lineTo(x, CY + hhAt(x));
+    ctx.closePath();
+    ctx.fillStyle = '#ececea'; ctx.fill();
+    ctx.strokeStyle = '#d8d6d0'; ctx.lineWidth = 1; ctx.stroke();
+    // 관문
+    for (let k=1;k<NS;k++){
+      const g = XS[k]; if (front < g) continue;        // 띠가 닿기 전에 관문 표시가 떠 있지 않게
+      const h0 = HH[k-1], h1 = HH[k], pool = (k-1) === C.POOL_GATE;
+      ctx.save();
+      if (pool){                                   // 추출 — 벽이 아니다. 점선 하나, 떨어지는 선 없음
+        ctx.setLineDash([4, 4]); ctx.strokeStyle = '#9a9a95'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(g, CY-h0-14); ctx.lineTo(g, CY+h0+14); ctx.stroke();
+      } else {
+        ctx.strokeStyle = '#141414'; ctx.lineWidth = 1.5;   // 통로 입술 — 띠가 지나는 구멍
+        for (const sg of [-1, 1]){
+          ctx.beginPath(); ctx.moveTo(g-9, CY+sg*h1); ctx.lineTo(g+9, CY+sg*h1); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(g, CY+sg*h1); ctx.lineTo(g, CY+sg*h0); ctx.stroke();
+        }
+        const vis = Math.min(1, Math.max(0, (front - g) / 90));   // 떨어져 나가는 몫
+        if (vis > 0){
+          ctx.strokeStyle = 'rgba(20,20,20,.30)'; ctx.lineWidth = .6;
+          for (let i=0;i<18;i++){
+            const u = i/17, y0 = CY + lerp(h1, h0, 0.1+0.9*u), x1 = g + 34 + u*86, y1 = DROP - u*10;
+            ctx.beginPath(); ctx.moveTo(g-2, y0);
+            ctx.bezierCurveTo(g+16, y0, x1-26, y1, g + (x1-g)*vis, lerp(y0, y1, vis));
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.restore();
+    }
+    paintLabs(L, XS.slice(0, NS).map(g => (front - g) / 150));
+    reveal(R, XS.slice(1, NS).map(g => (front - g - 14) / 60));
+  }
+  return {setup, frame};
+}
+
+/* ---- D 점 격자 : 공고 하나 = 점 하나. 9,900점을 전부 그린다 --------------- */
+function dots(){
+  const sec = document.querySelector('.v[data-v="d"]');
+  const cv = sec.querySelector('canvas'), L = [...sec.querySelectorAll('.lab')], R = [...sec.querySelectorAll('.rsn')];
+  const BLK = C.DBLK, CNT = C.CCNT, NS = CNT.length, N = CNT[0], NT = NS-1;
+  const ctx = cv.getContext('2d');
+  let sx = 1, sy = 1;
+
+  // 씨앗 고정 — 그림이 매번 같아야 비교가 된다(gen_flow 와 같은 PRNG·같은 방식)
+  function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  const rnd = rng(7), idx = new Int32Array(N);
+  for (let i=0;i<N;i++) idx[i]=i;
+  for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+  const ends = new Uint8Array(N);                   // 이 점이 마지막으로 서는 칸
+  const rank = new Int32Array(N*NS).fill(-1);
+  for (let i=0;i<N;i++) rank[i*NS] = i;
+  for (let s=1;s<NS;s++){
+    const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
+    a.forEach((i, r) => { ends[i] = s; rank[i*NS+s] = r; });
+  }
+  // 칸 안 자리 — 열 수·간격만 주면 점 수가 곧 덩어리 크기다
+  const pos = new Float32Array(N*NS*2);
+  for (let s=0;s<NS;s++){
+    const b = BLK[s], cols = b.cols, p = b.pitch, rows = Math.ceil(CNT[s]/cols);
+    const x0 = b.cx - (cols-1)*p/2, y0 = C.CY - (rows-1)*p/2;
+    for (let i=0;i<N;i++){
+      const r = rank[i*NS+s]; if (r < 0) continue;
+      pos[(i*NS+s)*2] = x0 + (r % cols)*p;
+      pos[(i*NS+s)*2+1] = y0 + Math.floor(r/cols)*p;
+    }
+  }
+  const T0 = 0.10, TL = 0.18, TG = 0.22;            // 관문 넷의 시작·길이·간격
+  const NB = 6;
+
+  function setup(){
+    const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    sx = r.width / W; sy = (r.height || H) / H;
+    cv.width = Math.round(r.width*dpr); cv.height = Math.round(H*sy*dpr);
+  }
+  function frame(t){
+    const dpr = devicePixelRatio || 1;
+    ctx.setTransform(sx*dpr, 0, 0, sy*dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    let done = 0, act = -1, lp = 0;
+    for (let k=0;k<NT;k++){
+      const a = T0 + k*TG;
+      if (t >= a + TL) done = k+1;
+      else if (t >= a){ act = k; lp = sstep((t-a)/TL); }
+    }
+    // 관문 자리 — 추출(둘째)만 점선, 나머지는 먹 헤어라인
+    for (let k=0;k<NT;k++){
+      if (t < T0 + k*TG) continue;
+      const g = C.DGATE[k], pool = k === C.POOL_GATE;
+      ctx.save(); ctx.lineWidth = 1;
+      if (pool){ ctx.setLineDash([4, 4]); ctx.strokeStyle = '#9a9a95'; } else ctx.strokeStyle = '#d8d6d0';
+      ctx.beginPath(); ctx.moveTo(g, 40); ctx.lineTo(g, H-52); ctx.stroke(); ctx.restore();
+    }
+    // 점 — 불투명도 버킷으로 묶어 한 번에 칠한다(9,900번 fillStyle 을 바꾸지 않는다).
+    // Path2D 는 비울 수 없어 매 프레임 새로 만든다(6개뿐).
+    const B = Array.from({length: NB}, () => new Path2D());
+    // 390px 에서는 설계 좌표가 0.33 배로 눌려 2px 점이 사라진다 — 장치 픽셀로 1.5px 는 되게 키운다
+    const sz = Math.max(2, 1.5 / Math.min(sx, sy));
+    for (let i=0;i<N;i++){
+      const e = ends[i];
+      let s, a, dy = 0;
+      if (act >= 0 && e > act){ s = -1; a = .85; }                       // 옮겨 가는 중
+      else if (act >= 0 && e === act){                                   // 이 관문에서 떨어진다
+        s = act; a = lerp(.85, e === C.POOL_GATE ? .22 : .12, lp);
+        dy = e === C.POOL_GATE ? 0 : lp*16;                              // 추출은 제자리, 탈락은 아래로
+      }
+      // 떨어진 점도 사라지지 않는다 — 그 공고가 나쁜 게 아니라 이 회사에 해당되지 않을 뿐이다
+      else if (e < done){ s = e; a = e === C.POOL_GATE ? .22 : .12; dy = e === C.POOL_GATE ? 0 : 16; }
+      else { s = Math.min(e, done); a = .85; }
+      if (a <= 0.02) continue;
+      let x, y;
+      if (s < 0){ const o=(i*NS+act)*2, n=(i*NS+act+1)*2; x = lerp(pos[o], pos[n], lp); y = lerp(pos[o+1], pos[n+1], lp); }
+      else { x = pos[(i*NS+s)*2]; y = pos[(i*NS+s)*2+1] + dy; }
+      const b = Math.min(NB-1, Math.max(0, Math.round(a*(NB-1))));
+      B[b].rect(x - sz/2, y - sz/2, sz, sz);
+    }
+    for (let b=1;b<NB;b++){ ctx.fillStyle = 'rgba(20,20,20,' + (b/(NB-1)*.85).toFixed(3) + ')'; ctx.fill(B[b]); }
+    // 마지막 12점은 표 행 자리에 앉는다 — 오른쪽에 주황 눈금(면이 아니라 선)
+    if (done >= NT){
+      ctx.strokeStyle = 'rgba(249,115,22,.9)'; ctx.lineWidth = 1.5;
+      for (let i=0;i<N;i++){
+        if (ends[i] !== NS-1) continue;
+        const o = (i*NS+NS-1)*2;
+        ctx.beginPath(); ctx.moveTo(pos[o]+7, pos[o+1]); ctx.lineTo(pos[o]+44, pos[o+1]); ctx.stroke();
+      }
+    }
+    const prog = [];
+    for (let s=0;s<NS;s++) prog.push(s === 0 ? (t-0.02)/0.06 : (t - (T0+(s-1)*TG+TL) + 0.012)/0.06);
+    paintLabs(L, prog);
+    reveal(R, prog.slice(1).map(p => p*2));
+  }
+  return {setup, frame};
+}
+
+const V = {a: lines('a', C.HH_A), b: lines('b', C.HH_B), c: band(), d: dots()};
+
+/* ---- 공통 타임라인 ------------------------------------------------------- */
+// 시안이라 2.4초 고정. 구현은 README '머리 장면' 결정대로 실제 진행 이벤트(stageDone)에 묶는다 — 가짜 진행률 없음.
+let cur = 'a', raf = 0;
+function play(){
+  cancelAnimationFrame(raf);
+  const v = V[cur];
+  if (reduce){ v.frame(1); return; }
+  const t0 = performance.now();
+  const tick = now => {
+    const t = Math.min(1, (now - t0) / DUR);
+    v.frame(t);
+    if (t < 1) raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+function show(k){
+  cur = k;
+  document.querySelectorAll('.v').forEach(s => s.classList.toggle('on', s.dataset.v === k));
+  document.querySelectorAll('.ctl [data-v]').forEach(s => s.classList.toggle('on', s.dataset.v === k));
+  V[k].setup(); play();
+}
+document.querySelectorAll('.ctl [data-v]').forEach(s => s.onclick = () => show(s.dataset.v));
+document.querySelector('.ctl .again').onclick = () => play();
+addEventListener('resize', () => { V[cur].setup(); V[cur].frame(1); });
+show('a');
+window.__seek = t => { cancelAnimationFrame(raf); V[cur].frame(t); };   /* --check 용 */
+</script></body></html>
