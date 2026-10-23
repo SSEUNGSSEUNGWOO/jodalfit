@@ -44,11 +44,11 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
     return (
       <>
         {/* 묻는 줄은 검색창의 머리다. 작으면 안내문처럼 읽혀 아무것도 묻지 않는 것처럼 보인다. */}
-        <h1 className="mt-10 max-w-[760px] text-[26px] font-[650] leading-[1.35] tracking-[-0.03em] text-ink max-sm:mt-6 max-sm:text-[20px]">
+        <h1 className="mx-auto mt-10 max-w-[760px] text-[26px] font-[650] leading-[1.35] tracking-[-0.03em] text-ink max-sm:mt-6 max-sm:text-[20px]">
           어느 <span className="border-b-2 border-orange pb-0.5">회사</span>의 공고를 찾습니까
         </h1>
-        <div className="mt-[18px]"><SearchSuggest autoFocus /></div>
-        <p className="mt-[11px] max-w-[760px] text-[13.5px] text-ink-g">
+        <div className="mx-auto mt-[18px] max-w-[760px]"><SearchSuggest autoFocus /></div>
+        <p className="mx-auto mt-[11px] max-w-[760px] text-[13.5px] text-ink-g">
           회사명 · 사업자등록번호 · 업종 또는 품목 중 아는 것 하나면 됩니다
         </p>
         {entry && <EntryPanel d={entry} />}

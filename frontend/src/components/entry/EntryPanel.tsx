@@ -28,7 +28,7 @@ export function EntryPanel({ d }: { d: EntryData }) {
     { n: d.companies, label: "등록된 회사" },
   ];
   return (
-    <div className="mt-[26px] max-w-[760px] rounded-[6px] border border-hair bg-panel px-6 py-[22px] max-sm:px-4">
+    <div className="mx-auto mt-[26px] max-w-[760px] rounded-[6px] border border-hair bg-panel px-6 py-[22px] max-sm:px-4">
       <div className="flex gap-[34px] max-sm:flex-wrap max-sm:gap-x-6 max-sm:gap-y-3">
         {stats.map((s) => (
           <div key={s.label} className="flex flex-col gap-[3px]">
