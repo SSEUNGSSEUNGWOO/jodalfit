@@ -18,4 +18,5 @@ as $$
 $$;
 
 grant execute on function public.funnel_counts(text[], int) to service_role;
-revoke execute on function public.funnel_counts(text[], int) from anon, authenticated;
+-- 함수는 생성 시 PUBLIC 에 execute 가 붙는다 — service_role 만 남긴다.
+revoke execute on function public.funnel_counts(text[], int) from public, anon, authenticated;
