@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.config import get_settings
 from app.services.embedding import embed_texts
@@ -99,7 +99,7 @@ def run(
 ) -> None:
     space = space or get_settings().embed_space
     rpc = "update_bid_notice_embeddings_k" if space == "kure" else "update_bid_notice_embeddings"
-    job_start = datetime.now().isoformat()
+    job_start = datetime.now(timezone.utc).isoformat()  # tz 없는 지역시각을 쓰면 Postgres 가 UTC 로 해석해 KST PC 에서 9시간 밀린다
     if dry_run:
         res = (
             pending_query(
@@ -128,7 +128,7 @@ def run(
                 break
             texts = [build_text(r) for r in rows]
             embeddings = embed_texts(texts, space)
-            now_iso = datetime.now().isoformat()
+            now_iso = datetime.now(timezone.utc).isoformat()  # tz 없는 지역시각을 쓰면 Postgres 가 UTC 로 해석해 KST PC 에서 9시간 밀린다
             updates = [
                 {
                     "bid_ntce_no": r["bid_ntce_no"],

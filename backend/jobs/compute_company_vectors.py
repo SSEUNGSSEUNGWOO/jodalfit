@@ -31,7 +31,7 @@ from __future__ import annotations
 import argparse
 import time
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Iterator
 
 import numpy as np
@@ -475,7 +475,7 @@ def process_chunk(
             industry_by_biz[b] = np.array(e, dtype=np.float32)
 
     # 6. 회사별 가중합
-    now_iso = datetime.now().isoformat()
+    now_iso = datetime.now(timezone.utc).isoformat()  # tz 없는 지역시각을 쓰면 Postgres 가 UTC 로 해석해 KST PC 에서 9시간 밀린다
     updates: list[dict] = []
     skipped = 0
     for bizrno_norm in chunk_bizrnos:
