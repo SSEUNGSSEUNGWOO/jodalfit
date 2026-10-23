@@ -33,6 +33,8 @@ from app.services.search_log import log_search
 logger = logging.getLogger(__name__)
 
 RATE_LIMIT = "15/minute;100/day"
+# /stream 은 결과 페이지의 주 경로(페이지 뷰 1회 = 스트림 1회). 다른 회사·다시 시도·뒤로가기가 분당 15 를 넘긴다 — 사무실 공용 IP 고려(2026-10-23 05 검토).
+STREAM_RATE_LIMIT = "40/minute;400/day"
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
@@ -208,7 +210,7 @@ def post_recommendations(
 
 
 @router.post("/stream", dependencies=[Depends(guard_external_traffic)])
-@limiter.limit(RATE_LIMIT)
+@limiter.limit(STREAM_RATE_LIMIT)
 def post_recommendations_stream(
     request: Request,
     req: RecommendRequest,

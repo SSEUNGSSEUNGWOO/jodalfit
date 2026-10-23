@@ -29,6 +29,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const [counts, setCounts] = useState<SceneCounts>(EMPTY);
   const [data, setData] = useState<RecommendationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errStatus, setErrStatus] = useState<number | null>(null); // 404 = 재시도로 못 푸는 상태(회사 없음·벡터 없음) → 다시 시도 대신 다른 검색
   const [settled, setSettled] = useState(mode === "keywords");
   const [search, setSearch] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -48,7 +49,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
         else if (e.type === "stage" && e.stage === "rank") setCounts((c) => ({ ...c, results: e.results }));
         // passed 를 0 으로 메우지 않는다 — 0056 미적용·v1 이면 모르는 값이고 "면허·지역 0% 통과"는 거짓이다. Scene 은 results 만으로 끝낸다.
         else if (e.type === "results") { got = true; clearTimeout(timer); setData(e.data); setCounts((c) => ({ ...c, results: e.data.results.length })); }
-        else if (e.type === "error") { got = true; clearTimeout(timer); setError(e.message); }
+        else if (e.type === "error") { got = true; clearTimeout(timer); setError(e.message); setErrStatus(e.status ?? null); }
       },
       ac.signal,
     ).catch((err) => { if (!ac.signal.aborted && !got) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
@@ -102,11 +103,15 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
 
       {error && (
         <div data-err className="flex items-center gap-3.5 border-t border-hair py-4 text-[13.5px] text-ink">
-          <span>결과를 불러오지 못했습니다</span><span className="flex-1" />
-          <Btn onClick={() => {
-            setCounts(EMPTY); setData(null); setError(null);
-            setSettled(mode === "keywords"); setAttempt((a) => a + 1);
-          }}>다시 시도</Btn>
+          <span>{errStatus === 404 ? error : "결과를 불러오지 못했습니다"}</span><span className="flex-1" />
+          {errStatus === 404 ? (
+            <Btn onClick={() => setSearch(true)}>다른 검색</Btn>
+          ) : (
+            <Btn onClick={() => {
+              setCounts(EMPTY); setData(null); setError(null); setErrStatus(null);
+              setSettled(mode === "keywords"); setAttempt((a) => a + 1);
+            }}>다시 시도</Btn>
+          )}
         </div>
       )}
 
