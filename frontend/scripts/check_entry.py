@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("RESULTS_BASE", "http://localhost:3000")
 OUT = Path(__file__).resolve().parent
-URL = f"{BASE}/recommendations"
+URL = f"{BASE}/"  # 입구는 루트다 — 실사용자 검색의 97.7% 가 여기서 시작한다
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요",
           "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "주십시오"]
 
