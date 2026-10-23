@@ -178,6 +178,7 @@ export function createEngine(
   let dpr = 1;
   let wd = 1;
   let hd = 1;
+  const stoppedPaths = new Map<number, Path2D>();
   let placed = ""; // 라벨·사유를 둔 자리 — 바뀔 때만 style 을 쓴다(매 프레임 레이아웃 치지 않게)
 
   /* ---- 점의 운명: counts 가 바뀔 때만 계산한다 -------------------------- */
@@ -210,7 +211,8 @@ export function createEngine(
   // keepLayout: 간격·칸 중심·관문을 그대로 두고 모양만 다시 — 숫자가 나눠 도착할 때 그림이 튀지 않게.
   function setup(keepLayout = false) {
     const r = canvas.getBoundingClientRect();
-    dpr = devicePixelRatio || 1;
+    stoppedPaths.clear();
+    dpr = Math.min(devicePixelRatio || 1, 2);
     const nw = Math.round(r.width * dpr);
     const nh = Math.round((r.height || H) * dpr);
     if (nw <= 0 || nh <= 0) return;
@@ -320,9 +322,24 @@ export function createEngine(
     }
 
     // 불투명도를 1/64 로 묶어 Path2D 하나씩 — N 번 fillStyle 을 바꾸지 않는다. 이게 60fps 의 전부다.
+    // Fallen dots stay fixed: reuse their geometry instead of rebuilding thousands of rectangles.
+    let stopped = stoppedPaths.get(done);
+    if (!stopped) {
+      stopped = new Path2D();
+      for (let i = 0; i < N; i++) {
+        const d = ends[i];
+        if (d >= done || d === NS - 1) continue;
+        const o = (i * NS + d) * 2;
+        stopped.rect(pos[o] - sz / 2, pos[o + 1] - sz / 2, sz, sz);
+      }
+      stoppedPaths.set(done, stopped);
+    }
+    ctx.fillStyle = `rgba(20,20,20,${DEAD})`;
+    ctx.fill(stopped);
     const paths = new Map<number, Path2D>();
     for (let i = 0; i < N; i++) {
       const e = ends[i];
+      if (e < done && e !== NS - 1) continue;
       // d: 이 점이 흐려지는 관문(= 마지막으로 선 칸). 끝까지 남으면 -1.
       const d = e === NS - 1 ? -1 : e;
       let px: number;

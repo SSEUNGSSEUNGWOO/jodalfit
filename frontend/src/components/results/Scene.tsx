@@ -32,10 +32,12 @@ function subOf(c: SceneCounts, i: number): string {
 
 export function Scene({
   counts,
+  playbackKey,
   state,
   onSettled,
 }: {
   counts: SceneCounts;
+  playbackKey: string;
   state: "running" | "done" | "error";
   onSettled: () => void;
 }) {
@@ -61,6 +63,9 @@ export function Scene({
           SCENE.XS[Math.max(1, firstUnknown)] - 30;
 
   useEffect(() => {
+    try {
+      if (sessionStorage.getItem(`recommendation-scene:${playbackKey}`)) { finish(); return; }
+    } catch { /* Optional playback memory. */ }
     if (!cv.current) return;
     const e = createEngine(
       cv.current,
@@ -86,23 +91,21 @@ export function Scene({
   }, [cnt.join(","), settled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (settled || state === "error") return;
+    if (settledRef.current || settled || state === "error") return;
     if (reduce) {
       if (target >= SCENE.W) finish();
       return;
     }
     let raf = 0,
       end = 0;
-    const from = xRef.current,
-      t0 = performance.now();
-    const dist = Math.max(0, target - from);
-    const dur = Math.max(1, dist / 288) * 260;
+    let previous = performance.now();
     const tick = (now: number) => {
-      const p = Math.min(1, (now - t0) / dur);
-      xRef.current = from + dist * (1 - Math.pow(1 - p, 2.2));
+      const elapsed = Math.min(50, now - previous);
+      previous = now;
+      xRef.current = Math.min(target, xRef.current + elapsed * 0.22);
       eng.current?.paint(xRef.current);
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else if (target >= SCENE.W) end = window.setTimeout(finish, 150);
+      if (xRef.current < target) raf = requestAnimationFrame(tick);
+      else if (target >= SCENE.W) end = window.setTimeout(finish, 900);
     };
     raf = requestAnimationFrame(tick);
     return () => {
@@ -115,6 +118,7 @@ export function Scene({
   function finish() {
     if (settledRef.current || state === "error") return;
     settledRef.current = true;
+    try { sessionStorage.setItem(`recommendation-scene:${playbackKey}`, "1"); } catch { /* Optional playback memory. */ }
     xRef.current = SCENE.W;
     eng.current?.paint(SCENE.W);
     setSettled(true);

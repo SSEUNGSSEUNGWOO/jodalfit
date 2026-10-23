@@ -110,7 +110,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />
       )}
 
-      {mode === "company" && <Scene counts={counts} state={state} onSettled={() => setSettled(true)} />}
+      {mode === "company" && <Scene key={attempt} playbackKey={JSON.stringify([query, keywords, algorithm])} counts={counts} state={state} onSettled={() => setSettled(true)} />}
       {mode === "keywords" && <div className="mt-5 border-t border-ink" />}
 
       {error && (
