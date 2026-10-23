@@ -45,6 +45,8 @@ export type Layout = {
   gx: number[]; // 관문 x — 덩어리 사이 한가운데
   pad: number;
   tick: number;
+  rows0: number; // 캔버스 높이가 허용하는 최대 행 — 간격을 고정한 채 모양만 다시 잡을 때 쓴다
+  ar: number; // 첫 덩어리의 가로세로비 — 나머지도 닮게
 };
 
 /** 숫자가 아직 안 온 칸의 '점 몇 개를 그릴지'만 메우는 값 — 기하 전용이다.
@@ -70,24 +72,8 @@ export function layout(cnt: readonly number[], wd: number, hd: number): Layout |
   for (const p of PITCHES) {
     const rows0 = Math.max(1, Math.floor(availh / p) + 1);
     const ar = Math.ceil(N / rows0) / rows0; // 첫 덩어리의 가로세로비 — 나머지도 닮게 만든다
-    const shp: [number, number][] = [];
-    for (const n of cnt) {
-      if (n <= 0) {
-        shp.push([0, 0]); // 아는 0 은 지어내지 않는다 — 빈 칸으로 둔다
-        continue;
-      }
-      let best: [number, number, number] | null = null; // [닮은 정도, 열, 행]
-      for (let r = 1; r <= rows0; r++) {
-        if ((r - 1) * p > availh) continue;
-        const c = Math.ceil(n / r);
-        if (c * r > n * 1.06) continue; // 낭비 6% 안
-        const d = Math.abs(Math.log(c / r / ar));
-        if (!best || d < best[0]) best = [d, c, r];
-      }
-      if (!best) break;
-      shp.push([best[1], best[2]]);
-    }
-    if (shp.length !== cnt.length) continue;
+    const shp = fitShapes(cnt, p, rows0, ar, availh);
+    if (!shp) continue;
     const ws = shp.map((s) => Math.max(0, (s[0] - 1) * p));
     const sum = ws.reduce((a, b) => a + b, 0);
     const gap = Math.min(gmax, (wd - tick - 2 * marg - sum) / (ws.length - 1));
@@ -104,9 +90,51 @@ export function layout(cnt: readonly number[], wd: number, hd: number): Layout |
       const b = cxs[k + 1] - ((shp[k + 1][0] || 1) - 1) * (p / 2);
       gx.push((a + b) / 2);
     }
-    return { p, shp, cxs, gx, pad, tick };
+    return { p, shp, cxs, gx, pad, tick, rows0, ar };
   }
   return null;
+}
+
+/** 간격·행 상한이 정해진 뒤 건수만으로 칸 모양을 고른다. 들어갈 모양이 없으면 null. */
+function fitShapes(
+  cnt: readonly number[], p: number, rows0: number, ar: number, availh: number,
+): [number, number][] | null {
+  const shp: [number, number][] = [];
+  for (const n of cnt) {
+    if (n <= 0) {
+      shp.push([0, 0]); // 아는 0 은 지어내지 않는다 — 빈 칸으로 둔다
+      continue;
+    }
+    let best: [number, number, number] | null = null; // [닮은 정도, 열, 행]
+    for (let r = 1; r <= rows0; r++) {
+      if ((r - 1) * p > availh) continue;
+      const c = Math.ceil(n / r);
+      if (c * r > n * 1.06) continue; // 낭비 6% 안
+      const d = Math.abs(Math.log(c / r / ar));
+      if (!best || d < best[0]) best = [d, c, r];
+    }
+    if (!best) return null;
+    shp.push([best[1], best[2]]);
+  }
+  return shp;
+}
+
+/** 간격·칸 중심·관문을 그대로 두고 건수만 반영한다.
+ *  숫자는 네 번에 나눠 도착한다(기본값 → 전체 → 후보 → 자격 → 결과). 그때마다 배치를 처음부터
+ *  다시 잡으면 그림이 통째로 다시 짜여 '장면이 되돌아간 것'처럼 보인다 — 2026-10-23 실측:
+ *  덩어리 왼쪽 끝이 384 → 344 → 348 로 튀고 점 수가 8,814 → 10,172 → 7,805 로 요동쳤다.
+ *  덩어리는 제 중심을 기준으로 커지거나 줄기만 한다. 관문을 넘길 만큼 커지면 null 을 돌려
+ *  호출부가 전면 재배치하게 둔다(드물다). */
+export function refit(lay: Layout, cnt: readonly number[], hd: number): Layout | null {
+  const availh = hd - 2 * lay.pad;
+  const shp = fitShapes(cnt, lay.p, lay.rows0, lay.ar, availh);
+  if (!shp) return null;
+  for (let k = 0; k < NT; k++) {
+    const right = lay.cxs[k] + Math.max(0, (shp[k][0] - 1) * lay.p) / 2;
+    const left = lay.cxs[k + 1] - Math.max(0, (shp[k + 1][0] - 1) * lay.p) / 2;
+    if (right >= lay.gx[k] || left <= lay.gx[k]) return null; // 덩어리가 관문을 먹는다
+  }
+  return { ...lay, shp };
 }
 
 /** 칸 i 가 차지하는 면적(장치 픽셀²). D-2 의 주장 = 이 값이 건수에 비례한다. */
@@ -179,15 +207,22 @@ export function createEngine(
     }
   }
 
-  function setup() {
+  // keepLayout: 간격·칸 중심·관문을 그대로 두고 모양만 다시 — 숫자가 나눠 도착할 때 그림이 튀지 않게.
+  function setup(keepLayout = false) {
     const r = canvas.getBoundingClientRect();
     dpr = devicePixelRatio || 1;
-    wd = Math.round(r.width * dpr);
-    hd = Math.round((r.height || H) * dpr);
-    if (wd <= 0 || hd <= 0) return;
-    canvas.width = wd;
-    canvas.height = hd;
-    lay = layout(cnt, wd, hd);
+    const nw = Math.round(r.width * dpr);
+    const nh = Math.round((r.height || H) * dpr);
+    if (nw <= 0 || nh <= 0) return;
+    const resized = nw !== wd || nh !== hd;
+    wd = nw;
+    hd = nh;
+    if (resized || canvas.width !== wd || canvas.height !== hd) {
+      canvas.width = wd;
+      canvas.height = hd;
+    }
+    const kept = keepLayout && lay && !resized ? refit(lay, cnt, hd) : null;
+    lay = kept ?? layout(cnt, wd, hd);
     if (!lay) return;
     // 390px·dpr3 에서 pitch 가 5 아래로 눌린다 — 1px 밑으로 가면 점이 사라져 얼룩이 된다.
     sz = Math.max(1, Math.round(lay.p * 0.55));
@@ -378,7 +413,8 @@ export function createEngine(
       if (c.length === cnt.length && c.every((n, i) => n === cnt[i])) return;
       cnt = c;
       build();
-      setup(); // 칸 모양이 건수에서 나온다 — 숫자가 오면 배치를 다시 잡는다
+      // 숫자는 네 번에 나눠 온다 — 배치를 처음부터 다시 잡으면 장면이 되돌아간 것처럼 보인다.
+      setup(true);
     },
     counts: () => cnt.slice(),
   };

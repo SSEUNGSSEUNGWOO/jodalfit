@@ -294,7 +294,7 @@ export default async function NoticePage({ params }: Props) {
           </section>
         )}
 
-        {/* 첨부문서 인사이트 — 제안요청서·공고문 요약 */}
+        {/* 첨부문서 인사이트 — 첨부 문서 요약. 대상 기준은 파일 종류가 아니라 경쟁입찰 여부다(0058) */}
         {insight?.summary && (
           <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14 border-b border-border">
             <div className="mb-6">
@@ -302,7 +302,7 @@ export default async function NoticePage({ params }: Props) {
                 문서 요약
               </h2>
               <p className="mt-1 text-[14px] text-muted-foreground">
-                첨부된 제안요청서·공고문을 읽어 정리한 내용이에요. 입찰 전 원문 확인은 필수.
+                첨부 문서를 읽어 정리한 내용이에요. 입찰 전 원문 확인은 필수.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
