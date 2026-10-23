@@ -12,7 +12,7 @@ a { color:inherit; text-decoration:none }
 .v { display:none; margin-top:22px } .v.on { display:block }
 .vh { display:flex; align-items:baseline; gap:12px; padding-bottom:14px; border-bottom:1px solid #141414 }
 .vh b { font-size:16px; font-weight:650; letter-spacing:-0.02em } .vh span { font-size:12.5px; color:#6b6b67 }
-.labs { position:relative; height:56px }
+.labs { position:relative; height:56px } .labs.t2 { height:72px }   /* 부제가 두 줄인 D-2·D-3 */
 .lab { position:absolute; top:4px } .lab.g { border-left:1px solid #d8d6d0; padding-left:12px }
 .lab.pool { border-left:1px dashed #b8b6b0 }
 .lab .k { display:block; font-size:12px; color:#55554f; white-space:nowrap; line-height:1.3 }
@@ -25,7 +25,7 @@ a { color:inherit; text-decoration:none }
 .field canvas { display:block; width:100%; height:392px }
 .rsn { position:absolute; font-size:12px; line-height:1.45; color:#4a4a46; letter-spacing:-0.015em; white-space:nowrap;
        text-align:right; background:#faf9f7; padding:1px 5px; opacity:0; transition:opacity .35s ease }
-.rsn.on { opacity:1 } .rsn.pool { color:#6b6b67; text-align:left }
+.rsn.on { opacity:1 } .rsn.pool { color:#6b6b67; text-align:left } .rsn.l { text-align:left }
 .note { max-width:980px; margin-top:4px; padding:14px 0 0; border-top:1px solid #ececea; font-size:13px; line-height:1.75; color:#55554f }
 .foot { max-width:980px; margin-top:40px; padding-top:16px; border-top:1px solid #ececea; font-size:12px; line-height:1.7; color:#7a7a76 }
 .ctl { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); display:flex; gap:2px; background:#fff;
@@ -45,7 +45,7 @@ a { color:inherit; text-decoration:none }
   .ctl { font-size:11.5px; padding:2px; flex-wrap:wrap; justify-content:center; width:calc(100% - 24px); border-radius:16px }
   .ctl span { padding:5px 9px } .ctl i { display:none }
 }
-</style></head><body><div class="wrap"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><span class="r">머리 장면 비교 — 깔때기 네 안</span></div><div class="q"><b>한종산업개발 주식회사</b>지금 입찰 가능한 공고 9,900 · 등록업종 허용 845 · 후보 풀 200 · 참가 자격 통과 85 · 검토할 공고 12<span class="src">모수가 같지 않다 — 9,900·845 는 전수 집계, 85 는 후보 풀 200건 중 자격 통과 수, 12 는 최종 결과. 845 → 85 를 그대로 기하로 그리면 거짓이 된다. 네 안이 이 지점을 어떻게 다루는지가 비교의 핵심이다.</span></div><section class="v" data-v="a"><div class="vh"><b>A 현행</b><span>통로 180 / 160 / 150 / 100 — 비교 기준(gen_flow 엔진 그대로)</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:74.286%;top:338px">등록업종 미허용</div><div class="rsn " style="right:48.571%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:22.857%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 선 다발이 벽 셋을 지난다. 통로는 180 → 100 으로 44% 만 좁아진다. 모수 — 처리하지 않는다(네 숫자를 같은 모수로 늘어놓는다). 약한 곳 — 건수가 99.9% 줄어드는데 통로가 거의 그대로여서 깔때기로 읽히지 않고, 85 를 845 와 같은 모수로 보이게 한다.</div></section><section class="v" data-v="b"><div class="vh"><b>B 비율 깔때기</b><span>통로 180 / 131 / 86 / 48 — 건수의 로그 비례</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:74.286%;top:338px">등록업종 미허용</div><div class="rsn " style="right:48.571%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:22.857%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 같은 선 다발이되 통로가 180 / 131 / 86 / 48 로 좁아진다(건수의 로그 비례). 마지막 통로에서 12선이 8.7px 간격으로 세어진다. 모수 — 처리하지 않는다. 비율만 바로잡은 안이다. 약한 곳 — 845 → 85 가 '열 배 걸러짐'으로 읽히는 거짓이 그대로 남는다. 형태는 여전히 선 다발 하나다.</div></section><section class="v" data-v="c"><div class="vh"><b>C 띠</b><span>두께 99 / 72 / 56 / 47 / 26 — 같은 로그 비례, 탈락은 아래로</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="240" style="left:21.429%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g pool" data-x="470" style="left:41.964%"><span class="k">후보 풀 추출<span class="sub"> · 845건에서 추출 · 모수 변경</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="700" style="left:62.500%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="930" style="left:83.036%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:78.571%;top:338px">등록업종 미허용</div><div class="rsn pool" style="left:41.964%;top:362px">후보 풀 200건 추출 — 여기서 모수가 바뀝니다</div><div class="rsn " style="right:37.500%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:16.964%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 회색 띠 하나가 관문마다 얇아지고, 떨어져 나가는 몫이 아래로 가는 선들로 흩어진다(이유는 그 아래). 모수 — 둘째 관문은 벽이 아니라 점선이고, 띠가 845 두께에서 후보 200 두께로 줄 때 떨어지는 선을 그리지 않는다. 탈락이 아니라 추출임을 형태로 구분한다. 약한 곳 — 면을 쓰므로 가는 괘선 기조에서 혼자 무겁고, 띠는 공고 하나를 가리키지 않는다(건수는 글자로만 믿어야 한다).</div></section><section class="v" data-v="d"><div class="vh"><b>D 점 격자</b><span>공고 하나 = 점 하나 · 9,900점 전부</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="240" style="left:21.429%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g pool" data-x="470" style="left:41.964%"><span class="k">후보 풀 추출<span class="sub"> · 845건에서 추출 · 모수 변경</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="700" style="left:62.500%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="930" style="left:83.036%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:73.929%;top:338px">등록업종 미허용</div><div class="rsn pool" style="left:42.857%;top:362px">후보 풀 200건 추출 — 여기서 모수가 바뀝니다</div><div class="rsn " style="right:42.232%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:21.429%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 공고 하나가 점 하나. 9,900점 격자가 관문마다 통과분만 다음 칸으로 옮겨 가고, 마지막 12점이 표 행 간격으로 내려앉는다(오른쪽 주황 눈금). 모수 — 둘째 관문에서 선택되지 않은 645점은 떨어지지 않고 흐린 채 제자리에 남는다. 후보 200 은 '걸러낸 것'이 아니라 '꺼내 본 것'이다. 약한 곳 — 점 크기가 건수에 비례하지 않아(칸마다 간격이 다르다) 면적으로 비율을 읽을 수 없다. 390px 에서 9,900 칸은 회색 얼룩이 된다.</div></section><div class="foot">네 안 모두 같은 실측 숫자(9,900 · 845 · 200 · 85 · 12)와 같은 2.4초 타임라인을 쓴다. 고정 타임라인은 시안 장치다 — 구현에서는 README 「머리 장면」 결정대로 실제 진행 이벤트에 묶고 가짜 진행률을 만들지 않는다. 주황은 선·글자뿐(로고 타일만 예외), 띠와 점은 회색. 움직임 줄이기 설정이면 애니메이션 없이 최종 상태만 그린다.</div></div><div class="ctl"><span data-v="a">A 현행</span><span data-v="b">B 비율</span><span data-v="c">C 띠</span><span data-v="d">D 점 격자</span><i></i><span class="again">다시 재생</span></div><script type="application/json" id="cfg">{"W": 1120, "H": 392, "CY": 196, "HH_A": [180, 160, 150, 100], "HH_B": [180, 131, 86, 48], "cnt4": [9900, 845, 85, 12], "CXS": [0, 240, 470, 700, 930, 1120], "CHH": [99, 72, 56, 47, 26], "CCY": 140, "CDROP": 312, "CCNT": [9900, 845, 200, 85, 12], "DBLK": [{"cx": 130, "cols": 80, "pitch": 2.6}, {"cx": 390, "cols": 24, "pitch": 4.2}, {"cx": 565, "cols": 14, "pitch": 6.6}, {"cx": 720, "cols": 9, "pitch": 8.4}, {"cx": 1010, "cols": 1, "pitch": 26}], "DGATE": [292, 480, 647, 880], "POOL_GATE": 1, "base": {"W": 1120, "H": 392, "CY": 196, "XS": [0, 288, 576, 864], "HH": [180, 160, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44}}</script><script>
+</style></head><body><div class="wrap"><div class="nav"><a class="brand" href="#"><svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="#f97316"/><path d="M30 14 H50 V34 M14 30 V50 H34" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>조달핏</a><span class="r">머리 장면 비교 — 깔때기 여섯 안</span></div><div class="q"><b>한종산업개발 주식회사</b>지금 입찰 가능한 공고 9,900 · 등록업종 허용 845 · 후보 풀 200 · 참가 자격 통과 85 · 검토할 공고 12<span class="src">모수가 같지 않다 — 9,900·845 는 전수 집계, 85 는 후보 풀 200건 중 자격 통과 수, 12 는 최종 결과. 845 → 85 를 그대로 기하로 그리면 거짓이 된다. 네 안이 이 지점을 어떻게 다루는지가 비교의 핵심이다.</span></div><section class="v" data-v="a"><div class="vh"><b>A 현행</b><span>통로 180 / 160 / 150 / 100 — 비교 기준(gen_flow 엔진 그대로)</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:74.286%;top:338px">등록업종 미허용</div><div class="rsn " style="right:48.571%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:22.857%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 선 다발이 벽 셋을 지난다. 통로는 180 → 100 으로 44% 만 좁아진다. 모수 — 처리하지 않는다(네 숫자를 같은 모수로 늘어놓는다). 약한 곳 — 건수가 99.9% 줄어드는데 통로가 거의 그대로여서 깔때기로 읽히지 않고, 85 를 845 와 같은 모수로 보이게 한다.</div></section><section class="v" data-v="b"><div class="vh"><b>B 비율 깔때기</b><span>통로 180 / 131 / 86 / 48 — 건수의 로그 비례</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="288" style="left:25.714%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="576" style="left:51.429%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="864" style="left:77.143%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:74.286%;top:338px">등록업종 미허용</div><div class="rsn " style="right:48.571%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:22.857%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 같은 선 다발이되 통로가 180 / 131 / 86 / 48 로 좁아진다(건수의 로그 비례). 마지막 통로에서 12선이 8.7px 간격으로 세어진다. 모수 — 처리하지 않는다. 비율만 바로잡은 안이다. 약한 곳 — 845 → 85 가 '열 배 걸러짐'으로 읽히는 거짓이 그대로 남는다. 형태는 여전히 선 다발 하나다.</div></section><section class="v" data-v="c"><div class="vh"><b>C 띠</b><span>두께 99 / 72 / 56 / 47 / 26 — 같은 로그 비례, 탈락은 아래로</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="240" style="left:21.429%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g pool" data-x="470" style="left:41.964%"><span class="k">후보 풀 추출<span class="sub"> · 845건에서 추출 · 모수 변경</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="700" style="left:62.500%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="930" style="left:83.036%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:78.571%;top:338px">등록업종 미허용</div><div class="rsn pool" style="left:41.964%;top:362px">후보 풀 200건 추출 — 여기서 모수가 바뀝니다</div><div class="rsn " style="right:37.500%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:16.964%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 회색 띠 하나가 관문마다 얇아지고, 떨어져 나가는 몫이 아래로 가는 선들로 흩어진다(이유는 그 아래). 모수 — 둘째 관문은 벽이 아니라 점선이고, 띠가 845 두께에서 후보 200 두께로 줄 때 떨어지는 선을 그리지 않는다. 탈락이 아니라 추출임을 형태로 구분한다. 약한 곳 — 면을 쓰므로 가는 괘선 기조에서 혼자 무겁고, 띠는 공고 하나를 가리키지 않는다(건수는 글자로만 믿어야 한다).</div></section><section class="v" data-v="d"><div class="vh"><b>D 점 격자</b><span>공고 하나 = 점 하나 · 9,900점 전부</span></div><div class="labs"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"> · 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="240" style="left:21.429%"><span class="k">등록업종 허용 공고<span class="sub"> · 전체의 8.5%</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g pool" data-x="470" style="left:41.964%"><span class="k">후보 풀 추출<span class="sub"> · 845건에서 추출 · 모수 변경</span></span><div class="n"><span class="cnt" data-to="200">0</span><small>건</small></div></div><div class="lab g " data-x="700" style="left:62.500%"><span class="k">참가 자격 통과 공고<span class="sub"> · 후보 풀 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="930" style="left:83.036%"><span class="k">검토할 공고<span class="sub"> · 자격 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn " style="right:73.929%;top:338px">등록업종 미허용</div><div class="rsn pool" style="left:42.857%;top:362px">후보 풀 200건 추출 — 여기서 모수가 바뀝니다</div><div class="rsn " style="right:42.232%;top:338px">면허·지역 제한 미충족</div><div class="rsn " style="right:21.429%;top:338px">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 공고 하나가 점 하나. 9,900점 격자가 관문마다 통과분만 다음 칸으로 옮겨 가고, 마지막 12점이 표 행 간격으로 내려앉는다(오른쪽 주황 눈금). 모수 — 둘째 관문에서 선택되지 않은 645점은 떨어지지 않고 흐린 채 제자리에 남는다. 후보 200 은 '걸러낸 것'이 아니라 '꺼내 본 것'이다. 약한 곳 — 점 크기가 건수에 비례하지 않아(칸마다 간격이 다르다) 면적으로 비율을 읽을 수 없다. 390px 에서 9,900 칸은 회색 얼룩이 된다.</div></section><section class="v" data-v="d2"><div class="vh"><b>D-2 고정 간격</b><span>네 덩어리가 같은 점 간격 — 면적이 건수에 비례</span></div><div class="labs t2"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"><br>· 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="0" style="left:27.000%"><span class="k">등록업종 허용 공고<span class="sub"><br>· 전체의 8.5%<br>· 200건 추출 후 자격 판정</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="0" style="left:54.000%"><span class="k">참가 자격 통과 공고<span class="sub"><br>· 후보 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="0" style="left:78.000%"><span class="k">검토할 공고<span class="sub"><br>· 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn">등록업종 미허용</div><div class="rsn">면허·지역 제한 미충족</div><div class="rsn">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 네 덩어리가 모두 같은 점 간격이다. 9,900 덩어리 옆에서 845 는 12분의 1, 85 는 손톱만 한 조각, 12 는 점 열둘로 남는다. 숫자를 읽지 않아도 줄어든 정도가 면적으로 읽힌다. 마지막 12점은 표 행 간격으로 펼쳐지고 오른쪽에 주황 눈금이 붙는다. 모수 — 후보 풀 200 은 제 칸을 세우지 않고 845 덩어리 안에서 진한 점으로 남는다. 모수가 바뀐 것이 아니라 같은 덩어리에서 추출한 것임을 형태가 말한다. 설명 글 없이 덩어리만으로 성립한다. 약한 곳 — 탈락분이 제자리에 흐리게 남으므로 첫 덩어리가 끝까지 캔버스의 절반을 차지한다. 칸 라벨은 덩어리 왼쪽 모서리에 맞췄으나 셋째·넷째 덩어리는 폭이 40px·12px 이라 라벨이 덩어리보다 넓고, 첫 라벨과 둘째 라벨 사이가 520px 비어 라벨 줄이 성기다.</div></section><section class="v" data-v="d3"><div class="vh"><b>D-3 제자리 축소</b><span>덩어리 하나가 제자리에서 줄어든다</span></div><div class="labs t2"><div class="lab " data-x="0" style="left:0.000%"><span class="k">지금 입찰 가능한 공고<span class="sub"><br>· 마감 90일 이내</span></span><div class="n"><span class="cnt" data-to="9900">0</span><small>건</small></div></div><div class="lab g " data-x="0" style="left:27.000%"><span class="k">등록업종 허용 공고<span class="sub"><br>· 전체의 8.5%<br>· 200건 추출 후 자격 판정</span></span><div class="n"><span class="cnt" data-to="845">0</span><small>건</small></div></div><div class="lab g " data-x="0" style="left:54.000%"><span class="k">참가 자격 통과 공고<span class="sub"><br>· 후보 200건 중</span></span><div class="n"><span class="cnt" data-to="85">0</span><small>건</small></div></div><div class="lab g last" data-x="0" style="left:78.000%"><span class="k">검토할 공고<span class="sub"><br>· 통과분의 14.1%</span></span><div class="n"><span class="cnt" data-to="12">0</span><small>건</small></div></div></div><div class="field"><canvas height="392" aria-hidden="true"></canvas><div class="rsn">등록업종 미허용</div><div class="rsn">면허·지역 제한 미충족</div><div class="rsn">회사와의 유사도 낮음</div></div><div class="note">보이는 것 — 칸을 나누지 않는다. 덩어리 하나가 제자리에서 줄어든다. 탈락분이 그 자리에서 사라져 구멍이 나고, 남은 점이 다져져 더 작은 네모가 된다. 지나온 크기는 가는 회색 외곽선으로 남는다. 끝에서는 흐린 탈락 점을 걷어내 외곽선 셋과 12행만 남긴다 — 흐린 점이 깔린 채로는 주황 눈금과 겹쳐 아무것도 읽히지 않았다. 외곽선은 남겼다. 점을 걷어낸 뒤 줄어든 폭을 증언하는 것이 그것뿐이기 때문이다. 모수 — D-2 와 같다. 후보 풀 200 은 845 덩어리 안에서 진한 점으로만 구분한다. 약한 곳 — 단계의 이력이 동시에 보이지 않는다. 지나간 크기는 외곽선으로만 남아 9,900 과 85 를 나란히 두고 견줄 수 없고, 2.4초 안에 네 번 줄어드는 것을 눈으로 따라가야 한다. 외곽선을 지우면 비교 근거가 아예 사라진다.</div></section><div class="foot">여섯 안 모두 같은 실측 숫자(9,900 · 845 · 200 · 85 · 12)와 같은 2.4초 타임라인을 쓴다. 고정 타임라인은 시안 장치다 — 구현에서는 README 「머리 장면」 결정대로 실제 진행 이벤트에 묶고 가짜 진행률을 만들지 않는다. 주황은 선·글자뿐(로고 타일만 예외), 띠와 점은 회색. 움직임 줄이기 설정이면 애니메이션 없이 최종 상태만 그린다.</div></div><div class="ctl"><span data-v="a">A 현행</span><span data-v="b">B 비율</span><span data-v="c">C 띠</span><span data-v="d">D 점 격자</span><span data-v="d2">D-2 고정 간격</span><span data-v="d3">D-3 제자리 축소</span><i></i><span class="again">다시 재생</span></div><script type="application/json" id="cfg">{"W": 1120, "H": 392, "CY": 196, "HH_A": [180, 160, 150, 100], "HH_B": [180, 131, 86, 48], "cnt4": [9900, 845, 85, 12], "CXS": [0, 240, 470, 700, 930, 1120], "CHH": [99, 72, 56, 47, 26], "CCY": 140, "CDROP": 312, "CCNT": [9900, 845, 200, 85, 12], "DBLK": [{"cx": 130, "cols": 80, "pitch": 2.6}, {"cx": 390, "cols": 24, "pitch": 4.2}, {"cx": 565, "cols": 14, "pitch": 6.6}, {"cx": 720, "cols": 9, "pitch": 8.4}, {"cx": 1010, "cols": 1, "pitch": 26}], "DGATE": [292, 480, 647, 880], "POOL_GATE": 1, "DCNT": [9900, 845, 85, 12], "DPOOL": 200, "PITCHES": [8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.5], "DLAY": {"p": 4, "shp": [[131, 76], [39, 22], [11, 8], [4, 3]], "cxs": [284.0, 721.3333333333334, 918.6666666666667, 1046.0], "pad": 46.0, "tick": 44.0, "gap": 101.33333333333333}, "base": {"W": 1120, "H": 392, "CY": 196, "XS": [0, 288, 576, 864], "HH": [180, 160, 150, 100], "FAN_X": 936, "FAN_SP": 150, "CONV": 44, "PRESS": 44}}</script><script>
 /* Engine(C, cv, L, T, mat): C=cfg, cv=그릴 캔버스, L=구간 라벨(.lab), T=전진선에 묶인 글자(.ttl)
    mat(선택) = { nb: 불투명도 버킷 수, of(i): 선 i 의 버킷, pen(g, c, b, dflt): 코호트 c·버킷 b 의 [strokeStyle, lineWidth] }
    — entry-flow 가 상태 0 의 재료(선마다 다른 불투명도)를 체에도 그대로 쓰기 위한 것. 없으면 flow.html 과 같은 그림. */
@@ -401,7 +401,180 @@ function dots(){
   return {setup, frame};
 }
 
-const V = {a: lines('a', C.HH_A), b: lines('b', C.HH_B), c: band(), d: dots()};
+/* ---- D-2 고정 간격 / D-3 제자리 축소 ------------------------------------- */
+/* 네 덩어리가 같은 pitch 를 쓴다 — 점유 면적(칸수 × pitch²)이 건수에 비례하는 유일한 방법.
+   좌표는 설계 좌표(1120×392)가 아니라 캔버스 장치 픽셀이다. 세로로만 눌리는 비균등 배율에서는
+   pitch 와 점 크기가 가로세로로 다르게 찌그러져 390px 에서 회색 얼룩이 되기 때문이다. */
+function fixedDots(key, mode){
+  const sec = document.querySelector('.v[data-v="'+key+'"]');
+  const cv = sec.querySelector('canvas'), L = [...sec.querySelectorAll('.lab')], R = [...sec.querySelectorAll('.rsn')];
+  const CNT = C.DCNT, NS = CNT.length, N = CNT[0], NT = NS-1, PITCHES = C.PITCHES;
+  const ctx = cv.getContext('2d');
+  const ALIVE = .85, DIM = .30, DEAD = .10;
+  const GA = [0.08, 0.42, 0.62], GL = [0.18, 0.18, 0.16];   // 관문 셋의 시작·길이
+  const PM0 = 0.28, PM1 = 0.40, UN0 = 0.82;                 // 후보 풀 200 표시 / 마지막 펼침
+
+  function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  const rnd = rng(7), idx = new Int32Array(N);
+  for (let i=0;i<N;i++) idx[i]=i;
+  for (let i=N-1;i>0;i--){ const j=(rnd()*(i+1))|0, t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+  const ends = new Uint8Array(N), inPool = new Uint8Array(N), dg = new Int8Array(N);
+  const rank = new Int32Array(N*NS).fill(-1);
+  for (let i=0;i<N;i++) rank[i*NS]=i;
+  for (let s=1;s<NS;s++){
+    const a = Int32Array.from(idx.slice(0, CNT[s])).sort();
+    a.forEach((i, r) => { ends[i]=s; rank[i*NS+s]=r; });
+  }
+  for (const i of idx.slice(0, C.DPOOL)) inPool[i]=1;       // 200 ⊂ 845, 85 ⊂ 200 — 겹이 중첩이다
+  // dg: 이 점이 흐려지는 관문. -1 끝까지 남음, -2 추출되지 않아 판정 대상이 아님
+  for (let i=0;i<N;i++) dg[i] = ends[i]===NT ? -1 : ends[i]===1 ? (inPool[i] ? 1 : -2) : ends[i];
+
+  function grid(wd, hd){
+    const pad = 46*hd/392, tick = 44*wd/1120, marg = 24*wd/1120, gmin = 64*wd/1120, gmax = 150*wd/1120;
+    const availh = hd - 2*pad;
+    for (const p of PITCHES){
+      const rows0 = Math.max(1, Math.floor(availh/p)+1), ar = Math.ceil(N/rows0)/rows0;
+      const shp = [];
+      for (const n of CNT){
+        let best = null;                       // 낭비 6% 안 + 첫 덩어리와 닮은 가로세로비
+        for (let r=1; r<=rows0; r++){
+          if ((r-1)*p > availh) continue;
+          const c = Math.ceil(n/r); if (c*r > n*1.06) continue;
+          const d = Math.abs(Math.log((c/r)/ar));
+          if (!best || d < best[0]) best = [d, c, r];
+        }
+        if (best) shp.push([best[1], best[2]]);
+      }
+      if (shp.length !== CNT.length) continue;
+      const ws = shp.map(s => (s[0]-1)*p), sum = ws.reduce((a,b)=>a+b, 0);
+      const gap = Math.min(gmax, (wd - tick - 2*marg - sum)/(ws.length-1));
+      if (gap < gmin) continue;
+      let x = (wd - tick - sum - gap*(ws.length-1))/2; const cxs = [];
+      for (const w of ws){ cxs.push(x + w/2); x += w + gap; }
+      return {p, shp, cxs, pad, tick, gap};
+    }
+    return null;
+  }
+
+  let lay = null, pos = null, unf = null, sz = 2, dpr = 1, wd = 1, hd = 1, gx = [];
+  function setup(){
+    const r = cv.getBoundingClientRect(); dpr = devicePixelRatio || 1;
+    wd = Math.round(r.width*dpr); hd = Math.round((r.height || C.H)*dpr);
+    cv.width = wd; cv.height = hd;
+    lay = grid(wd, hd); if (!lay) return;
+    sz = Math.max(1, Math.round(lay.p*0.55));
+    const px = (wd - lay.tick)/2;                            // D-3 은 한 자리에서만 줄어든다
+    pos = new Float32Array(N*NS*2);
+    for (let s=0;s<NS;s++){
+      const c = lay.shp[s][0], rw = lay.shp[s][1], p = lay.p;
+      const x0 = (mode === 'place' ? px : lay.cxs[s]) - (c-1)*p/2, y0 = hd/2 - (rw-1)*p/2;
+      for (let i=0;i<N;i++){
+        const q = rank[i*NS+s]; if (q < 0) continue;
+        pos[(i*NS+s)*2] = x0 + (q % c)*p; pos[(i*NS+s)*2+1] = y0 + Math.floor(q/c)*p;
+      }
+    }
+    unf = new Float32Array(N*2);                             // 마지막 12점 — 표 행 간격 26px
+    // D-3 은 펼친 12점을 가장 큰 외곽선 바깥에 세운다. 안에 세우면 눈금이 외곽선을 가로지른다.
+    const rg = 26*hd/C.H, ux = mode === 'place' ? px + (lay.shp[0][0]-1)*lay.p/2 + 40*dpr : lay.cxs[NS-1];
+    for (let i=0;i<N;i++){
+      const q = rank[i*NS+NT]; if (q < 0) continue;
+      unf[i*2] = ux; unf[i*2+1] = hd/2 + (q - (CNT[NT]-1)/2)*rg;
+    }
+    gx = [];                                                 // 관문 — 덩어리 사이 한가운데
+    for (let k=0;k<NT;k++){
+      const a = lay.cxs[k] + (lay.shp[k][0]-1)*lay.p/2, b = lay.cxs[k+1] - (lay.shp[k+1][0]-1)*lay.p/2;
+      gx.push((a+b)/2);
+    }
+    // 탈락 사유 — 레이아웃이 한 곳에서 정해지므로 자리도 JS 가 놓는다
+    R.forEach((e, k) => {
+      if (mode === 'place'){                                 // 칸이 하나라 오른쪽 여백에 쌓는다
+        e.classList.add('l'); e.style.left = (ux/dpr + 62) + 'px'; e.style.right = 'auto';
+        e.style.top = (r.height*0.32 + k*26) + 'px';
+      } else {
+        e.style.right = ((wd - gx[k])/dpr) + 'px'; e.style.left = 'auto';
+        e.style.top = (r.height - 40) + 'px';
+      }
+    });
+    // D-2 는 칸 라벨을 덩어리 왼쪽 모서리에 맞춘다(.lab.g 괘선이 곧 덩어리 시작선).
+    if (mode !== 'place') L.forEach((e, i) => {
+      e.style.left = ((lay.cxs[i] - (lay.shp[i][0]-1)*lay.p/2)/dpr) + 'px';
+    });
+  }
+
+  function frame(t){
+    if (!lay) setup();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, wd, hd);
+    let done = 0, kact = -1, lp = 0;
+    for (let k=0;k<NT;k++){
+      if (t >= GA[k]+GL[k]) done = k+1;
+      else if (t >= GA[k]){ kact = k; lp = sstep((t-GA[k])/GL[k]); }
+    }
+    const pm = Math.min(1, Math.max(0, (t-PM0)/(PM1-PM0)));          // 후보 풀 200 강조
+    const un = Math.min(1, Math.max(0, sstep((t-UN0)/(1-UN0))));     // 마지막 펼침
+    // D-3: 탈락은 먼저 흐려지고(앞 45%) 그 다음 남은 점이 다져진다. D-2 는 동시에.
+    const fp = mode === 'place' ? Math.min(1, lp/0.45) : lp;
+    const mv = mode === 'place' ? sstep(Math.max(0, (lp-0.40)/0.60)) : lp;
+
+    if (mode === 'place'){      // 지나온 크기 — 가는 회색 외곽선. 줄어든 폭의 유일한 근거다.
+      ctx.lineWidth = dpr; ctx.strokeStyle = 'rgba(20,20,20,.16)';
+      const cur = kact >= 0 ? kact : done;                  // 지금 서 있는 칸
+      for (let s=0;s<cur;s++){
+        const c = lay.shp[s][0], rw = lay.shp[s][1], p = lay.p, px2 = (wd-lay.tick)/2;
+        ctx.strokeRect(px2 - (c-1)*p/2 - p, hd/2 - (rw-1)*p/2 - p, (c-1)*p + 2*p, (rw-1)*p + 2*p);
+      }
+    } else {                    // D-2: 관문 자리 먹 헤어라인
+      for (let k=0;k<NT;k++){
+        if (t < GA[k]) continue;
+        ctx.lineWidth = dpr; ctx.strokeStyle = '#d8d6d0';
+        ctx.beginPath(); ctx.moveTo(gx[k], lay.pad*0.5); ctx.lineTo(gx[k], hd - lay.pad*0.5); ctx.stroke();
+      }
+    }
+
+    const paths = new Map();
+    for (let i=0;i<N;i++){
+      const e = ends[i], d = dg[i];
+      let x, y, a;
+      if (d >= 0 && (d < done || d === kact)){                      // 제자리에서 흐려진다
+        const o = (i*NS+d)*2; x = pos[o]; y = pos[o+1];
+        a = d === kact ? lerp(ALIVE, DEAD, fp) : DEAD;
+      } else if (d === -2 && pm > 0){                               // 추출되지 않은 645 — 같은 덩어리에 흐리게
+        const o = (i*NS+1)*2; x = pos[o]; y = pos[o+1]; a = lerp(ALIVE, DIM, pm);
+      } else if (kact >= 0 && e > kact){                            // 다음 칸으로 옮겨 간다
+        const o = (i*NS+kact)*2, n = (i*NS+kact+1)*2;
+        x = lerp(pos[o], pos[n], mv); y = lerp(pos[o+1], pos[n+1], mv); a = ALIVE;
+      } else {
+        const s = Math.min(e, done), o = (i*NS+s)*2;
+        x = pos[o]; y = pos[o+1]; a = ALIVE;
+        if (s === NT && un > 0){ x = lerp(x, unf[i*2], un); y = lerp(y, unf[i*2+1], un); }
+      }
+      // D-3 은 마지막에 남은 점 열둘만 남긴다 — 흐린 점이 깔려 있으면 주황 눈금과 겹쳐 읽히지 않는다.
+      // 줄어든 폭은 점이 아니라 외곽선이 증언한다.
+      if (mode === 'place' && un > 0 && !(e === NT)) a *= 1 - un;
+      if (a <= 0.02) continue;
+      const q = Math.round(a*64)/64;
+      let pa = paths.get(q); if (!pa){ pa = new Path2D(); paths.set(q, pa); }
+      pa.rect(x - sz/2, y - sz/2, sz, sz);
+    }
+    paths.forEach((pa, q) => { ctx.fillStyle = 'rgba(20,20,20,'+q.toFixed(4)+')'; ctx.fill(pa); });
+
+    if (un > 0){                                                    // 주황은 눈금(선)으로만
+      ctx.strokeStyle = 'rgba(249,115,22,'+un.toFixed(3)+')'; ctx.lineWidth = 1.5*dpr;
+      for (let i=0;i<N;i++){
+        if (ends[i] !== NT) continue;
+        ctx.beginPath(); ctx.moveTo(unf[i*2]+7*dpr, unf[i*2+1]); ctx.lineTo(unf[i*2]+44*dpr, unf[i*2+1]); ctx.stroke();
+      }
+    }
+    const app = [0.02, GA[0]+GL[0], GA[1]+GL[1], GA[2]+GL[2]];
+    paintLabs(L, app.map(a => (t-a+0.012)/0.06));
+    reveal(R, GA.map((a, k) => ((t-a)/GL[k] - 0.30)*3));
+  }
+  return {setup, frame, lay: () => lay};
+}
+
+const V = {a: lines('a', C.HH_A), b: lines('b', C.HH_B), c: band(), d: dots(),
+           d2: fixedDots('d2', 'grid'), d3: fixedDots('d3', 'place')};
 
 /* ---- 공통 타임라인 ------------------------------------------------------- */
 // 시안이라 2.4초 고정. 구현은 README '머리 장면' 결정대로 실제 진행 이벤트(stageDone)에 묶는다 — 가짜 진행률 없음.
@@ -429,4 +602,5 @@ document.querySelector('.ctl .again').onclick = () => play();
 addEventListener('resize', () => { V[cur].setup(); V[cur].frame(1); });
 show('a');
 window.__seek = t => { cancelAnimationFrame(raf); V[cur].frame(t); };   /* --check 용 */
+window.__V = V;
 </script></body></html>
