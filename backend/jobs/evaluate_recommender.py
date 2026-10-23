@@ -148,22 +148,36 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     return notices, X
 
 
-def fetch_company_profile(conn, biz: str) -> dict:
-    """같은 norm 의 모든 회사 행을 합친 업종·물품(대표/나머지), 지역, 업종 이름 set, 토큰 set."""
+def fetch_company_profile(conn, biz: str, t: date) -> dict:
+    """같은 norm 의 모든 회사 행을 합친 업종·물품(대표/나머지), 지역, 업종 이름 set, 토큰 set.
+
+    t 시점 기준으로 거른다 — 낙찰 뒤에 추가된 등록정보가 과거 평가를 낙관적으로 만든다(코덱스 지적).
+    2026-10-23 실측: 8/1 표본 3,557곳 중 t 이후 업종 추가 0.6%, 물품 추가 4.3% 라 영향은 작지만
+    지표를 믿으려면 시점이 맞아야 한다. 등록일에 0227년·4004년 같은 쓰레기 값이 섞여 있어
+    상식 범위를 벗어난 값은 '모름'으로 보고 남긴다 — 버리면 프로필이 통째로 비어버린다."""
     from app.recommender.score import _tokenize  # 운영과 같은 토큰화
     rows = conn.execute("select bizrno, rgn_nm from companies where bizrno_norm = %s order by bizrno", (biz,)).fetchall()
     pks = [r[0] for r in rows]
     rgn = next((r[1] for r in rows if r[1]), None)
     rep_i, rest_i, rep_p, rest_p = [], [], [], []
     names: set[str] = set(); terms: set[str] = set()
-    for nm, rep in conn.execute("select indstryty_nm, rprsnt_indstryty_yn from company_industries where bizrno = any(%s) order by indstryty_nm", (pks,)):
+    for nm, rep in conn.execute(
+        """select indstryty_nm, rprsnt_indstryty_yn from company_industries
+            where bizrno = any(%s)
+              and (rgst_dt is null or rgst_dt not between '1900-01-01' and '2100-01-01' or rgst_dt <= %s)
+              and (valid_to_dt is null or valid_to_dt not between '1900-01-01' and '2100-01-01' or valid_to_dt >= %s)
+            order by indstryty_nm""", (pks, t, t)):
         if not nm or nm in rep_i or nm in rest_i: continue
         (rep_i if rep == "Y" else rest_i).append(nm)
         names.add(nm); base = nm.split("(")[0].strip()
         if base and base != nm: names.add(base)
         terms |= _tokenize(nm)
     codes: set[str] = set()
-    for nm, rep, code in conn.execute("select dtl_prdct_clsfc_nm, rprsnt_prdct_yn, dtl_prdct_clsfc_no from company_supply_products where bizrno = any(%s) order by dtl_prdct_clsfc_nm", (pks,)):
+    for nm, rep, code in conn.execute(
+        """select dtl_prdct_clsfc_nm, rprsnt_prdct_yn, dtl_prdct_clsfc_no from company_supply_products
+            where bizrno = any(%s)
+              and (rgst_dt is null or rgst_dt not between '1900-01-01' and '2100-01-01' or rgst_dt <= %s)
+            order by dtl_prdct_clsfc_nm""", (pks, t)):
         if code: codes.add(code)
         if not nm or nm in rep_p or nm in rest_p: continue
         (rep_p if rep == "Y" else rest_p).append(nm)
@@ -257,7 +271,7 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
         mask = np.array([any(n in (r["bidprc_psbl_indstryty_nm"] or "") for n in prof["names"]) for r in notices])
         if retrieval == "soft":  # 허용업종이 없는 공고는 버리지 않는다
             mask |= np.array([not (r["bidprc_psbl_indstryty_nm"] or "").strip() for r in notices])
-        ind = [i for i in order if mask[i]][: pool * 2]
+        ind = [i for i in order if mask[i]][: min(pool * 2, CHANNEL_MAX_ROWS)]
         if retrieval in ("prefilter", "soft"):
             order = ind
         else:  # hybrid: 채널들을 번갈아(동률 RRF 와 같은 효과). 운영 _interleave 와 같은 채널 순서여야 한다.
@@ -267,12 +281,12 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
                     for i in group:
                         if i is not None and i not in seen_i: seen_i.add(i); out.append(i)
                 return out
-            channels = [ind, list(order[: pool * 2])]
+            channels = [ind, list(order[: min(pool * 2, CHANNEL_MAX_ROWS)])]
             if retrieval == "hybrid+prd" and prof.get("codes"):
                 # 물품 채널(0048): 세 채널을 나란히(각 1/3). 업종 채널과 한 자리를 나누는 중첩 방식은 업종 몫이 1/4 로 줄어
                 # 9/1 에서 rich −0.06·공사 −0.04 로 전부 나빠졌다(2026-10-15 prd2-0901, 7/1·8/1 은 네트워크 단절로 미완). 평면은 공사 −0.01, 물품 +0.04~0.07, 전체 3/3 상승.
                 pmask = np.array([bool(r["prdct_clsfc_nos"] & prof["codes"]) for r in notices])
-                channels.insert(0, [i for i in order if pmask[i]][: pool * 2])
+                channels.insert(0, [i for i in order if pmask[i]][: min(pool * 2, CHANNEL_MAX_ROWS)])
             order = rr(*channels)
     order = order[: pool * 2]
     dense = [(notices[i]["bid_ntce_no"], notices[i]["bid_ntce_ord"]) for i in order]
@@ -289,11 +303,16 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
     dedup = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in cand]
     lim = fetch_limits(conn, dedup)
     passed: list[dict] = []
+    qual_fail: dict[tuple[str, str], list] = {}
     for r in cand:
         slot = lim.get((r["bid_ntce_no"], r["bid_ntce_ord"])) or {"licenses": [], "regions": []}
         q = check_qualifications(prof["names"], prof["rgn"], slot["licenses"], slot["regions"])
         if q["passed"]:
             r["qualification"] = q; passed.append(r)
+        else:
+            # 탈락 사유를 보고서까지 들고 간다 — 면허/지역 구분이 없어 "9월에 자격 손실이 큰 이유"를
+            # 짚을 수 없었다(코덱스 지적). failures 는 check_qualifications 가 주는 사람이 읽는 문구다.
+            qual_fail[(r["bid_ntce_no"], r["bid_ntce_ord"])] = q.get("failures") or []
     qualified = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in passed]
     for r in passed:
         raw, bd = score_notice(r, company_rgn=prof["rgn"], company_terms=prof["terms"], company_institutions=instts,
@@ -316,12 +335,19 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
     embs = {(r["bid_ntce_no"], r["bid_ntce_ord"]): X[idx[(r["bid_ntce_no"], r["bid_ntce_ord"])]].tolist() for r in top}
     final_rows = mmr_diversify(top, embs, k=5) + passed[MMR_POOL:]
     final = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in final_rows[:limit]]
-    return {"dense": dense, "dedup": dedup, "qualified": qualified, "scored": scored, "final": final}
+    return {"dense": dense, "dedup": dedup, "qualified": qualified, "scored": scored, "final": final,
+            "qual_fail": qual_fail}
 
 
 # 결과를 몇 건 보여줄지 정하려고 같은 랭킹에서 여러 K 로 잰다 — 표시 수 결정용이고 기존 지표(final@30)와 무관하다.
 # --limit 보다 큰 K 는 limit 에서 잘린 목록을 재므로 의미가 없다(항상 --limit 30 이상으로 돌릴 것).
 K_CURVE = (3, 5, 8, 12, 16, 20, 25, 30)
+
+# Supabase REST 는 한 요청에 1,000행만 돌려준다 — 운영은 채널마다 match_count=pool*2 를
+# 요청하지만 실제로 받는 건 min(pool*2, 1000) 이다. 2026-10-23 실측: pool 2000/3000 을
+# 요청해도 후보가 890~1,331 에서 포화했고 dense 채널 원본이 정확히 1,000 에서 멈췄다.
+# 하네스는 전수 코사인을 정렬하므로 이 천장이 없어 pool>=500 에서 운영보다 낙관적이었다.
+CHANNEL_MAX_ROWS = 1000
 
 
 def main() -> None:
@@ -357,7 +383,7 @@ def main() -> None:
         positives_dropped += len(positives[biz]) - len(pos)
         if not pos:
             skipped += 1; continue
-        prof = fetch_company_profile(conn, biz)
+        prof = fetch_company_profile(conn, biz, t)
         hist, instts, med = fetch_history_before(conn, biz, t)
         clean = strip_leaked_history(hist, positives[biz])
         vec = company_vector_at(conn, prof, clean, t, cache, s["n_hist"])  # tier 라벨과 같은 유효건수
@@ -368,6 +394,7 @@ def main() -> None:
         # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
+        qual_fail = st.pop("qual_fail", {})  # 단계별 순위가 아니라 사유 맵 — st_nos 변환에서 제외한다
         st_nos = {k: [no for no, _ in v] for k, v in st.items()}
         if feats is not None:
             for f in feats:
@@ -377,6 +404,8 @@ def main() -> None:
         per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos),
                     "r_dense": recall_at_k(st_nos["dedup"], pos_nos, args.pool), "r_qual": recall_at_k(st_nos["qualified"], pos_nos, args.pool),
                     "r_scored30": recall_at_k(st_nos["scored"], pos_nos, args.limit), "r_final30": recall_at_k(st_nos["final"], pos_nos, args.limit),
+                    # 운영 화면 조건 — 비로그인 공개 5건 / 로그인 표시 20건. final@30 은 파이프라인 상한이라 체감과 다르다.
+                    "r_final5": recall_at_k(st_nos["final"], pos_nos, 5), "r_final20": recall_at_k(st_nos["final"], pos_nos, 20),
                     "mrr": mrr(st_nos["final"], pos_nos),
                     "k_curve": [recall_at_k(st_nos["final"], pos_nos, k) for k in K_CURVE]})
         title_by_no = {no: nidx[(no, od)]["bid_ntce_nm"] for no, od in sorted(pos)}
@@ -384,7 +413,10 @@ def main() -> None:
             lost = stage_lost(st_nos, p, args.pool, args.limit)
             if lost != "kept":
                 rank_dense = next((r for r, k in enumerate(st_nos["dense"], 1) if k == p), None)
-                failures.append({"biz": biz, "tier": s["tier"], "bid_ntce_no": p, "title": title_by_no[p], "lost_at": lost, "dense_rank": rank_dense})
+                # 자격에서 떨어진 정답은 사유를 같이 남긴다 — 같은 공고번호의 아무 차수나 매칭(차수는 사유가 같다).
+                why = next((v for (no, _), v in qual_fail.items() if no == p), None)
+                failures.append({"biz": biz, "tier": s["tier"], "bid_ntce_no": p, "title": title_by_no[p], "lost_at": lost,
+                                 "dense_rank": rank_dense, "qual_failures": why})
         if i % 25 == 0: print(f"  {i}/{len(sample)}")
     if not per:
         sys.exit("평가된 회사가 0곳 — 날짜/표본 조건을 확인하세요 (보고서 미생성)")
@@ -406,16 +438,19 @@ def main() -> None:
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (out_dir / "metrics.json").write_text(json.dumps(agg, ensure_ascii=False, indent=2), encoding="utf-8")
     with (out_dir / "failures.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["biz", "tier", "bid_ntce_no", "title", "lost_at", "dense_rank"]); w.writeheader(); w.writerows(failures)
+        w = csv.DictWriter(f, fieldnames=["biz", "tier", "bid_ntce_no", "title", "lost_at", "dense_rank", "qual_failures"]); w.writeheader(); w.writerows(failures)
     m, lines = agg["macro"], []
     lines += [f"# 추천 평가 baseline — t={t} (run {run_id})", "",
               f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit} · retrieval {args.retrieval}", "",
               "| 지표 | macro | micro |", "|---|---|---|"]
-    lines += [f"| {k} | {m[k]:.3f} | {agg['micro'][k]:.3f} |" for k in ("r_dense", "r_qual", "r_scored30", "r_final30", "mrr")]
-    lines += ["", "## 군별 (macro)", "", "| 군 | n | dense@pool | qual@pool | scored@30 | final@30 | mrr |", "|---|---|---|---|---|---|---|"]
+    lines += [f"| {k} | {m[k]:.3f} | {agg['micro'][k]:.3f} |" for k in m]
+    # 군별 표는 운영 화면 조건(@5·@20)을 같이 싣는다 — final@30 은 파이프라인 상한이라 체감과 다르다.
+    lines += ["", "## 군별 (macro)", "", "| 군 | n | dense@pool | qual@pool | final@5 | final@20 | final@30 | mrr |",
+              "|---|---|---|---|---|---|---|---|"]
     for grp in ("by_tier", "by_div"):
         for k, v in agg[grp].items():
-            lines.append(f"| {k} | {v['n']} | {v['r_dense']:.3f} | {v['r_qual']:.3f} | {v['r_scored30']:.3f} | {v['r_final30']:.3f} | {v['mrr']:.3f} |")
+            lines.append(f"| {k} | {v['n']} | {v['r_dense']:.3f} | {v['r_qual']:.3f} | "
+                         f"{v.get('r_final5', 0):.3f} | {v.get('r_final20', 0):.3f} | {v['r_final30']:.3f} | {v['mrr']:.3f} |")
     lines += ["", "## 정답이 사라진 단계", "",
               "- dense: dense 상위 pool×2 밖 · dedup: 후보 풀 pool 컷(지문 중복 제거 포함) · qualified: 자격 하드 제외 · scored: 점수 순위 limit 밖 · final: MMR 에 밀림",
               "", "| 단계 | 건수 |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(lost_counts.items(), key=lambda x: -x[1])]
