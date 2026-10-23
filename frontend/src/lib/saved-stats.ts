@@ -9,7 +9,7 @@ export function companyStats(clseDates: (string | null | undefined)[], today: Da
   const ds = clseDates.map((d) => dLeft(d, today)).filter((x): x is DLeft => !!x && x.days >= 0);
   let soonest: DLeft | null = null;
   for (const x of ds) if (!soonest || x.days < soonest.days) soonest = x;
-  return { total: ds.length, week: ds.filter((x) => x.days < 7).length, soonest };
+  return { total: ds.length, week: ds.filter((x) => x.days <= 7).length, soonest };
 }
 
 export type ScoreSignalLike = { key: string; label: string; points: number };

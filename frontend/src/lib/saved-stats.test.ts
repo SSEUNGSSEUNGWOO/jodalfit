@@ -4,9 +4,9 @@ import { companyStats, strongestWhy } from "./saved-stats.ts";
 
 const today = new Date(2026, 9, 16); // 2026-10-16
 
-test("companyStats: 마감 지난 것은 빼고, 7일 이내를 이번 주로, 가장 빠른 마감을 고른다", () => {
+test("companyStats: 마감 지난 것은 빼고, 7일 이내(D-7 포함)를 이번 주로, 가장 빠른 마감을 고른다", () => {
   const s = companyStats(["2026-10-20", "2026-11-25", "2026-10-10", null, "2026-10-23"], today);
-  assert.deepEqual(s, { total: 3, week: 1, soonest: { days: 4, month: 10, day: 20 } });
+  assert.deepEqual(s, { total: 3, week: 2, soonest: { days: 4, month: 10, day: 20 } });
 });
 
 test("companyStats: 결과가 없으면 0 과 null", () => {
