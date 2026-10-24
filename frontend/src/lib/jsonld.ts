@@ -17,6 +17,7 @@ export function organizationJsonLd(): Json {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "jodalfit",
+    alternateName: "조달핏", // AI 답변·검색은 한글 이름으로 묻는다 — 같은 서비스로 묶이게(GEO, 2026-10-24)
     url: SITE_URL,
     logo: `${SITE_URL}/icon.svg`,
     description:
@@ -32,6 +33,7 @@ export function websiteJsonLd(): Json {
     "@type": "WebSite",
     url: SITE_URL,
     name: "jodalfit",
+    alternateName: "조달핏",
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -40,6 +42,19 @@ export function websiteJsonLd(): Json {
       },
       "query-input": "required name=search_term_string",
     },
+  };
+}
+
+/** 자주 묻는 질문 — /faq. 화면의 질문·답과 같은 문장이어야 한다(구글 FAQ 지침: 보이는 내용만). */
+export function faqJsonLd(items: readonly { q: string; a: string }[]): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: { "@type": "Answer", text: it.a },
+    })),
   };
 }
 

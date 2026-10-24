@@ -11,7 +11,7 @@ import { NoticeRailClient } from "@/components/notice/NoticeRailClient";
 import { InstitutionSection, RequirementsSection, StagesSection, WorkSection } from "@/components/notice/NoticeBody";
 import { toLifecycleData } from "@/lib/lifecycle-data";
 import { noticeJsonLd } from "@/lib/jsonld";
-import { fetchLifecycle } from "@/lib/notice";
+import { fetchLifecycle, type BidNotice } from "@/lib/notice";
 import { formatDateKR, formatKRW } from "@/lib/utils";
 
 // 정적 생성을 하지 않는다. 리뉴얼 레이아웃의 nav 가 로그인 상태를 읽어 쿠키를 쓰기 때문에
@@ -42,6 +42,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: { title: notice.bid_ntce_nm, description: desc, type: "article", locale: "ko_KR" },
     keywords: [notice.bid_ntce_nm, notice.bid_ntce_no, notice.dmnd_instt_nm ?? "", "공공입찰", "나라장터", "공공조달"].filter(Boolean),
   };
+}
+
+/** 요약 한 문단 — 검색엔진·AI 답변이 그대로 인용할 수 있는 사실 문장(GEO, 2026-10-24).
+ *  전부 공고에 공개된 값이고, '오늘'(D-day)은 넣지 않는다 — 서버 출력이 날마다 바뀌면 안 된다(이 파일 머리 주석). */
+function NoticeAbstract({ n }: { n: BidNotice }) {
+  const ok = (v: string) => (v && v !== "—" ? v : null);
+  const instt = n.dmnd_instt_nm || n.ntce_instt_nm;
+  const posted = n.bid_ntce_date ? ok(formatDateKR(n.bid_ntce_date)) : null;
+  const facts = [
+    ok(formatKRW(n.presmpt_prce)) && `추정가 ${formatKRW(n.presmpt_prce)}`,
+    n.bid_clse_date && ok(formatDateKR(n.bid_clse_date)) && `입찰 마감 ${formatDateKR(n.bid_clse_date)}`,
+    n.openg_date && ok(formatDateKR(n.openg_date)) && `개찰 ${formatDateKR(n.openg_date)}`,
+    n.cntrct_cncls_mthd_nm && `계약 방법 ${n.cntrct_cncls_mthd_nm}`,
+    n.prtcpt_psbl_rgn_nm && `참가 가능 지역 ${n.prtcpt_psbl_rgn_nm}`,
+  ].filter(Boolean);
+  return (
+    <p className="mt-2.5 max-w-[760px] text-[13.5px] leading-[1.7] text-ink-g">
+      이 공고는 {instt ? `${instt}에서 ` : ""}{posted ? `${posted}에 ` : ""}게시한 나라장터 {n.bsns_div_nm ? `${n.bsns_div_nm} ` : ""}입찰공고입니다.
+      {facts.length > 0 && <> {facts.join(" · ")}.</>} 최종 참가 조건은 공고 원문으로 확인해야 합니다.
+    </p>
+  );
 }
 
 export default async function NoticePage({ params }: Props) {
@@ -80,6 +101,7 @@ export default async function NoticePage({ params }: Props) {
           {notice.bsns_div_nm && <> · {notice.bsns_div_nm}</>}
           <span className="num"> · 공고번호 {notice.bid_ntce_no}</span>
         </p>
+        <NoticeAbstract n={notice} />
       </header>
 
       <div className="mt-5 grid grid-cols-[260px_minmax(0,1fr)] items-start gap-x-10 max-sm:grid-cols-1 max-sm:gap-y-6">

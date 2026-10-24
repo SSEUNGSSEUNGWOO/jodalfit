@@ -104,6 +104,7 @@ export default async function CompanyPage({ params }: Props) {
           )}
           {company.contract_count > 0 && <> · 계약 {nf.format(company.contract_count)}건</>}
         </p>
+        <CompanySummary corpNm={company.corp_nm} rgn={company.rgn_nm} profile={profile} closed={closed} recommends={company.has_embedding} />
       </header>
 
       {/* 판 1 — 검토할 공고. 폐업이면 추천하지 않는다(낼 수 없는 회사에게 공고를 권하지 않는다). */}
@@ -135,6 +136,36 @@ export default async function CompanyPage({ params }: Props) {
         </p>
       )}
     </div>
+  );
+}
+
+/** 요약 한 문단 — 검색엔진·AI 답변이 그대로 인용할 수 있는 사실 문장(GEO, 2026-10-24).
+ *  수주 건수·투찰률은 넣지 않는다: 제목·설명에서 뺀 이유(2026-09-22, 상호 검색만으로 수주 현황·가격 전략이
+ *  드러남)가 인용 문장에도 똑같이 적용된다. 등록정보와 서비스가 하는 일만. */
+function CompanySummary({ corpNm, rgn, profile, closed, recommends }: {
+  corpNm: string; rgn: string | null; profile: Awaited<ReturnType<typeof fetchCompanyProfile>> | null; closed: boolean; recommends: boolean;
+}) {
+  const rep = profile?.industryLinks.find((l) => l.rep)?.nm ?? profile?.industries[0] ?? null;
+  // 조사는 마지막 한글 글자의 받침으로 — "한종산업개발(주)는" 처럼 괄호 뒤가 아니라 그 앞 글자를 본다
+  const last = [...corpNm].reverse().find((ch) => ch >= "가" && ch <= "힣");
+  const josa = last ? ((last.charCodeAt(0) - 0xac00) % 28 ? "은" : "는") : "은(는)";
+  // 0 개는 "0개가 등록된" 대신 없다고 말한다
+  const ind = profile?.industries.length ? `등록업종 ${profile.industries.length}개${rep ? `(대표 ${rep})` : ""}` : null;
+  const prd = profile?.products.length ? `공급물품 ${profile.products.length}개` : null;
+  const reg = ind && prd ? `나라장터에 ${ind}와 ${prd}가 등록된 사업자입니다.`
+    : ind ? `나라장터에 ${ind}이 등록된 사업자입니다(공급물품 미등록).`
+    : prd ? `나라장터에 ${prd}가 등록된 사업자입니다(등록업종 미등록).`
+    : "나라장터에 등록업종·공급물품 정보가 없는 사업자입니다.";
+  return (
+    <p className="mt-2.5 max-w-[760px] text-[13.5px] leading-[1.7] text-ink-g">
+      {corpNm}{josa} {rgn ? `${rgn} 소재, ` : ""}{reg}{" "}
+      {closed
+        ? "국세청 기준 폐업 상태라 공고를 추천하지 않습니다."
+        : recommends
+          ? "조달핏은 이 등록정보와 나라장터 수주 이력을 함께 분석해 지금 입찰 가능한 공고 중 이 회사가 검토할 만한 공고를 매일 추립니다."
+          : "추천 기준이 될 등록정보·수주 이력이 없어 업종·품목 키워드로 공고를 찾을 수 있습니다."}{" "}
+      나라장터 공공데이터 기반 · 매일 갱신.
+    </p>
   );
 }
 

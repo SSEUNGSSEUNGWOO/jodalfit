@@ -93,6 +93,19 @@ export default async function sitemap({
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    // 사실 문장이 모인 문서 — 검색엔진·AI 답변이 인용하는 자리(GEO, 2026-10-24)
+    {
+      url: `${BASE_URL}/faq`,
+      lastModified: STATIC_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/changelog`,
+      lastModified: STATIC_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    },
     {
       url: `${BASE_URL}/companies/industry`,
       lastModified: STATIC_LASTMOD,
