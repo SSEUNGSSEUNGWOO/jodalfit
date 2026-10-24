@@ -11,12 +11,13 @@ export type EntryData = {
   active: number; // 지금 입찰 가능 — 0057 funnel_counts 와 같은 정의(마감 90일·벡터·자격등록 안 지남)
   specOpen: number; // 의견 접수 중인 사전규격
   companies: number; // 벡터가 있는 회사
-  fresh: EntryNotice[];
+  fresh: EntryNotice[]; // 최신순, 최대 POOL 건 — 화면은 다섯 건씩 보이며 돈다(FreshTicker)
   freshToday: boolean; // 오늘 치가 충분한가 — 라벨이 바뀐다
   todayCount: number;
 };
 
-const ROWS = 5;
+// 세로 틱이 돌릴 목록 — 4.5초에 한 행이라 60건이면 4분 반 동안 겹치지 않는다(시안 entry-simple 의 "세로 틱").
+const POOL = 60;
 // 오늘 등록 건수가 이보다 적으면 "최근 등록"으로 바꿔 단다. 수집이 한 번 밀리면 한 자리로 떨어진다
 // (2026-10-23 실측 9건 — ingest_bid_notices 타임아웃). 숫자를 꾸미지 않으면서 화면이 안 비게.
 const TODAY_MIN = 20;
@@ -26,7 +27,7 @@ const ymd = kstDate;
 // 입구는 모든 사람이 거치는 화면이고 nav 가 로그인 상태를 읽어 페이지 자체는 정적이 될 수 없다.
 // 그래서 **데이터만** 캐시한다 — 요청마다 DB 를 다섯 번 치면 서버 응답이 1.7~1.9초가 된다
 // (2026-10-23 Lighthouse, 운영 빌드). 수치는 분 단위로 바뀌는 값이 아니다.
-export const getEntryData = unstable_cache(getEntryDataUncached, ["entry-data-v1"], {
+export const getEntryData = unstable_cache(getEntryDataUncached, ["entry-data-v2"], {
   revalidate: 300,
   tags: ["entry-data"],
 });
@@ -80,7 +81,7 @@ async function getEntryDataUncached(): Promise<EntryData> {
       clse: (r.bid_clse_date as string | null) ?? null,
       amt: (r.presmpt_prce as number | null) ?? (r.asign_bdgt_amt as number | null) ?? null,
     });
-    if (fresh.length >= ROWS) break;
+    if (fresh.length >= POOL) break;
   }
 
   return {
