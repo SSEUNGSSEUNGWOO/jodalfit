@@ -60,18 +60,14 @@ def check_qualifications(
             grp = str(lim.get("lmt_grp_no") or "1")
             groups.setdefault(grp, set()).update({name_only, base})
 
-        failed_group = next(
-            (
-                needed
-                for needed in groups.values()
-                if needed and not (company_industry_names & needed)
-            ),
-            None,
-        )
-        if failed_group is None:
+        # 제한 그룹(lmt_grp_no)은 서로 대안이다 — 어느 한 그룹의 면허 하나만 있으면 된다.
+        # 2026-10-23 실측: 실제 입찰 참가자(자격이 있던 회사) 10,086쌍에서 그룹 AND 는 81.5%(그룹 2개+ 공고는 41.9%)만
+        # 통과시켰고 그룹 OR 는 98.3%(98.9%). 그룹 안을 '전부 보유'로 보면 96.4% — 그룹 안도 하나면 된다.
+        needed_all = [needed for needed in groups.values() if needed]
+        if not needed_all or any(company_industry_names & needed for needed in needed_all):
             reasons.append("면허 충족")
         else:
-            sample = sorted(n for n in failed_group if n)[:2]
+            sample = sorted({n for needed in needed_all for n in needed if n})[:2]
             failures.append(f"면허 미충족({', '.join(sample)})")
 
     if not regions:
@@ -111,4 +107,11 @@ if __name__ == "__main__":   # uv run python -m app.recommender.qualifications
     assert r["passed"] and r["reasons"] == ["면허 제한 없음", "지역 자격 충족"], r
     r = check_qualifications({"x"}, "경상남도 김해시", [], [{"prtcpt_psbl_rgn_nm": "경상남도 창원시"}])
     assert not r["passed"] and r["failures"] == ["지역 미충족(경상남도 창원시)"], r
+    lic = [{"lcns_lmt_nm": "안전진단전문기관(건축분야)/1", "lmt_grp_no": "1"},
+           {"lcns_lmt_nm": "안전점검전문기관(건축 분야)/2", "lmt_grp_no": "2"}]
+    assert check_qualifications({"안전점검전문기관(건축 분야)"}, None, lic, [])["passed"]   # 그룹은 대안(OR)
+    r = check_qualifications({"건축공사업"}, None, lic, [])
+    assert not r["passed"] and r["failures"] == ["면허 미충족(안전점검전문기관, 안전점검전문기관(건축 분야))"], r
+    lic = [{"lcns_lmt_nm": "일반소방시설공사업(기계)", "lmt_grp_no": "1"}, {"lcns_lmt_nm": "일반소방시설공사업(전기)", "lmt_grp_no": "1"}]
+    assert check_qualifications({"일반소방시설공사업(전기)"}, None, lic, [])["passed"]       # 그룹 안도 하나면 된다
     print("ok")
