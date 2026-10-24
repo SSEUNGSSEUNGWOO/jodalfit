@@ -39,7 +39,7 @@ export default async function EntryPage() {
         <SearchSuggest autoFocus />
       </div>
       <p className="mx-auto mt-[11px] max-w-[760px] text-[13.5px] text-ink-g">
-        회사명 · 사업자등록번호 · 업종 또는 품목 중 아는 것 하나면 됩니다
+        회사 — 등록업종·수주 이력 기준으로 선별 · 키워드 — 입력한 말과 의미가 가까운 공고
       </p>
       <RecentChips />
       {entry && <EntryPanel d={entry} />}

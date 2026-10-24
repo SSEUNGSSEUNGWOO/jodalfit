@@ -51,10 +51,11 @@ def main() -> None:
         pg.wait_for_timeout(350)
         assert pg.evaluate("() => document.querySelectorAll('[role=option]').length") == 0, "한 글자에 목록이 떴다"
         pg.type("[data-suggest] input", "지니어링", delay=20)
-        # 키워드 줄('그대로 찾기')은 즉시 뜬다 — 회사 줄이 붙을 때까지 기다려야 한다(디바운스 + 왕복).
-        pg.wait_for_function("() => document.querySelectorAll('[role=option]').length >= 2", timeout=10000)
+        # 기본 검색 기준은 회사 — 회사 줄이 붙을 때까지 기다린다(디바운스 + 왕복).
+        assert pg.get_attribute("[data-suggest]", "data-mode") == "company", "기본 검색 기준이 회사가 아니다"
+        pg.wait_for_function("() => document.querySelectorAll('[role=option]').length >= 1", timeout=10000)
         n = pg.evaluate("() => document.querySelectorAll('[role=option]').length")
-        assert n >= 2, f"자동완성 {n}행"
+        assert n >= 1, f"자동완성 {n}행"
         pg.screenshot(path=str(OUT / "_shot_entry_typed.png"))
         pg.keyboard.press("Escape")
         pg.wait_for_timeout(120)
@@ -64,14 +65,23 @@ def main() -> None:
         pg.wait_for_function("() => document.querySelectorAll('[role=option]').length >= 2", timeout=10000)
         pg.keyboard.press("ArrowDown")
         pg.keyboard.press("Enter")
-        pg.wait_for_url(re.compile(r"/recommendations\?(company|q)="), timeout=15000)
+        pg.wait_for_url(re.compile(r"/recommendations\?company="), timeout=15000)
         picked = pg.url
-        assert "company=" in picked or "q=" in picked, picked
 
-        # 이전 후보가 남아 있어도 새 검색어를 제출해야 한다.
+        # 일치하는 회사가 없으면 '키워드로 찾기' 한 줄만 남고, 고르면 키워드 검색이다.
+        pg.goto(URL, wait_until="networkidle", timeout=30000)
+        pg.fill("[data-suggest] input", "하수처리시설 관리대행")
+        pg.wait_for_function("() => document.querySelectorAll('[role=option]').length === 1", timeout=10000)
+        assert "키워드로 찾기" in pg.inner_text("[role=option]"), pg.inner_text("[role=option]")
+        pg.keyboard.press("Enter")
+        pg.wait_for_url(re.compile(r"/recommendations\?q="), timeout=15000)
+
+        # 키워드 기준: 목록 없이 입력 그대로. 이전 후보가 남아 있어도 새 검색어를 제출해야 한다.
         pg.goto(URL, wait_until="networkidle", timeout=30000)
         pg.fill("[data-suggest] input", "한종")
         pg.wait_for_function("document.querySelectorAll('[role=option]').length >= 2", timeout=10000)
+        pg.click("[data-search-mode=keywords]")
+        assert pg.evaluate("() => document.querySelectorAll('[role=option]').length") == 0, "키워드 기준인데 회사 목록이 남았다"
         pg.fill("[data-suggest] input", "전기")
         pg.keyboard.press("Enter")
         pg.wait_for_url(re.compile(r"/recommendations\?q="), timeout=15000)
@@ -79,6 +89,7 @@ def main() -> None:
 
         # 자동완성의 두 글자 문턱과 검색 제출은 별개다.
         pg.goto(URL, wait_until="networkidle", timeout=30000)
+        pg.click("[data-search-mode=keywords]")
         pg.fill("[data-suggest] input", "물")
         pg.click("[data-suggest] button[type=submit]")
         pg.wait_for_url(re.compile(r"/recommendations\?q="), timeout=15000)

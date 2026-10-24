@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { PageHead } from "@/components/PageHead";
 import { Panel } from "@/components/Panel";
 import { Btn } from "@/components/Btn";
-import { SearchBox } from "@/components/SearchBox";
+import { SearchSuggest } from "@/components/entry/SearchSuggest";
 import { StarCompany } from "@/components/StarCompany";
 import { streamRecommendations } from "@/lib/stream";
 import { getSessionId } from "@/lib/events";
@@ -91,7 +91,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
     <div className={cn(search && "[&_[data-scene]]:opacity-20 [&_[data-scene]]:blur-[1px] [&_[data-res]]:opacity-20 [&_[data-res]]:blur-[1px] [&_[data-res]]:pointer-events-none")}>
       {search ? (
         <div className="pb-1 pt-[26px]" data-search>
-          <SearchBox autoFocus onSubmitted={() => setSearch(false)} />
+          <SearchSuggest autoFocus initialMode={mode} />
           <div className="mt-2.5 flex max-w-[720px] items-center gap-3.5 text-[13px] text-ink-g">
             <span className="t-k">최근 조회</span>
             {co && <a className="border-b border-field text-ink" href={`/recommendations?company=${encodeURIComponent(co.bizrno)}`}>{co.corp_nm}</a>}
@@ -101,10 +101,12 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       ) : mode === "company" ? (
         <PageHead title={co?.corp_nm ?? query} small={co ? maskBizrno(co.bizrno) : undefined} className="border-b-0! pb-0"
           aside={<>
-            {bizrno && <StarCompany bizrnoNorm={bizrno} saved={savedKeys.includes(bizrno)} loggedIn={loggedIn} next={next} className="ml-3 h-[30px] text-[13px]" />}
+            {bizrno ? <StarCompany bizrnoNorm={bizrno} saved={savedKeys.includes(bizrno)} loggedIn={loggedIn} next={next} className="ml-3 h-[30px] text-[13px]" />
+              : <span aria-hidden="true" className="inline-flex h-[30px] w-0 items-center overflow-hidden text-[13px]">{" "}</span> /* 버튼과 같은 높이·기준선으로 미리 — 도착할 때 제목 줄이 커지지 않게 */}
             <button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 회사</button>
           </>}
-          meta={co ? [co.rgn_nm ?? "—", `기준일 ${kstDate(today)}`] : undefined} />
+          /* 회사 정보는 결과와 함께 온다 — 그 전에도 한 줄 자리를 잡아 둔다(없으면 도착할 때 장면 전체가 30px 내려앉았다) */
+          meta={co ? [co.rgn_nm ?? "—", `기준일 ${kstDate(today)}`] : [" "]} />
       ) : (
         <PageHead title={`“${query}”`} className="border-b-0! pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
           meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />

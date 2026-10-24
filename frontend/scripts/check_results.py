@@ -86,7 +86,7 @@ def main():
         pg.locator("[data-funnel] summary").click()
         # 다른 회사
         pg.click("[data-other]"); pg.wait_for_timeout(500)
-        o = pg.evaluate("() => ({ box: !!document.querySelector('[data-search] [data-searchbox]'), res: getComputedStyle(document.querySelector('[data-res]')).opacity, focus: document.activeElement?.tagName })")
+        o = pg.evaluate("() => ({ box: !!document.querySelector('[data-search] [data-suggest]'), res: getComputedStyle(document.querySelector('[data-res]')).opacity, focus: document.activeElement?.tagName })")
         assert o["box"] and float(o["res"]) < 0.3 and o["focus"] == "INPUT", o
         pg.screenshot(path=str(OUT / "_shot_results_search.png"))
         pg.keyboard.press("Escape"); pg.wait_for_timeout(500)

@@ -99,13 +99,16 @@ export function Scene({
     let raf = 0,
       end = 0;
     let previous = performance.now();
+    // 기다리는 동안은 천천히(0.22px/ms) — 계산을 덮는 시간이다. 숫자를 전부 알면 남은 거리를 1.2초 안에 마무리한다.
+    // 결과가 이미 왔는데 일정 속도로 끝까지 가면 표가 5초 넘게 늦게 뜬다(2026-10-24 운영 실측: 응답 3초, 표 8.5초).
+    const speed = target >= SCENE.W ? Math.max(0.22, (SCENE.W - xRef.current) / 1200) : 0.22;
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - previous);
       previous = now;
-      xRef.current = Math.min(target, xRef.current + elapsed * 0.22);
+      xRef.current = Math.min(target, xRef.current + elapsed * speed);
       eng.current?.paint(xRef.current);
       if (xRef.current < target) raf = requestAnimationFrame(tick);
-      else if (target >= SCENE.W) end = window.setTimeout(finish, 900);
+      else if (target >= SCENE.W) end = window.setTimeout(finish, 450);
     };
     raf = requestAnimationFrame(tick);
     return () => {
@@ -149,7 +152,8 @@ export function Scene({
       <div
         className={cn(
           "relative overflow-hidden transition-[height] duration-500 [transition-timing-function:var(--ease-sheet)]",
-          done ? "h-0" : "h-14 max-sm:h-auto max-sm:grid max-sm:grid-cols-4 max-sm:gap-x-2.5 max-sm:py-2.5",
+          // 라벨 한 줄 + 숫자 26px 가 들어가는 높이 — h-14(56) 에서는 숫자 아래가 잘렸다.
+          done ? "h-0" : "h-[68px] max-sm:h-auto max-sm:grid max-sm:grid-cols-4 max-sm:gap-x-2.5 max-sm:py-2.5",
         )}
       >
         {FUNNEL_LABELS.map((k, i) => (
@@ -161,7 +165,7 @@ export function Scene({
             data-x={SCENE.XS[i]}
             data-lab
             className={cn(
-              "absolute top-1 opacity-0 transition-opacity duration-[400ms] max-sm:static",
+              "group/lab absolute top-1 opacity-0 transition-opacity duration-[400ms] max-sm:static",
               i > 0 && "border-l border-field pl-3 max-sm:border-0 max-sm:pl-0",
             )}
             style={{ left: `${(SCENE.XS[i] / SCENE.W) * 100}%` }}
@@ -170,12 +174,13 @@ export function Scene({
             <span className="block break-keep text-[12px] text-ink-g">{k}</span>
             <span
               className={cn(
-                "num mt-[5px] block text-[26px] font-[650] tracking-[-0.04em] max-sm:text-[18px]",
+                "num mt-[5px] block text-[26px] leading-[1.15] font-[650] tracking-[-0.04em] max-sm:text-[18px]",
                 i === 3 ? "text-orange-ink" : "text-ink",
               )}
             >
               <span className="cnt" data-to={cnt[i]} />
-              <small className="text-[11.5px] font-normal text-ink-mute">{subOf(counts, i)}</small>
+              {/* 비율은 카운트업이 끝난 뒤에 — 세는 중에 "83 · 앞 단계의 45%"(최종 89 기준)처럼 어긋나 보였다 */}
+              <small className="text-[11.5px] font-normal text-ink-mute opacity-0 transition-opacity duration-300 group-data-[full=true]/lab:opacity-100">{subOf(counts, i)}</small>
             </span>
           </div>
         ))}

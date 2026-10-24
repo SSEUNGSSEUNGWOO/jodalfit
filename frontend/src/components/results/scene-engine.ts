@@ -408,10 +408,12 @@ export function createEngine(
       const to = Number(span.dataset.to);
       if (to < 0) {
         span.textContent = "…";
+        g.dataset.full = "false";
         continue;
       }
       const p = Math.min(1, Math.max(0, (x - gxv) / 150));
       span.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString("ko-KR");
+      g.dataset.full = String(p >= 1); // 다 센 뒤에만 옆 비율을 보인다(Scene.tsx)
     }
   }
 

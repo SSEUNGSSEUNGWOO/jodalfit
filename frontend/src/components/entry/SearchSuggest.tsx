@@ -1,35 +1,43 @@
 // frontend/src/components/entry/SearchSuggest.tsx
-// 입구 검색창 — SearchBox 에 자동완성을 더한 것. 시안 entry-v2 의 D 안(gen_entry_v2.py)을 옮긴다.
+// 입구 검색창 — 검색 기준(회사 / 키워드) 선택 + 자동완성. 시안 entry-v2 의 D 안(gen_entry_v2.py)을 옮긴다.
 //
-// 조작: 두 글자부터 아래로 자란다 · ↑↓ 로 옮긴다 · Enter·클릭으로 고른다 · Esc 로 닫는다.
-// 목록 끝에는 항상 '그대로 찾기' 한 줄을 둔다 — 입력의 절반 이상이 회사명이 아니다(업종·품목·브랜드).
-// 회사를 고르면 회사 모드로, 그 줄을 고르면 키워드 모드로 간다.
+// 검색 기준을 먼저 고른다(2026-10-24 승우님) — 한 칸이 회사명도 키워드도 받으면 처음 온 사람은 무엇으로 찾는지 모른다.
+// 회사: 두 글자부터 회사 목록이 아래로 자란다 · ↑↓ 로 옮긴다 · Enter·클릭으로 고른다 · Esc 로 닫는다.
+//       일치하는 회사가 없으면 그 자리에 '키워드로 찾기' 한 줄 — 입력의 절반 이상이 회사명이 아니다(업종·품목·브랜드).
+// 키워드: 목록 없이 Enter 로 바로 찾는다.
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
-import { modeOf } from "@/components/SearchBox";
 import type { CompanySuggestion } from "@/app/api/companies/suggest/route";
 import { cn } from "@/lib/utils";
 
 const MIN = 2;
 const DEBOUNCE_MS = 140;
 
-export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
+type Mode = "company" | "keywords";
+const MODES: { mode: Mode; label: string; placeholder: string }[] = [
+  { mode: "company", label: "회사로 찾기", placeholder: "회사명 또는 사업자등록번호" },
+  { mode: "keywords", label: "키워드로 찾기", placeholder: "업종 또는 품목 — 예: 하수처리시설 관리대행" },
+];
+
+export function SearchSuggest({ autoFocus = false, initialMode = "company" }: { autoFocus?: boolean; initialMode?: Mode }) {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [q, setQ] = useState("");
   const [cos, setCos] = useState<CompanySuggestion[]>([]);
   const [suggestQuery, setSuggestQuery] = useState("");
   const [closed, setClosed] = useState(false); // 사용자가 Esc·바깥 클릭으로 닫았는가 — 열림은 계산으로 낸다
   const [act, setAct] = useState(0);
   const box = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   // 입력이 멈추면 한 번만 친다. 늦게 온 응답이 최신 입력을 덮어쓰지 않게 live 로 끊는다.
   // 효과 안에서 직접 상태를 바꾸지 않는다(react-hooks/set-state-in-effect) — 비동기 콜백에서만.
   useEffect(() => {
     const v = q.trim();
-    if (v.length < MIN) return;
+    if (mode !== "company" || v.length < MIN) return;
     let live = true;
     const t = setTimeout(() => {
       fetch(`/api/companies/suggest?q=${encodeURIComponent(v)}`)
@@ -49,7 +57,7 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
       live = false;
       clearTimeout(t);
     };
-  }, [q]);
+  }, [q, mode]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -59,34 +67,29 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
     return () => removeEventListener("mousedown", onDown);
   }, []);
 
-  // 마지막 줄은 '그대로 찾기'(키워드). 목록이 비어도 이 줄은 남는다.
-  const candidates = suggestQuery === q.trim() ? cos : [];
-  const rows = q.trim().length >= MIN ? [...candidates.map((c) => ({ co: c })), { co: null }] : [];
+  // 회사 모드 목록: 응답이 현재 입력의 것일 때만. 응답이 왔는데 0곳이면 '키워드로 찾기' 한 줄(co: null).
+  const answered = mode === "company" && q.trim().length >= MIN && suggestQuery === q.trim();
+  const rows: { co: CompanySuggestion | null }[] = !answered ? [] : cos.length ? cos.map((c) => ({ co: c })) : [{ co: null }];
 
-  function go(i: number) {
-    const r = rows[i];
+  function submit(m: Mode, v: string, from: string) {
+    setClosed(true);
+    track("search_submit", { mode: m, length: v.length, from });
+    router.push(m === "company" ? `/recommendations?company=${encodeURIComponent(v)}` : `/recommendations?q=${encodeURIComponent(v)}`);
+  }
+
+  function go(i: number | null) {
     const v = q.trim();
     if (!v) return;
-    setClosed(true);
-    if (r?.co) {
-      track("search_submit", { mode: "company", length: r.co.nm.length, from: "suggest" });
-      router.push(`/recommendations?company=${encodeURIComponent(r.co.nm)}`);
-      return;
-    }
-    const mode = modeOf(v);
-    track("search_submit", { mode, length: v.length, from: "suggest_keyword" });
-    router.push(mode === "company" ? `/recommendations?company=${encodeURIComponent(v)}` : `/recommendations?q=${encodeURIComponent(v)}`);
+    const r = i == null ? undefined : rows[i];
+    if (r?.co) return submit("company", r.co.nm, "suggest");
+    if (r && !r.co) return submit("keywords", v, "suggest_keyword");
+    // 목록 없이 제출 — 고른 기준 그대로. 회사 모드에서 못 찾으면 결과 페이지가 키워드로 넘긴다.
+    submit(mode, v, "submit");
   }
 
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-    if (!show) {
-      if (e.key === "Enter" && q.trim()) {
-        e.preventDefault();
-        go(rows.length - 1); // 목록이 닫혀 있으면 입력 그대로
-      }
-      return;
-    }
+    if (!show) return; // Enter 는 form 제출이 받는다
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setAct((a) => (a + 1) % rows.length);
@@ -101,18 +104,45 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
     }
   }
 
+  function pick(m: Mode) {
+    setMode(m);
+    setClosed(false);
+    setAct(0);
+    input.current?.focus();
+  }
+
   const show = !closed && rows.length > 0;
+  const cur = MODES.find((m) => m.mode === mode)!;
   return (
-    <div ref={box} className="relative max-w-[760px]" data-suggest>
+    <div ref={box} className="relative max-w-[760px]" data-suggest data-mode={mode}>
+      <div role="radiogroup" aria-label="검색 기준" className="mb-2.5 flex gap-5 text-[14px]">
+        {MODES.map((m) => (
+          <button
+            key={m.mode}
+            type="button"
+            role="radio"
+            aria-checked={mode === m.mode}
+            data-search-mode={m.mode}
+            onClick={() => pick(m.mode)}
+            className={cn(
+              "cursor-pointer border-b-2 pb-1 transition-colors",
+              mode === m.mode ? "border-ink font-[650] text-ink" : "border-transparent text-ink-mute hover:text-ink-g",
+            )}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
       <form
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
-          go(show ? act : rows.length - 1);
+          go(show ? act : null);
         }}
         className="flex items-stretch rounded-[6px] border-2 border-orange bg-panel transition-shadow duration-150 focus-within:shadow-[0_0_0_4px_var(--color-orange-ring)]"
       >
         <input
+          ref={input}
           value={q}
           onChange={(e) => {
             const v = e.target.value;
@@ -131,9 +161,9 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
           aria-controls="suggest-list"
           aria-autocomplete="list"
           aria-activedescendant={show ? `suggest-option-${act}` : undefined}
-          placeholder="회사명 · 사업자등록번호 · 업종 또는 품목"
-          aria-label="회사명, 사업자등록번호, 업종 또는 품목"
-          className="min-w-0 flex-1 bg-transparent px-[18px] py-3.5 text-[20px] font-medium tracking-[-0.02em] text-ink outline-none placeholder:font-[450] placeholder:text-ink-mute max-sm:px-3.5 max-sm:py-3 max-sm:text-[17px]"
+          placeholder={cur.placeholder}
+          aria-label={cur.placeholder}
+          className="min-w-0 flex-1 bg-transparent px-[18px] py-3.5 text-[20px] font-medium tracking-[-0.02em] text-ink outline-none placeholder:font-[450] placeholder:text-ink-mute max-sm:px-3.5 max-sm:py-3 max-sm:text-[17px] max-sm:placeholder:text-[15px]"
         />
         <button type="submit" className="cursor-pointer border-l border-rule bg-panel px-5 text-[15px] font-[650] text-ink max-sm:px-3.5">
           <span className="border-b-2 border-orange pb-px">찾기</span>
@@ -171,8 +201,8 @@ export function SearchSuggest({ autoFocus = false }: { autoFocus?: boolean }) {
                 </>
               ) : (
                 <>
-                  <span className="truncate text-ink-g">&quot;{q.trim()}&quot; 그대로 찾기</span>
-                  <span className="ml-auto shrink-0 text-[12.5px] text-ink-mute">업종·품목으로</span>
+                  <span className="truncate text-ink-g">일치하는 회사 없음</span>
+                  <span className="ml-auto shrink-0 text-[12.5px] text-ink">&quot;{q.trim()}&quot; 키워드로 찾기</span>
                 </>
               )}
             </div>
