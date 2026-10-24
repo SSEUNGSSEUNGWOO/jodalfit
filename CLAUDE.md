@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # jodalfit 프로젝트 가이드
 
 ## 컨셉
-회사명/사업자번호 입력 → **등록업종 + 공급물품 (메인)** + 과거 수주 이력 (보조)을 동적 가중합한 회사 벡터 생성 → 신규 입찰공고와 유사도 매칭 → TOP 5 추천 + LLM 설명. 한국 공공조달(나라장터) 대상, B2B(중소 SI), 한국 시장 한정.
+회사명/사업자번호 입력 → **등록업종 + 공급물품 (메인)** + 과거 수주 이력 (보조)을 동적 가중합한 회사 벡터 생성 → 신규 입찰공고와 유사도 매칭 → **20건** 추천(비로그인은 상위 5건 공개 + 15건 흐림) + LLM 설명. 한국 공공조달(나라장터) 대상, B2B(중소 SI), 한국 시장 한정.
 
 - 회사 식별/벡터 미확보 시 키워드 모드 폴백 (자유 텍스트 직접 임베딩).
 - 톤: **"낙찰 예측"이 아닌 "검토할 만한 공고 디스커버리"**. 카피 원칙(점수 표현, 사업자번호 마스킹 등)은 README.md §12 — 어기지 말 것.
@@ -27,6 +27,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 연결 점검: `uv run python -m jobs.verify_setup` (row count) / `jobs.verify_phase2`
 - 추천 평가(채점표): `cd backend && uv run python -m jobs.evaluate_recommender --as-of YYYY-MM-DD --companies 3000 --seed 7` → `backend/data/recommender_eval/<run_id>/report.md`. 규칙은 `docs/recommender/evaluation.md`.
 - 의존성 추가: `uv add <pkg>` (backend), `npm install <pkg>` (frontend). 일부 잡(backfill/사업자상태/purge/채점표/상세필드)은 Supabase 대신 `DATABASE_URL`(psycopg 직결)을 쓴다.
+- **프론트 검증은 `frontend/scripts/check_*.py`** (Playwright, 운영 데이터로 실제 화면을 친다). 백엔드 venv 로 돌린다:
+  `cd backend && uv run --no-sync python ../frontend/scripts/check_entry.py` — entry/results/saved/company/notice/changelog/auth/foundation/funnel 9종.
+  화면을 고치면 해당 검증도 같이 고친다. 금지어·주황 면 0·390 가로 넘침·조작(타이핑·방향키)까지 본다.
+- 순수 로직 단위 검사: `cd frontend && node --experimental-strip-types --test src/lib/*.test.ts src/components/results/*.test.ts`.
 - 테스트 프레임워크 없음. `jobs/test_api.py`·`probe_*.py`는 pytest가 아니라 API 탐색용 CLI 스크립트. 대신 순수 로직 모듈은 `__main__` 자체 점검을 둔다 — `uv run python -m app.recommender.evaluation` / `app.core.traffic_source` / `app.recommender.qualifications` / `app.services.embedding` / `app.services.doc_extract`. 새 순수 로직도 이 패턴을 따른다.
 
 ## 아키텍처 큰 그림
@@ -46,6 +50,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 알고리즘을 바꿀 때 (필수)
 - 후보 검색·자격·점수·MMR을 건드리면 **채점표로 전후 비교**한다: `--companies 3000 --seed 7`, 시점 7/1·8/1·9/1, 기준점 `docs/recommender/baseline-2026-10-16-big.md`. 300곳은 잡음과 구분이 안 된다.
 - **한 군(cold/small/rich)이 떨어지면 전체 평균이 올라도 채택하지 않는다.** 두 시점 이상 같은 방향이어야 한다.
+- **10/1 은 시험 전용이다**(2026-10-23). 가중치·임계값을 고르는 데 쓰지 말고, 7/1·8/1·9/1 에서 채택한 변경이 처음 보는 시점에서도 유지되는지 확인할 때만 돌린다. 여기서 떨어지면 과적합으로 보고 채택하지 않는다.
+- 하네스는 운영과 맞춰져 있다 — 채널당 1,000행 천장(`CHANNEL_MAX_ROWS`, Supabase REST 한계), 회사 프로필을 시점 t 로 복원(`rgst_dt`/`valid_to_dt`). 보고서에 `final@5`·`final@20`(운영 화면 조건)과 자격 탈락 사유가 나온다.
+- 점수 분해: `--ablate bonuses` 로 유사도 단독 기준선, `--ablate institution,region,...` 로 하나씩. `--channel-max-rows 0` 은 천장을 꺼 전수 채점 상한을 잰다(2026-10-23 실측: 후보를 전부 넣어도 final@20 은 안 오른다 — 병목은 점수다).
 - 결과는 `docs/recommender/exp-YYYY-MM-DD-<주제>.md`(실험 기록) + `docs/recommender/changelog.md`(사용자 언어로 "무엇이 왜 달라졌나")에 남긴다. 운영 전환 스위치(`RECO_RETRIEVAL`, `EMBED_SPACE`, `*_PROVIDER`)는 환경변수 하나로 롤백되게 유지한다.
 
 ### backend 구조
@@ -73,26 +80,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 나라장터 API 제약이 코드 전반에 배어 있음: 일일 호출 한도(UsrInfoService02 4,500/일), 조회범위 30일 초과 시 에러 → 청크 처리, 429 백오프 등.
 
 ### Supabase migrations
-`supabase/migrations/0001~0051` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**. 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
+`supabase/migrations/0001~0060` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
 
 ### frontend 구조
-- `src/app/` — 랜딩, `recommendations/`(mode=company|keywords), `companies/[bizrno]`(SEO 회사 페이지) + `companies/browse/[sido]`·`companies/industry/[code]`(디렉터리 MV 0027), `notices/[bid_ntce_no]`(공고 라이프사이클 6단계), `about`·`privacy`, `api/`(route handler: 회사 추천·유사 공고 — 브라우저가 백엔드를 직접 안 치게), sitemap/robots/JSON-LD/OG (SEO 비중 큼 → 서버 컴포넌트 + `lib/supabase-server.ts` 직접 조회 적극 활용). **SEO 페이지의 URL·SSR 구조는 리뉴얼에서도 보존.**
-- `src/lib/api.ts` — 백엔드 호출 + mock 폴백. `NEXT_PUBLIC_USE_MOCK=true`면 백엔드 없이 디자인 확인 가능.
-- `src/components/` — 플랫한 단일 폴더 (BidCard, MatchScore, Lifecycle 등) + `board/`(대화형 추천 보드, `/stream` 사용) + `ui/`(shadcn)
+- **모든 페이지가 `src/app/(renewal)/` 안에 있다**(2026-10-24 컷오버). 라우트 그룹이라 URL 은 그대로다 — `(renewal)/companies/[bizrno]` 가 `/companies/[bizrno]` 를 낸다. 그룹 밖에 page.tsx 를 만들면 같은 URL 로 충돌한다.
+- `(renewal)/layout.tsx` 가 nav·footer·`<main>` 을 준다. **nav 가 로그인 상태를 읽어 쿠키를 쓰므로 어떤 페이지도 정적 생성이 안 된다** — `generateStaticParams` 를 두면 운영에서 `DYNAMIC_SERVER_USAGE` 로 500 이 난다(2026-10-24 회사·공고 페이지가 이걸로 깨졌다). 페이지는 전부 동적(ƒ)이고, 캐시가 필요하면 **데이터만** `unstable_cache` 로 감싼다(`lib/entry.ts` 가 그 예).
+- 입구는 **루트 `/` 하나**다 — 질의 없는 `/recommendations` 는 `/` 로 리다이렉트한다(`(renewal)/recommendations/page.tsx`). 회사명만 적힌 질의는 공고번호 꼴이면 `/notices/*` 로 보낸다.
+- `src/lib/` 서버 전용 읽기(`"server-only"`): `supabase-server`(service_role), `company`·`notice`·`saved`·`entry`·`changelog`. 브라우저에서 import 하면 키가 샌다.
+- `src/app/api/` — route handler. `companies/suggest`(입구 자동완성 — **사업자번호는 응답에 싣지 않는다**), `companies/[bizrno]/profile`, 유사 공고. 브라우저가 백엔드를 직접 안 치게 하는 자리.
+- `src/components/` — `entry/`·`results/`·`company/`·`notice/`·`board/`(옛 대화형 보드, 일부만 생존) + `ui/`(shadcn). `JsonLd.tsx` 가 구조화 데이터 주입을 한 곳에 모은다.
+- SEO 비중이 크다 — 회사·공고 페이지의 메타·canonical·JSON-LD·색인 제외 규칙은 각각 이유가 있다(비공개 요청 0037, 깡통·폐업 noindex, **제목·설명에 수주 건수·평균 투찰률 비노출** 2026-09-22). 옮기거나 고칠 때 주석을 먼저 읽는다.
+- GEO(AI 답변 인용용): `public/llms.txt`, `/faq`(FAQPage JSON-LD), 회사·공고 머리 아래 사실 문단. 여기에도 수주 건수·투찰률은 넣지 않는다.
 - `frontend/CLAUDE.md`는 `@AGENTS.md`만 가리킨다(Next.js 16 지침).
 
 ## 주의사항 (gotchas)
 - **Next.js 16**: 학습 데이터와 다른 breaking change 있음. 코드 작성 전 `frontend/node_modules/next/dist/docs/`의 해당 가이드 확인 (frontend/AGENTS.md 지침).
 - **shadcn base-nova preset (@base-ui/react 기반)**: `Button`이 `asChild` 미지원 — 링크는 `<a>`에 직접 스타일.
-- 브랜드 컬러는 **에메랄드 `#047857`** (2026-08 리브랜딩; README §13의 `#166534`은 구버전). 토큰은 `src/app/globals.css`. **2026-10 디자인 리뉴얼은 주황 `#f97316`(docs/design/README.md) — 리뉴얼 배포 때 한꺼번에 교체, 그 전엔 운영 색 그대로.**
-- **디자인 리뉴얼 작업 전 `docs/design/README.md`를 먼저 읽는다.** 결정 사항(주황은 선이지 면이 아니다, 공문 톤 문체, 적합 점수 숫자 비노출·근거는 유지, 폐기한 컨셉 목록, 머리 장면은 로딩 가림막)이 거기 있고 최종 시안은 `prototypes/final/*.html`(그 밖의 `prototypes/*.html`은 폐기·중간안)(생성 스크립트 `scripts/`). 루트 `DESIGN.md`(개찰판·청색 장부)는 **현행 운영 디자인**이고 리뉴얼에서 폐기 대상. 로고 자산은 `docs/design/brand/`.
+- 브랜드 컬러는 **주황 `#f97316`** (2026-10-24 리뉴얼 배포로 에메랄드 `#047857` 교체). 토큰은 `src/app/globals.css`.
+  - **주황은 선이지 면이 아니다** — 테두리·밑줄·점에만. 유일한 면 예외는 로고 타일.
+  - **글자에는 `--color-orange-ink` (#b85510)** 를 쓴다. 브랜드 주황은 종이색 위 대비가 2.66:1 이라 큰 글자 기준 3.0 에도 못 미친다(2026-10-23 Lighthouse). Tailwind 로는 `text-orange-ink`. 선·테두리·타일은 `orange` 그대로.
+- **금지어가 있다.** `frontend/scripts/check_*.py` 의 `BANNED` 목록 — "하세요"·"주십시오"·"예요"·"에요"·"넣으면"·"낼 수 있"·"이메일 구독"·"매직링크" 등. 공문 톤 유지와 "낼 수 있다"는 단정 금지 때문이다. 문구를 쓰면 검증이 잡는다.
+- **디자인 리뉴얼 작업 전 `docs/design/README.md`를 먼저 읽는다.** 결정 사항(주황은 선이지 면이 아니다, 공문 톤 문체, 적합 점수 숫자 비노출·근거는 유지, 폐기한 컨셉 목록, 머리 장면은 로딩 가림막)이 거기 있고 최종 시안은 `prototypes/final/*.html`(그 밖의 `prototypes/*.html`은 폐기·중간안)(생성 스크립트 `scripts/`). 루트 `DESIGN.md`(개찰판·청색 장부)는 **폐기된 옛 디자인** 기록이다 — 현행이 아니다. 로고 자산은 `docs/design/brand/`.
 - 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음(로그인은 이메일 매직링크 = 알림 구독, 비밀번호 없음 — 리뉴얼 결정).
 - `backend/.env`의 `SUPABASE_SERVICE_ROLE_KEY`는 RLS 우회 admin 키 — frontend/git 노출 금지. 환경변수 전체 목록은 README.md §9.
 - `data/`는 gitignored 임시 수집 데이터.
 
+### 화면에 숫자를 올릴 때 (필수)
+2026-10-23 에 깔때기 숫자가 통째로 거짓이었던 걸 찾았다. 시안 생성기가 **운영에 없는 파이프라인**을 세고 있었다.
+
+- **파이프라인 단계로 그리는 숫자는 앞 칸의 부분집합이어야 한다.** 결과 화면 깔때기는 `지금 입찰 가능 → 비슷한 순서로 추린 후보 → 자격 통과 → 추천` 네 칸이고 전부 중첩이다. "등록업종 허용 공고"는 단계가 아니다 — 후보는 그 집합이 아니라 전체에서 유사도 순으로 뽑는다(최종 20건 중 8건이 그 집합 밖이었다).
+- **"지금 입찰 가능한 공고" 수는 `funnel_counts`(0057)** 다 — 마감 90일 이내 + 벡터 있음 + 참가자격 등록 안 지남. 단순 마감일 집계(옛 0056)를 쓰면 낼 수 없는 공고를 센다.
+- **시안 숫자는 운영을 재생해서 얻는다.** `docs/design/scripts/gen_data.py` 가 `recommend()` 를 돌려 progress 이벤트로 센다. 화면용 사본을 따로 만들면 반드시 갈라진다.
+- 수집 상태에 따라 무너지는 수치는 쓰지 않는다 — "오늘 등록된 공고"는 수집이 한 번 밀리면 한 자리가 된다. 얇으면 라벨을 "최근 등록"으로 바꿔 단다(`lib/entry.ts`).
+
+### 배포
+- 컷오버는 `renewal` → `main` PR 하나, 되돌리기는 그 PR revert. `main` push 로 **Vercel 자동 배포**(프론트), Railway(백엔드)는 별도.
+- **배포 후 운영 빌드로 전 경로를 친다.** 개발 서버(:3000)는 정적 생성 경로를 안 타서 `DYNAMIC_SERVER_USAGE` 같은 사고를 못 잡는다. `npm run build && npx next start -p 3100` 로 띄워 확인한다.
+- Lighthouse 목표 90 이상: `npx lighthouse <url> --only-categories=performance,accessibility,best-practices,seo --chrome-flags="--headless"`.
+
 ## 작업 원칙
 - MVP는 임베딩 매칭 하나로만 일단 공개 가능한 최소 단위 우선
-- 무료/유료 경계선 처음부터 설계: 무료(1회 분석, 주간 TOP5, 점수 숫자) / 유료 후보(실시간 알림, LLM 점수 설명 상세, 자격요건 매칭 상세)
+- 무료/유료 경계선 처음부터 설계: 무료(1회 분석, 주간 추천, 점수 숫자) / 유료 후보(실시간 알림, LLM 점수 설명 상세, 자격요건 매칭 상세)
 - README.md가 상세 문서(알고리즘 근거, API 서비스 목록, 잡 시드 순서, 응답 예시) — 중복 기술하지 말고 참조
 
 ## 문서 지도
