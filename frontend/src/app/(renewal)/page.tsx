@@ -6,7 +6,7 @@
 // 처음 온 사람에게 뭐 하는 곳인지 한 줄로 알리고 바로 아래에 검색창을 둔다.
 // 시안: docs/design/prototypes/entry-v2.html 의 D 안 + C 안의 머리 한 줄.
 import type { Metadata } from "next";
-import { SearchSuggest } from "@/components/entry/SearchSuggest";
+import { EntrySearch } from "@/components/entry/EntrySearch";
 import { EntryPanel } from "@/components/entry/EntryPanel";
 import { RecentChips } from "@/components/entry/RecentChips";
 import { getEntryData } from "@/lib/entry";
@@ -32,15 +32,7 @@ export default async function EntryPage() {
         나라장터 공고 중 <b className="font-[650] text-ink">우리 회사가 검토할 만한 것</b>만 추립니다.
         낙찰을 예측하지 않습니다.
       </p>
-      <h1 className="mx-auto mt-3 max-w-[760px] text-[26px] font-[650] leading-[1.35] tracking-[-0.03em] text-ink max-sm:text-[20px]">
-        어느 <span className="border-b-2 border-orange pb-0.5">회사</span>의 공고를 찾습니까
-      </h1>
-      <div className="mx-auto mt-[18px] max-w-[760px]">
-        <SearchSuggest autoFocus />
-      </div>
-      <p className="mx-auto mt-[11px] max-w-[760px] text-[13.5px] text-ink-g">
-        회사 — 등록업종·수주 이력 기준으로 선별 · 키워드 — 입력한 말과 의미가 가까운 공고
-      </p>
+      <EntrySearch />
       <RecentChips />
       {entry && <EntryPanel d={entry} />}
     </>

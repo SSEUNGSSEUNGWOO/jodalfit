@@ -16,13 +16,16 @@ import { cn } from "@/lib/utils";
 const MIN = 2;
 const DEBOUNCE_MS = 140;
 
-type Mode = "company" | "keywords";
+export type SearchMode = "company" | "keywords";
+type Mode = SearchMode;
 const MODES: { mode: Mode; label: string; placeholder: string }[] = [
   { mode: "company", label: "회사로 찾기", placeholder: "회사명 또는 사업자등록번호" },
   { mode: "keywords", label: "키워드로 찾기", placeholder: "업종 또는 품목 — 예: 하수처리시설 관리대행" },
 ];
 
-export function SearchSuggest({ autoFocus = false, initialMode = "company" }: { autoFocus?: boolean; initialMode?: Mode }) {
+export function SearchSuggest({ autoFocus = false, initialMode = "company", onModeChange }: {
+  autoFocus?: boolean; initialMode?: Mode; onModeChange?: (m: Mode) => void; // 입구 제목·안내 줄이 기준을 따라 바뀐다(EntrySearch)
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [q, setQ] = useState("");
@@ -106,6 +109,7 @@ export function SearchSuggest({ autoFocus = false, initialMode = "company" }: { 
 
   function pick(m: Mode) {
     setMode(m);
+    onModeChange?.(m);
     setClosed(false);
     setAct(0);
     input.current?.focus();

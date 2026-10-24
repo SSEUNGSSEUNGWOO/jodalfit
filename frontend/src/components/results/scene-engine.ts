@@ -1,8 +1,9 @@
 // 머리 장면 엔진 — D-2 점 격자. gen_funnel_variants.py::fixedDots('d2') 포팅.
 //
-// 공고 하나 = 점 하나. 네 덩어리가 **같은 pitch** 를 쓰므로 점유 면적이 건수에 그대로 비례한다
-// (눈금을 속일 수 없다 — 세면 된다). 이게 통로 폭으로 좁히던 A 안을 버린 이유다: 통로는
+// 공고 하나 = 점 하나(눈금을 속일 수 없다 — 세면 된다). 이게 통로 폭으로 좁히던 A 안을 버린 이유다: 통로는
 // 180/160/150/100 으로 44% 만 좁아지는데 건수는 99.8% 준다.
+// 2026-10-24 부터 첫 칸만 촘촘한 pitch, 뒤 세 칸은 확대 pitch 하나(아래 FIRST_MAX·ZOOM_MAX). 네 칸이 한 pitch 이던
+// 때는 뒤 세 칸이 손톱만 했다. 확대된 세 칸끼리는 면적이 건수에 비례하고, 축척 차이는 확대선이 밝힌다.
 //
 // 네 칸은 앞 칸의 **부분집합**이다 — 지금 입찰 가능 → 비슷한 순서로 추린 후보 → 자격 통과 → 추천.
 // 시안의 D-2 는 "등록업종 허용 845" 를 둘째 칸에 두고 후보 200 을 그 안의 진한 점으로 그렸는데
@@ -39,15 +40,25 @@ export type Engine = {
 };
 
 export type Layout = {
-  p: number; // pitch (장치 픽셀)
+  ps: number[]; // 칸마다 pitch (장치 픽셀) — 첫 칸만 촘촘하고 나머지 셋은 같은 확대 pitch
   shp: [number, number][]; // 칸마다 [열, 행]
   cxs: number[]; // 칸 중심 x
   gx: number[]; // 관문 x — 덩어리 사이 한가운데
   pad: number;
   tick: number;
-  rows0: number; // 캔버스 높이가 허용하는 최대 행 — 간격을 고정한 채 모양만 다시 잡을 때 쓴다
-  ar: number; // 첫 덩어리의 가로세로비 — 나머지도 닮게
+  rows: number[]; // 칸마다 캔버스 높이가 허용하는 최대 행 — 간격을 고정한 채 모양만 다시 잡을 때 쓴다
+  ars: number[]; // 칸마다 목표 가로세로비
 };
+
+// 확대(2026-10-24 승우님 "점 격자 비율 개선"). 같은 pitch 하나로는 8,000 대 20 이 47:1 면적이라 뒤 세 칸이
+// 손톱만 했다. 첫 칸은 촘촘하게 폭의 40% 안에 두고, 나머지 셋은 큰 pitch 하나로 그린다. 점 하나 = 공고 하나는
+// 그대로고, 확대된 세 칸끼리는 면적이 건수에 비례한다. 축척이 다르다는 것은 첫 칸 위쪽 띠(후보)에서 둘째 칸으로
+// 긋는 확대선과 "확대 ×N" 으로 화면이 직접 밝힌다.
+// 첫 칸이 쓸 수 있는 폭(쓸 수 있는 전체 폭 대비). 좁은 화면(390·dpr 1)에서는 36% 안에 8,000 점이
+// 안 들어가 배치가 비었다 — 안 되면 한도를 넓혀 다시 잡는다.
+const FIRST_MAX = [0.36, 0.5, 0.7] as const;
+const ZOOM_MAX = 12; // 확대 pitch 상한(설계 px) — 더 크면 점이 타일로 보이고 관문 사이가 좁아진다
+const ZOOM_AR = 1.2; // 확대 칸의 가로세로비
 
 /** 숫자가 아직 안 온 칸의 '점 몇 개를 그릴지'만 메우는 값 — 기하 전용이다.
  *  화면에 뜨는 숫자는 라벨이 data-to 로 따로 쥐고 있고(모르면 "…"), 여기 값이 사용자에게 보이는 일은 없다.
@@ -57,7 +68,7 @@ const FALLBACK_GEOM = [8200, 200, 85, 20] as const;
 
 export const geom = (c: readonly number[]) => c.map((n, i) => (n < 0 ? (FALLBACK_GEOM[i] ?? 0) : n));
 
-/** 칸 배치. 같은 pitch 를 쓰는 게 핵심이라 pitch 를 먼저 고르고 칸 모양을 맞춘다.
+/** 칸 배치. 첫 칸 pitch 를 먼저 고르고(폭 40% 안), 나머지 셋이 남은 폭에 들어가는 가장 큰 확대 pitch 를 고른다.
  *  순수 함수 — DOM 없이 테스트에서 면적 비례를 검사한다. 들어갈 pitch 가 없으면 null. */
 export function layout(cnt: readonly number[], wd: number, hd: number): Layout | null {
   const N = cnt[0];
@@ -68,55 +79,57 @@ export function layout(cnt: readonly number[], wd: number, hd: number): Layout |
   const gmin = (64 * wd) / W;
   const gmax = (150 * wd) / W;
   const availh = hd - 2 * pad;
+  const usable = wd - tick - 2 * marg;
 
-  for (const p of PITCHES) {
-    const rows0 = Math.max(1, Math.floor(availh / p) + 1);
-    const ar = Math.ceil(N / rows0) / rows0; // 첫 덩어리의 가로세로비 — 나머지도 닮게 만든다
-    const shp = fitShapes(cnt, p, rows0, ar, availh);
-    if (!shp) continue;
-    const ws = shp.map((s) => Math.max(0, (s[0] - 1) * p));
-    const sum = ws.reduce((a, b) => a + b, 0);
-    const gap = Math.min(gmax, (wd - tick - 2 * marg - sum) / (ws.length - 1));
-    if (gap < gmin) continue;
-    let x = (wd - tick - sum - gap * (ws.length - 1)) / 2;
-    const cxs: number[] = [];
-    for (const w of ws) {
-      cxs.push(x + w / 2);
-      x += w + gap;
+  for (const lim of FIRST_MAX) for (const p0 of PITCHES) {
+    const r0 = Math.max(1, Math.floor(availh / p0) + 1);
+    const ar0 = Math.ceil(N / r0) / r0;
+    const s0 = fitOne(N, p0, r0, ar0, availh);
+    if (!s0 || (s0[0] - 1) * p0 > usable * lim) continue;
+    // 확대 pitch 는 클수록 좋다 — 남은 폭에 셋이 들어가는 가장 큰 값. 끝내 안 되면 p0(확대 없음)까지 내려간다.
+    const zooms: number[] = [];
+    for (let v = Math.floor((ZOOM_MAX * hd) / H); v > p0; v--) zooms.push(v);
+    zooms.push(p0);
+    for (const p1 of zooms) {
+      const r1 = Math.max(1, Math.floor(availh / p1) + 1);
+      const rest = cnt.slice(1).map((n) => fitOne(n, p1, r1, ZOOM_AR, availh));
+      if (rest.some((s) => !s)) continue;
+      const shp = [s0, ...(rest as [number, number][])];
+      const ps = [p0, p1, p1, p1];
+      const ws = shp.map((s, i) => Math.max(0, (s[0] - 1) * ps[i]));
+      const sum = ws.reduce((a, b) => a + b, 0);
+      const gap = Math.min(gmax, (usable - sum) / (ws.length - 1));
+      if (gap < gmin) continue;
+      let x = (wd - tick - sum - gap * (ws.length - 1)) / 2;
+      const cxs: number[] = [];
+      for (const w of ws) {
+        cxs.push(x + w / 2);
+        x += w + gap;
+      }
+      const gx: number[] = [];
+      for (let k = 0; k < NT; k++) {
+        const a = cxs[k] + ((shp[k][0] || 1) - 1) * (ps[k] / 2);
+        const b = cxs[k + 1] - ((shp[k + 1][0] || 1) - 1) * (ps[k + 1] / 2);
+        gx.push((a + b) / 2);
+      }
+      return { ps, shp, cxs, gx, pad, tick, rows: [r0, r1, r1, r1], ars: [ar0, ZOOM_AR, ZOOM_AR, ZOOM_AR] };
     }
-    const gx: number[] = [];
-    for (let k = 0; k < NT; k++) {
-      const a = cxs[k] + ((shp[k][0] || 1) - 1) * (p / 2);
-      const b = cxs[k + 1] - ((shp[k + 1][0] || 1) - 1) * (p / 2);
-      gx.push((a + b) / 2);
-    }
-    return { p, shp, cxs, gx, pad, tick, rows0, ar };
   }
   return null;
 }
 
 /** 간격·행 상한이 정해진 뒤 건수만으로 칸 모양을 고른다. 들어갈 모양이 없으면 null. */
-function fitShapes(
-  cnt: readonly number[], p: number, rows0: number, ar: number, availh: number,
-): [number, number][] | null {
-  const shp: [number, number][] = [];
-  for (const n of cnt) {
-    if (n <= 0) {
-      shp.push([0, 0]); // 아는 0 은 지어내지 않는다 — 빈 칸으로 둔다
-      continue;
-    }
-    let best: [number, number, number] | null = null; // [닮은 정도, 열, 행]
-    for (let r = 1; r <= rows0; r++) {
-      if ((r - 1) * p > availh) continue;
-      const c = Math.ceil(n / r);
-      if (c * r > n * 1.06) continue; // 낭비 6% 안
-      const d = Math.abs(Math.log(c / r / ar));
-      if (!best || d < best[0]) best = [d, c, r];
-    }
-    if (!best) return null;
-    shp.push([best[1], best[2]]);
+function fitOne(n: number, p: number, rows0: number, ar: number, availh: number): [number, number] | null {
+  if (n <= 0) return [0, 0]; // 아는 0 은 지어내지 않는다 — 빈 칸으로 둔다
+  let best: [number, number, number] | null = null; // [닮은 정도, 열, 행]
+  for (let r = 1; r <= rows0; r++) {
+    if ((r - 1) * p > availh) continue;
+    const c = Math.ceil(n / r);
+    if (c * r > n * 1.06) continue; // 낭비 6% 안
+    const d = Math.abs(Math.log(c / r / ar));
+    if (!best || d < best[0]) best = [d, c, r];
   }
-  return shp;
+  return best ? [best[1], best[2]] : null;
 }
 
 /** 간격·칸 중심·관문을 그대로 두고 건수만 반영한다.
@@ -127,18 +140,19 @@ function fitShapes(
  *  호출부가 전면 재배치하게 둔다(드물다). */
 export function refit(lay: Layout, cnt: readonly number[], hd: number): Layout | null {
   const availh = hd - 2 * lay.pad;
-  const shp = fitShapes(cnt, lay.p, lay.rows0, lay.ar, availh);
-  if (!shp) return null;
+  const shp = cnt.map((n, i) => fitOne(n, lay.ps[i], lay.rows[i], lay.ars[i], availh));
+  if (shp.some((s) => !s)) return null;
+  const ok = shp as [number, number][];
   for (let k = 0; k < NT; k++) {
-    const right = lay.cxs[k] + Math.max(0, (shp[k][0] - 1) * lay.p) / 2;
-    const left = lay.cxs[k + 1] - Math.max(0, (shp[k + 1][0] - 1) * lay.p) / 2;
+    const right = lay.cxs[k] + Math.max(0, (ok[k][0] - 1) * lay.ps[k]) / 2;
+    const left = lay.cxs[k + 1] - Math.max(0, (ok[k + 1][0] - 1) * lay.ps[k + 1]) / 2;
     if (right >= lay.gx[k] || left <= lay.gx[k]) return null; // 덩어리가 관문을 먹는다
   }
-  return { ...lay, shp };
+  return { ...lay, shp: ok };
 }
 
-/** 칸 i 가 차지하는 면적(장치 픽셀²). D-2 의 주장 = 이 값이 건수에 비례한다. */
-export const blockArea = (l: Layout, i: number) => l.shp[i][0] * l.shp[i][1] * l.p * l.p;
+/** 칸 i 가 차지하는 면적(장치 픽셀²). 확대된 칸(1~3)끼리는 이 값이 건수에 비례한다. */
+export const blockArea = (l: Layout, i: number) => l.shp[i][0] * l.shp[i][1] * l.ps[i] * l.ps[i];
 
 function rng(a: number) {
   return function () {
@@ -174,7 +188,7 @@ export function createEngine(
   let unf = new Float32Array(0); // 마지막 펼침 자리(표 행)
   let ends = new Uint8Array(0); // 이 점이 마지막으로 서는 칸
   let rank = new Int32Array(0);
-  let sz = 2;
+  let szs = [2, 2, 2, 2]; // 칸마다 점 크기 — 확대 칸은 크다
   let dpr = 1;
   let wd = 1;
   let hd = 1;
@@ -197,7 +211,8 @@ export function createEngine(
       idx[i] = idx[j];
       idx[j] = t;
     }
-    for (let i = 0; i < N; i++) rank[i * NS] = i;
+    // 첫 칸은 비슷한 순서로 줄 세운다 — 앞선 후보가 위쪽 띠에 모이고, 확대선이 그 띠에서 둘째 칸으로 간다.
+    for (let j = 0; j < N; j++) rank[idx[j] * NS] = j;
     // 칸마다 앞 칸의 부분집합 — 같은 idx 앞쪽을 잘라 쓰므로 중첩이 보장된다.
     for (let s = 1; s < NS; s++) {
       const a = Int32Array.from(idx.slice(0, Math.max(0, Math.min(N, cnt[s])))).sort();
@@ -227,19 +242,20 @@ export function createEngine(
     lay = kept ?? layout(cnt, wd, hd);
     if (!lay) return;
     // 390px·dpr3 에서 pitch 가 5 아래로 눌린다 — 1px 밑으로 가면 점이 사라져 얼룩이 된다.
-    sz = Math.max(1, Math.round(lay.p * 0.55));
+    szs = lay.ps.map((p) => Math.max(1, Math.round(p * 0.55)));
     const N = cnt[0];
     pos = new Float32Array(N * NS * 2);
     for (let s = 0; s < NS; s++) {
       const [c, rw] = lay.shp[s];
       if (!c) continue;
-      const x0 = lay.cxs[s] - ((c - 1) * lay.p) / 2;
-      const y0 = hd / 2 - ((rw - 1) * lay.p) / 2;
+      const p = lay.ps[s];
+      const x0 = lay.cxs[s] - ((c - 1) * p) / 2;
+      const y0 = hd / 2 - ((rw - 1) * p) / 2;
       for (let i = 0; i < N; i++) {
         const q = rank[i * NS + s];
         if (q < 0) continue;
-        pos[(i * NS + s) * 2] = x0 + (q % c) * lay.p;
-        pos[(i * NS + s) * 2 + 1] = y0 + Math.floor(q / c) * lay.p;
+        pos[(i * NS + s) * 2] = x0 + (q % c) * p;
+        pos[(i * NS + s) * 2 + 1] = y0 + Math.floor(q / c) * p;
       }
     }
     // 결과 점이 표 행 자리에 앉는다. 행 간격은 26px 가 기본이되 캔버스를 넘으면 좁힌다 —
@@ -266,7 +282,7 @@ export function createEngine(
     if (key === placed) return;
     placed = key;
     labels.forEach((e, i) => {
-      const x = i === 0 ? lay!.cxs[0] - ((lay!.shp[0][0] || 1) - 1) * (lay!.p / 2) : lay!.gx[i - 1];
+      const x = i === 0 ? lay!.cxs[0] - ((lay!.shp[0][0] || 1) - 1) * (lay!.ps[0] / 2) : lay!.gx[i - 1];
       e.style.left = `${toPct(x)}%`;
     });
     reasons.forEach((e, k) => {
@@ -314,11 +330,52 @@ export function createEngine(
       // 마지막 칸은 펼쳐지기 시작하면 격자 자리가 의미를 잃는다 — 외곽선만 남으면 주황 눈금
       // 한가운데 작은 네모가 떠다닌다. 건수는 눈금이 이미 세어 보여준다.
       if (s === NS - 1 && un > 0) continue;
-      const w = (c - 1) * lay.p;
-      const h = (rw - 1) * lay.p;
+      const p = lay.ps[s];
+      const w = (c - 1) * p;
+      const h = (rw - 1) * p;
       ctx.lineWidth = dpr;
       ctx.strokeStyle = "rgba(20,20,20,.16)";
-      ctx.strokeRect(lay.cxs[s] - w / 2 - lay.p, hd / 2 - h / 2 - lay.p, w + 2 * lay.p, h + 2 * lay.p);
+      ctx.strokeRect(lay.cxs[s] - w / 2 - p, hd / 2 - h / 2 - p, w + 2 * p, h + 2 * p);
+    }
+
+    // 확대선 — 첫 칸 위쪽 띠(앞선 후보)에서 둘째 칸으로. 축척이 다르다는 것을 숨기지 않는다.
+    const [c0, r0] = lay.shp[0];
+    const [c1, r1] = lay.shp[1];
+    const zoom = lay.ps[1] / lay.ps[0];
+    if (x >= gateStart(0) && zoom > 1.2 && c0 && c1 && cnt[1] > 0) {
+      const p0 = lay.ps[0];
+      const p1 = lay.ps[1];
+      const L0 = lay.cxs[0] - ((c0 - 1) * p0) / 2 - p0;
+      const R0 = lay.cxs[0] + ((c0 - 1) * p0) / 2 + p0;
+      const T0 = hd / 2 - ((r0 - 1) * p0) / 2 - p0;
+      const B0 = T0 + Math.min(r0, Math.ceil(cnt[1] / c0)) * p0 + p0;
+      const L1 = lay.cxs[1] - ((c1 - 1) * p1) / 2 - p1;
+      const T1 = hd / 2 - ((r1 - 1) * p1) / 2 - p1;
+      const B1 = hd / 2 + ((r1 - 1) * p1) / 2 + p1;
+      ctx.lineWidth = dpr;
+      ctx.strokeStyle = "rgba(20,20,20,.28)";
+      ctx.strokeRect(L0, T0, R0 - L0, B0 - T0);
+      ctx.strokeStyle = "rgba(20,20,20,.16)";
+      ctx.setLineDash([3 * dpr, 3 * dpr]);
+      ctx.beginPath();
+      ctx.moveTo(R0, T0);
+      ctx.lineTo(L1, T1);
+      ctx.moveTo(R0, B0);
+      ctx.lineTo(L1, B1);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 관문선이 글자를 가로지르지 않게 바닥색을 깐다(탈락 이유 캡션의 bg-paper 와 같은 방식)
+      const label = `확대 ×${zoom.toFixed(1).replace(/\.0$/, "")}`;
+      const lx = (R0 + L1) / 2;
+      const ly = Math.min(T0, T1) - 4 * dpr;
+      ctx.font = `${11 * dpr}px Pretendard, system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = "#faf9f7";
+      ctx.fillRect(lx - tw / 2 - 4 * dpr, ly - 14 * dpr, tw + 8 * dpr, 16 * dpr);
+      ctx.fillStyle = "#7a7a76";
+      ctx.fillText(label, lx, ly);
     }
 
     // 불투명도를 1/64 로 묶어 Path2D 하나씩 — N 번 fillStyle 을 바꾸지 않는다. 이게 60fps 의 전부다.
@@ -330,7 +387,8 @@ export function createEngine(
         const d = ends[i];
         if (d >= done || d === NS - 1) continue;
         const o = (i * NS + d) * 2;
-        stopped.rect(pos[o] - sz / 2, pos[o + 1] - sz / 2, sz, sz);
+        const z = szs[d];
+        stopped.rect(pos[o] - z / 2, pos[o + 1] - z / 2, z, z);
       }
       stoppedPaths.set(done, stopped);
     }
@@ -345,6 +403,7 @@ export function createEngine(
       let px: number;
       let py: number;
       let a: number;
+      let z: number;
       if (d >= 0 && (d < done || d === kact)) {
         // 제자리에서 흐려진다 — 떨어진 점도 사라지지 않는다.
         // 그 공고가 나쁜 게 아니라 이 회사에 해당되지 않을 뿐이다.
@@ -352,18 +411,21 @@ export function createEngine(
         px = pos[o];
         py = pos[o + 1];
         a = d === kact ? lerp(ALIVE, DEAD, lp) : DEAD;
+        z = szs[d];
       } else if (kact >= 0 && e > kact) {
         const o = (i * NS + kact) * 2;
         const n = (i * NS + kact + 1) * 2;
         px = lerp(pos[o], pos[n], lp);
         py = lerp(pos[o + 1], pos[n + 1], lp);
         a = ALIVE;
+        z = lerp(szs[kact], szs[kact + 1], lp); // 확대 칸으로 가며 커진다
       } else {
         const s = Math.min(e, done);
         const o = (i * NS + s) * 2;
         px = pos[o];
         py = pos[o + 1];
         a = ALIVE;
+        z = szs[s];
         if (s === NS - 1 && un > 0) {
           px = lerp(px, unf[i * 2], un);
           py = lerp(py, unf[i * 2 + 1], un);
@@ -376,7 +438,7 @@ export function createEngine(
         pa = new Path2D();
         paths.set(q, pa);
       }
-      pa.rect(px - sz / 2, py - sz / 2, sz, sz);
+      pa.rect(px - z / 2, py - z / 2, z, z);
     }
     paths.forEach((pa, q) => {
       ctx.fillStyle = `rgba(20,20,20,${q.toFixed(4)})`;
