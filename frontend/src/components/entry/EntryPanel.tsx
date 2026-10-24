@@ -16,7 +16,8 @@ export function EntryPanel({ d }: { d: EntryData }) {
   ];
   return (
     <div className="mx-auto mt-[26px] max-w-[760px] rounded-[6px] border border-hair bg-panel px-6 py-[22px] max-sm:px-4">
-      <div className="flex gap-[34px] max-sm:flex-wrap max-sm:gap-x-6 max-sm:gap-y-3">
+      {/* 세 묶음을 판 양 끝까지 — 아래 공고 목록이 판 전체 폭을 쓰는데 숫자만 왼쪽에 몰려 오른쪽이 비었다 */}
+      <div className="flex justify-between gap-[34px] max-sm:flex-wrap max-sm:justify-start max-sm:gap-x-6 max-sm:gap-y-3">
         {stats.map((s) => (
           <div key={s.label} className="flex flex-col gap-[3px]">
             <b className={cn("num text-[24px] font-[650] tracking-[-0.03em]", s.hot ? "text-orange-ink" : "text-ink")}>
