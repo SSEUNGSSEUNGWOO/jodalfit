@@ -32,12 +32,10 @@ function subOf(c: SceneCounts, i: number): string {
 
 export function Scene({
   counts,
-  playbackKey,
   state,
   onSettled,
 }: {
   counts: SceneCounts;
-  playbackKey: string;
   state: "running" | "done" | "error";
   onSettled: () => void;
 }) {
@@ -62,10 +60,9 @@ export function Scene({
         : // 0번 칸 앞에는 벽이 없다 — 숫자를 몰라도 1번 벽까지는 간다(선 개수는 기하 기본값, 라벨은 "…").
           SCENE.XS[Math.max(1, firstUnknown)] - 30;
 
+  // 같은 세션에서 본 검색을 건너뛰던 것(71f6cf5)은 뺐다 — /stream 은 매번 실제로 계산해서 건너뛰어도 결과는
+  // 2~3초 뒤에 온다. 그동안 장면도 표도 없는 빈 머리만 남았다(2026-10-24 승우님 "시각화가 아예 안 보인다").
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem(`recommendation-scene:${playbackKey}`)) { finish(); return; }
-    } catch { /* Optional playback memory. */ }
     if (!cv.current) return;
     const e = createEngine(
       cv.current,
@@ -121,7 +118,6 @@ export function Scene({
   function finish() {
     if (settledRef.current || state === "error") return;
     settledRef.current = true;
-    try { sessionStorage.setItem(`recommendation-scene:${playbackKey}`, "1"); } catch { /* Optional playback memory. */ }
     xRef.current = SCENE.W;
     eng.current?.paint(SCENE.W);
     setSettled(true);
