@@ -41,7 +41,7 @@ export function CompanySide({ bizrnoNorm, region }: { bizrnoNorm: string; region
       </Sec>
       <Sec k="공급물품">{d && d.products.length > 0 ? `${d.products.length}종` : <><span className="text-ink-dim">등록 없음</span> — 물품 공고 추천에는 등록 필요</>}</Sec>
       <Sec k="지역">본사 <b className="font-semibold text-ink">{rgnBase(region) || "—"}</b><br /><span className="text-ink-dim">제한 공고가 적은 단위(시·도 또는 시·군·구)까지 판정</span></Sec>
-      <Sec k="면허">공고 요구 면허 그룹마다 등록업종 중 하나 포함 시 통과</Sec>
+      <Sec k="면허">공고 요구 면허 그룹 중 하나에 등록업종이 포함되면 통과</Sec>
       <Sec k="규모"><span className="text-ink-dim">미입력</span> — 소기업·중소기업 제한 공고 판정 기준</Sec>
       <Sec k="사업자 상태">{d ? `${d.status} · ${d.restricted ? "제재 있음" : "제재 없음"}` : "…"}</Sec>
       </div>
