@@ -92,7 +92,11 @@ def main():
         pg.keyboard.press("Escape"); pg.wait_for_timeout(500)
         assert not pg.query_selector("[data-search]") and pg.evaluate("getComputedStyle(document.querySelector('[data-res]')).opacity") == "1"
         # 390
-        pg.set_viewport_size({"width": 390, "height": 844}); goto(pg, f"/recommendations?company={CO}", 300); pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
+        # 같은 탭에서 다시 연 검색은 받아 둔 결과로 바로 — 장면 없이 표(계산이 없으면 가림막도 없다)
+        pg.set_viewport_size({"width": 390, "height": 844}); goto(pg, f"/recommendations?company={CO}", 300)
+        pg.wait_for_selector("[data-res]", timeout=3000)
+        assert not pg.query_selector("[data-scene]"), "다시 연 검색인데 장면이 돈다"
+        rules(pg)
         m = pg.evaluate("() => ({ open: document.querySelector('[data-side]').open, first: document.querySelector('[data-sheet-row]').getBoundingClientRect().top, side: document.querySelector('[data-side]').getBoundingClientRect().top })")
         assert m["open"] is False and m["first"] < 450 and m["side"] > m["first"], m
         pg.screenshot(path=str(OUT / "_shot_results_390.png"), full_page=True)

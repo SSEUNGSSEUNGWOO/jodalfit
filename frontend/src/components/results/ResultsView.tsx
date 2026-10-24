@@ -26,6 +26,10 @@ const TIMEOUT_MS = 8000;
 // 공개 5 + 흐림 미리보기 3. 인쇄 보고서는 A4 한 장에 맞춰 12 건으로 따로 간다(report/page.tsx).
 const RESULT_LIMIT = 20;
 const EMPTY: SceneCounts = { total: null, candidates: null, passed: null, results: null };
+// 같은 탭에서 다시 연 검색은 받아 둔 결과로 바로 — 계산이 없으면 가림막(머리 장면)도 없다(docs/design/README.md
+// "머리 장면 = 로딩 가림막"). 공고는 매시 수집되므로 30분이 지나면 다시 계산한다. 2026-10-24.
+const CACHE_MS = 30 * 60 * 1000;
+type Cached = { at: number; data: RecommendationResponse; counts: SceneCounts };
 const OTHER = "ml-3.5 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange";
 
 export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, savedKeys, reviewedKeys, next, initialCompany }: {
@@ -40,9 +44,23 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const [search, setSearch] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [today] = useState(() => new Date()); // 렌더 동안 읽히는 값 — ref 가 아니라 state(react-hooks/refs)
+  const [cached, setCached] = useState(false);
+  const [checked, setChecked] = useState(false); // 캐시를 본 뒤에야 장면을 그린다 — 안 그러면 캐시 히트에도 첫 프레임이 비친다
+  const cacheKey = `jf:reco:${mode}:${query}:${keywords ?? ""}:${algorithm}`;
 
   // 질의가 바뀌면 페이지가 key 로 다시 마운트한다 — 효과 안에서 상태를 초기화하지 않는다(재시도는 버튼 핸들러가 비운다).
   useEffect(() => {
+    let hit: Cached | null = null;
+    try {
+      const v = JSON.parse(sessionStorage.getItem(cacheKey) ?? "null") as Cached | null;
+      if (v && Date.now() - v.at < CACHE_MS) hit = v;
+    } catch { /* 저장소가 막혀 있으면 그냥 계산한다 */ }
+    if (hit) {
+      const h = hit;
+      queueMicrotask(() => { setCached(true); setData(h.data); setCounts(h.counts); setSettled(true); setChecked(true); });
+      return;
+    }
+    queueMicrotask(() => setChecked(true));
     const ac = new AbortController();
     let got = false;
     const timer = setTimeout(() => { if (!got) { ac.abort(); setError("결과를 불러오지 못했습니다"); } }, TIMEOUT_MS);
@@ -61,7 +79,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       ac.signal,
     ).catch((err) => { if (!ac.signal.aborted && !got) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
     return () => { clearTimeout(timer); ac.abort(); };
-  }, [query, mode, keywords, algorithm, attempt]);
+  }, [query, mode, keywords, algorithm, attempt, cacheKey]);
 
   // 회사 모드인데 회사를 못 찾았으면 키워드로 넘어간다(옛 보드와 같은 규칙)
   useEffect(() => {
@@ -85,6 +103,12 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const results = data?.results ?? [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";
   const zero = state === "done" && results.length === 0;
+
+  // 계산해서 받은 결과만 남긴다. 회사를 못 찾아 키워드로 넘어가는 응답은 남기지 않는다(곧 다른 주소로 간다).
+  useEffect(() => {
+    if (state !== "done" || cached || !data || (mode === "company" && !data.company)) return;
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), data, counts } satisfies Cached)); } catch { /* 용량 초과 등 — 다음에 다시 계산할 뿐 */ }
+  }, [state, cached, data, counts, mode, cacheKey]);
   const stats = results.length ? companyStats(results.map((r) => r.bid_clse_date), today) : null;
 
   return (
@@ -112,8 +136,8 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />
       )}
 
-      {mode === "company" && <Scene key={attempt} counts={counts} state={state} onSettled={() => setSettled(true)} />}
-      {mode === "keywords" && <div className="mt-5 border-t border-ink" />}
+      {mode === "company" && checked && !cached && <Scene key={attempt} counts={counts} state={state} onSettled={() => setSettled(true)} />}
+      {(mode === "keywords" || cached) && <div className="mt-5 border-t border-ink" />}
 
       {error && (
         <div data-err className="flex items-center gap-3.5 border-t border-hair py-4 text-[13.5px] text-ink">
