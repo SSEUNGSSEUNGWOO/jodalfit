@@ -6,6 +6,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { EntryNotice } from "@/lib/entry";
 import { cn } from "@/lib/utils";
 import { dLeft } from "@/lib/format";
@@ -84,12 +85,12 @@ export function FreshTicker({ items }: { items: EntryNotice[] }) {
           const dl = dLeft(r.clse, today)?.days ?? null;
           return (
             <li
-              key={`${r.nm}|${r.instt}`}
+              key={r.no}
               className="grid grid-cols-[1fr_auto_auto] items-baseline gap-3.5 border-b border-rule py-[9px] max-sm:grid-cols-[1fr_auto]"
             >
-              {/* 새로 들어온 행은 잠깐 진하게 — 색은 쓰지 않는다(주황은 선) */}
+              {/* 새로 들어온 행은 잠깐 진하게 — 색은 쓰지 않는다(주황은 선). 제목은 공고 페이지 링크(hover 주황 밑줄). */}
               <span className={cn("truncate transition-[font-weight] duration-[600ms]", phase !== "idle" && i === 0 && "font-[650]")}>
-                {r.nm}
+                <Link href={`/notices/${r.no}`} className="hover:border-b hover:border-orange">{r.nm}</Link>
                 <span className="ml-2 text-[12.5px] text-ink-g">{r.instt || "—"}</span>
               </span>
               <span className="min-w-[76px] text-right text-[13px] text-ink-g">

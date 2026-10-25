@@ -1,7 +1,17 @@
 // frontend/src/app/(renewal)/about/page.tsx
-// 서비스 소개 — 09 전환에서 리뉴얼 껍데기로 옮겼다. nav·footer 는 레이아웃이 준다.
+// 서비스 소개 — 리뉴얼 문법으로 다시 그림(2026-10-25). 09 컷오버는 nav·footer 껍데기만 바꾸고 본문은 옛 개찰판
+// (청색 밴드 `gc-*`, "적합 72" 점수 숫자, 폐기된 "검토 여유 +10" 보너스, "넣으면" 구어)을 그대로 두었었다.
+// 규칙(docs/design/README.md): 바닥 위 머리 + 흰 판, 먹 괘선은 머리 아래 하나, 주황은 선, 적합 점수 숫자 비노출, 공문 톤.
+// 점수표·단계 설명은 lib/how-we-pick.ts 하나만 참조한다(score.py 와 check_changelog.py 가 대조) — 여기에 숫자를 다시 적지 않는다.
+// 예시 표는 실제 결과(data/sample.json, 한종산업개발 2026-10-16) 2건 — 가짜 공고·가짜 점수를 만들지 않는다.
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Btn } from "@/components/Btn";
+import { PageHead } from "@/components/PageHead";
+import { Panel, PanelHead } from "@/components/Panel";
+import { SheetExpand, SheetHead, SheetRow } from "@/components/Sheet";
+import { getEntryData } from "@/lib/entry";
+import { dLeft, won } from "@/lib/format";
+import { NEGATIVE, NOTE, POSITIVE, steps } from "@/lib/how-we-pick";
 import { fetchAboutStats, type AboutStats } from "@/lib/notice";
 
 export const metadata: Metadata = {
@@ -13,473 +23,259 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
+const nf = new Intl.NumberFormat("ko-KR");
+const n = (v: number) => (v > 0 ? nf.format(v) : "—");
+
 export default async function AboutPage() {
-  const stats = await fetchAboutStats().catch<AboutStats>(() => ({
-    activeNotices: 0,
-    totalNotices: 0,
-    companies: 0,
-    contracts: 0,
-  }));
+  const [stats, entry] = await Promise.all([
+    fetchAboutStats().catch<AboutStats>(() => ({ activeNotices: 0, totalNotices: 0, companies: 0, contracts: 0 })),
+    getEntryData().catch(() => null),
+  ]);
+  // "지금 입찰 가능"은 입구와 같은 정의(0057 funnel_counts) — 단순 마감일 집계(activeNotices)는 낼 수 없는 공고를 센다.
+  const active = entry?.active ?? 0;
 
   return (
     <>
-      <div>
-        <Masthead stats={stats} />
-        <SampleBoard />
-        <Process />
-        <Comparison />
-        <Ledger stats={stats} />
-        <Limits />
-        <Contact />
-      </div>
+      <PageHead title="조달핏이란" meta={["나라장터 공공데이터 기반", "공고 매시 · 회사·계약 매일 05:00 갱신"]}>
+        <p className="mb-0 mt-5 max-w-[720px] text-[15.5px] leading-[1.75] text-ink-body break-keep">
+          회사명 또는 사업자등록번호 하나로 등록업종·공급물품·수주 이력을 읽고, 지금 입찰 가능한 공고 가운데
+          참가 자격이 있고 회사와 비슷한 공고를 적합 순으로 정리합니다. 왜 그 순서인지 행마다 근거를 적습니다.
+          낙찰 가능성을 예측하지 않습니다 — 검토 시간을 줄이는 도구입니다.
+        </p>
+        <dl className="mb-0 mt-7 grid grid-cols-4 gap-x-6 gap-y-5 max-sm:grid-cols-2">
+          {[
+            { k: "지금 입찰 가능한 공고", v: n(active), s: "건", h: "마감 90일 이내 · 참가자격 등록 전" },
+            { k: "누적 공고", v: n(stats.totalNotices), s: "건", h: "2026년 이후 전량 벡터화" },
+            { k: "등록 회사", v: n(stats.companies), s: "개사", h: "조달업체 등록정보" },
+            { k: "계약 이력", v: n(stats.contracts), s: "건", h: "수주 신호의 원천" },
+          ].map((d) => (
+            <div key={d.k}>
+              <dt className="t-k">{d.k}</dt>
+              <dd className="m-0 mt-1 flex items-baseline gap-1 text-ink">
+                <span className="num text-[28px] font-semibold leading-none tracking-[-0.03em] max-sm:text-[24px]">{d.v}</span>
+                <span className="text-[13px] font-medium text-ink-g">{d.s}</span>
+              </dd>
+              <dd className="m-0 mt-1 text-[12px] text-ink-mute break-keep">{d.h}</dd>
+            </div>
+          ))}
+        </dl>
+      </PageHead>
+
+      <Sample />
+      <HowWePick active={active} />
+      <Comparison />
+      <Sources stats={stats} />
+      <Limits />
+      <Contact />
     </>
   );
 }
 
-/* ── 공통: 이중 괘선 섹션 머리 ─────────────────────────── */
+/* ── 무엇을 합니다 — 말 대신 실제 결과 행 둘 ─────────────────────────── */
 
-function SectionHead({
-  title,
-  note,
-  id,
-}: {
-  title: string;
-  note?: string;
-  id?: string;
-}) {
-  return (
-    <div
-      id={id}
-      className="gc-double-rule pt-4 pb-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 scroll-mt-24"
-    >
-      <h2 className="font-[650] text-[22px] sm:text-[26px] tracking-[-0.02em] text-ink break-keep">
-        {title}
-      </h2>
-      {note && <span className="text-[12.5px] text-ink-3 break-keep">{note}</span>}
-    </div>
-  );
-}
-
-function Wrap({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="mx-auto max-w-[1080px] px-5 sm:px-8 pt-14 sm:pt-16">
-      {children}
-    </section>
-  );
-}
-
-const n = (v: number) => (v > 0 ? v.toLocaleString("ko-KR") : "—");
-
-/* ── 판머리 — 네이비 밴드 위 제호·표제·규모 ────────────────── */
-
-function Masthead({ stats }: { stats: AboutStats }) {
-  return (
-    <section className="bg-gc-band">
-      <div className="mx-auto max-w-[1080px] px-5 sm:px-8 pt-7 sm:pt-9 pb-12 sm:pb-14">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-gc-band-ink/40 pb-3">
-          <span className="font-[650] text-[15px] tracking-[0.02em] text-gc-band-hi">
-            조달핏
-          </span>
-          <span className="text-[12px] text-gc-band-ink">
-            서비스 안내 · 공공 OpenAPI 기반 · 매시간 갱신
-          </span>
-        </div>
-
-        <div className="mt-10 sm:mt-14 flex items-start justify-between gap-6">
-          <div className="min-w-0 max-w-[760px]">
-            <h1 className="font-[650] text-[32px] sm:text-[50px] leading-[1.22] tracking-[-0.02em] text-gc-band-hi break-keep">
-              나라장터 공고를
-              <br />
-              회사 기준으로 정리하는 탐색 서비스
-            </h1>
-            <p className="mt-5 text-[15.5px] sm:text-[17px] leading-[1.7] text-gc-band-ink max-w-[600px] break-keep">
-              회사명 하나로 등록업종·공급물품·수주 이력을 읽고, 진행 중 공고를
-              검토할 만한 순서로 다시 세웁니다. 왜 그 순서인지도 행마다 적혀
-              있습니다. 낙찰을 약속하는 서비스가 아니라, 검토 시간을 줄이는
-              도구입니다.
-            </p>
-          </div>
-        </div>
-
-        {/* 규모 — 데이터가 곧 제품이므로 건수를 숨기지 않는다 */}
-        <dl className="mt-10 sm:mt-12 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-5 border-t border-gc-band-ink/40 pt-5">
-          {[
-            { k: "진행 중 공고", v: n(stats.activeNotices), s: "건", h: "마감 전" },
-            { k: "누적 공고", v: n(stats.totalNotices), s: "건", h: "2026년 이후 전량 벡터화" },
-            { k: "등록 회사", v: n(stats.companies), s: "개사", h: "조달업체 등록정보" },
-            { k: "계약 이력", v: n(stats.contracts), s: "건", h: "수주 시그널의 원천" },
-          ].map((d) => (
-            <div key={d.k}>
-              <dt className="text-[12px] font-bold text-gc-band-ink">{d.k}</dt>
-              <dd className="mt-1 flex items-baseline gap-1 text-gc-band-hi">
-                <span className="font-[650] text-[26px] sm:text-[30px] leading-none tabular tabular-nums tracking-[-0.02em]">
-                  {d.v}
-                </span>
-                <span className="text-[13px] font-bold">{d.s}</span>
-              </dd>
-              <dd className="mt-1 text-[12px] text-gc-band-ink">{d.h}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  );
-}
-
-/* ── 무엇을 합니다 — 말 대신 개봉된 행 하나를 보여준다 ────────── */
-
-const SAMPLE_SIGNALS = [
-  { label: "유사도 61%", pts: "+61" },
-  { label: "재출현 기관", pts: "+50" },
-  { label: "지역 매칭", pts: "+30" },
-  { label: "검토 여유", pts: "+10" },
+// data/sample.json(한종산업개발, 2026-10-16) results[0]·[1]. dev/foundation 의 표본과 같은 행.
+const SAMPLE_TODAY = new Date(2026, 9, 16);
+const SAMPLE_ROWS = [
+  {
+    no: 1, title: "송탄정수장 공업용수공급 시설공사(1공구)", org: "경기도 평택시 상하수도사업소", why: "재출현 기관", clse: "2026-10-29", price: 5025454546,
+    quals: [{ state: "none", text: "면허 — 제한 없음" }, { state: "none", text: "지역 — 제한 없음" }] as const,
+    whys: ["경기도 평택시 상하수도사업소 — 과거 거래 이력 있음", "추정가가 회사 평균 수주가의 1.08배 — 유사한 규모", "공고 내용과 회사 업종 설명 유사도 73%"],
+  },
+  { no: 2, title: "중랑물재생센터 제1처리장 관리대행", org: "서울특별시 물재생센터 중랑물재생센터", why: "업종·물품 일치", clse: "2026-11-25", price: 6106074545, quals: [], whys: [] },
 ];
 
-function SampleBoard() {
+function Sample() {
   return (
-    <Wrap>
-      <SectionHead
-        title="무엇을 합니다"
-        note="아래는 예시 화면 — 실제 값은 회사마다 다릅니다"
-      />
-      <p className="mt-5 max-w-[720px] text-[15px] leading-[1.8] text-ink-2 break-keep">
-        회사명이나 사업자번호를 넣으면 진행 중 공고가 우리 회사 기준 적합도 순으로
-        한 판에 정렬됩니다. 행을 열면 <strong className="text-ink">점수의 근거</strong>와{" "}
-        <strong className="text-ink">추천 이유 한 줄</strong>, 제안요청서를 읽어
-        정리한 <strong className="text-ink">과업·자격·일정 요약</strong>이 나옵니다.
+    <Panel className="mt-[22px]">
+      <PanelHead title="무엇을 합니다" summary={["예시 — 2026-10-16 한종산업개발 결과 중 2건", "실제 값은 회사마다 다름"]} />
+      <p className="mb-0 mt-4 max-w-[760px] text-[14.5px] leading-[1.75] text-ink-body break-keep">
+        회사명 또는 사업자등록번호를 입력하면 진행 중 공고가 회사 기준 적합 순으로 정렬됩니다. 행을 펼치면{" "}
+        <b className="font-semibold text-ink">참가 자격 판정</b>과 <b className="font-semibold text-ink">추천 근거</b>가 나오고,
+        첨부 문서가 있으면 과업·자격·일정 요약이 함께 붙습니다. 점수 숫자는 보여주지 않습니다 — 순서가 곧 적합도입니다.
       </p>
-
-      <div className="mt-8 border border-gc-rule bg-gc-sheet rounded-[3px]">
-        {/* 컬럼 머리 */}
-        <div
-          aria-hidden
-          className="hidden sm:grid grid-cols-[48px_minmax(0,1fr)_84px_110px_88px] gap-x-4 px-4 pt-3 pb-2 border-b-2 border-gc-ink text-[11.5px] font-bold text-ink-2"
-        >
-          <span className="text-right pr-1">순번</span>
-          <span>공고</span>
-          <span className="text-right">마감</span>
-          <span className="text-right">추정가</span>
-          <span className="text-right">적합</span>
-        </div>
-
-        {/* 개봉된 행 */}
-        <div className="grid items-baseline gap-x-4 px-4 py-4 grid-cols-[40px_minmax(0,1fr)] sm:grid-cols-[48px_minmax(0,1fr)_84px_110px_88px]">
-          <span className="text-right pr-1 text-[15px] font-bold tabular tabular-nums text-ink-2">
-            01
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[15.5px] sm:text-[16.5px] font-bold leading-[1.45] text-ink break-keep">
-              청사 냉난방 설비 유지관리 용역
-            </span>
-            <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-ink-3">
-              <span className="font-semibold text-ink-2">○○시 시설관리공단</span>
-              <span className="border border-gc-rule rounded-[3px] px-1.5 py-px text-[11.5px] font-semibold text-ink-2 bg-gc-sheet">
-                용역
-              </span>
-              <span>경기</span>
-              <span className="sm:hidden tabular tabular-nums font-bold text-ink">
-                D-9 · 1.2억 · 적합 72
-              </span>
-            </span>
-          </span>
-          <span className="hidden sm:block text-right text-[14px] font-bold tabular tabular-nums text-ink self-start">
-            D-9
-          </span>
-          <span className="hidden sm:block text-right text-[14px] font-semibold tabular tabular-nums text-ink self-start">
-            1.2억
-          </span>
-          <span className="hidden sm:block text-right text-[14px] font-black tabular tabular-nums text-ink self-start">
-            72
-          </span>
-        </div>
-
-        {/* 개봉면 — 절취선 아래 근거 */}
-        <div className="border-t border-dashed border-gc-tint-line px-4 sm:pl-[calc(48px+16px+16px)] py-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div>
-            <div className="text-[11.5px] font-bold text-ink-2">점수 근거</div>
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {SAMPLE_SIGNALS.map((s) => (
-                <li
-                  key={s.label}
-                  className="inline-flex items-baseline gap-1.5 bg-gc-tint text-gc-tint-ink rounded-[3px] px-2 py-1 text-[12.5px] font-semibold"
-                >
-                  {s.label}
-                  <span className="tabular tabular-nums text-[11.5px]">{s.pts}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 text-[11.5px] font-bold text-ink-2">추천 이유</div>
-            <p className="mt-1.5 text-[14px] leading-[1.75] text-ink break-keep">
-              과거 거래 기관 ‘○○시 시설관리공단’의 후속 사업이고, 회사 소재지
-              경기와 참가가능 지역이 일치한다. 회사 평균 수주 1.4억 대비 사업 규모도
-              맞물린다.
-            </p>
-          </div>
-          <div>
-            <div className="text-[11.5px] font-bold text-ink-2">문서 요약 · 제안요청서 기준</div>
-            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[13.5px] leading-[1.6]">
-              <dt className="font-bold text-ink-3">과업</dt>
-              <dd className="text-ink break-keep">청사 3개동 냉난방 설비 정기점검·부품 교체·비상 출동. 월 2회 정기점검.</dd>
-              <dt className="font-bold text-ink-3">필수</dt>
-              <dd className="text-ink break-keep">기계설비유지관리자 선임 · 본사 소재지 경기 · 중소기업 확인서</dd>
-              <dt className="font-bold text-ink-3">평가</dt>
-              <dd className="text-ink">적격심사 · 최저가</dd>
-              <dt className="font-bold text-ink-3">기간</dt>
-              <dd className="text-ink">계약일 ~ 12개월</dd>
-            </dl>
-          </div>
-        </div>
+      <div className="mt-5">
+        <SheetHead />
+        {SAMPLE_ROWS.map((r) => (
+          <SheetRow key={r.no} no={r.no} title={r.title} org={r.org} why={r.why} dLeft={dLeft(r.clse, SAMPLE_TODAY)} price={won(r.price)} defaultOpen={r.no === 1}>
+            {r.quals.length > 0 && <SheetExpand quals={[...r.quals]} whys={r.whys} />}
+          </SheetRow>
+        ))}
       </div>
-
-      <p className="mt-4 text-[13px] text-ink-3 break-keep">
-        키워드로도 볼 수 있습니다 — “교량 점검”, “급식 식자재”처럼 관심 영역을 넣으면
-        회사 정보 없이 의미가 가까운 공고를 찾습니다. 영업 탐색이나 시장 조사에 맞습니다.
+      <p className="mb-0 mt-4 text-[13px] leading-[1.7] text-ink-g break-keep">
+        키워드로도 찾을 수 있습니다 — “교량 점검”, “급식 식자재”처럼 업종 또는 품목을 입력하면 회사 정보 없이 의미가 가까운 공고를 찾습니다.
+        회사 정보가 없으므로 참가 자격은 판정하지 않습니다.
       </p>
-    </Wrap>
+    </Panel>
   );
 }
 
-/* ── 어떻게 동작합니다 — 순서가 곧 정보인 4행 ───────────────── */
+/* ── 어떻게 고르는가 — lib/how-we-pick.ts 하나만 ───────────────────────── */
 
-const STEPS = [
-  {
-    title: "회사를 읽습니다",
-    body: "조달업체 등록정보에서 등록업종·공급물품을, 계약·개찰 데이터에서 수주 이력을 가져옵니다. 회사가 직접 입력할 것은 없습니다.",
-    src: ["등록업종·공급물품", "계약·낙찰 이력", "소재지"],
-  },
-  {
-    title: "의미가 가까운 공고를 모읍니다",
-    body: "회사와 공고를 각각 벡터로 만들어 비교합니다. 같은 단어가 없어도 “공간정보 구축”과 “GIS 시스템 개발”처럼 뜻이 가까우면 후보가 됩니다.",
-    src: ["진행 중 공고 전량"],
-  },
-  {
-    title: "자격과 검토 가치를 봅니다",
-    body: "면허·지역 제한에 맞지 않으면 제외합니다. 과거 거래 기관, 비슷한 회사들이 수주한 기관, 사업 규모, 마감까지 남은 날을 점수로 더합니다.",
-    src: ["면허·지역 제한", "비슷한 회사의 수주", "추정가"],
-  },
-  {
-    title: "이유를 한 줄로 적습니다",
-    body: "점수만 보여주지 않습니다. 어떤 근거가 맞물렸는지 문장으로 적고, 제안요청서가 있으면 과업·자격·일정을 함께 정리합니다.",
-    src: ["첨부 제안요청서", "점수 근거"],
-  },
-];
-
-function Process() {
+function HowWePick({ active }: { active: number }) {
+  const st = steps(active);
   return (
-    <Wrap>
-      <SectionHead title="어떻게 동작합니다" note="회사명 입력에서 결과까지, 순서대로" />
-      <ol className="mt-2">
-        {STEPS.map((s, i) => (
-          <li
-            key={s.title}
-            className="grid gap-x-5 gap-y-2 py-6 border-b border-gc-rule grid-cols-[40px_minmax(0,1fr)] sm:grid-cols-[48px_minmax(0,1fr)_240px]"
-          >
-            <span className="text-right pr-1 font-[650] text-[22px] leading-none tabular tabular-nums text-ink-2 pt-0.5">
-              {String(i + 1).padStart(2, "0")}
-            </span>
+    <Panel className="mt-[22px]">
+      <PanelHead title="어떻게 고르는가" summary={["운영 점수표 값 그대로", <a key="c" href="/changelog" className="u-link text-ink">개선 기록 →</a>]} />
+      <ol className="m-0 list-none p-0">
+        {st.map((s, i) => (
+          <li key={s.k} className="grid grid-cols-[36px_220px_minmax(0,1fr)] gap-x-5 border-b border-rule py-4 last:border-b-0 max-sm:grid-cols-[28px_minmax(0,1fr)] max-sm:gap-y-1.5">
+            <span className="num pt-0.5 text-[13px] text-ink-mute">{String(i + 1).padStart(2, "0")}</span>
             <div className="min-w-0">
-              <h3 className="text-[16.5px] font-bold text-ink break-keep">{s.title}</h3>
-              <p className="mt-1.5 max-w-[620px] text-[14.5px] leading-[1.75] text-ink-2 break-keep">
-                {s.body}
-              </p>
+              <div className="text-[15px] font-semibold text-ink break-keep">{s.k}</div>
+              <div className="mt-0.5 text-[13px] text-ink-g break-keep"><b className="num font-semibold text-ink">{s.n}</b>{s.n !== "회사마다" && "건"} · {s.sub}</div>
             </div>
-            <div className="col-start-2 sm:col-start-3">
-              <div className="text-[11.5px] font-bold text-ink-3">쓰는 데이터</div>
-              <ul className="mt-1.5 flex flex-wrap gap-1.5">
-                {s.src.map((t) => (
-                  <li
-                    key={t}
-                    className="border border-gc-rule bg-gc-sheet rounded-[3px] px-2 py-0.5 text-[12px] font-semibold text-ink-2"
-                  >
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <p className="m-0 text-[14px] leading-[1.7] text-ink-body break-keep max-sm:col-start-2">{s.d}</p>
           </li>
         ))}
       </ol>
-    </Wrap>
+      <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-rule pt-5 max-sm:grid-cols-1">
+        {[{ k: "올리는 것", rows: POSITIVE }, { k: "내리는 것", rows: NEGATIVE }].map((g) => (
+          <div key={g.k}>
+            <span className="t-k mb-1.5 block">{g.k}</span>
+            <ul className="m-0 list-none p-0" data-factors>
+              {g.rows.map((f) => (
+                <li key={f.t} className="flex items-baseline justify-between gap-4 border-b border-rule py-2 text-[14px] last:border-b-0">
+                  <span className="text-ink-body break-keep">{f.t}{f.d && <span className="ml-1.5 text-[12.5px] text-ink-mute">({f.d})</span>}</span>
+                  <b className="num shrink-0 font-semibold text-ink">{f.v}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <p className="mb-0 mt-5 text-[13px] leading-[1.7] text-ink-g break-keep">{NOTE}</p>
+    </Panel>
   );
 }
 
-/* ── 키워드 알림과 다른 점 — 대조표 ─────────────────────── */
+/* ── 키워드 알림과 다른 점 ─────────────────────────────────────────── */
 
-const COMPARE = [
+const COMPARE: [string, string, string][] = [
   ["찾는 방식", "등록한 단어가 제목에 있을 때", "회사 영역과 뜻이 가까울 때 — 단어가 달라도"],
   ["회사를 아는 정도", "키워드 목록", "등록업종·공급물품 + 실제 수주 이력"],
-  ["자격 조건", "직접 확인", "면허·지역 제한을 먼저 대조해 제외"],
-  ["왜 이 공고인지", "없음", "점수 근거와 이유 한 줄"],
-  ["제안요청서", "직접 내려받아 읽기", "첨부 원클릭 + 과업·자격·일정 요약"],
-  ["공고가 바뀌면", "새 알림", "정정 차수와 무엇이 바뀌었는지 비교"],
+  ["참가 자격", "직접 확인", "허용업종·지역·등록 마감을 먼저 대조해 제외"],
+  ["추천 근거", "없음", "행마다 가장 강한 신호 1개, 펼치면 근거 전부"],
+  ["첨부 문서", "직접 내려받아 읽기", "과업·자격·일정 요약 + 원문 링크"],
+  ["공고가 바뀌면", "새 알림", "정정 차수와 바뀐 항목 비교"],
 ];
 
 function Comparison() {
   return (
-    <Wrap>
-      <SectionHead title="키워드 알림과 다른 점" />
-      {/* 모바일: 핵심 열이 가로 스크롤 뒤로 숨지 않도록 행으로 쌓는다 */}
-      <ul className="sm:hidden mt-2">
+    <Panel className="mt-[22px]">
+      <PanelHead title="키워드 알림과 다른 점" />
+      <table className="w-full border-collapse text-[14px] max-sm:hidden">
+        <thead>
+          <tr className="border-b border-rule text-left">
+            <th className="t-k w-[150px] py-2.5 pr-4 font-semibold">항목</th>
+            <th className="t-k w-[36%] py-2.5 pr-4 font-semibold">키워드 알림</th>
+            <th className="py-2.5 text-[13px] font-semibold text-ink">조달핏</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COMPARE.map(([k, a, b]) => (
+            <tr key={k} className="border-b border-rule align-top last:border-b-0">
+              <th scope="row" className="py-3 pr-4 text-left font-semibold text-ink-sub">{k}</th>
+              <td className="py-3 pr-4 text-ink-g break-keep">{a}</td>
+              <td className="py-3 font-medium text-ink break-keep">{b}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <ul className="m-0 hidden list-none p-0 max-sm:block">
         {COMPARE.map(([k, a, b]) => (
-          <li key={k} className="py-4 border-b border-gc-rule">
-            <div className="text-[12px] font-bold text-ink-2">{k}</div>
-            <div className="mt-1.5 grid grid-cols-[64px_minmax(0,1fr)] gap-x-3 gap-y-1 text-[14px]">
-              <span className="text-[11.5px] font-bold text-ink-3 pt-0.5">키워드 알림</span>
-              <span className="text-ink-3 break-keep">{a}</span>
-              <span className="text-[11.5px] font-[650] text-ink pt-0.5">조달핏</span>
-              <span className="text-ink font-semibold break-keep">{b}</span>
+          <li key={k} className="border-b border-rule py-3.5 last:border-b-0">
+            <div className="t-k">{k}</div>
+            <div className="mt-1.5 grid grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-1 text-[14px]">
+              <span className="text-[12px] text-ink-mute">키워드 알림</span><span className="text-ink-g break-keep">{a}</span>
+              <span className="text-[12px] font-semibold text-ink">조달핏</span><span className="font-medium text-ink break-keep">{b}</span>
             </div>
           </li>
         ))}
       </ul>
-      <div className="hidden sm:block mt-2">
-        <table className="w-full border-collapse text-[14px]">
-          <thead>
-            <tr className="border-b-2 border-gc-ink text-[11.5px] font-bold text-ink-2">
-              <th className="text-left py-2.5 pr-4 w-[160px]">항목</th>
-              <th className="text-left py-2.5 pr-4 w-[38%]">키워드 알림</th>
-              <th className="text-left py-2.5 font-[650] text-[13px] text-ink">
-                조달핏
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {COMPARE.map(([k, a, b]) => (
-              <tr key={k} className="border-b border-gc-rule align-top">
-                <th scope="row" className="text-left py-3.5 pr-4 font-bold text-ink-2">
-                  {k}
-                </th>
-                <td className="py-3.5 pr-4 text-ink-3 break-keep">{a}</td>
-                <td className="py-3.5 text-ink font-semibold break-keep">{b}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Wrap>
+    </Panel>
   );
 }
 
-/* ── 데이터 장부 — 출처·갱신 주기 ─────────────────────── */
+/* ── 데이터 출처 ───────────────────────────────────────────────────── */
 
+// 갱신 주기는 .github/workflows 의 세 잡과 같다 — hourly(공고) / documents 2시간(첨부) / daily 05:00(나머지)
 const SOURCES: [string, string, string][] = [
-  ["입찰공고 · 첨부파일", "입찰공고정보 · 공공데이터개방표준", "매시간"],
-  ["제안요청서 본문 · AI 요약", "첨부파일 원문에서 추출", "매시간"],
-  ["계약 · 낙찰 · 개찰 참가", "계약정보 · 낙찰정보", "매일 새벽"],
-  ["회사 등록정보 · 업종 · 공급물품", "조달업체정보", "매일 새벽"],
-  ["면허 · 지역 제한", "입찰공고정보", "매일 새벽"],
-  ["사전규격 · 의견 · 발주계획", "사전규격정보 · 발주계획정보", "매일 새벽"],
-  ["부정당 제재", "조달업체정보", "매일 새벽"],
+  ["입찰공고 · 첨부 목록", "입찰공고정보", "매시"],
+  ["첨부 문서 본문 · 요약", "첨부 원문에서 추출", "2시간"],
+  ["계약 · 낙찰 · 개찰 참가", "계약정보 · 낙찰정보", "매일 05:00"],
+  ["회사 등록정보 · 등록업종 · 공급물품", "조달업체정보", "매일 05:00"],
+  ["허용업종 · 참가 가능 지역 제한", "입찰공고정보", "매일 05:00"],
+  ["사전규격 · 의견 · 발주계획", "사전규격정보 · 발주계획정보", "매일 05:00"],
+  ["부정당 제재", "조달업체정보", "매일 05:00"],
 ];
 
-function Ledger({ stats }: { stats: AboutStats }) {
+function Sources({ stats }: { stats: AboutStats }) {
   return (
-    <Wrap>
-      <SectionHead
-        title="데이터 출처"
-        note={`조달청 나라장터(G2B) 공공데이터포털 OpenAPI · 누적 공고 ${n(stats.totalNotices)}건`}
-      />
-      <p className="mt-5 max-w-[720px] text-[15px] leading-[1.8] text-ink-2 break-keep">
-        전부{" "}
-        <a
-          href="https://www.data.go.kr"
-          target="_blank"
-          rel="noreferrer"
-          className="font-bold text-ink underline underline-offset-4 decoration-gc-tint-line hover:decoration-gc-ink"
-        >
-          공공데이터포털
-        </a>
-        이 공개하는 공식 API입니다. 회사가 나라장터에 등록한 정보가 원본이라, 회사가
-        그쪽에서 고치면 다음 갱신 때 조달핏에도 반영됩니다. 첨부파일 원본은 저장하지
-        않고 추출한 텍스트만 보관하며, 원문 링크를 항상 함께 둡니다.
+    <Panel className="mt-[22px]">
+      <PanelHead title="데이터 출처" summary={["조달청 나라장터 공공데이터 API", <>누적 공고 <b>{n(stats.totalNotices)}</b>건</>]} />
+      <p className="mb-0 mt-4 max-w-[760px] text-[14.5px] leading-[1.75] text-ink-body break-keep">
+        전부 <a href="https://www.data.go.kr" target="_blank" rel="noreferrer" className="u-link font-semibold text-ink">공공데이터포털</a>이 공개하는 공식 API 입니다.
+        회사가 나라장터에 등록한 정보가 원본이라, 그쪽에서 고치면 다음 갱신 때 조달핏에도 반영됩니다. 첨부 문서는 원본을 저장하지 않고
+        추출한 텍스트만 보관하며, 원문 링크를 항상 함께 둡니다.
       </p>
-      <div className="mt-6">
-        <table className="w-full border-collapse text-[14px]">
-          <thead>
-            <tr className="border-b-2 border-gc-ink text-[11.5px] font-bold text-ink-2">
-              <th className="text-left py-2.5 pr-4">데이터</th>
-              <th className="text-left py-2.5 pr-4 hidden sm:table-cell">API 서비스</th>
-              <th className="text-right py-2.5 w-[84px]">갱신</th>
+      <table className="mt-4 w-full border-collapse text-[14px]">
+        <thead>
+          <tr className="border-b border-rule text-left">
+            <th className="t-k py-2.5 pr-4 font-semibold">데이터</th>
+            <th className="t-k py-2.5 pr-4 font-semibold max-sm:hidden">API 서비스</th>
+            <th className="t-k w-[96px] py-2.5 text-right font-semibold">갱신</th>
+          </tr>
+        </thead>
+        <tbody>
+          {SOURCES.map(([d, s, c]) => (
+            <tr key={d} className="border-b border-rule last:border-b-0">
+              <td className="py-3 pr-4 font-medium text-ink break-keep">
+                {d}<span className="mt-0.5 hidden text-[12.5px] font-normal text-ink-mute max-sm:block">{s}</span>
+              </td>
+              <td className="py-3 pr-4 text-ink-g break-keep max-sm:hidden">{s}</td>
+              <td className="num whitespace-nowrap py-3 text-right text-ink-sub">{c}</td>
             </tr>
-          </thead>
-          <tbody>
-            {SOURCES.map(([d, s, c]) => (
-              <tr key={d} className="border-b border-gc-rule">
-                <td className="py-3 pr-4 font-semibold text-ink break-keep">
-                  {d}
-                  <span className="sm:hidden block mt-0.5 text-[12px] font-normal text-ink-3">{s}</span>
-                </td>
-                <td className="py-3 pr-4 text-ink-3 break-keep hidden sm:table-cell">{s}</td>
-                <td className="py-3 text-right font-bold tabular tabular-nums text-ink-2 whitespace-nowrap">
-                  {c}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Wrap>
+          ))}
+        </tbody>
+      </table>
+    </Panel>
   );
 }
 
-/* ── 할 수 없는 것 — 정직한 디스커버리 ─────────────────── */
+/* ── 할 수 없는 것 ─────────────────────────────────────────────────── */
 
-const LIMITS = [
-  ["낙찰을 보장하지 않습니다", "매칭 점수는 “검토할 가치”의 신호이지 “이길 가능성”이 아닙니다. 그래서 낙찰 확률 같은 숫자는 어디에도 쓰지 않습니다."],
-  ["자격 판정은 보조 신호입니다", "면허·지역 제한은 공개 데이터로 대조하지만, 최종 입찰 가능 여부는 공고 원문과 회사 자격으로 직접 확인해야 합니다."],
-  ["AI 요약은 원문을 대신하지 않습니다", "제안요청서 요약은 문서에 적힌 내용만 옮기지만 읽기 오류가 있을 수 있습니다. 요약 옆에 원문 링크를 항상 둡니다."],
-  ["회사 데이터가 적으면 정확도가 낮습니다", "등록업종·공급물품이 없거나 수주 이력이 없는 회사는 키워드 검색으로 전환을 안내합니다."],
+const LIMITS: [string, string][] = [
+  ["낙찰을 예측하지 않습니다", "추천 순서는 검토할 공고를 놓치지 않기 위한 순서이며 낙찰 확률이 아닙니다. 낙찰 확률 같은 숫자는 어디에도 쓰지 않습니다."],
+  ["참가 자격은 공고 필드만 판정합니다", "허용업종·참가 가능 지역·참가자격 등록 마감 세 가지를 대조합니다. 첨부 문서에 적힌 실적·증명 요건은 판정하지 않고 보여만 주므로, 최종 확인은 공고 원문으로 해야 합니다."],
+  ["문서 요약은 원문을 대신하지 않습니다", "첨부 문서 요약은 문서에 적힌 내용만 옮기지만 읽기 오류가 있을 수 있습니다. 요약 옆에 원문 링크를 항상 둡니다."],
+  ["회사 등록정보가 없으면 정확도가 낮습니다", "나라장터에 등록업종이 없는 회사는 면허 자격을 판정하지 못하며, 그 사실을 결과 화면에 적습니다. 그런 회사는 키워드 검색이 더 맞습니다."],
 ];
 
 function Limits() {
   return (
-    <Wrap>
-      <SectionHead title="할 수 없는 것, 보장하지 않는 것" note="최종 판단은 사람이 합니다" />
-      <ul className="mt-2">
+    <Panel className="mt-[22px]">
+      <PanelHead title="할 수 없는 것, 보장하지 않는 것" summary={["최종 판단은 사람이 합니다"]} />
+      <ul className="m-0 list-none p-0">
         {LIMITS.map(([t, b]) => (
-          <li
-            key={t}
-            className="grid gap-x-6 gap-y-1 py-5 border-b border-gc-rule sm:grid-cols-[300px_minmax(0,1fr)]"
-          >
-            <h3 className="text-[15.5px] font-bold text-ink break-keep">{t}</h3>
-            <p className="text-[14.5px] leading-[1.75] text-ink-2 break-keep">{b}</p>
+          <li key={t} className="grid grid-cols-[280px_minmax(0,1fr)] gap-x-6 gap-y-1 border-b border-rule py-4 last:border-b-0 max-sm:grid-cols-1">
+            <h3 className="m-0 text-[15px] font-semibold text-ink break-keep">{t}</h3>
+            <p className="m-0 text-[14px] leading-[1.75] text-ink-body break-keep">{b}</p>
           </li>
         ))}
       </ul>
-    </Wrap>
+    </Panel>
   );
 }
 
-/* ── 연락처 + 다음 행동 ─────────────────────────────── */
+/* ── 연락처 + 다음 행동 ─────────────────────────────────────────────── */
 
 function Contact() {
   return (
-    <section className="mx-auto max-w-[1080px] px-5 sm:px-8 pt-14 sm:pt-16 pb-16 sm:pb-20">
-      <div className="gc-double-rule pt-6 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-        <div>
-          <h2 className="font-[650] text-[22px] sm:text-[26px] tracking-[-0.02em] text-ink break-keep">
-            회원가입 없이 바로 확인할 수 있습니다
-          </h2>
-          <p className="mt-2 text-[14.5px] text-ink-2 break-keep">
-            문의·제안·오류 제보:{" "}
-            <a
-              href="mailto:jsw7980@gmail.com"
-              className="font-bold text-ink underline underline-offset-4 decoration-gc-tint-line hover:decoration-gc-ink"
-            >
-              jsw7980@gmail.com
-            </a>
-          </p>
-        </div>
-        <Link
-          href="/#gc-search"
-          className="inline-flex items-center justify-center h-11 px-5 bg-gc-band text-gc-band-hi text-[14px] font-bold rounded-[3px] hover:bg-gc-ink transition-colors whitespace-nowrap"
-        >
-          우리 회사 공고 보기 →
-        </Link>
-      </div>
-      <p className="mt-6 text-[12.5px] text-ink-3">
-        © {new Date().getFullYear()} 조달핏. 데이터는 공공데이터포털 이용 조건을 따릅니다.
+    <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-ink pt-5">
+      <p className="m-0 text-[14px] text-ink-g break-keep">
+        문의 · 제안 · 오류 제보 <a href="mailto:jsw7980@gmail.com" className="u-link ml-1 font-medium text-ink">jsw7980@gmail.com</a>
       </p>
-    </section>
+      <Btn variant="dark" href="/">회사로 찾기</Btn>
+    </div>
   );
 }

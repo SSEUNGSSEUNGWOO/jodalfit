@@ -41,6 +41,9 @@ def main() -> None:
         assert len(nums) >= 3, f"현황 숫자가 셋이 아니다: {nums}"
         rows = pg.evaluate("() => document.querySelectorAll('ul li').length")
         assert rows >= 1, "등록 공고 목록이 비었다"
+        # 등록 공고 행의 제목은 공고 페이지 링크 (2026-10-25 — 그 전엔 번호가 없어 눌러도 갈 데가 없었다)
+        href = pg.evaluate("() => document.querySelector('ul li a[href^=\"/notices/\"]')?.getAttribute('href') || ''")
+        assert href.startswith("/notices/") and len(href) > len("/notices/"), f"등록 공고 행에 공고 링크가 없다: {href!r}"
         # 마감이 지난 공고가 섞이면 'D--1' 이 찍힌다(재공고·정정 건)
         assert "D--" not in txt, "마감 지난 공고가 목록에 있다"
         pg.screenshot(path=str(OUT / "_shot_entry_desk.png"), full_page=True)
