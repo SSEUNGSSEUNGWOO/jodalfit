@@ -398,6 +398,7 @@ uv run python -m jobs.verify_setup
 | `DATABASE_URL` | Postgres 직결(세션 풀러 :5432) — backfill/사업자상태/purge/채점표 잡 | `postgresql://...` |
 | `EMBED_SPACE` | 임베딩 공간 `openai`(1536d, `embedding`) / `kure`(1024d, `embedding_k`+`_k` RPC, 0045 필요). 롤백 = 이 값 하나 | `openai` |
 | `KURE_MODEL_DIR` | KURE ONNX 모델 캐시 경로. 비우면 임시 폴더 → Railway 재시작마다 409MB 재다운로드. 영구 볼륨을 가리킬 것 | `/data/kure` |
+| `INDEXNOW_KEY` | (선택) IndexNow 키 — `jobs.ping_indexnow`(매시, Bing·네이버). 비우면 코드의 기본 키. 바꾸면 `frontend/public/<key>.txt` 도 같이 | (비움) |
 
 `frontend/.env.local`:
 

@@ -81,3 +81,9 @@ jobs:
       - name: 입찰공고 임베딩 (신규)
         run: uv run python -m jobs.embed_bid_notices --limit 500 --batch 50
         continue-on-error: true
+
+      # IndexNow(Bing·네이버): 최근 2시간에 바뀐 공고·회사 페이지 URL 을 알린다. 키 파일은 frontend/public/<key>.txt.
+      # 구글은 안 받는다. 실패해도 다음 시간에 다시 보내면 되므로 continue-on-error.
+      - name: IndexNow 핑 (최근 2h 갱신 공고·회사)
+        run: uv run python -m jobs.ping_indexnow --hours 2
+        continue-on-error: true
