@@ -31,6 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   `cd backend && uv run --no-sync python ../frontend/scripts/check_entry.py` — entry/results/saved/company/notice/changelog/auth/foundation/funnel 9종.
   화면을 고치면 해당 검증도 같이 고친다. 금지어·주황 면 0·390 가로 넘침·조작(타이핑·방향키)까지 본다.
 - 순수 로직 단위 검사: `cd frontend && node --experimental-strip-types --test src/lib/*.test.ts src/components/results/*.test.ts`.
+- 인증 흐름 스모크: `cd frontend && node --env-file=.env.local scripts/auth_smoke.mjs` (service_role 로 가입·확인·로그인·로그아웃을 실제 서버에 친다. `AUTH_URL` 로 대상 변경, 기본 :3000).
 - 테스트 프레임워크 없음. `jobs/test_api.py`·`probe_*.py`는 pytest가 아니라 API 탐색용 CLI 스크립트. 대신 순수 로직 모듈은 `__main__` 자체 점검을 둔다 — `uv run python -m app.recommender.evaluation` / `app.core.traffic_source` / `app.recommender.qualifications` / `app.services.embedding` / `app.services.doc_extract`. 새 순수 로직도 이 패턴을 따른다.
 
 ## 아키텍처 큰 그림
@@ -61,6 +62,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `app/services/` — supabase/openai/anthropic 클라이언트, embedding(공간 스위치+캐시)·local_embed(KURE), recommend(후보 검색+v1), recommendation_cache, explain, doc_extract(hwp/hwpx/pdf/xlsx 본문)·notice_insights(LLM 구조화), viz(임베딩 시각화), search_log, notice_events
 - `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative) + evaluation(지표 순수 함수)
 - `jobs/` — 접두사 규칙: `ingest_*`(나라장터 API 수집) / `embed_*`(임베딩 생성) / `compute_company_vectors`(회사 벡터 통합) / `probe_*`(API 응답 탐색, 개발용) / `verify_*`·`check_*`·`diag_*`(검증/진단). 공통 fetch/페이징/타입 변환은 `jobs/_common.py`.
+  - 채점표 도구: `evaluate_recommender`(정량 채점표, 기준) → `--dump-features` 로 뽑은 `features.csv` 위에서 `fit_score_weights`(로지스틱 재보정, held-out)·`sweep_score_scale`(보너스 배율 k 하나만 훑기). `evaluate_recommendations`는 옛 정성 리포트(3버킷 마크다운)로 채점표가 아니다.
+  - 로컬 GPU 백필은 `uv sync --extra embed-gpu`(RTX 5060 Ti = cu128). `embed-cpu`와 상호 배제라 cpu 로 sync 하면 CUDA torch 가 CPU 휠로 덮인다.
 - `jobs/marketing_report/` — 일일 마케팅 성적표 (`/marketing-report`, 설명서 `docs/marketing/README.md`).
 
 ### 로그 지표 — 내부 SSR과 실사용자 구분 (필수)
@@ -87,6 +90,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `(renewal)/layout.tsx` 가 nav·footer·`<main>` 을 준다. **nav 가 로그인 상태를 읽어 쿠키를 쓰므로 어떤 페이지도 정적 생성이 안 된다** — `generateStaticParams` 를 두면 운영에서 `DYNAMIC_SERVER_USAGE` 로 500 이 난다(2026-10-24 회사·공고 페이지가 이걸로 깨졌다). 페이지는 전부 동적(ƒ)이고, 캐시가 필요하면 **데이터만** `unstable_cache` 로 감싼다(`lib/entry.ts` 가 그 예).
 - 입구는 **루트 `/` 하나**다 — 질의 없는 `/recommendations` 는 `/` 로 리다이렉트한다(`(renewal)/recommendations/page.tsx`). 회사명만 적힌 질의는 공고번호 꼴이면 `/notices/*` 로 보낸다.
 - `src/lib/` 서버 전용 읽기(`"server-only"`): `supabase-server`(service_role), `company`·`notice`·`saved`·`entry`·`changelog`. 브라우저에서 import 하면 키가 샌다.
+- **Supabase 클라이언트가 둘이다 — 섞지 않는다.** `lib/supabase-server.ts`(service_role, 공개 데이터 SSR) vs `lib/supabase/{browser,server}.ts`(`@supabase/ssr` anon 키 + 쿠키 세션, 사용자 RLS 테이블 읽기·쓰기). 세션 갱신은 `src/proxy.ts`(Next 16 — `middleware.ts` 아님)가 매 요청 맡고 보호 경로 리다이렉트는 하지 않는다. 서버에서 현재 사용자는 `lib/auth.ts::getSessionUser`(`getUser`로 토큰 검증 — `getSession`은 쿠키를 믿으므로 쓰지 않는다). 메일 링크는 `app/auth/confirm/route.ts`가 세션으로 바꾸고 `safeNext`로만 복귀한다(recovery 는 `/reset/new` 강제).
+- 로그인 필요 페이지: `/saved`(비로그인은 안내 판), `/recommendations/report`(A4 인쇄용, `?company=` 없으면 `/recommendations`로). `/dev/foundation`은 noindex 컴포넌트 시트다.
 - `src/app/api/` — route handler. `companies/suggest`(입구 자동완성 — **사업자번호는 응답에 싣지 않는다**), `companies/[bizrno]/profile`, 유사 공고. 브라우저가 백엔드를 직접 안 치게 하는 자리.
 - `src/components/` — `entry/`·`results/`·`company/`·`notice/`·`board/`(옛 대화형 보드, 일부만 생존) + `ui/`(shadcn). `JsonLd.tsx` 가 구조화 데이터 주입을 한 곳에 모은다.
 - SEO 비중이 크다 — 회사·공고 페이지의 메타·canonical·JSON-LD·색인 제외 규칙은 각각 이유가 있다(비공개 요청 0037, 깡통·폐업 noindex, **제목·설명에 수주 건수·평균 투찰률 비노출** 2026-09-22). 옮기거나 고칠 때 주석을 먼저 읽는다.
@@ -101,7 +106,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **글자에는 `--color-orange-ink` (#b85510)** 를 쓴다. 브랜드 주황은 종이색 위 대비가 2.66:1 이라 큰 글자 기준 3.0 에도 못 미친다(2026-10-23 Lighthouse). Tailwind 로는 `text-orange-ink`. 선·테두리·타일은 `orange` 그대로.
 - **금지어가 있다.** `frontend/scripts/check_*.py` 의 `BANNED` 목록 — "하세요"·"주십시오"·"예요"·"에요"·"넣으면"·"낼 수 있"·"이메일 구독"·"매직링크" 등. 공문 톤 유지와 "낼 수 있다"는 단정 금지 때문이다. 문구를 쓰면 검증이 잡는다.
 - **디자인 리뉴얼 작업 전 `docs/design/README.md`를 먼저 읽는다.** 결정 사항(주황은 선이지 면이 아니다, 공문 톤 문체, 적합 점수 숫자 비노출·근거는 유지, 폐기한 컨셉 목록, 머리 장면은 로딩 가림막)이 거기 있고 최종 시안은 `prototypes/final/*.html`(그 밖의 `prototypes/*.html`은 폐기·중간안)(생성 스크립트 `scripts/`). 루트 `DESIGN.md`(개찰판·청색 장부)는 **폐기된 옛 디자인** 기록이다 — 현행이 아니다. 로고 자산은 `docs/design/brand/`.
-- 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음(로그인은 이메일 매직링크 = 알림 구독, 비밀번호 없음 — 리뉴얼 결정).
+- 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음. **로그인은 이메일 + 비밀번호(8자 이상, 조합 규칙 없음) + 확인 메일 1회**(README §"이메일 + 비밀번호", 2026-10-17 결정) — 1차 시안의 매직링크는 폐기됐고 "매직링크"·"이메일 구독"은 금지어다. README 상단 §1의 "매직링크 = 알림 구독" 문장은 옛 기술이다.
 - `backend/.env`의 `SUPABASE_SERVICE_ROLE_KEY`는 RLS 우회 admin 키 — frontend/git 노출 금지. 환경변수 전체 목록은 README.md §9.
 - `data/`는 gitignored 임시 수집 데이터.
 
