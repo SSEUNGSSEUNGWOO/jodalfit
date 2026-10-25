@@ -67,11 +67,14 @@ def aggregate(per_company: list[dict]) -> dict:
     out["micro"] = {m: round(sum(r[m] * r["n_pos"] for r in per_company) / tot, 4) for m in metrics}
     by_tier: dict[str, list[dict]] = defaultdict(list)
     by_div: dict[str, list[dict]] = defaultdict(list)
+    by_names: dict[str, list[dict]] = defaultdict(list)   # 등록업종 유무 — 면허 확인불가 처리의 영향을 보는 군
     for r in per_company:
         by_tier[r["tier"]].append(r)
         by_div[r["bsns_div"]].append(r)
+        by_names["업종있음" if r.get("has_names", True) else "업종없음"].append(r)
     out["by_tier"] = {t: {"n": len(rows), **{m: round(mean(rows, m), 4) for m in metrics}} for t, rows in sorted(by_tier.items())}
     out["by_div"] = {d: {"n": len(rows), **{m: round(mean(rows, m), 4) for m in metrics}} for d, rows in sorted(by_div.items())}
+    out["by_names"] = {d: {"n": len(rows), **{m: round(mean(rows, m), 4) for m in metrics}} for d, rows in sorted(by_names.items())}
     return out
 
 
@@ -100,6 +103,7 @@ def _self_check() -> None:
         {"tier": "rich", "bsns_div": "용역", "r_dense": 0.0, "r_qual": 0.0, "r_scored30": 0.0, "r_final30": 0.0, "mrr": 0.0, "n_pos": 1},
     ])
     assert agg["macro"]["r_dense"] == 0.5 and agg["by_tier"]["cold"]["n"] == 1
+    assert agg["by_names"]["업종있음"]["n"] == 2   # has_names 없으면 '있음'으로
     assert agg["micro"]["r_dense"] == round(2 / 3, 4)  # aggregate 는 4자리 반올림
     print("evaluation self-check ok")
 

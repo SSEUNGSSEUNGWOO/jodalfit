@@ -168,6 +168,10 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
                     <span>{mode === "company" ? "적합 순" : "검색어 유사도 순"}</span>
                     {stats && stats.week > 0 && <span>이번 주 마감 <b className="num font-semibold text-ink">{stats.week}건</b></span>}
                   </p>
+                  {/* 등록업종 0건 회사 — 면허 판정이 전부 '확인불가'로 통과한다(qualifications.py). 그 사실을 적고 감점 사실을 알린다. */}
+                  {mode === "company" && co?.industry_count === 0 && (
+                    <p data-noind className="mt-2 max-w-[640px] text-[13px] leading-[1.6] text-ink-g">나라장터에 등록업종이 없어 면허 자격을 판정하지 못했습니다. 면허 제한이 있는 공고는 순서를 낮췄습니다.</p>
+                  )}
                 </div>
                 {mode === "company" && co && <a href={loggedIn ? `/recommendations/report?company=${encodeURIComponent(co.bizrno)}` : `/login?next=${encodeURIComponent(`/recommendations/report?company=${co.bizrno}`)}`} className="inline-flex h-9 items-center gap-2 rounded-[6px] border border-field px-3 text-[12.5px] font-medium text-ink-g transition-colors hover:border-ink max-sm:h-8"><span className="max-sm:hidden">인쇄 / PDF 저장</span><span className="hidden max-sm:inline">PDF 저장</span><span aria-hidden="true">↗</span></a>}
               </div>

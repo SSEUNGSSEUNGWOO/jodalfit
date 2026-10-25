@@ -27,9 +27,10 @@ from app.recommender.evaluation import (
 )
 from app.services.embedding import embed_texts
 from jobs.compute_company_vectors import build_industry_text, dynamic_weights
+from app.recommender.cancellation import cancel_ords, drop_cancelled
 from app.recommender.mmr import mmr_diversify
 from app.recommender.pipeline import MMR_POOL
-from app.recommender.qualifications import check_qualifications
+from app.recommender.qualifications import check_qualifications, unverified_penalty
 from app.recommender.score import score_notice
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -158,6 +159,19 @@ def fetch_active_notices(conn, t: date, horizon: date) -> tuple[list[dict], np.n
     return notices, X
 
 
+def fetch_cancel_map(conn, t: date, nos: list[str]) -> dict[str, str]:
+    """t 이전에 게시된 취소공고 → {공고번호: 취소 차수}. 운영 rank_v2(_fetch_notice_status + cancel_ords)와 같은 판정이되
+    시점 t 에 알 수 있던 행만 본다. 취소 흔적이 있는 행만 가져오고 판정은 같은 함수(is_cancel_row)가 한다 —
+    상태를 아는 행은 제목을 안 보므로 운영과 결과가 같다."""
+    rows = conn.execute(
+        """select bid_ntce_no, bid_ntce_ord, bid_ntce_nm, raw->>'bidNtceSttusNm', raw->>'ntceKindNm'
+           from bid_notices where bid_ntce_no = any(%s) and bid_ntce_date < %s
+             and (raw->>'bidNtceSttusNm' like '%%취소%%' or raw->>'ntceKindNm' like '%%취소%%' or bid_ntce_nm like '%%취소%%')""",
+        (nos, t),
+    ).fetchall()
+    return cancel_ords([dict(bid_ntce_no=r[0], bid_ntce_ord=r[1], bid_ntce_nm=r[2], status=r[3], kind=r[4]) for r in rows])
+
+
 def fetch_company_profile(conn, biz: str, t: date | None = None) -> dict:
     """같은 norm 의 모든 회사 행을 합친 업종·물품(대표/나머지), 지역, 업종 이름 set, 토큰 set.
 
@@ -276,8 +290,13 @@ def fetch_limits(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], dic
 def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict, instts: set[str],
            median: float | None, instt_stats: dict, t: date, pool: int, limit: int,
            retrieval: str = "dense", features_out: list[dict] | None = None,
-           ablate: set[str] | None = None, chan_max: int = CHANNEL_MAX_ROWS) -> dict[str, list[tuple[str, str]]]:
+           ablate: set[str] | None = None, chan_max: int = CHANNEL_MAX_ROWS,
+           cmap: dict[str, str] | None = None, unv_penalty: float | None = None, unv_exclude: bool = False,
+           no_license_text: bool = False) -> dict[str, list[tuple[str, str]]]:
     """운영 _search_with_embedding + rank_v2 를 그대로 재생. 단계별 (no, ord) 순위 리스트 반환.
+    cmap: 취소공고 맵(fetch_cancel_map) — 운영과 같이 dedup 뒤 후보에서 뺀다(dense 순위는 그대로). 비면 안 뺀다.
+    unv_penalty: 면허 확인불가 감점(None 이면 운영 상수) / unv_exclude: 확인불가를 하드 제외하는 변형(실험용).
+    no_license_text: 면허 행 없음 + 허용업종 원문 있음 → 확인불가 처리를 끈다(2026-10-25 이전 운영 재현, 실험용).
     retrieval: dense(운영) / prefilter(등록업종이 허용업종에 든 공고 안에서만 dense) / soft(prefilter + 허용업종 없는 공고 유지)
     / hybrid(dense 와 prefilter 교대 합침) / hybrid+prd(hybrid + 물품분류 코드 채널, 0048)."""
     sims = X @ vec
@@ -316,13 +335,17 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
         seen.add(n); seen_c.add(ck); cand.append(r)
         if len(cand) >= pool: break
     dedup = [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in cand]
-    lim = fetch_limits(conn, dedup)
+    cand = drop_cancelled(cand, cmap or {})   # 운영 rank_v2 와 같은 자리 — 정답(낙찰)은 취소될 수 없어 손실 단계에 안 잡힌다
+    lim = fetch_limits(conn, [(r["bid_ntce_no"], r["bid_ntce_ord"]) for r in cand])
     passed: list[dict] = []
     qual_fail: dict[tuple[str, str], list] = {}
     for r in cand:
         slot = lim.get((r["bid_ntce_no"], r["bid_ntce_ord"])) or {"licenses": [], "regions": []}
-        q = check_qualifications(prof["names"], prof["rgn"], slot["licenses"], slot["regions"])
-        if q["passed"]:
+        q = check_qualifications(prof["names"], prof["rgn"], slot["licenses"], slot["regions"],
+                                 license_text=None if no_license_text else r.get("bidprc_psbl_indstryty_nm"))
+        if unv_exclude and "면허 확인불가" in q["reasons"]:
+            qual_fail[(r["bid_ntce_no"], r["bid_ntce_ord"])] = ["면허 확인불가(제외 변형)"]
+        elif q["passed"]:
             r["qualification"] = q; passed.append(r)
         else:
             # 탈락 사유를 보고서까지 들고 간다 — 면허/지역 구분이 없어 "9월에 자격 손실이 큰 이유"를
@@ -335,7 +358,9 @@ def replay(conn, notices: list[dict], X: np.ndarray, vec: np.ndarray, prof: dict
         # ablate 된 보너스는 합에서 뺀다 — breakdown 은 그대로 둬서 features.csv 로 기여도를 볼 수 있게.
         if ablate:
             raw = sum(b["points"] for b in bd if b["key"] not in ablate)
-        r["score_raw"] = round(raw, 1)
+        # 운영 rank_v2 와 같은 감점 — 면허 확인불가(회사 업종 미상)만
+        pen = unverified_penalty(r["qualification"]) if unv_penalty is None else unverified_penalty(r["qualification"], unv_penalty)
+        r["score_raw"] = round(raw - pen, 1)
         if features_out is not None:  # 점수 재보정용 특징 덤프 (운영 경로와 무관)
             allowed = r.get("bidprc_psbl_indstryty_nm") or ""
             row = {"bid_ntce_no": r["bid_ntce_no"], "bid_ntce_ord": r["bid_ntce_ord"], "bsns_div": r.get("bsns_div_nm") or "?",
@@ -402,6 +427,11 @@ def main() -> None:
     ap.add_argument("--ablate", default="", metavar="KEYS",
                     help="점수에서 뺄 보너스 key(쉼표). 'bonuses' 는 유사도 외 전부 = 유사도 단독 기준선. "
                          f"가능: bonuses, {','.join(BONUS_KEYS)}")
+    ap.add_argument("--unverified-penalty", type=float, default=None, metavar="PTS",
+                    help="면허 확인불가(회사 업종 미상) 감점. 기본은 운영 상수 UNVERIFIED_LICENSE_PENALTY")
+    ap.add_argument("--unverified-exclude", action="store_true", help="면허 확인불가를 하드 제외하는 변형(감점 대신)")
+    ap.add_argument("--keep-cancelled", action="store_true", help="취소공고를 후보에서 빼지 않는다(2026-10-25 이전 운영 재현, 전후 비교용)")
+    ap.add_argument("--no-license-text", action="store_true", help="면허 행 없음 + 원문 있음 → 확인불가 처리를 끈다(2026-10-25 이전 운영 재현)")
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
     ap.add_argument("--space", choices=["openai", "kure"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045 적용 후)")
     ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
@@ -421,7 +451,9 @@ def main() -> None:
     notices, X = fetch_active_notices(conn, t, horizon)
     instt_stats = fetch_instt_stats_before(conn, t)
     nidx = {(n["bid_ntce_no"], n["bid_ntce_ord"]): n for n in notices}
-    print(f"t={t} active={len(notices):,} sample={len(sample)} positives(total)={sum(len(positives[s['biz']]) for s in sample):,}")
+    cmap = fetch_cancel_map(conn, t, sorted({n["bid_ntce_no"] for n in notices}))
+    n_cancelled = len(notices) - len(drop_cancelled(notices, cmap))
+    print(f"t={t} active={len(notices):,} (취소 {n_cancelled:,}) sample={len(sample)} positives(total)={sum(len(positives[s['biz']]) for s in sample):,}")
     cache: dict = {}; per: list[dict] = []; failures: list[dict] = []; skipped = 0; all_feats: list[dict] = []; positives_dropped = 0
     for i, s in enumerate(sample, 1):
         biz = s["biz"]; pos = {k for k in positives[biz] if k in nidx}
@@ -436,7 +468,8 @@ def main() -> None:
             skipped += 1; continue
         feats: list[dict] | None = [] if args.dump_features else None
         st = replay(conn, notices, X, vec, prof, instts, med, instt_stats, t, args.pool, args.limit, args.retrieval, feats, ablate,
-                    args.channel_max_rows)
+                    args.channel_max_rows, {} if args.keep_cancelled else cmap, args.unverified_penalty, args.unverified_exclude,
+                    args.no_license_text)
         # dedup 이 공고번호 단위로 차수를 접으므로(운영과 동일) 정답·순위 비교도 공고번호 단위로 한다
         # (활성 공고의 9%가 다른 차수와 공존, 정답의 4%가 그 영향 — 그대로 두면 가짜 'dedup 손실'이 생긴다)
         pos_nos = {no for no, _ in pos}
@@ -447,7 +480,7 @@ def main() -> None:
                 f.update(biz=biz, tier=s["tier"], is_pos=int(f["bid_ntce_no"] in pos_nos))
                 all_feats.append(f)
         div = nidx[min(pos)]["bsns_div_nm"] or "?"
-        per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos),
+        per.append({"biz": biz, "tier": s["tier"], "bsns_div": div, "n_pos": len(pos_nos), "has_names": bool(prof["names"]),
                     "r_dense": recall_at_k(st_nos["dedup"], pos_nos, args.pool), "r_qual": recall_at_k(st_nos["qualified"], pos_nos, args.pool),
                     "r_scored30": recall_at_k(st_nos["scored"], pos_nos, args.limit), "r_final30": recall_at_k(st_nos["final"], pos_nos, args.limit),
                     # 운영 화면 조건 — 비로그인 공개 5건 / 로그인 표시 20건. final@30 은 파이프라인 상한이라 체감과 다르다.
@@ -474,6 +507,8 @@ def main() -> None:
     agg["positives_dropped"] = positives_dropped
     manifest = {"as_of": t.isoformat(), "positives": args.positives, "space": args.space, "embeddings": args.embeddings, "horizon_days": HORIZON_DAYS, "pool": args.pool, "limit": args.limit, "seed": args.seed,
                 "retrieval": args.retrieval, "ablate": sorted(ablate), "channel_max_rows": args.channel_max_rows,
+                "unverified_penalty": args.unverified_penalty, "unverified_exclude": args.unverified_exclude, "cancelled_active_rows": n_cancelled,
+                "keep_cancelled": args.keep_cancelled, "no_license_text": args.no_license_text,
                 "companies_requested": args.companies, "companies_evaluated": len(per), "active_notices": len(notices),
                 "notes": ["업종·물품·지역은 현재 값(과거 이력 없음) → '현재 등록정보 참고 평가'",
                           "회사 업종·물품은 같은 사업자번호(norm)의 모든 행 합침 (운영은 한 행 — Codex P1)",
@@ -488,14 +523,16 @@ def main() -> None:
         w = csv.DictWriter(f, fieldnames=["biz", "tier", "bid_ntce_no", "title", "lost_at", "dense_rank", "qual_failures"]); w.writeheader(); w.writerows(failures)
     m, lines = agg["macro"], []
     lines += [f"# 추천 평가 baseline — t={t} (run {run_id})", "",
-              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} · pool {args.pool} · limit {args.limit} · retrieval {args.retrieval}"
-              + (f" · ablate {','.join(sorted(ablate))}" if ablate else ""), "",
+              f"회사 {len(per)} (skip {skipped}) · 활성 공고 {len(notices):,} (취소 {n_cancelled:,} {'유지' if args.keep_cancelled else '제외'}) · pool {args.pool} · limit {args.limit} · retrieval {args.retrieval}"
+              + (f" · ablate {','.join(sorted(ablate))}" if ablate else "")
+              + (" · 면허원문 미사용" if args.no_license_text else "")
+              + (f" · unverified exclude" if args.unverified_exclude else (f" · unverified −{args.unverified_penalty:g}" if args.unverified_penalty is not None else "")), "",
               "| 지표 | macro | micro |", "|---|---|---|"]
     lines += [f"| {k} | {m[k]:.3f} | {agg['micro'][k]:.3f} |" for k in m]
     # 군별 표는 운영 화면 조건(@5·@20)을 같이 싣는다 — final@30 은 파이프라인 상한이라 체감과 다르다.
     lines += ["", "## 군별 (macro)", "", "| 군 | n | dense@pool | qual@pool | final@5 | final@20 | final@30 | mrr |",
               "|---|---|---|---|---|---|---|---|"]
-    for grp in ("by_tier", "by_div"):
+    for grp in ("by_tier", "by_div", "by_names"):
         for k, v in agg[grp].items():
             lines.append(f"| {k} | {v['n']} | {v['r_dense']:.3f} | {v['r_qual']:.3f} | "
                          f"{v.get('r_final5', 0):.3f} | {v.get('r_final20', 0):.3f} | {v['r_final30']:.3f} | {v['mrr']:.3f} |")

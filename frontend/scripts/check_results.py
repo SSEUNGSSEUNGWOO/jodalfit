@@ -4,7 +4,7 @@
 사용: cd backend && uv run --no-sync python ../frontend/scripts/check_results.py   (RESULTS_BASE 기본 http://localhost:3000)
 회사 1248177731(한종산업개발): 장면 → 건너뛰기 → done, 숫자 넷(… 아님), 표 5 + 게이트 2버튼 + 흐림 ≥1, 행 펼침에 자격·근거 줄,
 다른 회사 → 상자·흐림 → Esc 복귀, 금지어·주황 면·인주 0, 바닥색·판 14px, 390 한 단·넘침 없음.
-키워드(하수처리): 장면 없음, 표 ≥1. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
+키워드(하수처리): 장면 없음, 표 ≥1. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -14,6 +14,7 @@ BASE = os.environ.get("RESULTS_BASE", "http://localhost:3000")
 OUT = Path(__file__).resolve().parent; ROOT = OUT.parent.parent
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요", "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "주십시오"]
 CO = "1248177731"
+NO_IND = "4191800117"   # 유원디자인연구소 — 나라장터 등록업종 0건 (면허 확인불가 안내 줄 검사용)
 
 def env(path, key):
     m = re.search(rf"^{key}=(.*)$", Path(path).read_text(encoding="utf-8"), re.M) if Path(path).exists() else None
@@ -105,6 +106,12 @@ def main():
         goto(pg, "/recommendations?q=%ED%95%98%EC%88%98%EC%B2%98%EB%A6%AC"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
         k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]') })")
         assert not k["scene"] and k["rows"] >= 1 and not k["side"], k
+        # 등록업종 0건 회사(유원디자인연구소) — 면허 자격을 판정하지 못했다는 줄이 있고, 업종 있는 회사(위 CO)에는 없다
+        goto(pg, f"/recommendations?company={NO_IND}"); pg.wait_for_selector("[data-scene]", timeout=10000)
+        pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
+        assert "면허 자격을 판정하지 못했습니다" in (pg.locator("[data-noind]").text_content() or ""), "업종 0건 안내 줄이 없다"
+        goto(pg, f"/recommendations?company={CO}", 300); pg.wait_for_selector("[data-res]", timeout=30000)
+        assert not pg.query_selector("[data-noind]"), "업종 있는 회사에 업종 0건 안내가 뜬다"
         # 빈 질의 = 입구로 보낸다(입구는 루트 하나다 — 실사용자 검색의 97.7% 가 / 에서 시작)
         goto(pg, "/recommendations")
         assert pg.url.rstrip("/").endswith(BASE.rstrip("/").split("//")[-1]) or pg.url.rstrip("/") == BASE.rstrip("/"), pg.url

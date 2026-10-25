@@ -802,6 +802,27 @@ def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
     return out
 
 
+NOTICE_STATUS_COLS = "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,status:raw->>bidNtceSttusNm,kind:raw->>ntceKindNm"
+
+
+def _fetch_notice_status(client, bid_nos: list[str]) -> list[dict]:
+    """후보 공고번호들의 모든 차수와 공고상태 — 취소공고 판정용(app/recommender/cancellation.py).
+    raw 전체가 아니라 키 둘만 뽑는다. 300개 번호 → 355행 363ms (2026-10-25)."""
+    out: list[dict] = []
+    PAGE = 300
+    for i in range(0, len(bid_nos), PAGE):
+        rows = (
+            client.table("bid_notices")
+            .select(NOTICE_STATUS_COLS)
+            .in_("bid_ntce_no", bid_nos[i : i + PAGE])
+            .execute()
+            .data
+            or []
+        )
+        out.extend(rows)
+    return out
+
+
 INSIGHT_COLS = "bid_ntce_no,bid_ntce_ord,summary,scope,requirements,evaluation,schedule,keywords"
 
 
@@ -1132,6 +1153,8 @@ def _recommend_by_company(
             "corp_nm": company["corp_nm"],
             "rgn_nm": company.get("rgn_nm"),
             "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
+            # 0 이면 면허 자격을 판정하지 못한 회사 — 결과 화면이 그 사실을 적는다
+            "industry_count": len(company_industry_names),
         },
         "mode": "company",
         "algorithm": algorithm,

@@ -3,6 +3,8 @@ export interface CompanyDigest {
   corp_nm: string;
   rgn_nm?: string;
   corp_bsns_div_nm?: string;
+  /** 나라장터 등록업종 수. 0 이면 면허 자격을 판정하지 못한 회사(백엔드 recommend.py). 캐시된 옛 응답에는 없다. */
+  industry_count?: number;
 }
 
 export type RecommendationStage = "notice" | "pre_spec" | "order_plan";
