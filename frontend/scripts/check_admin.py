@@ -94,6 +94,13 @@ def main():
             assert s["funnel"] == 7 and s["daily"] == 7 and s["health"] == 3 and s["h1"].startswith("관리"), s
             # PostHog 키가 없으면 안내 한 줄, 있으면 세 표(날짜·페이지·유입)
             assert ("미설정" in s["visitsText"]) or ("유입" in s["visitsText"] and "페이지뷰" in s["visitsText"]), s["visitsText"][:200]
+            # 사람 검색 표는 25건씩 쪽으로 — 200행이 한 화면에 깔려 아래 판을 밀어냈다(2026-10-26)
+            pgd = pg.evaluate("() => { const e = document.querySelector('[data-admin=searches] [data-paged]'); return e && { rows: e.querySelectorAll('tbody tr').length, pages: +e.dataset.pages, first: e.querySelector('tbody tr')?.innerText } }")
+            assert pgd is None or pgd["rows"] <= 25, pgd
+            if pgd and pgd["pages"] > 1:
+                pg.locator("[data-admin=searches] [data-pager] button", has_text="다음").click(); pg.wait_for_timeout(200)
+                after = pg.evaluate("() => { const e = document.querySelector('[data-admin=searches] [data-paged]'); return { page: +e.dataset.page, first: e.querySelector('tbody tr')?.innerText } }")
+                assert after["page"] == 2 and after["first"] != pgd["first"], after
             assert "ch***@jodalfit.test" in txt, "가입자 표에 본인(마스킹)이 없다"
             assert ADMIN_EMAIL not in txt.replace("ch***@jodalfit.test", ""), "원문 이메일이 화면에 보인다"
             pg.screenshot(path=str(OUT / "_shot_admin.png"), full_page=True)

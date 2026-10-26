@@ -9,6 +9,7 @@ import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
 import { fetchAdminData, isAdmin, type Funnel, type Health } from "@/lib/admin";
 import { getSessionUser } from "@/lib/auth";
+import { PagedTable } from "./PagedTable";
 
 export const metadata: Metadata = { title: "관리 | 조달핏", robots: { index: false, follow: false } };
 
@@ -139,8 +140,8 @@ export default async function AdminPage() {
       </Panel>
 
       <Panel className="mt-[14px]" data-admin="searches">
-        <PanelHead title="사람 검색" small="최근 7일 · 최신순 · 최대 200" />
-        <Table
+        <PanelHead title="사람 검색" small="최근 7일 · 최신순 · 최대 200 · 25건씩" />
+        <PagedTable
           head={["시각", "모드", "질의", "매칭 회사", "결과", "IP", "유입"]}
           rows={d.searches.map((s) => [
             t(s.at), s.mode, s.query,
