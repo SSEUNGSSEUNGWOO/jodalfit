@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   화면을 고치면 해당 검증도 같이 고친다. 금지어·주황 면 0·390 가로 넘침·조작(타이핑·방향키)까지 본다.
 - 순수 로직 단위 검사: `cd frontend && node --experimental-strip-types --test src/lib/*.test.ts src/components/results/*.test.ts`.
 - 인증 흐름 스모크: `cd frontend && node --env-file=.env.local scripts/auth_smoke.mjs` (service_role 로 가입·확인·로그인·로그아웃을 실제 서버에 친다. `AUTH_URL` 로 대상 변경, 기본 :3000).
-- 테스트 프레임워크 없음. `jobs/test_api.py`·`probe_*.py`는 pytest가 아니라 API 탐색용 CLI 스크립트. 대신 순수 로직 모듈은 `__main__` 자체 점검을 둔다 — `uv run python -m app.recommender.evaluation` / `app.core.traffic_source` / `app.recommender.qualifications` / `app.services.embedding` / `app.services.doc_extract`. 새 순수 로직도 이 패턴을 따른다.
+- 테스트 프레임워크 없음. `jobs/test_api.py`·`probe_*.py`는 pytest가 아니라 API 탐색용 CLI 스크립트. 대신 순수 로직 모듈은 `__main__` 자체 점검을 둔다 — `uv run python -m app.recommender.evaluation` / `app.core.traffic_source` / `app.recommender.qualifications` / `app.recommender.keyword_expand` / `app.services.embedding` / `app.services.doc_extract`. 새 순수 로직도 이 패턴을 따른다.
 
 ## 아키텍처 큰 그림
 
@@ -60,7 +60,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `app/api/` — 라우터 (recommendations, events=행동 로깅, qualifications=자격 라벨, feedback=`/feedback` 폼 수신 → 0061 `feedback` 테이블, `/admin` 이 읽는다)
 - `app/core/` — pydantic-settings config(환경변수 스위치는 전부 여기, 주석에 근거 문서 링크), rate_limit, bot_guard, traffic_source, timing(Server-Timing)
 - `app/services/` — supabase/openai/anthropic 클라이언트, embedding(공간 스위치+캐시)·local_embed(KURE), recommend(후보 검색+v1), recommendation_cache, explain, doc_extract(hwp/hwpx/pdf/xlsx 본문)·notice_insights(LLM 구조화), viz(임베딩 시각화), search_log, notice_events
-- `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative) + evaluation(지표 순수 함수)
+- `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative) + evaluation(지표 순수 함수) + keyword_expand(키워드 질의의 영문 약어 풀이 — "si"→시스템 통합…, 임베딩 전에만 적용)
 - `jobs/` — 접두사 규칙: `ingest_*`(나라장터 API 수집) / `embed_*`(임베딩 생성) / `compute_company_vectors`(회사 벡터 통합) / `probe_*`(API 응답 탐색, 개발용) / `verify_*`·`check_*`·`diag_*`(검증/진단). 공통 fetch/페이징/타입 변환은 `jobs/_common.py`.
   - 채점표 도구: `evaluate_recommender`(정량 채점표, 기준) → `--dump-features` 로 뽑은 `features.csv` 위에서 `fit_score_weights`(로지스틱 재보정, held-out)·`sweep_score_scale`(보너스 배율 k 하나만 훑기). `evaluate_recommendations`는 옛 정성 리포트(3버킷 마크다운)로 채점표가 아니다.
   - 로컬 GPU 백필은 `uv sync --extra embed-gpu`(RTX 5060 Ti = cu128). `embed-cpu`와 상호 배제라 cpu 로 sync 하면 CUDA torch 가 CPU 휠로 덮인다.

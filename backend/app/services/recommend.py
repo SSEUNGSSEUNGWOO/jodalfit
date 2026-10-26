@@ -1017,8 +1017,10 @@ def _recommend_by_keywords(
             "order_plan_results": [],
         }
 
+    from app.recommender.keyword_expand import expand_keywords  # lazy — recommend ↔ recommender 순환 import 회피
+
     with timed("embed_query"):
-        embedding = embed_texts([f"관심 영역: {text}"])[0]
+        embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"])[0]
     embedding_str = vector_to_pgvector_str(embedding)
     ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
     pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
@@ -1103,8 +1105,10 @@ def _recommend_by_company(
 
     keywords_text = (keywords or "").strip()
     if keywords_text:
+        from app.recommender.keyword_expand import expand_keywords  # lazy — 순환 import 회피
+
         with timed("embed_query"):
-            keyword_vec = embed_texts([f"관심 영역: {keywords_text}"])[0]
+            keyword_vec = embed_texts([f"관심 영역: {expand_keywords(keywords_text)}"])[0]
         blended = _blend_embeddings(raw_company_vec, keyword_vec)
         embedding_str = vector_to_pgvector_str(blended)
     else:
