@@ -178,9 +178,8 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
             )}
             {zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
                   : <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
-            {mode === "company" && (
-              <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
-            )}
+            {/* 키워드 모드에도 — 백엔드는 사전규격·발주계획을 두 모드 다 돌려준다(2026-10-26 전엔 회사 모드만 그렸다). */}
+            <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
             {mode === "company" && bizrno && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
           </div>
         </Panel>

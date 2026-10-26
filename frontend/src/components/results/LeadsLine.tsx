@@ -35,14 +35,22 @@ function when(iso: string | null, now: Date): { text: string; hot: boolean } {
   return { text: `D-${days}`, hot: days <= 2 };
 }
 
+/** 의견 창이 아직 열린 사전규격만 "골든타임" 이다 — 마감 지난 행은 세지 않는다. */
+function isLive(p: PreSpecRecommendation, now: Date): boolean {
+  const t = p.opnin_rgst_clse_dt ? new Date(p.opnin_rgst_clse_dt) : null;
+  return !!t && !Number.isNaN(+t) && +t > +now;
+}
+
 export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommendation[]; orderPlans: OrderPlanRecommendation[] }) {
-  const [open, setOpen] = useState(false);
   const now = new Date();
+  const live = preSpecs.filter((p) => isLive(p, now)).length;
+  // 골든타임이 1건이라도 있으면 펼쳐서 시작한다 — 접힌 한 줄로는 아무도 못 봤다(승우님 2026-10-26).
+  const [open, setOpen] = useState(live > 0);
   if (!preSpecs.length && !orderPlans.length) return null;
 
   const soon = preSpecs.filter((p) => when(p.opnin_rgst_clse_dt, now).hot).length;
   return (
-    <div data-leads className="mt-6 border-t border-hair pt-5">
+    <div data-leads data-golden={live > 0 ? live : undefined} className="mt-6 border-t border-hair pt-5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -50,7 +58,7 @@ export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommend
         className="flex w-full cursor-pointer items-baseline gap-3 text-left max-sm:flex-wrap max-sm:gap-y-1"
       >
         <span className="shrink-0 text-[14px] font-[650] text-ink">
-          공고 전 단계 {nf.format(preSpecs.length + orderPlans.length)}건
+          {live > 0 ? <><span className="text-orange-ink">골든타임</span> {nf.format(live)}건</> : <>공고 전 단계 {nf.format(preSpecs.length + orderPlans.length)}건</>}
         </span>
         <span className="break-keep text-[12.5px] text-ink-g max-sm:order-last max-sm:basis-full">
           {preSpecs.length > 0 && <>의견 접수 중인 사전규격 {preSpecs.length}건{soon > 0 && <> (<b className="font-[650] text-orange-ink">{soon}건 곧 마감</b>)</>}</>}
@@ -65,7 +73,7 @@ export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommend
           {preSpecs.length > 0 && (
             <>
               <div className="text-[12.5px] text-ink-g">
-                의견 접수 중인 사전규격 — 본공고가 뜨면 사양은 거의 못 바꿉니다
+                골든타임 — 사전규격에 의견을 내는 기간입니다. 본공고가 뜨면 사양은 거의 못 바꿉니다
               </div>
               <ul className="mt-1.5">
                 {preSpecs.map((p) => {

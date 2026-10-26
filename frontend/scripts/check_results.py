@@ -14,7 +14,7 @@ BASE = os.environ.get("RESULTS_BASE", "http://localhost:3000")
 OUT = Path(__file__).resolve().parent; ROOT = OUT.parent.parent
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요", "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "주십시오"]
 CO = "1248177731"
-NO_IND = "4191800117"   # 유원디자인연구소 — 나라장터 등록업종 0건 (면허 확인불가 안내 줄 검사용)
+NO_IND = "3208703862"   # 지안관리 주식회사 — 나라장터 등록업종 0건 (면허 확인불가 안내 줄 검사용). 2026-10-26 교체: 전 기준(유원디자인연구소)에 업종 10건이 들어왔다. 실패하면 업종이 생긴 것 — companies 에서 company_industries 행 없는 회사로 바꾼다
 
 def env(path, key):
     m = re.search(rf"^{key}=(.*)$", Path(path).read_text(encoding="utf-8"), re.M) if Path(path).exists() else None
@@ -102,10 +102,22 @@ def main():
         assert m["open"] is False and m["first"] < 450 and m["side"] > m["first"], m
         pg.screenshot(path=str(OUT / "_shot_results_390.png"), full_page=True)
         pg.set_viewport_size({"width": 1280, "height": 900})
+        # 공고 전 단계 줄 — CO 는 사전규격 0·발주계획 20 이라 접힌 채 "앞으로 나올 공고"
+        lead = pg.evaluate("() => { const e = document.querySelector('[data-leads]'); return e && { golden: e.dataset.golden ?? null, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText } }")
+        assert lead and lead["golden"] is None and lead["open"] == "false" and "앞으로 나올 공고" in lead["txt"], lead
         # 키워드 모드
         goto(pg, "/recommendations?q=%ED%95%98%EC%88%98%EC%B2%98%EB%A6%AC"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
-        k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]') })")
-        assert not k["scene"] and k["rows"] >= 1 and not k["side"], k
+        k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]'), leads: !!document.querySelector('[data-leads]') })")
+        assert not k["scene"] and k["rows"] >= 1 and not k["side"] and k["leads"], k
+        # 골든타임 — 의견 창이 열린 사전규격을 DB 에서 하나 골라 그 품명으로 키워드 검색하면 사전규격 줄이 "골든타임" 으로 펼쳐져 있어야 한다
+        if srv and (surl := env(ROOT / "backend/.env", "SUPABASE_URL")):
+            now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+            req = urllib.request.Request(f"{surl}/rest/v1/pre_specs?select=prdct_clsfc_no_nm&opnin_rgst_clse_dt=gt.{urllib.parse.quote(now)}&embedding_k=not.is.null&order=opnin_rgst_clse_dt.desc&limit=1", headers={"apikey": srv, "Authorization": f"Bearer {srv}"})
+            with urllib.request.urlopen(req) as r: spec = json.loads(r.read())[0]["prdct_clsfc_no_nm"]
+            goto(pg, f"/recommendations?q={urllib.parse.quote(spec)}"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
+            g = pg.evaluate("() => { const e = document.querySelector('[data-leads][data-golden]'); return e && { golden: e.dataset.golden, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText, rows: e.querySelectorAll('ul li').length } }")
+            assert g and int(g["golden"]) >= 1 and g["open"] == "true" and "골든타임" in g["txt"] and g["rows"] >= 1, (spec, g)
+            pg.screenshot(path=str(OUT / "_shot_results_golden.png"), full_page=True)
         # 등록업종 0건 회사(유원디자인연구소) — 면허 자격을 판정하지 못했다는 줄이 있고, 업종 있는 회사(위 CO)에는 없다
         goto(pg, f"/recommendations?company={NO_IND}"); pg.wait_for_selector("[data-scene]", timeout=10000)
         pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
