@@ -140,9 +140,9 @@ export default async function AdminPage() {
       </Panel>
 
       <Panel className="mt-[14px]" data-admin="searches">
-        <PanelHead title="사람 검색" small="최근 7일 · 최신순 · 최대 200 · 25건씩" />
+        <PanelHead title="사람 검색" small="최근 7일 · 최신순 · 최대 200 · 25건씩 · 외부 유입은 방문 판" />
         <PagedTable
-          head={["시각", "모드", "질의", "매칭 회사", "결과", "IP", "유입"]}
+          head={["시각", "모드", "질의", "매칭 회사", "결과", "IP", "검색한 페이지"]}
           rows={d.searches.map((s) => [
             t(s.at), s.mode, s.query,
             s.matchedBizrno ? <Link key="m" href={`/companies/${s.matchedBizrno}`} className="u-link">{s.matched ?? s.matchedBizrno}</Link> : (s.matched ?? "—"),

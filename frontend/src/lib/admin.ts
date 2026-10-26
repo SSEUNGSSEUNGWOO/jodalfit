@@ -58,11 +58,14 @@ type EventRow = { created_at: string; event_type: string; source: string | null 
 type SavedKey = { user_id: string; bizrno_norm: string; created_at: string };
 type ReviewedKey = { user_id: string; bid_ntce_no: string; bid_ntce_ord: string; created_at: string };
 
-function refererHost(r: string | null): string | null {
+/** 검색 요청의 referer = 검색이 일어난 우리 페이지. 외부 유입(네이버 등)이 아니다 — 그건 방문 판(PostHog)에 있다.
+ *  우리 도메인이면 경로만("/" 는 홈), 다른 도메인이면 호스트(임베드·프록시 같은 예외 상황). */
+function refererPage(r: string | null): string | null {
   if (!r) return null;
   try {
     const u = new URL(r);
-    return u.host.replace(/^www\./, "") + (u.host.endsWith("jodalfit.co.kr") ? u.pathname.replace(/\/$/, "") || "/" : "");
+    if (u.host.endsWith("jodalfit.co.kr")) return u.pathname === "/" ? "홈" : u.pathname.replace(/\/$/, "");
+    return u.host.replace(/^www\./, "");
   } catch {
     return r.slice(0, 40);
   }
@@ -77,7 +80,7 @@ function p50(xs: number[]): number | null {
 function toRow(r: LogRow): SearchRow {
   return {
     at: r.created_at, mode: r.mode ?? "—", query: r.query ?? "", matched: r.matched_corp_nm, matchedBizrno: r.matched_bizrno,
-    results: r.result_count, error: !!r.has_error, ip: (r.ip_hash ?? "").slice(0, 4), referer: refererHost(r.referer),
+    results: r.result_count, error: !!r.has_error, ip: (r.ip_hash ?? "").slice(0, 4), referer: refererPage(r.referer),
   };
 }
 
