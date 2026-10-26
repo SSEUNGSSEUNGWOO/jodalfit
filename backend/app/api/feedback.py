@@ -39,21 +39,25 @@ def _notify(row: dict) -> None:
         f"{row['message']}\n\n"
         "— https://jodalfit.co.kr/admin 의견·문의 판에서 확인"
     )
+    payload = {
+        "from": "조달핏 <noreply@jodalfit.co.kr>",
+        "to": [s.feedback_notify_to],
+        "subject": f"[조달핏 {_KIND_LABEL.get(row['kind'], row['kind'])}] {row['message'][:40]}",
+        "text": body,
+    }
+    if row["email"]:
+        payload["reply_to"] = row["email"]
     try:
         r = httpx.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {s.resend_api_key}"},
-            json={
-                "from": "조달핏 <noreply@jodalfit.co.kr>",
-                "to": [s.feedback_notify_to],
-                "reply_to": row["email"] or None,
-                "subject": f"[조달핏 {_KIND_LABEL.get(row['kind'], row['kind'])}] {row['message'][:40]}",
-                "text": body,
-            },
+            json=payload,
             timeout=10,
         )
         if r.status_code >= 400:
             logger.warning("feedback notify failed: %s %s", r.status_code, r.text[:200])
+        else:
+            logger.info("feedback notify sent: %s", r.json().get("id"))
     except Exception as e:  # noqa: BLE001
         logger.warning("feedback notify error: %s", e)
 
