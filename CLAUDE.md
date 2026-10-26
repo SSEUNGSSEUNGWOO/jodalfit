@@ -91,7 +91,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 입구는 **루트 `/` 하나**다 — 질의 없는 `/recommendations` 는 `/` 로 리다이렉트한다(`(renewal)/recommendations/page.tsx`). 회사명만 적힌 질의는 공고번호 꼴이면 `/notices/*` 로 보낸다.
 - `src/lib/` 서버 전용 읽기(`"server-only"`): `supabase-server`(service_role), `company`·`notice`·`saved`·`entry`·`changelog`. 브라우저에서 import 하면 키가 샌다.
 - **Supabase 클라이언트가 둘이다 — 섞지 않는다.** `lib/supabase-server.ts`(service_role, 공개 데이터 SSR) vs `lib/supabase/{browser,server}.ts`(`@supabase/ssr` anon 키 + 쿠키 세션, 사용자 RLS 테이블 읽기·쓰기). 세션 갱신은 `src/proxy.ts`(Next 16 — `middleware.ts` 아님)가 매 요청 맡고 보호 경로 리다이렉트는 하지 않는다. 서버에서 현재 사용자는 `lib/auth.ts::getSessionUser`(`getUser`로 토큰 검증 — `getSession`은 쿠키를 믿으므로 쓰지 않는다). 메일 링크는 `app/auth/confirm/route.ts`가 세션으로 바꾸고 `safeNext`로만 복귀한다(recovery 는 `/reset/new` 강제).
-- 로그인 필요 페이지: `/saved`(비로그인은 안내 판), `/recommendations/report`(A4 인쇄용, `?company=` 없으면 `/recommendations`로). `/dev/foundation`은 noindex 컴포넌트 시트다.
+- 로그인 필요 페이지: `/saved`(비로그인은 안내 판), `/recommendations/report`(A4 인쇄용, `?company=` 없으면 `/recommendations`로). `/dev/foundation`은 noindex 컴포넌트 시트다. `/admin`은 `ADMIN_EMAILS`에 든 로그인 이메일만 — 아니면 404(403 아님), robots·nav 에 두지 않는다. 읽기 전용(`lib/admin.ts`), 쓰기 동작은 넣지 않는다.
 - `src/app/api/` — route handler. `companies/suggest`(입구 자동완성 — **사업자번호는 응답에 싣지 않는다**), `companies/[bizrno]/profile`, 유사 공고. 브라우저가 백엔드를 직접 안 치게 하는 자리.
 - `src/components/` — `entry/`·`results/`·`company/`·`notice/`·`board/`(옛 대화형 보드, 일부만 생존) + `ui/`(shadcn). `JsonLd.tsx` 가 구조화 데이터 주입을 한 곳에 모은다.
 - SEO 비중이 크다 — 회사·공고 페이지의 메타·canonical·JSON-LD·색인 제외 규칙은 각각 이유가 있다(비공개 요청 0037, 깡통·폐업 noindex, **제목·설명에 수주 건수·평균 투찰률 비노출** 2026-09-22). 옮기거나 고칠 때 주석을 먼저 읽는다.
