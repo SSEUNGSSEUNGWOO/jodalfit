@@ -13,8 +13,11 @@ export type NavUser = {
   reviewedCount: number;
 };
 
+// 공고·기업 목록은 그동안 사이트맵과 검색엔진으로만 닿았다(2026-10-26). 회사 상세는 "기업" 아래로 — 전엔 "추천" 이 켜졌다.
 const LINKS = [
-  { href: "/recommendations", label: "추천", match: /^\/(recommendations|companies\/[0-9])/ },
+  { href: "/recommendations", label: "추천", match: /^\/recommendations/ },
+  { href: "/notices", label: "공고", match: /^\/notices/ },
+  { href: "/companies", label: "기업", match: /^\/companies/ },
   { href: "/saved", label: "검토함", match: /^\/saved/ },
   { href: "/changelog", label: "개선 기록", match: /^\/changelog/ },
 ];

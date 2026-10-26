@@ -8,6 +8,7 @@ export function SiteFooter({ updatedAt }: { updatedAt?: string }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <span>나라장터(국가종합전자조달) 공공데이터 기반 · 매일 05:00 갱신{updatedAt ? ` · 기준일 ${updatedAt}` : ""}</span>
         <span className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link href="/about" className="u-link">소개</Link>
           <Link href="/faq" className="u-link">자주 묻는 질문</Link>
           <Link href="/terms" className="u-link text-ink">이용약관</Link>
           <Link href="/privacy" className="u-link text-ink">개인정보처리방침</Link>
