@@ -273,7 +273,7 @@ function Contact() {
   return (
     <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-ink pt-5">
       <p className="m-0 text-[14px] text-ink-g break-keep">
-        문의 · 제안 · 오류 제보 <a href="/feedback?from=%2Fabout" className="u-link ml-1 font-medium text-ink">의견 보내기</a> · <a href="mailto:jsw7980@gmail.com" className="u-link text-ink">jsw7980@gmail.com</a>
+        문의 · 제안 · 오류 제보 <a href="/feedback?from=%2Fabout" className="u-link ml-1 font-medium text-ink">의견 보내기</a> · <a href="mailto:jansseung@gmail.com" className="u-link text-ink">jansseung@gmail.com</a>
       </p>
       <Btn variant="dark" href="/">회사로 찾기</Btn>
     </div>

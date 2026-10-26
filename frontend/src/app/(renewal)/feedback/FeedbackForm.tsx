@@ -36,7 +36,7 @@ export function FeedbackForm({ initialEmail, page }: { initialEmail: string; pag
       if (!res.ok) throw new Error(String(res.status));
       setDone(true);
     } catch {
-      setErr("보내지 못했습니다. 잠시 뒤 다시 보내거나 jsw7980@gmail.com 으로 보내 주시면 됩니다.");
+      setErr("보내지 못했습니다. 잠시 뒤 다시 보내거나 jansseung@gmail.com 으로 보내 주시면 됩니다.");
       setBusy(false);
     }
   }
