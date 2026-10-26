@@ -90,7 +90,7 @@ def main():
                 health: document.querySelectorAll('[data-admin=health] dt').length,
                 visitsText: document.querySelector('[data-admin=visits]').innerText,
                 h1: document.querySelector('h1').textContent.trim() })""")
-            assert s["panels"] == ["funnel", "visits", "health", "zero", "users", "searches", "saved", "reviewed"], s
+            assert s["panels"] == ["funnel", "visits", "health", "zero", "feedback", "users", "searches", "saved", "reviewed"], s
             assert s["funnel"] == 7 and s["daily"] == 7 and s["health"] == 3 and s["h1"].startswith("관리"), s
             # PostHog 키가 없으면 안내 한 줄, 있으면 세 표(날짜·페이지·유입)
             assert ("미설정" in s["visitsText"]) or ("유입" in s["visitsText"] and "페이지뷰" in s["visitsText"]), s["visitsText"][:200]
@@ -111,7 +111,7 @@ def main():
             admin(url, srv, "DELETE", f"/admin/users/{a['id']}")
             admin(url, srv, "DELETE", f"/admin/users/{n['id']}")
         b.close()
-        print("ok admin: guest 404 · robots 없음 · 관리자 200 · 판 8 · 깔때기 7+일별 7 · 건강 3 · 방문 판 · 마스킹 · 390 · 일반 사용자 404")
+        print("ok admin: guest 404 · robots 없음 · 관리자 200 · 판 9 · 깔때기 7+일별 7 · 건강 3 · 방문 판 · 의견 판 · 마스킹 · 390 · 일반 사용자 404")
         return 0
 
 if __name__ == "__main__":

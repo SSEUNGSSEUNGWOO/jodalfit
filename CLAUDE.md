@@ -57,7 +57,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 결과는 `docs/recommender/exp-YYYY-MM-DD-<주제>.md`(실험 기록) + `docs/recommender/changelog.md`(사용자 언어로 "무엇이 왜 달라졌나")에 남긴다. 운영 전환 스위치(`RECO_RETRIEVAL`, `EMBED_SPACE`, `*_PROVIDER`)는 환경변수 하나로 롤백되게 유지한다.
 
 ### backend 구조
-- `app/api/` — 라우터 (recommendations, events=행동 로깅, qualifications=자격 라벨)
+- `app/api/` — 라우터 (recommendations, events=행동 로깅, qualifications=자격 라벨, feedback=`/feedback` 폼 수신 → 0061 `feedback` 테이블, `/admin` 이 읽는다)
 - `app/core/` — pydantic-settings config(환경변수 스위치는 전부 여기, 주석에 근거 문서 링크), rate_limit, bot_guard, traffic_source, timing(Server-Timing)
 - `app/services/` — supabase/openai/anthropic 클라이언트, embedding(공간 스위치+캐시)·local_embed(KURE), recommend(후보 검색+v1), recommendation_cache, explain, doc_extract(hwp/hwpx/pdf/xlsx 본문)·notice_insights(LLM 구조화), viz(임베딩 시각화), search_log, notice_events
 - `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative) + evaluation(지표 순수 함수)

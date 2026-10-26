@@ -28,6 +28,7 @@ export type SearchRow = {
 export type UserRow = { id: string; email: string; createdAt: string; lastSignInAt: string | null; confirmed: boolean; saved: number; reviewed: number };
 export type SavedRow = { at: string; user: string; bizrnoNorm: string; name: string };
 export type ReviewedRow = { at: string; user: string; bidNtceNo: string; title: string };
+export type FeedbackRow = { id: number; at: string; kind: "idea" | "question" | "bug"; message: string; email: string | null; page: string | null; handled: boolean };
 export type Funnel = { searches: number; visitors: number; identified: number; clicks: number; signups: number; saved: number; reviewed: number };
 export type Health = { errorRate: number | null; zeroRate: number | null; p50: number | null };   // 비율은 0~1, p50 은 ms. 검색 0건이면 null
 export type Visits = {
@@ -45,6 +46,7 @@ export type AdminData = {
   health: { today: Health; week: Health };
   zeroQueries: SearchRow[];              // 7일, 결과 0건(오류 제외), 최신순
   visits: Visits;
+  feedback: FeedbackRow[];               // 최근 50, 최신순 (0061)
   users: UserRow[];
   searches: SearchRow[];                 // 최근 7일, 최신순, 최대 200
   savedRows: SavedRow[];
@@ -126,7 +128,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   const weekStart = new Date(todayStart.getTime() - 6 * 86_400_000);
   const since = weekStart.toISOString();
 
-  const [logs, events, usersRes, saved, reviewed, visits] = await Promise.all([
+  const [logs, events, usersRes, saved, reviewed, visits, fb] = await Promise.all([
     sb.from("search_logs")
       .select("created_at,query,mode,matched_corp_nm,matched_bizrno,result_count,has_error,ip_hash,referer,latency_ms")
       .gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).limit(1000),
@@ -136,6 +138,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     sb.from("saved_companies").select("user_id,bizrno_norm,created_at").order("created_at", { ascending: false }).limit(200),
     sb.from("reviewed_notices").select("user_id,bid_ntce_no,bid_ntce_ord,created_at").order("created_at", { ascending: false }).limit(200),
     fetchVisits(todayKst),
+    sb.from("feedback").select("id,created_at,kind,message,email,page,handled_at").order("created_at", { ascending: false }).limit(50),
   ]);
 
   // 로컬 개발 서버(check_*.py 검증)도 운영 DB 에 source='user' 로 남는다 — referer 가 localhost 면 사람이 아니다(2026-10-26 화면에서 확인)
@@ -194,6 +197,8 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     health: { today: health(todayStart), week: health(weekStart) },
     zeroQueries: logRows.filter((r) => !r.has_error && r.result_count === 0).slice(0, 50).map(toRow),
     visits,
+    feedback: ((fb.data ?? []) as { id: number; created_at: string; kind: FeedbackRow["kind"]; message: string; email: string | null; page: string | null; handled_at: string | null }[])
+      .map((r) => ({ id: r.id, at: r.created_at, kind: r.kind, message: r.message, email: r.email, page: r.page, handled: !!r.handled_at })),
     users: users
       .slice()
       .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))

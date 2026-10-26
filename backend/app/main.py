@@ -10,6 +10,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from starlette.requests import Request
 
 from app.api.events import router as events_router
+from app.api.feedback import router as feedback_router
 from app.api.qualifications import router as qualifications_router
 from app.api.recommendations import router as recommendations_router
 from app.core.config import get_settings
@@ -103,4 +104,5 @@ def health() -> dict[str, str]:
 
 app.include_router(recommendations_router)
 app.include_router(events_router)
+app.include_router(feedback_router)
 app.include_router(qualifications_router)

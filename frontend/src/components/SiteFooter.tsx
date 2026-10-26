@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FeedbackLink } from "@/components/FeedbackLink";
 
 /** 바닥 — 출처·갱신(카피 원칙: 상시 명시), 약관·개인정보·비공개 요청, 문의. 공문 톤. */
 export function SiteFooter({ updatedAt }: { updatedAt?: string }) {
@@ -11,7 +12,7 @@ export function SiteFooter({ updatedAt }: { updatedAt?: string }) {
           <Link href="/terms" className="u-link text-ink">이용약관</Link>
           <Link href="/privacy" className="u-link text-ink">개인정보처리방침</Link>
           <Link href="/privacy#company-optout" className="u-link">기업 정보 비공개 요청</Link>
-          <a href="mailto:jsw7980@gmail.com?subject=%EC%A1%B0%EB%8B%AC%ED%95%8F%20%EB%AC%B8%EC%9D%98" className="u-link">문의</a>
+          <FeedbackLink className="u-link text-ink">의견·문의</FeedbackLink>
         </span>
       </div>
       <p className="mt-2">추천은 검토 순서이며 낙찰을 예측하지 않습니다. © {new Date().getFullYear()} 조달핏</p>

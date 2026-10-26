@@ -33,6 +33,7 @@ const HEALTH: { k: keyof Health; label: string; f: (v: number | null) => string;
   { k: "zeroRate", label: "결과 0건 비율", f: pct, h: "오류 아닌데 0건" },
   { k: "p50", label: "p50 응답", f: ms, h: "추천 API latency_ms" },
 ];
+const KIND_LABEL = { idea: "의견", question: "문의", bug: "오류 제보" } as const;
 const TYPE_LABEL: Record<string, string> = { home: "홈", company: "회사 페이지", companies: "회사 목록", notice: "공고 페이지", notices: "공고 목록", results: "추천 결과", saved: "검토함", auth: "로그인·가입", other: "그 밖" };
 
 export default async function AdminPage() {
@@ -112,6 +113,21 @@ export default async function AdminPage() {
           />
         </Panel>
       </div>
+
+      <Panel className="mt-[14px]" data-admin="feedback">
+        <PanelHead title="의견·문의" small="최근 50 · /feedback" summary={[<span key="n">답장은 적힌 이메일로 직접 · 처리 표시는 Supabase feedback.handled_at</span>]} />
+        <Table
+          head={["시각", "종류", "내용", "답장 주소", "보낸 페이지"]}
+          rows={d.feedback.map((f) => [
+            t(f.at),
+            <span key="k" className={f.kind === "bug" ? "text-orange-ink" : undefined}>{KIND_LABEL[f.kind]}</span>,
+            <span key="m" className={`whitespace-pre-wrap break-keep ${f.handled ? "text-ink-mute" : ""}`}>{f.message}</span>,
+            f.email ? <a key="e" href={`mailto:${f.email}`} className="u-link">{f.email}</a> : "—",
+            f.page ? f.page.replace(/^https?:\/\/(www\.)?jodalfit\.co\.kr/, "") : "—",
+          ])}
+          empty="아직 들어온 의견·문의가 없습니다."
+        />
+      </Panel>
 
       <Panel className="mt-[14px]" data-admin="users">
         <PanelHead title="가입자" small={`${d.users.length}명`} />
