@@ -6,7 +6,8 @@
 
 비로그인: /admin 은 404(403 아님 — 경로 존재를 알리지 않는다). robots.txt 에 admin 이 없다.
 로그인(키 있을 때만): 서버가 ADMIN_EMAILS 에 `@jodalfit.test` 주소를 갖고 있어야 한다 — ADMIN_TEST_EMAIL 로 알려 준다(기본 check-admin@jodalfit.test).
-  Admin API 로 그 사용자 생성 → /login → /admin 200 · 판 5(깔때기·가입자·검색·저장·검토) · 깔때기 숫자 7개 · 가입자 표에 본인(마스킹) ·
+  Admin API 로 그 사용자 생성 → /login → /admin 200 · 판 8(깔때기·방문·건강·0건·가입자·검색·저장·검토) · 깔때기 7 + 날짜별 7행 · 건강 3 ·
+  방문 판은 PostHog 키 없으면 "미설정" 한 줄, 있으면 표 3 · 가입자 표에 본인(마스킹) ·
   원문 이메일 비노출 · 금지어 0 · 주황 면 0 · 390 → 일반 사용자는 404 → 사용자 삭제.
 """
 import json, os, re, sys, urllib.request
@@ -84,10 +85,15 @@ def main():
             assert r.status == 200, f"관리자 /admin 이 {r.status} — 서버 ADMIN_EMAILS 에 {ADMIN_EMAIL} 가 있어야 한다"
             txt = rules(pg)
             s = pg.evaluate("""() => ({ panels: [...document.querySelectorAll('[data-admin]')].map(e => e.dataset.admin),
-                funnel: document.querySelectorAll('[data-admin=funnel] dt').length,
+                funnel: document.querySelectorAll('[data-admin=funnel] dl dt').length,
+                daily: document.querySelectorAll('[data-admin-daily] tbody tr').length,
+                health: document.querySelectorAll('[data-admin=health] dt').length,
+                visitsText: document.querySelector('[data-admin=visits]').innerText,
                 h1: document.querySelector('h1').textContent.trim() })""")
-            assert s["panels"] == ["funnel", "users", "searches", "saved", "reviewed"], s
-            assert s["funnel"] == 7 and s["h1"].startswith("관리"), s
+            assert s["panels"] == ["funnel", "visits", "health", "zero", "users", "searches", "saved", "reviewed"], s
+            assert s["funnel"] == 7 and s["daily"] == 7 and s["health"] == 3 and s["h1"].startswith("관리"), s
+            # PostHog 키가 없으면 안내 한 줄, 있으면 세 표(날짜·페이지·유입)
+            assert ("미설정" in s["visitsText"]) or ("유입" in s["visitsText"] and "페이지뷰" in s["visitsText"]), s["visitsText"][:200]
             assert "ch***@jodalfit.test" in txt, "가입자 표에 본인(마스킹)이 없다"
             assert ADMIN_EMAIL not in txt.replace("ch***@jodalfit.test", ""), "원문 이메일이 화면에 보인다"
             pg.screenshot(path=str(OUT / "_shot_admin.png"), full_page=True)
@@ -105,7 +111,7 @@ def main():
             admin(url, srv, "DELETE", f"/admin/users/{a['id']}")
             admin(url, srv, "DELETE", f"/admin/users/{n['id']}")
         b.close()
-        print("ok admin: guest 404 · robots 없음 · 관리자 200 · 판 5 · 깔때기 7 · 마스킹 · 390 · 일반 사용자 404")
+        print("ok admin: guest 404 · robots 없음 · 관리자 200 · 판 8 · 깔때기 7+일별 7 · 건강 3 · 방문 판 · 마스킹 · 390 · 일반 사용자 404")
         return 0
 
 if __name__ == "__main__":

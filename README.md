@@ -410,6 +410,7 @@ uv run python -m jobs.verify_setup
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon 키 (frontend 전용) |
 | `NEXT_PUBLIC_EMBED_SPACE` | `openai`(기본) / `kure` — 직접 RPC 호출·벡터 컬럼 분기. 백엔드 `EMBED_SPACE` 와 같이 바꾼다 |
 | `ADMIN_EMAILS` | `/admin`(읽기 전용 운영 숫자)을 볼 수 있는 로그인 이메일, 쉼표 구분. 비우면 아무도 못 본다(404) |
+| `POSTHOG_PERSONAL_API_KEY` · `POSTHOG_PROJECT_ID` | `/admin` 방문 판(페이지뷰·방문자·유입)이 PostHog 쿼리 API 를 읽는 개인 키(`phx_…`, Settings → Personal API keys, 읽기 권한)와 프로젝트 번호. 없으면 그 판만 "미설정" |
 
 > ⚠️ **보안 주의**:
 > - `SUPABASE_SERVICE_ROLE_KEY`는 **RLS를 우회하는 admin 권한**. 절대 frontend나 git에 노출 금지.
