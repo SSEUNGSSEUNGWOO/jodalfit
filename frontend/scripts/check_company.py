@@ -47,6 +47,8 @@ def main() -> None:
         assert s["ogSite"] == "조달핏", f"og:site_name {s['ogSite']!r} — 페이지 openGraph 가 루트를 덮는다"
         assert not s["over"], "가로 넘침"
         assert "검토할 공고" in txt, "추천 판이 없다"
+        # 결과 화면으로 가는 길 (2026-10-26) — 회사 페이지 방문자의 4% 만 추천 결과에 닿았다
+        assert pg.locator('[data-reco-cta] a[href="/recommendations?company=1248177731"]').count() == 1, "추천 전체 보기 링크가 없다"
         assert "수주 이력" in txt or "계약" in txt, "수주 이력 판이 없다"
         # 사업자번호는 마스킹된 형태만
         assert "124-81-77731" not in txt, "사업자번호가 그대로 보인다"

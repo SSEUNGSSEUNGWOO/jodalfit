@@ -9,6 +9,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Btn } from "@/components/Btn";
 import { AwardsPanel, ContractsPanel, Panel, PeersPanel } from "@/components/company/CompanyPanels";
 import { JsonLd } from "@/components/JsonLd";
 import { ResultRows } from "@/components/results/ResultRows";
@@ -230,7 +231,9 @@ async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: str
     >
       {results.length === 0 ? (
         <p className="mt-3 text-[14px] leading-[1.75] text-ink-g">
-          현재 추천 기준으로 검토할 공고가 없습니다. 업종이나 품목으로도 검색할 수 있습니다.
+          현재 추천 기준으로 검토할 공고가 없습니다. 업종이나 품목을 글로 적어{" "}
+          <a href={`/recommendations?q=${encodeURIComponent(corpNm)}`} className="border-b border-field text-ink hover:border-orange">키워드로 찾는 방법</a>
+          도 있습니다.
         </p>
       ) : (
         <div className="mt-1">
@@ -245,6 +248,12 @@ async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: str
           />
         </div>
       )}
+      {/* 추천 결과 화면으로 가는 길 — 7일 방문자 4,717 중 회사 페이지 3,531·추천 결과 146(2026-10-26 방문 판). 이 페이지는
+          캐시된 목록만 보여주고 근거 설명·사전규격(골든타임)·발주계획·인쇄는 결과 화면에 있는데, 거기로 가는 링크가 없었다. */}
+      <div data-reco-cta className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-4">
+        <p className="m-0 text-[13px] leading-[1.6] text-ink-g">추천 근거와 자격 판정, 공고 전 단계(사전규격·발주계획)는 결과 화면에서 봅니다.</p>
+        <Btn variant="dark" href={`/recommendations?company=${bizrnoNorm}`} className="h-[38px] px-4 text-[13.5px]">이 회사 추천 전체 보기 →</Btn>
+      </div>
     </Panel>
   );
 }
