@@ -108,6 +108,16 @@ def main() -> None:
         pg2.goto(URL, wait_until="networkidle", timeout=30000)
         assert not pg2.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "390 가로 넘침"
         pg2.screenshot(path=str(OUT / "_shot_entry_390.png"), full_page=True)
+        # 390 햄버거 메뉴 (2026-10-26) — 섹션 링크는 숨고 ≡ 안에 다 있다. 열고 → 항목 5 → Esc 로 닫힘
+        m = pg2.evaluate("() => ({ visible: [...document.querySelectorAll('nav > a:not([href^=\"/login\"])')].filter(a => a.offsetParent).length, btn: !!document.querySelector('[data-nav-menu]'), open: !!document.querySelector('[data-section-menu]') })")
+        assert m["visible"] == 0 and m["btn"] and not m["open"], m
+        pg2.click("[data-nav-menu]"); pg2.wait_for_selector("[data-section-menu]")
+        items = pg2.evaluate("() => [...document.querySelectorAll('[data-section-menu] a')].map(a => a.textContent.trim())")
+        assert items == ["추천", "공고", "기업", "검토함", "개선 기록"], items
+        assert not pg2.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "메뉴 열었을 때 가로 넘침"
+        pg2.screenshot(path=str(OUT / "_shot_entry_390_menu.png"), clip={"x": 0, "y": 0, "width": 390, "height": 320})
+        pg2.keyboard.press("Escape"); pg2.wait_for_timeout(100)
+        assert not pg2.query_selector("[data-section-menu]"), "Esc 로 메뉴가 안 닫힌다"
         b.close()
     print(f"ok entry: 숫자 {nums[:3]} · 목록 {rows}행 · 자동완성 {n}행 · 고르면 {picked.split('?')[-1][:40]}")
 
