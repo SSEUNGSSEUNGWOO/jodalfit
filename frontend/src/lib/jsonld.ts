@@ -16,8 +16,10 @@ export function organizationJsonLd(): Json {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "jodalfit",
-    alternateName: "조달핏", // AI 답변·검색은 한글 이름으로 묻는다 — 같은 서비스로 묶이게(GEO, 2026-10-24)
+    // 한글이 주 이름이다 — 구글 검색결과의 사이트명은 WebSite/Organization 의 name 을 쓰고, 영문이면
+    // 도메인(jodalfit.co.kr)으로 대체됐다(2026-10-26 확인). AI 답변·검색도 한글 이름으로 묻는다(GEO, 2026-10-24).
+    name: "조달핏",
+    alternateName: "jodalfit",
     url: SITE_URL,
     logo: `${SITE_URL}/icon.svg`,
     description:
@@ -26,14 +28,14 @@ export function organizationJsonLd(): Json {
   };
 }
 
-/** 사이트 검색박스 — 구글이 사이트링크 검색박스 노출에 사용. */
+/** 사이트 이름(검색결과 첫 줄 "조달핏") + 검색박스 — 구글은 홈의 WebSite.name 을 사이트명으로 쓴다. */
 export function websiteJsonLd(): Json {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     url: SITE_URL,
-    name: "jodalfit",
-    alternateName: "조달핏",
+    name: "조달핏",
+    alternateName: "jodalfit",
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -79,6 +81,24 @@ export function companyOrganizationJsonLd(args: {
   return data;
 }
 
+/** 회사 페이지 브레드크럼 — 검색결과 둘째 줄이 "jodalfit.co.kr › companies" 대신 "조달핏 › 공공조달 활동 기업 › 대구광역시 › 회사명"
+ *  으로 나오게(경쟁 페이지는 지역까지 보여 준다, 2026-10-26). sido 는 /companies/browse/[sido]/1 이 있는 시·도만 넣는다 —
+ *  구글은 마지막 항목 외엔 item(URL)이 필수다. */
+export function companyBreadcrumbJsonLd(args: { bizrnoNorm: string; corpNm: string; sido?: string | null }): Json {
+  const { bizrnoNorm, corpNm, sido } = args;
+  const items: Json[] = [
+    { "@type": "ListItem", name: "홈", item: SITE_URL },
+    { "@type": "ListItem", name: "공공조달 활동 기업", item: `${SITE_URL}/companies` },
+  ];
+  if (sido) items.push({ "@type": "ListItem", name: sido, item: `${SITE_URL}/companies/browse/${encodeURIComponent(sido)}/1` });
+  items.push({ "@type": "ListItem", name: corpNm, item: `${SITE_URL}/companies/${bizrnoNorm}` });
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({ ...it, position: i + 1 })),
+  };
+}
+
 /** 입찰공고 상세 — WebPage + BreadcrumbList.
  *  (GovernmentService는 "기관이 제공하는 행정 서비스" 의미라 입찰공고에 맞지 않음) */
 export function noticeJsonLd(args: {
@@ -98,7 +118,7 @@ export function noticeJsonLd(args: {
     name: bidNtceNm,
     description,
     url,
-    isPartOf: { "@type": "WebSite", url: SITE_URL, name: "jodalfit" },
+    isPartOf: { "@type": "WebSite", url: SITE_URL, name: "조달핏" },
   };
   if (instituionName) {
     page.about = { "@type": "GovernmentOrganization", name: instituionName };

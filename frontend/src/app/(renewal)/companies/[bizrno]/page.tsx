@@ -16,6 +16,7 @@ import { StarCompany } from "@/components/StarCompany";
 import { getRecommendations } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import {
+  BROWSE_SIDO_LIST,
   fetchCompanyAwards,
   fetchCompanyByBizrno,
   fetchCompanyContracts,
@@ -24,7 +25,7 @@ import {
   summarizeAwards,
   summarizeContracts,
 } from "@/lib/company";
-import { companyOrganizationJsonLd } from "@/lib/jsonld";
+import { companyBreadcrumbJsonLd, companyOrganizationJsonLd } from "@/lib/jsonld";
 import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";
 import { maskBizrno } from "@/lib/utils";
 
@@ -83,10 +84,16 @@ export default async function CompanyPage({ params }: Props) {
   ]);
   const awardSummary = summarizeAwards(awards);
   const sectors = summarizeContracts(contracts);
+  // 브레드크럼의 시·도 칸은 지역별 목록 페이지가 있는 이름만 (rgn_nm 첫 토큰, 개편 전 이름은 그대로 — 목록도 like 로 같은 기준)
+  const sidoToken = (company.rgn_nm || "").split(" ")[0];
+  const sido = (BROWSE_SIDO_LIST as readonly string[]).includes(sidoToken) ? sidoToken : null;
 
   return (
     <div className="pb-20">
-      <JsonLd data={companyOrganizationJsonLd({ bizrnoNorm: normalized, corpNm: company.corp_nm, rgnNm: company.rgn_nm })} />
+      <JsonLd data={[
+        companyOrganizationJsonLd({ bizrnoNorm: normalized, corpNm: company.corp_nm, rgnNm: company.rgn_nm }),
+        companyBreadcrumbJsonLd({ bizrnoNorm: normalized, corpNm: company.corp_nm, sido }),
+      ]} />
 
       <header className="mt-8 border-b border-ink pb-3.5 max-sm:mt-5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
