@@ -399,6 +399,8 @@ uv run python -m jobs.verify_setup
 | `EMBED_SPACE` | 임베딩 공간 `openai`(1536d, `embedding`) / `kure`(1024d, `embedding_k`+`_k` RPC, 0045 필요). 롤백 = 이 값 하나 | `openai` |
 | `KURE_MODEL_DIR` | KURE ONNX 모델 캐시 경로. 비우면 임시 폴더 → Railway 재시작마다 409MB 재다운로드. 영구 볼륨을 가리킬 것 | `/data/kure` |
 | `INDEXNOW_KEY` | (선택) IndexNow 키 — `jobs.ping_indexnow`(매시, Bing·네이버). 비우면 코드의 기본 키. 바꾸면 `frontend/public/<key>.txt` 도 같이 | (비움) |
+| `RESEND_API_KEY` | (선택) `/feedback` 접수 때 운영자 알림 메일(발신 `noreply@jodalfit.co.kr`). 비우면 DB 저장만. Supabase SMTP 와 별도 키를 발급해 둔다(하나를 갈아도 다른 쪽이 안 죽게) | `re_...` |
+| `FEEDBACK_NOTIFY_TO` | 알림 받을 주소 | `jansseung@gmail.com` |
 
 `frontend/.env.local`:
 

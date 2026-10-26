@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     # KURE ONNX 모델 캐시 폴더. 미설정 시 임시 폴더(Railway 는 재시작마다 재다운로드 ~409MB).
     kure_model_dir: str | None = None
 
+    # /feedback 알림 메일 — Resend API 키(Sending access). 비우면 DB 저장만 하고 메일은 안 보낸다.
+    # 발신 noreply@jodalfit.co.kr 은 Supabase SMTP 와 같은 Resend 도메인(DKIM 인증 완료).
+    resend_api_key: str | None = None
+    feedback_notify_to: str = "jansseung@gmail.com"
+
 
 @lru_cache
 def get_settings() -> Settings:
