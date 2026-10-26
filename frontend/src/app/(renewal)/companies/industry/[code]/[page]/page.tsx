@@ -17,12 +17,8 @@ interface Props {
 
 // 업종별 집계 페이지 — "○○공사업 업체" 류 롱테일 검색의 착지점. 회사명 검색은 취업·신용
 // 포털이 상단을 차지해 CTR 2%대지만, 집계 페이지는 조달핏만 가진 데이터로 1등을 노릴 수 있다.
-// 원천 MV가 하루 한 번 갱신이라 ISR 하루. 빈 generateStaticParams가 있어야 ●(ISR)로 빌드된다.
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return [];
-}
+// 빌드 때 미리 만들 수 없다 — generateStaticParams 를 두면 운영에서 DYNAMIC_SERVER_USAGE 로 500 이 난다
+// (리뉴얼 레이아웃의 nav 가 쿠키를 읽는다. 회사·공고 페이지와 같은 원인, 2026-10-26 발견). 동적(ƒ)으로 둔다.
 
 function parseParams(code: string, page: string) {
   const pageNo = parseInt(page, 10);

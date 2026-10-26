@@ -15,12 +15,8 @@ interface Props {
 }
 
 // 사이트맵에만 있고 내부 링크로 닿지 않던 6만 회사 페이지의 크롤 경로.
-// 데이터가 매일 갱신이라 ISR 하루. 빈 generateStaticParams가 있어야 ●(ISR)로 빌드된다.
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return [];
-}
+// 빌드 때 미리 만들 수 없다 — generateStaticParams 를 두면 운영에서 DYNAMIC_SERVER_USAGE 로 500 이 난다
+// (리뉴얼 레이아웃의 nav 가 쿠키를 읽는다. 회사·공고 페이지와 같은 원인, 2026-10-26 발견). 동적(ƒ)으로 둔다.
 
 function parseParams(sido: string, page: string) {
   const decoded = decodeURIComponent(sido);
