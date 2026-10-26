@@ -15,13 +15,17 @@ export async function GET(req: Request) {
   const q = (new URL(req.url).searchParams.get("q") ?? "").trim();
   // 두 글자 미만은 후보가 수천 개라 의미가 없다 — 프로토타입과 같은 문턱.
   if (q.length < 2) return NextResponse.json<CompanySuggestion[]>([]);
+  // 회사명은 50자를 넘지 않는다 — 긴 q 는 캐시를 비켜 가는 trigram 검색만 만든다.
+  if (q.length > 50) return NextResponse.json<CompanySuggestion[]>([]);
+  // ilike 와일드카드(% _ \)는 이름 글자로 취급한다.
+  const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
 
   const sb = getServerSupabase();
   // ilike 는 pg_trgm 인덱스를 탄다(companies_corp_nm_trgm). 벡터가 있는 회사만 — 추천이 되는 회사라야 고를 값이 있다.
   const { data, error } = await sb
     .from("companies")
     .select("bizrno,corp_nm,rgn_nm")
-    .ilike("corp_nm", `%${q}%`)
+    .ilike("corp_nm", pattern)
     .is("optout_at", null)
     .not("embedding_k", "is", null)
     .order("contract_count", { ascending: false, nullsFirst: false })

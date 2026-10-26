@@ -26,7 +26,13 @@ def main() -> None:
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page(viewport={"width": 1280, "height": 900}, device_scale_factor=2)
-        pg.goto(URL, wait_until="networkidle", timeout=30000)
+        resp = pg.goto(URL, wait_until="networkidle", timeout=30000)
+        # 보안 헤더(next.config.ts SECURITY_HEADERS, 2026-10-26) — 로그인 화면 클릭재킹 차단·MIME 스니핑 금지
+        h = {k.lower(): v for k, v in (resp.headers if resp else {}).items()}
+        assert h.get("x-frame-options") == "DENY", f"X-Frame-Options 없음: {h.get('x-frame-options')!r}"
+        assert h.get("x-content-type-options") == "nosniff", "X-Content-Type-Options 없음"
+        assert "frame-ancestors 'none'" in h.get("content-security-policy", ""), "CSP frame-ancestors 없음"
+        assert "x-powered-by" not in h, "X-Powered-By 가 노출된다"
 
         txt = pg.evaluate("document.body.innerText")
         bad = [w for w in BANNED if w in txt]

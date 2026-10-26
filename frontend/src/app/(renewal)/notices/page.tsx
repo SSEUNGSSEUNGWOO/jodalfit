@@ -12,6 +12,7 @@ import {
   type NoticeFilters,
 } from "@/lib/notice";
 import { cn } from "@/lib/utils";
+import { BROWSE_SIDO_LIST } from "@/lib/company";
 
 interface Props {
   searchParams: Promise<{
@@ -86,7 +87,8 @@ function parseFilters(s: Awaited<Props["searchParams"]>): NoticeFilters {
   if (s.price === "lt1" || s.price === "1to10" || s.price === "10to50" || s.price === "gt50") {
     f.priceBucket = s.price;
   }
-  if (s.rgn) f.rgn = s.rgn;
+  // 시·도 목록에 있는 값만 — 임의 문자열이 ilike 패턴으로 들어가지 않게(2026-10-26 보안 점검).
+  if (s.rgn && (BROWSE_SIDO_LIST as readonly string[]).includes(s.rgn)) f.rgn = s.rgn;
   if (isCategory(s.cat)) f.category = s.cat;
   if (s.sort === "price_desc" || s.sort === "ntce_desc" || s.sort === "close") {
     f.sort = s.sort;

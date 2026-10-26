@@ -1,6 +1,7 @@
 // frontend/src/proxy.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
 let warned = false;
 
@@ -14,6 +15,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll() { return request.cookies.getAll(); },
       setAll(cookiesToSet, headers?: Record<string, string>) {

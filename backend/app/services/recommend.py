@@ -1054,8 +1054,14 @@ def _recommend_by_company(
             "order_plan_results": [],
         }
     if company.get("is_restricted"):
+        # 행을 통째로 내보내지 않는다 — embedding·ceo_nm·optout_at 까지 응답에 실렸다(2026-10-26 보안 점검).
         return {
-            "company": company,
+            "company": {
+                "bizrno": company["bizrno"],
+                "corp_nm": company["corp_nm"],
+                "rgn_nm": company.get("rgn_nm"),
+                "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
+            },
             "mode": "company",
             "error": "부정당 제재 회사입니다",
             "results": [],

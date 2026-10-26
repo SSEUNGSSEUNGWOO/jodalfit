@@ -12,6 +12,8 @@ search_logs·notice_events가 한 테이블에 섞여 있으면 "검색 8만 건
 
 from __future__ import annotations
 
+import hmac
+
 from fastapi import Request
 
 from app.core.config import get_settings
@@ -51,7 +53,7 @@ _BOT_UA = (
 
 def classify(user_agent: str | None, internal_token: str | None, expected_token: str | None) -> str:
     """순수 함수 — 테스트 가능하게 헤더 값만 받는다."""
-    if expected_token and internal_token == expected_token:
+    if expected_token and hmac.compare_digest(internal_token or "", expected_token):
         return INTERNAL
     ua = (user_agent or "").lower()
     if not ua:

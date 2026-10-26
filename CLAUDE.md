@@ -83,7 +83,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 나라장터 API 제약이 코드 전반에 배어 있음: 일일 호출 한도(UsrInfoService02 4,500/일), 조회범위 30일 초과 시 에러 → 청크 처리, 429 백오프 등.
 
 ### Supabase migrations
-`supabase/migrations/0001~0060` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
+`supabase/migrations/0001~0062` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
+- **뷰는 RLS 를 우회한다**(`security_invoker` 기본 off → 소유자 권한). 표에 RLS 를 켜도 그 위의 뷰는 anon 키로 읽혔다(2026-10-26, `v_search_logs_*`). 0062 가 public 기본 권한에서 anon/authenticated 를 뺐으니 새 표·뷰는 자동으로 anon 에 안 열린다 — 사용자 세션으로 읽을 표만 명시적으로 `grant` + 정책. 점검은 `docs/security/2026-10-26-review.md`.
 
 ### frontend 구조
 - **모든 페이지가 `src/app/(renewal)/` 안에 있다**(2026-10-24 컷오버). 라우트 그룹이라 URL 은 그대로다 — `(renewal)/companies/[bizrno]` 가 `/companies/[bizrno]` 를 낸다. 그룹 밖에 page.tsx 를 만들면 같은 URL 로 충돌한다.

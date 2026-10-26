@@ -22,7 +22,8 @@ if settings.sentry_dsn:
     import sentry_sdk
 
     # FastAPI 통합은 자동 감지. 미처리 예외 + 로거의 error 이상을 보낸다. 트레이싱은 끔(무료 한도).
-    sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0, send_default_pii=False)
+    # max_request_body_size="never": 기본값(medium)은 예외 때 요청 본문을 같이 보낸다 — /feedback 본문·이메일이 Sentry 로 새는 걸 막는다.
+    sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0, send_default_pii=False, max_request_body_size="never")
 
 logger = logging.getLogger("jodalfit")
 

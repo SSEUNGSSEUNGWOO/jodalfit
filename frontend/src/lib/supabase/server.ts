@@ -2,6 +2,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { SESSION_COOKIE_OPTIONS } from "./cookie-options";
 
 /**
  * 서버 컴포넌트·라우트 핸들러용(anon 키 + 요청 쿠키). 사용자 세션으로 RLS 테이블을 읽고 쓴다.
@@ -12,6 +13,7 @@ import { createServerClient } from "@supabase/ssr";
 export async function getServerSupabase({ strict = false }: { strict?: boolean } = {}) {
   const store = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll() { return store.getAll(); },
       setAll(cookiesToSet) {

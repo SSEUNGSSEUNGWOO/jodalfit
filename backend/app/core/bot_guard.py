@@ -10,6 +10,7 @@ INTERNAL_API_TOKEN이 설정되지 않으면 전체 가드 no-op (개발 편의)
 
 from __future__ import annotations
 
+import hmac
 import time
 from collections import deque
 from threading import Lock
@@ -70,7 +71,7 @@ def guard_external_traffic(request: Request) -> None:
         return
 
     # 내부 호출 우회 (Next.js SSR self-call)
-    if request.headers.get("x-internal-token") == expected:
+    if hmac.compare_digest(request.headers.get("x-internal-token") or "", expected):
         return
 
     _check_global_cap()
