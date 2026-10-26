@@ -103,6 +103,9 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const results = data?.results ?? [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";
   const zero = state === "done" && results.length === 0;
+  // 회사는 찾았는데 등록업종·공급물품이 없어 회사 기준 추천이 안 되는 경우(백엔드 fallback=keywords, 7일 27건 = 빈손 검색의 1/3).
+  // 전엔 "참가 자격이 있는 공고가 없습니다"(ZeroBlock)로 보여 사실과 달랐다 — 자격을 본 게 아니라 기준이 없었던 것.
+  const noInfo = zero && !!data?.error && data?.fallback === "keywords" && !!data?.company;
 
   // 계산해서 받은 결과만 남긴다. 회사를 못 찾아 키워드로 넘어가는 응답은 남기지 않는다(곧 다른 주소로 간다).
   useEffect(() => {
@@ -153,7 +156,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
         </div>
       )}
 
-      {mode === "company" && !error && (
+      {mode === "company" && !error && !noInfo && (
         <FunnelLine counts={counts} open={state === "done"} />
       )}
 
@@ -176,14 +179,29 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
                 {mode === "company" && co && <a href={loggedIn ? `/recommendations/report?company=${encodeURIComponent(co.bizrno)}` : `/login?next=${encodeURIComponent(`/recommendations/report?company=${co.bizrno}`)}`} className="inline-flex h-9 items-center gap-2 rounded-[6px] border border-field px-3 text-[12.5px] font-medium text-ink-g transition-colors hover:border-ink max-sm:h-8"><span className="max-sm:hidden">인쇄 / PDF 저장</span><span className="hidden max-sm:inline">PDF 저장</span><span aria-hidden="true">↗</span></a>}
               </div>
             )}
-            {zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
+            {noInfo ? <NoInfoBlock corpNm={co?.corp_nm ?? query} />
+                  : zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
                   : <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
             {/* 키워드 모드에도 — 백엔드는 사전규격·발주계획을 두 모드 다 돌려준다(2026-10-26 전엔 회사 모드만 그렸다). */}
             <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
-            {mode === "company" && bizrno && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
+            {mode === "company" && bizrno && !noInfo && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
           </div>
         </Panel>
       )}
+    </div>
+  );
+}
+
+/** 등록정보가 없는 회사 — 회사 기준 추천은 못 하고, 업종·품목을 적게 해 키워드로 넘긴다. 검색창을 바로 둔다(버튼 하나 더 누르게 하지 않는다). */
+function NoInfoBlock({ corpNm }: { corpNm: string }) {
+  return (
+    <div data-noinfo className="pb-[34px] pt-[22px]">
+      <b className="block text-[18px] font-[650] tracking-[-0.015em] text-ink">{corpNm}의 등록업종·공급물품이 나라장터에 없습니다</b>
+      <p className="m-0 mt-1.5 max-w-[640px] text-[14px] leading-[1.7] text-ink-dim">
+        회사 기준 추천은 등록정보로 자격과 적합도를 판정합니다. 기준이 없으니 다루는 업종이나 품목을 적어 주시면 그 말뜻으로 공고를 찾습니다.
+      </p>
+      <div className="mt-[18px] max-w-[720px]"><SearchSuggest autoFocus initialMode="keywords" /></div>
+      <p className="m-0 mt-3 text-[12.5px] text-ink-mute">나라장터에 업종·물품을 등록하면 다음 날부터 회사 기준으로 추천됩니다.</p>
     </div>
   );
 }

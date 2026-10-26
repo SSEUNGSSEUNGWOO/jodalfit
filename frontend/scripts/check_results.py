@@ -14,6 +14,7 @@ BASE = os.environ.get("RESULTS_BASE", "http://localhost:3000")
 OUT = Path(__file__).resolve().parent; ROOT = OUT.parent.parent
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요", "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "주십시오"]
 CO = "1248177731"
+NO_INFO = "1138635250"  # (주)윈디자인 — 등록업종·공급물품 둘 다 없음 → 회사 기준 추천 불가, 키워드 검색창(2026-10-26). 업종이 생기면 바꾼다
 NO_IND = "3208703862"   # 지안관리 주식회사 — 나라장터 등록업종 0건 (면허 확인불가 안내 줄 검사용). 2026-10-26 교체: 전 기준(유원디자인연구소)에 업종 10건이 들어왔다. 실패하면 업종이 생긴 것 — companies 에서 company_industries 행 없는 회사로 바꾼다
 
 def env(path, key):
@@ -124,6 +125,12 @@ def main():
         assert "면허 자격을 판정하지 못했습니다" in (pg.locator("[data-noind]").text_content() or ""), "업종 0건 안내 줄이 없다"
         goto(pg, f"/recommendations?company={CO}", 300); pg.wait_for_selector("[data-res]", timeout=30000)
         assert not pg.query_selector("[data-noind]"), "업종 있는 회사에 업종 0건 안내가 뜬다"
+        # 등록업종·공급물품 둘 다 없는 회사 — "자격 있는 공고가 없다"가 아니라 "등록정보가 없다" + 키워드 검색창(깔때기·회사 옆판 없음)
+        goto(pg, f"/recommendations?company={NO_INFO}"); pg.wait_for_selector("[data-scene]", timeout=10000)
+        pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
+        ni = pg.evaluate("() => ({ block: !!document.querySelector('[data-noinfo]'), zero: !!document.querySelector('[data-zero]'), funnel: !!document.querySelector('[data-funnel]'), side: !!document.querySelector('[data-side]'), mode: document.querySelector('[data-noinfo] [data-suggest]')?.dataset.mode, txt: document.querySelector('[data-noinfo]')?.innerText || '' })")
+        assert ni["block"] and not ni["zero"] and not ni["funnel"] and not ni["side"] and ni["mode"] == "keywords" and "등록업종·공급물품이 나라장터에 없습니다" in ni["txt"], ni
+        pg.screenshot(path=str(OUT / "_shot_results_noinfo.png"), full_page=True)
         # 빈 질의 = 입구로 보낸다(입구는 루트 하나다 — 실사용자 검색의 97.7% 가 / 에서 시작)
         goto(pg, "/recommendations")
         assert pg.url.rstrip("/").endswith(BASE.rstrip("/").split("//")[-1]) or pg.url.rstrip("/") == BASE.rstrip("/"), pg.url

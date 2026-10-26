@@ -29,7 +29,7 @@ const FUNNEL: { k: keyof Funnel; label: string; h: string }[] = [
   { k: "reviewed", label: "공고 검토", h: "검토함" },
 ];
 const HEALTH: { k: keyof Health; label: string; f: (v: number | null) => string; h: string }[] = [
-  { k: "errorRate", label: "오류율", f: pct, h: "사람 검색 중 has_error" },
+  { k: "errorRate", label: "빈손 검색", f: pct, h: "회사 못 찾음·등록정보 없음 포함 — 서버 오류 아님" },
   { k: "zeroRate", label: "결과 0건 비율", f: pct, h: "오류 아닌데 0건" },
   { k: "p50", label: "p50 응답", f: ms, h: "추천 API latency_ms" },
 ];
