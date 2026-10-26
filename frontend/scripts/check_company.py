@@ -19,6 +19,7 @@ RULES = """() => { const cs = e => getComputedStyle(e); const all = [...document
     panels: document.querySelectorAll('section').length,
     jsonld: document.querySelectorAll('script[type="application/ld+json"]').length,
     ld: [...document.querySelectorAll('script[type="application/ld+json"]')].flatMap(s => { const j = JSON.parse(s.textContent); return Array.isArray(j) ? j : [j]; }),
+    ogSite: document.querySelector('meta[property="og:site_name"]')?.content,
     over: document.documentElement.scrollWidth > window.innerWidth } }"""
 
 
@@ -43,6 +44,7 @@ def main() -> None:
         assert all("item" in it for it in crumbs[0]["itemListElement"]), "브레드크럼 항목에 URL 이 없다"
         site = [d for d in s["ld"] if d.get("@type") == "WebSite"]
         assert site and site[0]["name"] == "조달핏", "WebSite 이름이 조달핏이 아니다 (검색결과 사이트명)"
+        assert s["ogSite"] == "조달핏", f"og:site_name {s['ogSite']!r} — 페이지 openGraph 가 루트를 덮는다"
         assert not s["over"], "가로 넘침"
         assert "검토할 공고" in txt, "추천 판이 없다"
         assert "수주 이력" in txt or "계약" in txt, "수주 이력 판이 없다"

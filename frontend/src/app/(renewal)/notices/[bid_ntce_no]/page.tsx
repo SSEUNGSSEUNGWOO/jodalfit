@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: desc,
     alternates: { canonical: `/notices/${bid_ntce_no}` },
-    openGraph: { title: notice.bid_ntce_nm, description: desc, type: "article", locale: "ko_KR" },
+    openGraph: { siteName: "조달핏", title: notice.bid_ntce_nm, description: desc, type: "article", locale: "ko_KR" },
     keywords: [notice.bid_ntce_nm, notice.bid_ntce_no, notice.dmnd_instt_nm ?? "", "공공입찰", "나라장터", "공공조달"].filter(Boolean),
   };
 }

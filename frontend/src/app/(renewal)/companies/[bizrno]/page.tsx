@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: desc,
     alternates: { canonical: `/companies/${normalized}` },
     robots: isThin || isClosed ? { index: false, follow: true } : undefined,
-    openGraph: { title, description: desc, type: "profile", locale: "ko_KR" },
+    openGraph: { siteName: "조달핏", title, description: desc, type: "profile", locale: "ko_KR" },
     keywords: [company.corp_nm, `${company.corp_nm} 입찰`, `${company.corp_nm} 공고`, `${company.corp_nm} 수주`, "공공조달", "나라장터"],
   };
 }
