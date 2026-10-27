@@ -4,7 +4,7 @@
 사용: cd backend && uv run --no-sync python ../frontend/scripts/check_results.py   (RESULTS_BASE 기본 http://localhost:3000)
 회사 1248177731(한종산업개발): 장면 → 건너뛰기 → done, 숫자 넷(… 아님), 표 5 + 게이트 2버튼 + 흐림 ≥1, 행 펼침에 자격·근거 줄,
 다른 회사 → 상자·흐림 → Esc 복귀, 금지어·주황 면·인주 0, 바닥색·판 14px, 390 한 단·넘침 없음.
-키워드(하수처리): 장면 없음, 표 ≥1. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
+키워드(하수처리): 장면 없음, 표 ≥1. 키워드(폐기물): 제목 일치 판 전부·25건 쪽 넘김·의미 판과 중복 없음. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -103,13 +103,25 @@ def main():
         assert m["open"] is False and m["first"] < 450 and m["side"] > m["first"], m
         pg.screenshot(path=str(OUT / "_shot_results_390.png"), full_page=True)
         pg.set_viewport_size({"width": 1280, "height": 900})
-        # 공고 전 단계 줄 — CO 는 사전규격 0·발주계획 20 이라 접힌 채 "앞으로 나올 공고"
+        # 공고 전 단계 줄 — 의견 창 열린 사전규격이 없으면 접힌 채 "앞으로 나올 공고", 있으면(2026-10-27 CO 에 1건 생김) "골든타임" 으로 펼쳐진다
         lead = pg.evaluate("() => { const e = document.querySelector('[data-leads]'); return e && { golden: e.dataset.golden ?? null, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText } }")
-        assert lead and lead["golden"] is None and lead["open"] == "false" and "앞으로 나올 공고" in lead["txt"], lead
+        assert lead and "앞으로 나올 공고" in lead["txt"] and ((lead["golden"] is None and lead["open"] == "false") or (lead["golden"] and lead["open"] == "true" and "골든타임" in lead["txt"])), lead
         # 키워드 모드
         goto(pg, "/recommendations?q=%ED%95%98%EC%88%98%EC%B2%98%EB%A6%AC"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
         k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]'), leads: !!document.querySelector('[data-leads]') })")
         assert not k["scene"] and k["rows"] >= 1 and not k["side"] and k["leads"], k
+        # 제목 일치 판(2026-10-27) — "폐기물" 은 제목에 든 진행 공고가 200건 넘는다. 첫 판에 전부(25건씩 쪽), 의미 유사 판에는 같은 공고가 없다.
+        goto(pg, "/recommendations?q=%ED%8F%90%EA%B8%B0%EB%AC%BC"); pg.wait_for_selector("[data-title-matches]", timeout=30000); rules(pg)
+        t = pg.evaluate("""() => { const e = document.querySelector('[data-title-matches]'); const hrefs = s => [...document.querySelectorAll(s + ' [data-sheet-row] a[href^="/notices/"]')].map(a => a.getAttribute('href'));
+          return { n: +e.querySelector('h2 .num').textContent, page: e.dataset.page, pages: +e.dataset.pages, rows: e.querySelectorAll('[data-sheet-row]').length, pager: !!e.querySelector('[data-pager]'),
+                   head: e.querySelector('h2').textContent, first: e.querySelector('[data-sheet-row]').textContent, title: hrefs('[data-title-matches]'), sem: hrefs('[data-rows]'), zero: !!document.querySelector('[data-zero]') } }""")
+        assert t["n"] > 25 and t["page"] == "1" and t["pages"] == -(-t["n"] // 25) and t["rows"] == 25 and t["pager"] and "제목 일치" in t["head"] and not t["zero"], t
+        assert not (set(t["title"]) & set(t["sem"])), "같은 공고가 제목 일치와 의미 유사 두 판에 있다"
+        assert all("폐기물" in x for x in pg.evaluate("() => [...document.querySelectorAll('[data-title-matches] [data-sheet-row]')].map(r => r.textContent)")), "제목에 낱말이 없는 행이 제목 일치 판에 있다"
+        pg.screenshot(path=str(OUT / "_shot_results_title.png"), full_page=False)
+        pg.click("[data-title-matches] [data-pager] button:has-text('다음')")
+        t2 = pg.evaluate("() => { const e = document.querySelector('[data-title-matches]'); return { page: e.dataset.page, first: e.querySelector('[data-sheet-row]').textContent } }")
+        assert t2["page"] == "2" and t2["first"] != t["first"], t2
         # 골든타임 — 의견 창이 열린 사전규격을 DB 에서 하나 골라 그 품명으로 키워드 검색하면 사전규격 줄이 "골든타임" 으로 펼쳐져 있어야 한다
         if srv and (surl := env(ROOT / "backend/.env", "SUPABASE_URL")):
             now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()

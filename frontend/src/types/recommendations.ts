@@ -72,6 +72,11 @@ export interface BidRecommendation {
   insight?: NoticeInsight;
 }
 
+/** 키워드 모드 — 제목에 검색어 낱말이 전부 든 진행 공고(전부, 마감 가까운 순). 순위·점수가 없다(backend title_match.py). */
+export type TitleMatch = Pick<BidRecommendation,
+  "stage" | "bid_ntce_no" | "bid_ntce_ord" | "bid_ntce_nm" | "bsns_div_nm" | "bid_ntce_date" | "bid_clse_date" | "openg_date"
+  | "presmpt_prce" | "ntce_instt_nm" | "dmnd_instt_nm" | "bidprc_psbl_indstryty_nm" | "prtcpt_psbl_rgn_nm" | "bid_ntce_url">;
+
 /** v2 랭킹 시그널 1건 — 가산/감산 근거 */
 export interface ScoreSignal {
   key: string;
@@ -143,6 +148,12 @@ export interface VizData {
 export interface RecommendationResponse {
   company: CompanyDigest | null;
   results: BidRecommendation[];
+  /** 키워드 모드 — 제목 일치 전부(상한 300). results 에는 이 공고들이 빠져 있다(같은 공고가 두 판에 안 보이게). 2026-10-27 */
+  title_matches?: TitleMatch[];
+  /** 제목 일치가 300건을 넘어 마감 가까운 300건만 실었다 */
+  title_match_capped?: boolean;
+  /** 제목 일치에 쓴 낱말(질의를 쪼갠 것, 전부 포함 조건) */
+  title_terms?: string[];
   /** v0.3 사전규격 매칭 (골든타임) */
   pre_spec_results?: PreSpecRecommendation[];
   /** v0.3 발주계획 매칭 (선행지표) */

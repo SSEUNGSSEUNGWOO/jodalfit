@@ -29,10 +29,11 @@ export type SheetRowProps = {
   children?: ReactNode;    // SheetExpand
   href?: string;           // 제목 링크(공고 상세). 없으면 행 클릭 = 펼침
   onOpen?: () => void;     // 닫힘→열림으로 바뀔 때 한 번 호출
+  expandLabel?: string;    // 펼침 버튼 글자. 키워드 모드처럼 자격·근거가 없는 행은 "원문·검토"(2026-10-27)
 };
 
 /** 표 행 — 제목·마감·금액을 먼저 보여주고, 명시적인 버튼으로 자격·근거를 펼친다. */
-export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href, onOpen }: SheetRowProps) {
+export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultOpen = false, children, href, onOpen, expandLabel = "자격·근거" }: SheetRowProps) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
   const hot = !!dLeft && dLeft.days >= 0 && dLeft.days <= 7;
@@ -70,7 +71,7 @@ export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultO
           <button type="button" aria-expanded={open} aria-controls={panelId} aria-label={`${no}번 공고 ${open ? "접기" : "펼치기"}`}
             onClick={(e) => { e.stopPropagation(); toggle(); }}
             className="num mt-0.5 flex w-fit cursor-pointer items-center gap-2 rounded-[5px] border border-field px-2.5 py-1.5 text-[12px] font-medium text-ink-g hover:border-ink hover:text-ink max-sm:col-span-full max-sm:mt-3">
-            {open ? "접기" : "자격·근거"}<ChevronDown aria-hidden="true" size={13} className={cn("transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+            {open ? "접기" : expandLabel}<ChevronDown aria-hidden="true" size={13} className={cn("transition-transform motion-reduce:transition-none", open && "rotate-180")} />
           </button>
         )}
       </div>

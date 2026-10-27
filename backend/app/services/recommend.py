@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from itertools import zip_longest
 from typing import Any, Literal
 
@@ -1019,21 +1019,86 @@ def _recommend_by_keywords(
 
     from app.recommender.keyword_expand import expand_keywords  # lazy — recommend ↔ recommender 순환 import 회피
 
-    with timed("embed_query"):
-        embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"])[0]
-    embedding_str = vector_to_pgvector_str(embedding)
-    ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
-    pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
-    order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
+    # 제목 일치(전부)는 임베딩 검색과 독립 — 같이 띄워 왕복 한 번 값으로 끝낸다. 실패해도 의미 검색은 그대로 나간다.
+    with ThreadPoolExecutor(max_workers=1) as ex:
+        f_title = submit_timed(ex, "title_match", _search_title_matches, get_admin_client(), text)
+        with timed("embed_query"):
+            embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"])[0]
+        embedding_str = vector_to_pgvector_str(embedding)
+        ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
+        pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
+        order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
+        try:
+            title = f_title.result()
+        except Exception as e:
+            logger.warning("title_match 실패 — 의미 검색만 보낸다: %s", e)
+            title = {"rows": [], "capped": False, "terms": []}
+
+    # 제목에 이미 든 공고는 의미 검색 쪽에서 뺀다 — 같은 공고가 두 판에 두 번 보이지 않게(번호 기준, 차수는 다를 수 있다)
+    title_nos = {r.get("bid_ntce_no") for r in title["rows"]}
+    ranked = [r for r in ranked if r.get("bid_ntce_no") not in title_nos]
 
     return {
         "company": None,
         "mode": "keywords",
         "query": text,
         "results": ranked,
+        "title_matches": title["rows"],
+        "title_match_capped": title["capped"],
+        "title_terms": title["terms"],
         "pre_spec_results": pre_specs,
         "order_plan_results": order_plans,
     }
+
+
+# 후보 검색 RPC(0049)와 같은 열 + 취소 판정용 상태·종류. 점수 열(similarity)은 없다 — 제목 일치는 순위가 아니다.
+TITLE_MATCH_COLS = (
+    "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,"
+    "ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,bid_ntce_url,"
+    "status:raw->>bidNtceSttusNm,kind:raw->>ntceKindNm"
+)
+
+
+def _search_title_matches(client, text: str) -> dict[str, Any]:
+    """제목에 질의 낱말이 전부 든 진행 공고 — 전부(상한 CAP), 마감 가까운 순. 규칙은 app/recommender/title_match.py.
+
+    진행 = 마감 전 + 입찰참가자격 등록 마감이 안 지남(0057 funnel_counts 와 같은 기준). 마감 90일 지평선은 두지 않는다 —
+    찾기는 추천이 아니다. 같은 번호의 다른 차수가 결과 밖에 있을 수 있어 취소 판정은 번호 전체 차수를 다시 읽는다.
+    실측 2026-10-27: "폐기물" 249행 381ms, "옥상방수" 11행.
+    """
+    from app.recommender.cancellation import cancel_ords          # lazy — recommend ↔ recommender 순환 import 회피
+    from app.recommender.title_match import CAP, parse_terms, select_rows, term_filters
+
+    terms = parse_terms(text)
+    if not terms:
+        return {"rows": [], "capped": False, "terms": []}
+    q = (
+        client.table("bid_notices")
+        .select(TITLE_MATCH_COLS)
+        .gte("bid_clse_date", date.today().isoformat())
+        .or_(f"bid_qlfct_rgst_dt.is.null,bid_qlfct_rgst_dt.gt.{datetime.now(timezone.utc).isoformat()}")
+    )
+    for op, crit in term_filters(terms):
+        q = q.filter("bid_ntce_nm", op, crit)
+    rows = (
+        q.order("bid_clse_date").order("bid_ntce_no").order("bid_ntce_ord", desc=True)
+        .limit(CAP * 2)   # 차수 중복·취소를 걷어낸 뒤에도 CAP 이 차도록 넉넉히
+        .execute()
+        .data
+        or []
+    )
+    nos = sorted({r["bid_ntce_no"] for r in rows if r.get("bid_ntce_no")})
+    try:
+        cmap = cancel_ords(_fetch_notice_status(client, nos)) if nos else {}
+    except Exception as e:   # 상태 조회 실패 — 결과 안의 행만으로 판정
+        logger.warning("title_match notice status skipped: %s", e)
+        cmap = cancel_ords(rows)
+    kept, capped = select_rows(rows, cmap)
+    for r in kept:
+        r.pop("status", None)
+        r.pop("kind", None)
+        r["stage"] = "notice"
+    return {"rows": kept, "capped": capped, "terms": terms}
 
 
 def _recommend_by_company(

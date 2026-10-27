@@ -26,7 +26,7 @@ export function ResultRows({ results, loggedIn, reviewed, viaBizrno, next, today
     const ev = { bid_ntce_no: b.bid_ntce_no, bid_ntce_ord: b.bid_ntce_ord, target_bizrno: viaBizrno, rank_position: i + 1, algorithm_version: "v2", score: b.score };
     return (
       <SheetRow key={key} no={i + 1} title={b.bid_ntce_nm} org={org} why={why ?? undefined} dLeft={dLeft(b.bid_clse_date, today)} price={won(b.presmpt_prce)}
-        reviewed={rv.has(key)} href={`/notices/${b.bid_ntce_no}`}
+        reviewed={rv.has(key)} href={`/notices/${b.bid_ntce_no}`} expandLabel={keywordMode ? "원문·검토" : undefined}
         onOpen={() => emitNoticeEvent({ event_type: "click", ...ev })}>
         <SheetExpand quals={keywordMode ? [] : qualLines(b.qualification)} whys={keywordMode ? [] : whyLines(b.score_breakdown, org)}
           actions={<>

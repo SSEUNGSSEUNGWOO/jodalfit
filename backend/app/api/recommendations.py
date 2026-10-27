@@ -128,7 +128,7 @@ def post_recommendations(
         algorithm=req.algorithm,
     )
 
-    has_any_results = bool(result.get("results") or result.get("keyword_results"))
+    has_any_results = bool(result.get("results") or result.get("keyword_results") or result.get("title_matches"))
     error_404 = (
         result.get("error")
         and not has_any_results
@@ -268,7 +268,7 @@ def post_recommendations_stream(
             return
         result = box["result"]
 
-        has_any_results = bool(result.get("results") or result.get("keyword_results"))
+        has_any_results = bool(result.get("results") or result.get("keyword_results") or result.get("title_matches"))
         if result.get("error") and not has_any_results and not result.get("fallback"):
             yield _line({"type": "error", "message": result["error"], "status": 404})
             return

@@ -20,6 +20,7 @@ import { LeadsLine } from "./LeadsLine";
 import { rememberCompany } from "@/components/entry/RecentChips";
 import { CompanySide } from "./CompanySide";
 import { ResultRows, ZeroBlock } from "./ResultRows";
+import { TitleMatches } from "./TitleMatches";
 
 const TIMEOUT_MS = 8000;
 // 20 건 — 채점표 K 곡선(12→20 은 낙찰 포함률이 크게 오르고 20→30 은 거의 안 는다)과 실사용 로그(13~20위에서 저장의 27%)를 같이 보고 정했다. 2026-10-23.
@@ -101,8 +102,10 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   }, [co?.corp_nm, co?.rgn_nm]);
   const bizrno = co ? co.bizrno.replace(/\D/g, "") : null;
   const results = data?.results ?? [];
+  // 키워드 모드 첫 판 — 제목에 낱말이 든 공고 전부. 의미 유사 20건(results)은 이것을 뺀 "그 밖에"다(backend _recommend_by_keywords). 2026-10-27
+  const titles = mode === "keywords" ? (data?.title_matches ?? []) : [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";
-  const zero = state === "done" && results.length === 0;
+  const zero = state === "done" && results.length === 0 && titles.length === 0;
   // 회사는 찾았는데 등록업종·공급물품이 없어 회사 기준 추천이 안 되는 경우(백엔드 fallback=keywords, 7일 27건 = 빈손 검색의 1/3).
   // 전엔 "참가 자격이 있는 공고가 없습니다"(ZeroBlock)로 보여 사실과 달랐다 — 자격을 본 게 아니라 기준이 없었던 것.
   const noInfo = zero && !!data?.error && data?.fallback === "keywords" && !!data?.company;
@@ -136,7 +139,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           meta={co ? [co.rgn_nm ?? "—", `기준일 ${kstDate(today)}`] : [" "]} />
       ) : (
         <PageHead title={`“${query}”`} className="border-b-0! pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
-          meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "입력한 관심 분야와 의미가 가까운 순서"]} />
+          meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "제목에 든 공고 전부 · 이어서 뜻이 가까운 공고"]} />
       )}
 
       {mode === "company" && checked && !cached && <Scene key={attempt} counts={counts} state={state} onSettled={() => setSettled(true)} />}
@@ -163,10 +166,11 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       {state === "done" && data && (
         <Panel data-res className="mt-4 translate-y-0 opacity-100 transition-[opacity,transform] duration-500 [transition-timing-function:var(--ease-sheet)] starting:translate-y-2.5 starting:opacity-0">
           <div className="pt-6 max-sm:pt-5">
-            {!zero && (
-              <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-3 border-b border-ink pb-5 max-sm:pb-4">
+            {titles.length > 0 && <TitleMatches rows={titles} terms={data.title_terms ?? [query]} capped={!!data.title_match_capped} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} next={next} today={today} />}
+            {!zero && results.length > 0 && (
+              <div className={cn("flex flex-wrap items-start justify-between gap-x-5 gap-y-3 border-b border-ink pb-5 max-sm:pb-4", titles.length > 0 && "mt-12 max-sm:mt-10")}>
                 <div>
-                  <h2 className="text-[24px] font-semibold tracking-[-0.035em] text-ink max-sm:text-[21px]">검토할 공고 <span className="num">{results.length}</span><span className="ml-0.5 text-[16px] font-medium">건</span></h2>
+                  <h2 className="text-[24px] font-semibold tracking-[-0.035em] text-ink max-sm:text-[21px]">{mode === "company" ? "검토할 공고" : titles.length > 0 ? "그 밖에 뜻이 가까운 공고" : "뜻이 가까운 공고"} <span className="num">{results.length}</span><span className="ml-0.5 text-[16px] font-medium">건</span></h2>
                   <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-g">
                     <span>{mode === "company" ? "적합 순" : "검색어 유사도 순"}</span>
                     {stats && stats.week > 0 && <span>이번 주 마감 <b className="num font-semibold text-ink">{stats.week}건</b></span>}
@@ -181,7 +185,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
             )}
             {noInfo ? <NoInfoBlock corpNm={co?.corp_nm ?? query} />
                   : zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
-                  : <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
+                  : results.length > 0 && <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
             {/* 키워드 모드에도 — 백엔드는 사전규격·발주계획을 두 모드 다 돌려준다(2026-10-26 전엔 회사 모드만 그렸다). */}
             <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
             {mode === "company" && bizrno && !noInfo && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
