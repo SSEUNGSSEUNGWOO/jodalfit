@@ -57,7 +57,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 결과는 `docs/recommender/exp-YYYY-MM-DD-<주제>.md`(실험 기록) + `docs/recommender/changelog.md`(사용자 언어로 "무엇이 왜 달라졌나")에 남긴다. 운영 전환 스위치(`RECO_RETRIEVAL`, `EMBED_SPACE`, `*_PROVIDER`)는 환경변수 하나로 롤백되게 유지한다.
 
 ### backend 구조
-- `app/api/` — 라우터 (recommendations, events=행동 로깅, qualifications=자격 라벨, feedback=`/feedback` 폼 수신 → 0061 `feedback` 테이블, `/admin` 이 읽는다)
+- `app/api/` — 라우터 (recommendations, events=행동 로깅 + `/events/helpful`(결과 화면 "도움이 됐습니까" → 0063 `result_feedback`, `/admin` 응답 건강 판), qualifications=자격 라벨, feedback=`/feedback` 폼 수신 → 0061 `feedback` 테이블, `/admin` 이 읽는다)
 - `app/core/` — pydantic-settings config(환경변수 스위치는 전부 여기, 주석에 근거 문서 링크), rate_limit, bot_guard, traffic_source, timing(Server-Timing)
 - `app/services/` — supabase/openai/anthropic 클라이언트, embedding(공간 스위치+캐시)·local_embed(KURE), recommend(후보 검색+v1), recommendation_cache, explain, doc_extract(hwp/hwpx/pdf/xlsx 본문)·notice_insights(LLM 구조화), viz(임베딩 시각화), search_log, notice_events
 - `app/recommender/` — v2 랭킹 (pipeline / score / qualifications / mmr / collaborative) + evaluation(지표 순수 함수) + keyword_expand(키워드 질의의 영문 약어 풀이 — "si"→시스템 통합…, 임베딩 전에만 적용) + title_match(키워드 모드 첫 판 "제목 일치 전부" — 낱말 AND·영문은 단어 경계·마감 가까운 순·상한 300, 의미 유사 20건은 이걸 뺀 "그 밖에". 회사 모드 무관)
@@ -65,6 +65,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - 채점표 도구: `evaluate_recommender`(정량 채점표, 기준) → `--dump-features` 로 뽑은 `features.csv` 위에서 `fit_score_weights`(로지스틱 재보정, held-out)·`sweep_score_scale`(보너스 배율 k 하나만 훑기). `evaluate_recommendations`는 옛 정성 리포트(3버킷 마크다운)로 채점표가 아니다.
   - 로컬 GPU 백필은 `uv sync --extra embed-gpu`(RTX 5060 Ti = cu128). `embed-cpu`와 상호 배제라 cpu 로 sync 하면 CUDA torch 가 CPU 휠로 덮인다.
 - `jobs/marketing_report/` — 일일 마케팅 성적표 (`/marketing-report`, 설명서 `docs/marketing/README.md`).
+- `jobs/send_weekly_mail.py` — 저장한 회사의 새 공고 주간 메일(월 08:00 KST, `weekly-mail.yml`). 대상 = 메일 인증 + 가입 동의(0052 `user_consents.marketing_opt_in`) + 저장 회사 있음, 6일 내 미발송(0063 `weekly_mail_log`). 회사마다 `recommend()` 를 돌려 최근 7일 등록 공고 상위 5건. 그만 받기 링크는 `INTERNAL_API_TOKEN` HMAC(`frontend/src/lib/mail-link.ts` 와 같은 식) → `/mail/weekly` 가 확인 버튼 뒤 POST 로 바꾼다. `--dry-run`, 시험 발송 `--to 주소 --bizrno 번호`.
 
 ### 로그 지표 — 내부 SSR과 실사용자 구분 (필수)
 
@@ -83,7 +84,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 나라장터 API 제약이 코드 전반에 배어 있음: 일일 호출 한도(UsrInfoService02 4,500/일), 조회범위 30일 초과 시 에러 → 청크 처리, 429 백오프 등.
 
 ### Supabase migrations
-`supabase/migrations/0001~0062` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
+`supabase/migrations/0001~0063` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
 - **뷰는 RLS 를 우회한다**(`security_invoker` 기본 off → 소유자 권한). 표에 RLS 를 켜도 그 위의 뷰는 anon 키로 읽혔다(2026-10-26, `v_search_logs_*`). 0062 가 public 기본 권한에서 anon/authenticated 를 뺐으니 새 표·뷰는 자동으로 anon 에 안 열린다 — 사용자 세션으로 읽을 표만 명시적으로 `grant` + 정책. 점검은 `docs/security/2026-10-26-review.md`.
 
 ### frontend 구조

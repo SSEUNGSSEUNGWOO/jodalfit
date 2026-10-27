@@ -23,7 +23,7 @@ export function Consent({ value, onChange, idPrefix = "consent" }: { value: Cons
       </label>
       <label htmlFor={`${idPrefix}-marketing`} className={`${row} text-ink-g`}>
         <input id={`${idPrefix}-marketing`} type="checkbox" className={box} checked={value.marketing} onChange={(e) => onChange({ ...value, marketing: e.target.checked })} />
-        <span><span className="t-k mr-1.5">[선택]</span>알림 메일 수신 동의 — 준비 중, 시작 시 안내</span>
+        <span><span className="t-k mr-1.5">[선택]</span>알림 메일 수신 동의 — 저장한 회사에 새 공고가 있으면 매주 월요일 한 통</span>
       </label>
     </div>
   );

@@ -84,6 +84,10 @@ def main():
             pg.click("[data-review=off]"); pg.wait_for_selector("[data-review=on]"); pg.wait_for_timeout(800)
 
             goto(pg, "/saved"); rules(pg)
+            # 주간 메일 줄(2026-10-27) — 가입 동의값을 보여주고 같은 폼으로 바꾼다. 토글 한 번 → 상태가 뒤집히고 /saved 로 돌아온다.
+            w0 = pg.evaluate("document.querySelector('[data-weekly-mail]')?.dataset.on"); assert w0 in ("0", "1"), "주간 메일 줄이 없다"
+            pg.click("[data-weekly-mail] button"); pg.wait_for_url(re.compile(r"/saved$")); pg.wait_for_load_state("networkidle")
+            assert pg.evaluate("document.querySelector('[data-weekly-mail]')?.dataset.on") == ("0" if w0 == "1" else "1"), "주간 메일 토글이 안 바뀐다"
             s = pg.evaluate("""() => ({ tabs: [...document.querySelectorAll('[role=tab] small')].map(e => e.textContent),
                 rows: document.querySelectorAll('#pane-n [data-saved-row]').length,
                 star: getComputedStyle(document.querySelector('#pane-n [data-saved-row] span span span'), '::before').color,
