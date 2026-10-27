@@ -19,6 +19,7 @@ jobs:
       run:
         working-directory: backend
     env:
+      NARAJANGTEO_API_KEY: ${{ secrets.NARAJANGTEO_API_KEY }}  # Settings 필수 필드 — 이 잡은 쓰지 않지만 없으면 로드가 실패한다
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}          # auth.users 읽기 + 발송 기록
