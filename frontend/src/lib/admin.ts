@@ -30,7 +30,7 @@ export type SavedRow = { at: string; user: string; bizrnoNorm: string; name: str
 export type ReviewedRow = { at: string; user: string; bidNtceNo: string; title: string };
 export type FeedbackRow = { id: number; at: string; kind: "idea" | "question" | "bug"; message: string; email: string | null; page: string | null; handled: boolean };
 export type Funnel = { searches: number; visitors: number; identified: number; clicks: number; signups: number; saved: number; reviewed: number };
-export type Health = { errorRate: number | null; zeroRate: number | null; p50: number | null };   // 비율은 0~1, p50 은 ms. 검색 0건이면 null
+export type Health = { errorRate: number | null; zeroRate: number | null; p50: number | null; helpful: number | null; helpfulN: number | null };   // 비율은 0~1, p50 은 ms. 검색 0건이면 null. helpful = "도움이 됐습니까" 예 비율, helpfulN = 응답 수(0063)
 export type Visits = {
   daily: { date: string; views: number; visitors: number }[];                 // 오늘 포함 7일, KST
   byType: { type: string; views: number; visitors: number }[];               // 7일
@@ -131,7 +131,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   const weekStart = new Date(todayStart.getTime() - 6 * 86_400_000);
   const since = weekStart.toISOString();
 
-  const [logs, events, usersRes, saved, reviewed, visits, fb] = await Promise.all([
+  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes] = await Promise.all([
     sb.from("search_logs")
       .select("created_at,query,mode,matched_corp_nm,matched_bizrno,result_count,has_error,ip_hash,referer,latency_ms")
       .gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).limit(1000),
@@ -142,7 +142,9 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     sb.from("reviewed_notices").select("user_id,bid_ntce_no,bid_ntce_ord,created_at").order("created_at", { ascending: false }).limit(200),
     fetchVisits(todayKst),
     sb.from("feedback").select("id,created_at,kind,message,email,page,handled_at").order("created_at", { ascending: false }).limit(50),
+    sb.from("result_feedback").select("created_at,helpful").gte("created_at", since).eq("source", "user").limit(2000),
   ]);
+  const helpfulRows = (helpfulRes.data ?? []) as { created_at: string; helpful: boolean }[];
 
   // 로컬 개발 서버(check_*.py 검증)도 운영 DB 에 source='user' 로 남는다 — referer 가 localhost 면 사람이 아니다(2026-10-26 화면에서 확인)
   const logRows = ((logs.data ?? []) as LogRow[]).filter((r) => !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(r.referer ?? ""));
@@ -180,11 +182,15 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   };
   const health = (from: Date): Health => {
     const L = logRows.filter((r) => Date.parse(r.created_at) >= from.getTime());
-    if (L.length === 0) return { errorRate: null, zeroRate: null, p50: null };
+    const H = helpfulRows.filter((r) => Date.parse(r.created_at) >= from.getTime());
+    const helpful = H.length ? H.filter((r) => r.helpful).length / H.length : null;
+    if (L.length === 0) return { errorRate: null, zeroRate: null, p50: null, helpful, helpfulN: H.length || null };
     return {
       errorRate: L.filter((r) => r.has_error).length / L.length,
       zeroRate: L.filter((r) => !r.has_error && r.result_count === 0).length / L.length,
       p50: p50(L.map((r) => r.latency_ms).filter((v): v is number => typeof v === "number")),
+      helpful,
+      helpfulN: H.length || null,
     };
   };
   const daily = Array.from({ length: 7 }, (_, i) => {

@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field
 
 from app.core.bot_guard import guard_external_traffic
 from app.core.rate_limit import limiter
+from app.core.traffic_source import classify_source
 from app.services.notice_events import log_notice_events
+from app.services.result_feedback import log_result_feedback
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -33,4 +35,25 @@ def post_notice_event(
     background: BackgroundTasks,
 ):
     background.add_task(log_notice_events, [req.model_dump()])
+    return {"ok": True}
+
+
+class HelpfulRequest(BaseModel):
+    """결과 화면 맨 아래 "이 결과가 검토에 도움이 됐습니까?" (0063 result_feedback, 2026-10-27)."""
+
+    mode: Literal["company", "keywords"]
+    query: str = Field(..., min_length=1, max_length=200)
+    bizrno_norm: str | None = Field(None, pattern=r"^\d{10}$")
+    helpful: bool
+    note: str | None = Field(None, max_length=300)
+    session_id: str | None = Field(None, max_length=64)
+
+
+@router.post("/helpful", dependencies=[Depends(guard_external_traffic)])
+@limiter.limit("20/minute")
+def post_helpful(request: Request, req: HelpfulRequest, background: BackgroundTasks):
+    row = req.model_dump()
+    row["note"] = (row["note"] or "").strip() or None
+    row["source"] = classify_source(request)
+    background.add_task(log_result_feedback, row)
     return {"ok": True}

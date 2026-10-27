@@ -110,6 +110,13 @@ def main():
         goto(pg, "/recommendations?q=%ED%95%98%EC%88%98%EC%B2%98%EB%A6%AC"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
         k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]'), leads: !!document.querySelector('[data-leads]') })")
         assert not k["scene"] and k["rows"] >= 1 and not k["side"] and k["leads"], k
+        # "도움이 됐습니까" 한 줄(2026-10-27) — 아니오 → 메모 칸 → 보내기 → 고맙습니다. 운영 DB 에 시험 행을 남기지 않게 요청은 가로채 200 으로 답한다.
+        hits = []
+        pg.route("**/events/helpful", lambda r: (hits.append(r.request.post_data), r.fulfill(status=200, content_type="application/json", body='{"ok":true}')))
+        assert pg.evaluate("document.querySelector('[data-helpful]')?.dataset.state") == "ask", "도움이 됐습니까 줄이 없다"
+        pg.click("[data-helpful] button:has-text('아니오')"); pg.fill("#helpful-note", "검증 메모"); pg.click("[data-helpful] button[type=submit]"); pg.wait_for_timeout(300)
+        assert pg.evaluate("document.querySelector('[data-helpful]')?.dataset.state") == "done" and len(hits) == 1 and '"helpful":false' in hits[0] and "검증 메모" in hits[0], hits
+        pg.unroute("**/events/helpful")
         # 제목 일치 판(2026-10-27) — "폐기물" 은 제목에 든 진행 공고가 200건 넘는다. 첫 판에 전부(25건씩 쪽), 의미 유사 판에는 같은 공고가 없다.
         goto(pg, "/recommendations?q=%ED%8F%90%EA%B8%B0%EB%AC%BC"); pg.wait_for_selector("[data-title-matches]", timeout=30000); rules(pg)
         t = pg.evaluate("""() => { const e = document.querySelector('[data-title-matches]'); const hrefs = s => [...document.querySelectorAll(s + ' [data-sheet-row] a[href^="/notices/"]')].map(a => a.getAttribute('href'));

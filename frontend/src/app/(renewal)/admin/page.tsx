@@ -33,6 +33,8 @@ const HEALTH: { k: keyof Health; label: string; f: (v: number | null) => string;
   { k: "errorRate", label: "빈손 검색", f: pct, h: "회사 못 찾음·등록정보 없음 포함 — 서버 오류 아님" },
   { k: "zeroRate", label: "결과 0건 비율", f: pct, h: "오류 아닌데 0건" },
   { k: "p50", label: "p50 응답", f: ms, h: "추천 API latency_ms" },
+  { k: "helpful", label: "도움이 됐다", f: pct, h: "결과 화면 '도움이 됐습니까' 예 비율 (0063)" },
+  { k: "helpfulN", label: "응답 수", f: (v) => (v == null ? "—" : String(v)), h: "예·아니오 합" },
 ];
 const KIND_LABEL = { idea: "의견", question: "문의", bug: "오류 제보" } as const;
 const TYPE_LABEL: Record<string, string> = { home: "홈", company: "회사 페이지", companies: "회사 목록", notice: "공고 페이지", notices: "공고 목록", results: "추천 결과", saved: "검토함", auth: "로그인·가입", other: "그 밖" };

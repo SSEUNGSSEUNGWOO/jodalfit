@@ -21,6 +21,7 @@ import { rememberCompany } from "@/components/entry/RecentChips";
 import { CompanySide } from "./CompanySide";
 import { ResultRows, ZeroBlock } from "./ResultRows";
 import { TitleMatches } from "./TitleMatches";
+import { HelpfulLine } from "./HelpfulLine";
 
 const TIMEOUT_MS = 8000;
 // 20 건 — 채점표 K 곡선(12→20 은 낙찰 포함률이 크게 오르고 20→30 은 거의 안 는다)과 실사용 로그(13~20위에서 저장의 27%)를 같이 보고 정했다. 2026-10-23.
@@ -205,6 +206,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
             {/* 키워드 모드에도 — 백엔드는 사전규격·발주계획을 두 모드 다 돌려준다(2026-10-26 전엔 회사 모드만 그렸다). */}
             <LeadsLine preSpecs={data.pre_spec_results ?? []} orderPlans={data.order_plan_results ?? []} />
             {mode === "company" && bizrno && !noInfo && <CompanySide bizrnoNorm={bizrno} region={co?.rgn_nm ?? null} />}
+            {!zero && !noInfo && <HelpfulLine mode={mode} query={query} bizrno={bizrno} />}
           </div>
         </Panel>
       )}
