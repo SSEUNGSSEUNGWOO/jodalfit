@@ -23,11 +23,14 @@ const MODES: { mode: Mode; label: string; placeholder: string }[] = [
   { mode: "keywords", label: "키워드로 찾기", placeholder: "업종 또는 품목 — 예: 하수처리시설 관리대행" },
 ];
 
-export function SearchSuggest({ autoFocus = false, initialMode = "company", onModeChange }: {
+export function SearchSuggest({ autoFocus = false, initialMode = "company", onModeChange, lock, placeholder, compact = false }: {
   autoFocus?: boolean; initialMode?: Mode; onModeChange?: (m: Mode) => void; // 입구 제목·안내 줄이 기준을 따라 바뀐다(EntrySearch)
+  lock?: Mode;          // 기준을 고정하고 탭을 숨긴다 — 회사 페이지의 다리(OwnCompanyBridge)처럼 뜻이 이미 정해진 자리(2026-10-27)
+  placeholder?: string; // 자리글을 그 자리의 말로
+  compact?: boolean;    // 입구보다 한 단계 작게
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>(initialMode);
+  const [mode, setMode] = useState<Mode>(lock ?? initialMode);
   const [q, setQ] = useState("");
   const [cos, setCos] = useState<CompanySuggestion[]>([]);
   const [suggestQuery, setSuggestQuery] = useState("");
@@ -119,7 +122,7 @@ export function SearchSuggest({ autoFocus = false, initialMode = "company", onMo
   const cur = MODES.find((m) => m.mode === mode)!;
   return (
     <div ref={box} className="relative max-w-[760px]" data-suggest data-mode={mode}>
-      <div role="radiogroup" aria-label="검색 기준" className="mb-2.5 flex gap-5 text-[14px]">
+      {!lock && <div role="radiogroup" aria-label="검색 기준" className="mb-2.5 flex gap-5 text-[14px]">
         {MODES.map((m) => (
           <button
             key={m.mode}
@@ -136,7 +139,7 @@ export function SearchSuggest({ autoFocus = false, initialMode = "company", onMo
             {m.label}
           </button>
         ))}
-      </div>
+      </div>}
       <form
         role="search"
         onSubmit={(e) => {
@@ -165,11 +168,12 @@ export function SearchSuggest({ autoFocus = false, initialMode = "company", onMo
           aria-controls="suggest-list"
           aria-autocomplete="list"
           aria-activedescendant={show ? `suggest-option-${act}` : undefined}
-          placeholder={cur.placeholder}
-          aria-label={cur.placeholder}
-          className="min-w-0 flex-1 bg-transparent px-[18px] py-3.5 text-[20px] font-medium tracking-[-0.02em] text-ink outline-none placeholder:font-[450] placeholder:text-ink-mute max-sm:px-3.5 max-sm:py-3 max-sm:text-[17px] max-sm:placeholder:text-[15px]"
+          placeholder={placeholder ?? cur.placeholder}
+          aria-label={placeholder ?? cur.placeholder}
+          className={cn("min-w-0 flex-1 bg-transparent font-medium tracking-[-0.02em] text-ink outline-none placeholder:font-[450] placeholder:text-ink-mute",
+            compact ? "px-3.5 py-2.5 text-[16px] placeholder:text-[14.5px]" : "px-[18px] py-3.5 text-[20px] max-sm:px-3.5 max-sm:py-3 max-sm:text-[17px] max-sm:placeholder:text-[15px]")}
         />
-        <button type="submit" className="cursor-pointer border-l border-rule bg-panel px-5 text-[15px] font-[650] text-ink max-sm:px-3.5">
+        <button type="submit" className={cn("cursor-pointer border-l border-rule bg-panel font-[650] text-ink", compact ? "px-4 text-[14px]" : "px-5 text-[15px] max-sm:px-3.5")}>
           <span className="border-b-2 border-orange pb-px">찾기</span>
         </button>
       </form>

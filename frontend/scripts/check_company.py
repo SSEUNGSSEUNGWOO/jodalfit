@@ -50,6 +50,13 @@ def main() -> None:
         # 결과 화면으로 가는 길 (2026-10-26) — 회사 페이지 방문자의 4% 만 추천 결과에 닿았다
         assert pg.locator('[data-reco-cta] a[href="/recommendations?company=1248177731"]').count() == 1, "추천 전체 보기 링크가 없다"
         assert "수주 이력" in txt or "계약" in txt, "수주 이력 판이 없다"
+        # 다리 + 판 순서(2026-10-27 시안 B): 머리 → 우리 회사 기준으로 보기(회사 모드 고정, 탭 없음) → 수주 이력 → … → 검토할 공고
+        br = pg.evaluate("""() => { const b = document.querySelector('[data-bridge]'); const h2 = [...document.querySelectorAll('h2')].map(e => e.textContent.trim());
+          return { has: !!b, tabs: b ? b.querySelectorAll('[data-search-mode]').length : -1, ph: b?.querySelector('input')?.placeholder, mode: b?.querySelector('[data-suggest]')?.dataset.mode,
+                   order: [h2.findIndex(t => t.startsWith('우리 회사 기준')), h2.findIndex(t => t.startsWith('수주 이력')), h2.findIndex(t => t.startsWith('검토할 공고'))] } }""")
+        assert br["has"] and br["tabs"] == 0 and br["mode"] == "company" and "우리 회사" in (br["ph"] or ""), br
+        assert 0 <= br["order"][0] < br["order"][1] < br["order"][2], f"판 순서 {br['order']}"
+        pg.fill("[data-bridge] input", "한종산업"); pg.wait_for_selector("[data-bridge] [role=option]", timeout=8000)  # 자동완성은 다리에서도 붙는다
         # 사업자번호는 마스킹된 형태만
         assert "124-81-77731" not in txt, "사업자번호가 그대로 보인다"
         pg.screenshot(path=str(OUT / "_shot_company.png"), full_page=True)

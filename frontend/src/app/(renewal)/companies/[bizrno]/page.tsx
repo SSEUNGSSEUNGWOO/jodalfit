@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Btn } from "@/components/Btn";
 import { AwardsPanel, ContractsPanel, Panel, PeersPanel } from "@/components/company/CompanyPanels";
+import { OwnCompanyBridge } from "@/components/company/OwnCompanyBridge";
 import { JsonLd } from "@/components/JsonLd";
 import { ResultRows } from "@/components/results/ResultRows";
 import { StarCompany } from "@/components/StarCompany";
@@ -115,28 +116,17 @@ export default async function CompanyPage({ params }: Props) {
         <CompanySummary corpNm={company.corp_nm} rgn={company.rgn_nm} profile={profile} closed={closed} recommends={company.has_embedding} />
       </header>
 
-      {/* 판 1 — 검토할 공고. 폐업이면 추천하지 않는다(낼 수 없는 회사에게 공고를 권하지 않는다). */}
-      {closed ? (
-        <Panel title="검토할 공고">
-          <p className="mt-3 text-[14px] leading-[1.75] text-ink-g">
-            국세청 기준 폐업 회사라 추천을 하지 않습니다. 사업자 상태가 바뀌면 다시 보입니다.
-          </p>
-        </Panel>
-      ) : (
-        <Suspense
-          fallback={
-            <Panel title="검토할 공고">
-              <p className="mt-3 text-[14px] text-ink-g">계산 중입니다.</p>
-            </Panel>
-          }
-        >
-          <RecoPanel bizrnoNorm={normalized} corpNm={company.corp_nm} hasEmbedding={company.has_embedding} />
-        </Suspense>
-      )}
+      {/* 판 순서(2026-10-27 시안 B 채택): 다리 → 수주 이력·낙찰·같은 시장 → 검토할 공고.
+          회사명으로 검색해 들어온 사람이 보러 온 것은 그 회사의 수주 이력이고, "이 회사가 검토할 공고"는 그 회사의 일이지
+          방문자의 일이 아니다. 보러 온 것을 먼저 주고, 다리로 자기 회사를 치게 하고, 이 회사의 추천은 맨 아래. */}
+      <OwnCompanyBridge corpNm={company.corp_nm} />
 
       <ContractsPanel rows={contracts} topInstt={sectors.top_institutions} />
       <AwardsPanel rows={awards} summary={awardSummary} />
       <PeersPanel peers={peers} />
+
+      {/* 검토할 공고. 폐업이면 추천하지 않는다(낼 수 없는 회사에게 공고를 권하지 않는다). */}
+      <RecoSlot closed={closed} normalized={normalized} corpNm={company.corp_nm} hasEmbedding={company.has_embedding} />
 
       {!closed && contracts.length === 0 && awards.length === 0 && (
         <p className="mt-5 text-[13px] leading-[1.7] text-ink-mute">
@@ -144,6 +134,29 @@ export default async function CompanyPage({ params }: Props) {
         </p>
       )}
     </div>
+  );
+}
+
+function RecoSlot({ closed, normalized, corpNm, hasEmbedding }: { closed: boolean; normalized: string; corpNm: string; hasEmbedding: boolean }) {
+  if (closed) {
+    return (
+      <Panel title="검토할 공고">
+        <p className="mt-3 text-[14px] leading-[1.75] text-ink-g">
+          국세청 기준 폐업 회사라 추천을 하지 않습니다. 사업자 상태가 바뀌면 다시 보입니다.
+        </p>
+      </Panel>
+    );
+  }
+  return (
+    <Suspense
+      fallback={
+        <Panel title="검토할 공고">
+          <p className="mt-3 text-[14px] text-ink-g">계산 중입니다.</p>
+        </Panel>
+      }
+    >
+      <RecoPanel bizrnoNorm={normalized} corpNm={corpNm} hasEmbedding={hasEmbedding} />
+    </Suspense>
   );
 }
 
