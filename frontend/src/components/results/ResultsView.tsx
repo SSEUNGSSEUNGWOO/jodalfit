@@ -48,9 +48,13 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const [cached, setCached] = useState(false);
   const [checked, setChecked] = useState(false); // 캐시를 본 뒤에야 장면을 그린다 — 안 그러면 캐시 히트에도 첫 프레임이 비친다
   const cacheKey = `jf:reco:${mode}:${query}:${keywords ?? ""}:${algorithm}`;
+  // 사업자번호로 찾지 못해 키워드로 넘어온 경우 — 숫자를 키워드로 검색해 봐야 뜻이 없다. 계산하지 않고 "다음 시간부터 검색된다"를 적는다.
+  // 번호 검색 실패는 시간 잡(register_searched_companies)이 조달청 API 로 등록한다(2026-10-26 (주)에이데이타가 그렇게 들어왔다).
+  const noBizrno = mode === "keywords" && from === "company" && isBizrnoLike(query);
 
   // 질의가 바뀌면 페이지가 key 로 다시 마운트한다 — 효과 안에서 상태를 초기화하지 않는다(재시도는 버튼 핸들러가 비운다).
   useEffect(() => {
+    if (noBizrno) { queueMicrotask(() => setChecked(true)); return; }
     let hit: Cached | null = null;
     try {
       const v = JSON.parse(sessionStorage.getItem(cacheKey) ?? "null") as Cached | null;
@@ -80,7 +84,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       ac.signal,
     ).catch((err) => { if (!ac.signal.aborted && !got) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
     return () => { clearTimeout(timer); ac.abort(); };
-  }, [query, mode, keywords, algorithm, attempt, cacheKey]);
+  }, [query, mode, keywords, algorithm, attempt, cacheKey, noBizrno]);
 
   // 회사 모드인데 회사를 못 찾았으면 키워드로 넘어간다(옛 보드와 같은 규칙)
   useEffect(() => {
@@ -139,11 +143,23 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           meta={co ? [co.rgn_nm ?? "—", `기준일 ${kstDate(today)}`] : [" "]} />
       ) : (
         <PageHead title={`“${query}”`} className="border-b-0! pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
-          meta={[from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "제목에 든 공고 전부 · 이어서 뜻이 가까운 공고"]} />
+          meta={[noBizrno ? "사업자번호로 찾지 못했습니다" : from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "제목에 든 공고 전부 · 이어서 뜻이 가까운 공고"]} />
       )}
 
       {mode === "company" && checked && !cached && <Scene key={attempt} counts={counts} state={state} onSettled={() => setSettled(true)} />}
       {(mode === "keywords" || cached) && <div className="mt-5 border-t border-ink" />}
+
+      {noBizrno && (
+        <Panel data-res className="mt-4"><div className="pt-6 max-sm:pt-5"><NoBizrnoBlock query={query} /></div></Panel>
+      )}
+
+      {/* 오타 등급으로만 잡힌 회사 — 다른 회사일 수 있다. 결과가 온 뒤 머리 아래 한 줄로 알리고 번호 검색으로 보낸다. */}
+      {mode === "company" && state === "done" && co?.match === "fuzzy" && (
+        <p data-fuzzy className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-l-2 border-orange pl-2.5 text-[13.5px] leading-[1.6] text-ink">
+          <span>‘{query}’와 가장 가까운 이름의 회사로 찾았습니다. 다른 회사면 사업자번호로 검색합니다.</span>
+          <button type="button" className="cursor-pointer border-b border-field font-medium text-ink-g hover:border-orange" onClick={() => setSearch(true)}>사업자번호로 검색</button>
+        </p>
+      )}
 
       {error && (
         <div data-err className="flex items-center gap-3.5 border-t border-hair py-4 text-[13.5px] text-ink">
@@ -163,7 +179,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
         <FunnelLine counts={counts} open={state === "done"} />
       )}
 
-      {state === "done" && data && (
+      {state === "done" && data && !noBizrno && (
         <Panel data-res className="mt-4 translate-y-0 opacity-100 transition-[opacity,transform] duration-500 [transition-timing-function:var(--ease-sheet)] starting:translate-y-2.5 starting:opacity-0">
           <div className="pt-6 max-sm:pt-5">
             {titles.length > 0 && <TitleMatches rows={titles} terms={data.title_terms ?? [query]} capped={!!data.title_match_capped} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} next={next} today={today} />}
@@ -192,6 +208,24 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           </div>
         </Panel>
       )}
+    </div>
+  );
+}
+
+/** 10자리 사업자번호 꼴(숫자·하이픈·공백만)인가 — register_searched_companies 의 _bizrno_input 과 같은 기준 */
+function isBizrnoLike(q: string): boolean {
+  return /^[\d\-\s]+$/.test(q) && q.replace(/\D/g, "").length === 10;
+}
+
+/** 사업자번호로 찾지 못한 회사 — 조달핏에 아직 없는 것이지 자격을 본 게 아니다. 시간 잡이 나라장터에서 가져오므로 그 사실을 적고, 당장은 키워드로 보낸다. */
+function NoBizrnoBlock({ query }: { query: string }) {
+  return (
+    <div data-nobizrno className="pb-[34px] pt-[22px]">
+      <b className="block text-[18px] font-[650] tracking-[-0.015em] text-ink">사업자번호 {query}의 회사가 아직 조달핏에 없습니다</b>
+      <p className="m-0 mt-1.5 max-w-[640px] text-[14px] leading-[1.7] text-ink-dim">
+        나라장터에 등록된 회사면 다음 시간부터 검색됩니다. 지금은 다루는 업종이나 품목을 적어 주시면 그 말뜻으로 공고를 찾습니다.
+      </p>
+      <div className="mt-[18px] max-w-[720px]"><SearchSuggest autoFocus initialMode="keywords" /></div>
     </div>
   );
 }

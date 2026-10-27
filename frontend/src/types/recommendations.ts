@@ -5,6 +5,8 @@ export interface CompanyDigest {
   corp_bsns_div_nm?: string;
   /** 나라장터 등록업종 수. 0 이면 면허 자격을 판정하지 못한 회사(백엔드 recommend.py). 캐시된 옛 응답에는 없다. */
   industry_count?: number;
+  /** 어떤 길로 찾았나(백엔드 find_company). fuzzy = 오타 등급으로만 잡힌 회사 — 다른 회사일 수 있어 화면이 그 사실을 적는다. 2026-10-27 */
+  match?: "bizrno" | "exact" | "partial" | "fuzzy";
 }
 
 export type RecommendationStage = "notice" | "pre_spec" | "order_plan";

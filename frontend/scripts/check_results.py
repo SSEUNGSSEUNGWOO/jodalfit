@@ -4,7 +4,7 @@
 사용: cd backend && uv run --no-sync python ../frontend/scripts/check_results.py   (RESULTS_BASE 기본 http://localhost:3000)
 회사 1248177731(한종산업개발): 장면 → 건너뛰기 → done, 숫자 넷(… 아님), 표 5 + 게이트 2버튼 + 흐림 ≥1, 행 펼침에 자격·근거 줄,
 다른 회사 → 상자·흐림 → Esc 복귀, 금지어·주황 면·인주 0, 바닥색·판 14px, 390 한 단·넘침 없음.
-키워드(하수처리): 장면 없음, 표 ≥1. 키워드(폐기물): 제목 일치 판 전부·25건 쪽 넘김·의미 판과 중복 없음. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
+키워드(하수처리): 장면 없음, 표 ≥1. 키워드(폐기물): 제목 일치 판 전부·25건 쪽 넘김·의미 판과 중복 없음. 오타 매칭(한종산업개빌): "가장 가까운 이름" 줄. 번호 못 찾음(000-00-00001): "다음 시간부터" 판. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -131,6 +131,16 @@ def main():
             g = pg.evaluate("() => { const e = document.querySelector('[data-leads][data-golden]'); return e && { golden: e.dataset.golden, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText, rows: e.querySelectorAll('ul li').length } }")
             assert g and int(g["golden"]) >= 1 and g["open"] == "true" and "골든타임" in g["txt"] and g["rows"] >= 1, (spec, g)
             pg.screenshot(path=str(OUT / "_shot_results_golden.png"), full_page=True)
+        # 오타 등급으로만 잡힌 회사(2026-10-27) — "한종산업개빌" 은 difflib 0.83 으로 CO 에 잡힌다. 머리 아래 "가장 가까운 이름" 줄 + 번호 검색 버튼. 정확 매칭(CO 번호)에는 없다.
+        goto(pg, "/recommendations?company=%ED%95%9C%EC%A2%85%EC%82%B0%EC%97%85%EA%B0%9C%EB%B9%8C"); pg.wait_for_selector("[data-scene]", timeout=10000)
+        pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)
+        fz = pg.evaluate("() => { const e = document.querySelector('[data-fuzzy]'); return e && { txt: e.innerText, h1: document.querySelector('h1').textContent } }")
+        assert fz and "가장 가까운 이름" in fz["txt"] and "한종산업개발" in fz["h1"], fz
+        pg.click("[data-fuzzy] button"); pg.wait_for_selector("[data-search]", timeout=3000)
+        # 사업자번호로 찾지 못함(2026-10-27) — 키워드로 숫자를 검색하지 않고 "다음 시간부터 검색된다" 판. 시간 잡이 이 번호를 조달청에 한 번 물어보고 not_found 로 적는다
+        goto(pg, "/recommendations?company=000-00-00001"); pg.wait_for_selector("[data-nobizrno]", timeout=20000); rules(pg)
+        nb = pg.evaluate("() => ({ url: location.search, txt: document.querySelector('[data-nobizrno]').innerText, rows: document.querySelectorAll('[data-sheet-row]').length, input: !!document.querySelector('[data-nobizrno] input') })")
+        assert "from=company" in nb["url"] and "다음 시간부터 검색됩니다" in nb["txt"] and nb["rows"] == 0 and nb["input"], nb
         # 등록업종 0건 회사(유원디자인연구소) — 면허 자격을 판정하지 못했다는 줄이 있고, 업종 있는 회사(위 CO)에는 없다
         goto(pg, f"/recommendations?company={NO_IND}"); pg.wait_for_selector("[data-scene]", timeout=10000)
         pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)

@@ -202,7 +202,7 @@ def find_company(query: str) -> dict | None:
     if len(digits) == 10:
         row = _row_by_norm(client, digits)
         if row:
-            return row
+            return _with_match(row, "bizrno")
 
     core = _name_core(query)
     if len(core) >= 3:  # 2글자 이하는 trigram 인덱스를 못 타 전수 스캔이 된다
@@ -212,7 +212,7 @@ def find_company(query: str) -> dict | None:
         )
         exact = [c["bizrno"] for c in cands if _name_core(c["corp_nm"]) == core]
         if exact:
-            return _pick_best(client, exact)
+            return _with_match(_pick_best(client, exact), "exact")
 
     fuzzy: dict[str, dict] = {}
     for q in dict.fromkeys([query, "".join(query.split())]):
@@ -230,7 +230,16 @@ def find_company(query: str) -> dict | None:
     top = max(x[0] for x in scored)
     best_sim = max(x[1] for x in scored if x[0] == top)
     tied = [x[2]["bizrno"] for x in scored if x[0] == top and x[1] == best_sim]
-    return _pick_best(client, tied)
+    return _with_match(_pick_best(client, tied), {3: "exact", 2: "partial"}.get(top, "fuzzy"))
+
+
+# 어떤 길로 회사를 찾았나 — 화면이 "가장 가까운 회사로 찾았다"를 적을지 정한다.
+# fuzzy(오타 등급 1)는 다른 회사일 수 있다: 2026-10-26 "(주)에이데이타"(미등록)가 하루 종일 "주식회사 에이아이데이타"로 잡혔다
+# (difflib 0.83 ≥ 0.8). 규칙은 두고 사용자에게 알린다.
+def _with_match(row: dict | None, how: str) -> dict | None:
+    if row is not None:
+        row["match"] = how
+    return row
 
 
 import re as _re
@@ -1230,6 +1239,8 @@ def _recommend_by_company(
             "corp_bsns_div_nm": company.get("corp_bsns_div_nm"),
             # 0 이면 면허 자격을 판정하지 못한 회사 — 결과 화면이 그 사실을 적는다
             "industry_count": len(company_industry_names),
+            # bizrno | exact | partial | fuzzy — fuzzy 면 화면이 "가장 가까운 회사로 찾았다"를 적는다(find_company)
+            "match": company.get("match"),
         },
         "mode": "company",
         "algorithm": algorithm,
