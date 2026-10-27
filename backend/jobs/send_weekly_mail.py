@@ -58,54 +58,85 @@ def _won(v) -> str:
     return f"{v:,}원"
 
 
-def _dleft(d: str | None, today: date) -> str:
-    if not d:
-        return "—"
-    n = (date.fromisoformat(d[:10]) - today).days
-    return f"D-{n}" if n >= 0 else "마감"
-
-
 def pick_new(results: list[dict], since: date) -> list[dict]:
     """최근 등록 공고만, 추천 순서 그대로 상위 TOP_N. 등록일이 없는 행은 새 공고로 보지 않는다."""
     out = [r for r in results if (r.get("bid_ntce_date") or "") >= since.isoformat()]
     return out[:TOP_N]
 
 
+FONT = "Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif"
+C = {"paper": "#faf9f7", "panel": "#ffffff", "hair": "#e6e4df", "rule": "#ececea", "ink": "#141414", "g": "#55554f", "mute": "#737370", "orange": "#f97316", "oink": "#b85510"}
+DOW = "월화수목금토일"
+
+
 def render(blocks: list[dict], today: date, unsubscribe: str | None) -> tuple[str, str, str]:
-    """(subject, html, text). blocks = [{corp_nm, bizrno_norm, rows:[...]}]."""
+    """(subject, html, text). blocks = [{corp_nm, bizrno_norm, rows:[...]}].
+
+    사이트와 같은 재료로(docs/design/README.md): 종이 위 흰 판, 헤어라인, 먹 글자, 주황은 선(회사 머리의 괘선·D-day 글자)뿐.
+    메일 클라이언트용으로 table 과 인라인 스타일만 쓴다. 로고는 사이트의 apple-icon(PNG) — Gmail 은 SVG 를 막는다.
+    """
     n_rows = sum(len(b["rows"]) for b in blocks)
     first = blocks[0]["corp_nm"]
     more = f" 외 {len(blocks) - 1}곳" if len(blocks) > 1 else ""
     subject = f"[조달핏] 이번 주 검토할 공고 — {first}{more} · {n_rows}건"
+    E = html.escape
+    date_label = f"{today.year}.{today.month:02d}.{today.day:02d} {DOW[today.weekday()]}"
+    cta = f"{SITE}/recommendations?company={blocks[0]['bizrno_norm']}&{UTM}" if len(blocks) == 1 else f"{SITE}/saved?{UTM}"
+    cta_label = "이 회사 추천 전체 보기 →" if len(blocks) == 1 else "검토함에서 전체 보기 →"
 
     h: list[str] = []
     t: list[str] = []
-    h.append('<div style="font-family:Pretendard,-apple-system,\'Segoe UI\',Roboto,\'Noto Sans KR\',sans-serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:24px 16px;line-height:1.6">')
-    h.append('<p style="margin:0 0 4px;font-size:13px;color:#6b6560">조달핏 · 저장한 회사의 새 공고</p>')
-    h.append(f'<h1 style="margin:0 0 18px;font-size:20px;font-weight:700;letter-spacing:-0.02em">이번 주 검토할 공고 {n_rows}건</h1>')
-    t.append(f"조달핏 · 이번 주 검토할 공고 {n_rows}건\n")
+    preheader = E(blocks[0]["rows"][0].get("bid_ntce_nm") or "")
+    h.append(f'<div style="display:none;max-height:0;overflow:hidden;opacity:0">{preheader}</div>')
+    h.append(f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{C["paper"]};font-family:{FONT};color:{C["ink"]}"><tr><td align="center" style="padding:28px 16px 36px">')
+    h.append('<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">')
+    # 머리 — 로고 lockup · 날짜
+    h.append('<tr><td style="padding:0 2px 14px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
+             f'<td style="font-size:16px;font-weight:800;letter-spacing:-0.035em;line-height:22px"><img src="{SITE}/apple-icon" width="22" height="22" alt="" style="vertical-align:middle;border-radius:5px;margin-right:7px">'
+             f'<a href="{SITE}/?{UTM}" style="color:{C["ink"]};text-decoration:none;vertical-align:middle">조달핏</a></td>'
+             f'<td align="right" style="font-size:12px;color:{C["mute"]};white-space:nowrap">{date_label} · 주간 메일</td></tr></table></td></tr>')
+    # 판
+    h.append(f'<tr><td style="background:{C["panel"]};border:1px solid {C["hair"]};border-radius:8px;padding:26px 26px 24px">')
+    h.append(f'<div style="font-size:11px;letter-spacing:0.04em;color:{C["mute"]}">저장한 회사의 새 공고</div>')
+    h.append(f'<div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;line-height:1.3;margin-top:6px">이번 주 검토할 공고 <span style="font-variant-numeric:tabular-nums">{n_rows}</span><span style="font-size:15px;font-weight:500">건</span></div>')
+    h.append(f'<div style="font-size:13px;color:{C["g"]};margin-top:6px">최근 7일 등록 · 각 회사의 등록업종·공급물품·수주 이력 기준 · 적합 순</div>')
+    t.append(f"조달핏 · {date_label} · 이번 주 검토할 공고 {n_rows}건\n")
     for b in blocks:
         link = f"{SITE}/recommendations?company={b['bizrno_norm']}&{UTM}"
-        h.append(f'<h2 style="margin:22px 0 6px;font-size:15px;font-weight:700;border-bottom:1px solid #1a1a1a;padding-bottom:6px">{html.escape(b["corp_nm"])} <a href="{link}" style="font-weight:500;font-size:12.5px;color:#6b6560">추천 전체 보기 →</a></h2>')
-        t.append(f"\n■ {b['corp_nm']}  ({link})")
-        for r in b["rows"]:
-            no = r.get("bid_ntce_no")
-            nl = f"{SITE}/notices/{no}?{UTM}"
+        h.append('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>'
+                 f'<td style="border-left:2px solid {C["orange"]};padding-left:10px;font-size:15px;font-weight:700;line-height:1.3">{E(b["corp_nm"])}'
+                 f'<div style="font-size:12.5px;font-weight:500;color:{C["mute"]};margin-top:3px">새 공고 {len(b["rows"])}건 &nbsp;·&nbsp; '
+                 f'<a href="{link}" style="color:{C["ink"]};text-decoration:none;border-bottom:1px solid {C["ink"]}">추천 전체 보기 →</a></div></td></tr></table>')
+        t.append(f"\n■ {b['corp_nm']} — 새 공고 {len(b['rows'])}건  ({link})")
+        h.append('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px">')
+        for i, r in enumerate(b["rows"], 1):
+            nl = f"{SITE}/notices/{r.get('bid_ntce_no')}?{UTM}"
             org = r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "—"
-            dl = _dleft(r.get("bid_clse_date"), today)
+            clse = r.get("bid_clse_date")
+            days = (date.fromisoformat(clse[:10]) - today).days if clse else None
+            dl = "—" if days is None else (f"D-{days}" if days >= 0 else "마감")
+            hot = days is not None and 0 <= days <= 7
+            md = f"{clse[5:7]}.{clse[8:10]}" if clse else ""
             h.append(
-                '<div style="padding:10px 0;border-bottom:1px solid #e6e2dc">'
-                f'<a href="{nl}" style="color:#1a1a1a;font-weight:600;text-decoration:none;font-size:15px">{html.escape(r.get("bid_ntce_nm") or "")}</a>'
-                f'<div style="font-size:12.5px;color:#6b6560;margin-top:2px">{html.escape(org)} · 마감 <b style="color:#b85510">{dl}</b> · 추정가 {_won(r.get("presmpt_prce"))}</div>'
-                "</div>"
+                f'<tr><td valign="top" style="padding:13px 0;border-bottom:1px solid {C["rule"]};width:22px;font-size:11px;color:{C["mute"]};font-variant-numeric:tabular-nums">{i:02d}</td>'
+                f'<td valign="top" style="padding:13px 10px 13px 0;border-bottom:1px solid {C["rule"]}">'
+                f'<a href="{nl}" style="color:{C["ink"]};font-size:15px;font-weight:600;line-height:1.45;text-decoration:none">{E(r.get("bid_ntce_nm") or "")}</a>'
+                f'<div style="font-size:12.5px;color:{C["g"]};margin-top:3px">{E(org)} &nbsp;·&nbsp; <span style="white-space:nowrap">추정가 <span style="color:{C["ink"]};font-weight:500;font-variant-numeric:tabular-nums">{_won(r.get("presmpt_prce"))}</span></span></div></td>'
+                f'<td valign="top" align="right" style="padding:13px 0;border-bottom:1px solid {C["rule"]};width:58px;white-space:nowrap;font-variant-numeric:tabular-nums">'
+                f'<div style="font-size:16px;font-weight:700;letter-spacing:-0.02em;color:{C["oink"] if hot else C["ink"]}">{dl}</div><div style="font-size:11px;color:{C["g"]};margin-top:2px">{md}</div></td></tr>'
             )
-            t.append(f"- {r.get('bid_ntce_nm')}  | {org} | 마감 {dl} | 추정가 {_won(r.get('presmpt_prce'))}\n  {nl}")
-    h.append('<p style="margin:22px 0 0;font-size:12.5px;color:#6b6560;line-height:1.7">추천은 검토 순서이며 낙찰을 예측하지 않습니다. 최근 7일에 등록된 공고 중 각 회사의 등록업종·공급물품·수주 이력에 맞는 순서로 골랐습니다.<br>'
-             f'저장한 회사를 바꾸려면 <a href="{SITE}/saved?{UTM}" style="color:#1a1a1a">검토함</a>에서 합니다.')
+            t.append(f"{i:02d}. {r.get('bid_ntce_nm')}\n    {org} · 마감 {dl} {md} · 추정가 {_won(r.get('presmpt_prce'))}\n    {nl}")
+        h.append("</table>")
+    h.append(f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:22px"><tr><td style="background:{C["ink"]};border-radius:6px"><a href="{cta}" style="display:inline-block;padding:11px 16px;color:#ffffff;font-size:13.5px;font-weight:600;text-decoration:none">{cta_label}</a></td></tr></table>')
+    h.append("</td></tr>")
+    # 바닥
+    h.append(f'<tr><td style="padding:16px 2px 0;font-size:12px;line-height:1.7;color:{C["mute"]}">추천은 검토 순서이며 낙찰을 예측하지 않습니다. 나라장터 공공데이터 기반 · 매일 05:00 갱신<br>'
+             f'<a href="{SITE}/saved?{UTM}" style="color:{C["mute"]}">저장한 회사 바꾸기</a>')
     if unsubscribe:
-        h.append(f'<br><a href="{unsubscribe}" style="color:#6b6560">이 메일 그만 받기</a>')
-    h.append("</p></div>")
-    t.append("\n추천은 검토 순서이며 낙찰을 예측하지 않습니다. 저장한 회사를 바꾸려면 검토함: " + f"{SITE}/saved")
+        h.append(f' &nbsp;·&nbsp; <a href="{unsubscribe}" style="color:{C["mute"]}">이 메일 그만 받기</a>')
+    h.append(f' &nbsp;·&nbsp; © {today.year} 조달핏</td></tr>')
+    h.append("</table></td></tr></table>")
+    t.append(f"\n{cta_label} {cta}\n추천은 검토 순서이며 낙찰을 예측하지 않습니다. 저장한 회사 바꾸기: {SITE}/saved")
     if unsubscribe:
         t.append(f"이 메일 그만 받기: {unsubscribe}")
     return subject, "".join(h), "\n".join(t)
