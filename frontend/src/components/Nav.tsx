@@ -27,7 +27,7 @@ function LoginLink() {
   const pathname = usePathname() ?? "/";
   const search = useSearchParams()?.toString();
   const next = search ? `${pathname}?${search}` : pathname;
-  return <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-ink border-b border-ink">로그인</Link>;
+  return <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-ink border-b border-ink transition-colors duration-150 hover:border-orange">로그인</Link>;
 }
 
 /** 바깥 클릭·Esc 로 닫히는 팝오버 상태. 사용자 메뉴와 모바일 메뉴가 같이 쓴다. */
@@ -55,14 +55,15 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
   const { open: mOpen, setOpen: setMOpen, ref: mRef, trigger: mTrigger } = usePopover();
 
   return (
-    <div className="flex items-center justify-between py-[22px] text-[13px] text-ink-g print:hidden">
+    // 머리 아래 헤어라인 한 줄로 본문과 나눈다(2026-10-28, 승우님) — 색 면은 두지 않는다(주황은 선). 메뉴는 hover 에 먹 글자 + 주황 밑줄(.u-link 와 같은 말).
+    <div data-nav className="flex items-center justify-between border-b border-hair py-[22px] text-[13px] text-ink-g print:hidden">
       <Link href="/" aria-label="조달핏 홈"><Lockup /></Link>
       <nav className="flex items-center gap-[22px] max-sm:gap-4" aria-label="주 메뉴">
         {LINKS.map((l) => {
           const active = l.match.test(pathname);
           return (
             <Link key={l.href} href={l.href} aria-current={active ? "page" : undefined}
-              className={cn("max-sm:hidden", active && "text-ink font-semibold")}>
+              className={cn("max-sm:hidden border-b-2 border-transparent pb-px transition-colors duration-150 hover:border-orange hover:text-ink", active && "text-ink font-semibold")}>
               {l.label}
             </Link>
           );
@@ -70,7 +71,7 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
         {user ? (
           <div ref={ref} className="relative">
             <button ref={trigger} type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="nav-user-menu"
-              className="text-ink font-semibold border-b border-ink cursor-pointer">
+              className="text-ink font-semibold border-b border-ink cursor-pointer transition-colors duration-150 hover:border-orange">
               {user.email.split("@")[0]}@…
             </button>
             {open && (

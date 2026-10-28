@@ -104,6 +104,17 @@ def main() -> None:
         pg.wait_for_url(re.compile(r"/recommendations\?q="), timeout=15000)
         assert parse_qs(urlsplit(pg.url).query)["q"] == ["물"], pg.url
 
+        # 머리(2026-10-28) — 아래 헤어라인 한 줄, 메뉴 hover 는 먹 글자 + 주황 밑줄(면 아님). 활성 항목은 굵게.
+        pg.goto(URL, wait_until="networkidle", timeout=30000)
+        nv = pg.evaluate("""() => { const n = document.querySelector('[data-nav]'); const c = getComputedStyle(n);
+            const a = document.querySelector('nav > a[href="/notices"]'); const s = getComputedStyle(a);
+            return { line: c.borderBottomColor, w: c.borderBottomWidth, rest: s.borderBottomColor, bg: s.backgroundColor } }""")
+        assert nv["line"] == "rgb(230, 228, 223)" and nv["w"] == "1px", nv
+        pg.hover('nav > a[href="/notices"]'); pg.wait_for_timeout(250)
+        hv = pg.evaluate("""() => { const s = getComputedStyle(document.querySelector('nav > a[href="/notices"]')); return { ul: s.borderBottomColor, color: s.color, bg: s.backgroundColor } }""")
+        assert hv["ul"] == "rgb(249, 115, 22)" and hv["color"] == "rgb(20, 20, 20)" and hv["bg"] == "rgba(0, 0, 0, 0)", hv
+        pg.screenshot(path=str(OUT / "_shot_entry_nav_hover.png"), clip={"x": 0, "y": 0, "width": 1280, "height": 90})
+
         pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
         pg2.goto(URL, wait_until="networkidle", timeout=30000)
         assert not pg2.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "390 가로 넘침"
