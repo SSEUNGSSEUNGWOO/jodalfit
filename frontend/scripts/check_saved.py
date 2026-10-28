@@ -84,6 +84,7 @@ def main():
             assert pg.url.endswith("/welcome") and pg.evaluate("!!document.querySelector('[data-save-company] [data-suggest][data-mode=company]') && !!document.querySelector('[data-welcome-skip]')"), pg.url
             pg.fill("[data-save-company] input[role=combobox]", "케이브레인컴퍼니"); pg.wait_for_selector("[data-save-company] [role=option]")
             assert "키워드로 찾기" not in pg.inner_text("[data-save-company]"), "저장 폼에 키워드 폴백이 떴다"
+            assert pg.inner_text("[data-save-company] button[type=submit]").strip() == "저장", "저장 폼 버튼 글자"
             pg.keyboard.press("Enter"); pg.wait_for_url(re.compile(r"/saved$")); pg.wait_for_load_state("networkidle")
             pg.click("#tab-c"); pg.wait_for_timeout(200)
             assert pg.evaluate("document.querySelectorAll('#pane-c [data-saved-company]').length") == 1 and "케이브레인컴퍼니" in pg.inner_text("#pane-c [data-saved-company] a"), "welcome 저장이 검토함에 없다"

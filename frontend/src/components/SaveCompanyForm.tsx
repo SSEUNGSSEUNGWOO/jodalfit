@@ -31,7 +31,7 @@ export function SaveCompanyForm({ next, from }: {
 
   return (
     <div data-save-company data-state={st.k}>
-      <SearchSuggest lock="company" placeholder="우리 회사 이름 또는 사업자번호" compact onPick={pick} autoFocus={from === "welcome"} />
+      <SearchSuggest lock="company" placeholder="우리 회사 이름 또는 사업자번호" compact onPick={pick} submitLabel="저장" autoFocus={from === "welcome"} />
       {st.k === "busy" && <p className="m-0 mt-2.5 text-[13.5px] text-ink-g" aria-live="polite">{st.nm} 저장 중</p>}
       {st.k === "notfound" && <p role="alert" className="m-0 mt-2.5 border-l-2 border-orange pl-2.5 text-[13.5px] text-ink">&quot;{st.nm}&quot;은 조달핏에 없는 회사입니다. 목록에 뜨는 이름으로 고릅니다. 나라장터에 등록된 회사면 다음 시간부터 검색됩니다.</p>}
       {st.k === "error" && <p role="alert" className="m-0 mt-2.5 border-l-2 border-orange pl-2.5 text-[13.5px] text-ink">저장하지 못했습니다. 잠시 후 다시</p>}
