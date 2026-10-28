@@ -175,7 +175,7 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
             </h1>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-ink-mute">
               필터 조건에 맞는 공고 <span className="font-bold text-ink">{totalCount.toLocaleString("ko-KR")}건</span>.
-              공고를 클릭하면 발주계획부터 낙찰까지 전 과정을 한 페이지에서 확인할 수 있어요.
+              공고를 열면 발주계획부터 낙찰까지 전 과정을 한 페이지에서 확인합니다.
             </p>
             <div className="mt-6 max-w-[560px]">
               <SearchSuggest />
@@ -279,10 +279,10 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
           {notices.length === 0 ? (
             <div className="rounded-xl bg-muted/40 border border-border p-8 text-center">
               <h3 className="text-[18px] font-bold text-ink">
-                해당 조건의 진행 중 공고가 없어요.
+                해당 조건의 진행 중 공고가 없습니다.
               </h3>
               <p className="mt-2 text-[14px] text-ink-mute">
-                필터를 조금 풀어보세요.
+                필터 조건을 줄이면 더 많은 공고가 나옵니다.
               </p>
             </div>
           ) : (

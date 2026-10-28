@@ -22,6 +22,12 @@ const LINKS = [
   { href: "/changelog", label: "개선 기록", match: /^\/changelog/ },
 ];
 
+/** 계정 글자 — 메일 앞부분 + "@…". 앞부분이 10자를 넘으면 9자에서 끊고 "…" 하나만(check-saved → check-sav…). */
+export function accountLabel(email: string, max = 10): string {
+  const local = email.split("@")[0];
+  return local.length <= max ? `${local}@…` : `${local.slice(0, max - 1)}…`;
+}
+
 /** 로그인 링크 — 현재 경로 + 쿼리를 next 로. useSearchParams 는 Suspense 경계가 필요하다(Next 16). */
 function LoginLink() {
   const pathname = usePathname() ?? "/";
@@ -70,9 +76,10 @@ export function Nav({ user, signOutHref = "/logout" }: { user?: NavUser | null; 
         })}
         {user ? (
           <div ref={ref} className="relative">
-            <button ref={trigger} type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="nav-user-menu"
+            {/* 계정 글자는 짧게 — 메일 앞부분이 길면 메뉴 한 줄을 다 먹었다(2026-10-28). 데스크톱은 10자에서 자르고, 390 은 "계정" 두 글자. 전체 주소는 팝오버 첫 줄에 있다. */}
+            <button ref={trigger} type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="nav-user-menu" aria-label={`계정 메뉴 (${user.email})`} data-nav-account
               className="text-ink font-semibold border-b border-ink cursor-pointer transition-colors duration-150 hover:border-orange">
-              {user.email.split("@")[0]}@…
+              <span className="max-sm:hidden">{accountLabel(user.email)}</span><span className="sm:hidden">계정</span>
             </button>
             {open && (
               <div id="nav-user-menu" data-menu className={POPOVER}>

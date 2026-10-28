@@ -10,7 +10,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "업종별 공공조달 기업 목록 | 조달핏",
   description:
-    "나라장터 등록업종별로 공공조달 참여 기업을 찾아보세요. 토목·전기·정보통신·소프트웨어 등 업종을 선택하면 해당 업종으로 등록된 회사와 수주 이력을 볼 수 있습니다.",
+    "나라장터 등록업종별 공공조달 참여 기업 목록. 토목·전기·정보통신·소프트웨어 등 업종을 선택하면 해당 업종으로 등록된 회사와 수주 이력이 나옵니다.",
   alternates: { canonical: "/companies/industry" },
 };
 

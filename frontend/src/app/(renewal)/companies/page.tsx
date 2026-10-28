@@ -24,7 +24,7 @@ const TOP_INDUSTRIES = 24;
 export const metadata: Metadata = {
   title: "공공조달 활동 기업 둘러보기 | 조달핏",
   description:
-    "나라장터 수주 이력이 분석된 기업들. 각 회사의 활동 영역과 적합한 공공입찰 공고를 한눈에 확인하세요.",
+    "나라장터 수주 이력이 분석된 기업 목록. 각 회사의 활동 영역과 검토할 만한 공공입찰 공고를 한 페이지에서 확인합니다.",
   alternates: { canonical: "/companies" },
 };
 
@@ -47,8 +47,8 @@ export default async function CompaniesIndexPage() {
               공공조달 활동 기업
             </h1>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.65] text-ink-mute">
-              나라장터 수주 이력이 분석된 기업 중 {companies.length}곳을 보여드려요. 회사를 선택하면
-              해당 회사에 맞는 추천 공고와 과거 수주 분석을 볼 수 있어요.
+              나라장터 수주 이력이 분석된 기업 중 {companies.length}곳입니다. 회사를 선택하면
+              그 회사가 검토할 공고와 과거 수주 분석이 나옵니다.
             </p>
             <div className="mt-6 max-w-[560px]">
               <SearchSuggest />
@@ -59,7 +59,7 @@ export default async function CompaniesIndexPage() {
         <section className="mx-auto max-w-[1140px] px-5 sm:px-8 py-10 sm:py-14">
           {companies.length === 0 ? (
             <p className="text-[14.5px] text-ink-mute">
-              아직 보여드릴 회사가 없어요. 잠시 후 다시 확인해 주세요.
+              아직 표시할 회사가 없습니다. 잠시 후 다시 확인합니다.
             </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

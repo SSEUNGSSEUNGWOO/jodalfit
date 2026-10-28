@@ -128,7 +128,7 @@ export default function PrivacyPage() {
                 <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("[조달핏] 기업 정보 비공개 요청")}`} className="underline underline-offset-2">
                   {CONTACT_EMAIL}
                 </a>
-                로 보내주세요.
+                로 보냅니다.
               </li>
               <li>
                 확인 방법: 해당 기업의 도메인으로 된 메일 주소에서 온 요청은 그대로 처리합니다. 다른 메일 주소로 온 요청은

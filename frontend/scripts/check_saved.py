@@ -146,10 +146,13 @@ def main():
             assert pg.locator("[data-unstar]").inner_text() == "되돌리기"
             pg.click("[data-unstar]"); pg.wait_for_timeout(500)
             pg.click("#tab-n"); rules(pg)
+            # 계정 글자(2026-10-28) — 390 은 "계정", 데스크톱은 메일 앞부분 10자까지 + "@…"
+            assert pg.inner_text("[data-nav-account]").strip() == "계정", pg.inner_text("[data-nav-account]")
             pg.screenshot(path=str(OUT / "_shot_saved_390.png"), full_page=True)
 
             # 메뉴 ★ 목록·검토 건수 (Nav)
             pg.set_viewport_size({"width": 1280, "height": 900}); goto(pg, "/saved")
+            assert pg.inner_text("[data-nav-account]").strip() == "check-sav…", pg.inner_text("[data-nav-account]")  # check-saved 는 11자라 9자 + …
             pg.click("nav button[aria-controls=nav-user-menu]"); pg.wait_for_timeout(200)
             n = pg.evaluate("""() => ({ star: document.querySelectorAll('[data-menu] a[href^="/companies/1248177731"]').length,
                 cnt: [...document.querySelectorAll('[data-menu] small')].map(e => e.textContent).find(t => t.includes('검토한 공고')) })""")
