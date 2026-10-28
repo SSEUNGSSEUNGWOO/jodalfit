@@ -61,12 +61,18 @@ function WeeklyMailLine({ userId, on }: { userId: string; on: boolean }) {
   return (
     <p data-weekly-mail data-on={on ? "1" : "0"} className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-hair pt-4 text-[13.5px] text-ink-g">
       <span>저장한 회사에 새 공고가 있으면 매주 월요일 아침 메일로 보냅니다.</span>
-      <b className="font-semibold text-ink">{on ? "받는 중" : "받지 않음"}</b>
-      {t && (
-        <form method="post" action="/api/mail/weekly" className="inline">
+      {t ? (
+        // 토글 모양이지만 JS 없는 폼 제출이다 — 누르면 서버가 바꾸고 /saved 로 돌아온다. 켜짐은 먹색 면(주황 면 금지), 주황은 hover·focus 테두리만.
+        <form method="post" action="/api/mail/weekly" className="inline-flex items-center gap-2">
           <input type="hidden" name="u" value={userId} /><input type="hidden" name="t" value={t} /><input type="hidden" name="on" value={on ? "0" : "1"} /><input type="hidden" name="back" value="saved" />
-          <button type="submit" className="cursor-pointer border-b border-field text-ink hover:border-orange">{on ? "그만 받기" : "받기"}</button>
+          <button type="submit" role="switch" aria-checked={on} aria-label="주간 메일 받기" data-weekly-switch
+            className={`relative inline-block h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange ${on ? "border-ink bg-ink hover:border-orange" : "border-field bg-panel hover:border-orange"}`}>
+            <span aria-hidden className={`absolute top-[3px] h-[14px] w-[14px] rounded-full transition-[left] ${on ? "left-[21px] bg-panel" : "left-[3px] bg-ink-tick"}`} />
+          </button>
+          <b className="font-semibold text-ink">{on ? "받는 중" : "받지 않음"}</b>
         </form>
+      ) : (
+        <b className="font-semibold text-ink">{on ? "받는 중" : "받지 않음"}</b>
       )}
     </p>
   );
