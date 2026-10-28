@@ -55,7 +55,13 @@ def main():
                 return { txt: b?.innerText.trim(), bg: getComputedStyle(b).backgroundColor, above: b.getBoundingClientRect().bottom <= f.getBoundingClientRect().top } }""")
             assert g["txt"] == "Google로 계속" and g["bg"] == "rgb(255, 255, 255)" and g["above"], (path, g)
         pg.goto(f"{BASE}/consent?next=%2Fsaved"); pg.wait_for_load_state("networkidle"); assert "/login?next=%2Fconsent" in pg.url, pg.url
-        pg.goto(f"{BASE}/login?error=oauth"); pg.wait_for_load_state("networkidle"); assert "Google 로그인이 완료되지 않았습니다" in pg.evaluate("document.body.innerText")
+        pg.goto(f"{BASE}/login?error=oauth"); pg.wait_for_load_state("networkidle"); assert "소셜 로그인이 완료되지 않았습니다" in pg.evaluate("document.body.innerText")
+        # 네이버 버튼은 NEXT_PUBLIC_NAVER_LOGIN=1 일 때만 — 있으면 구글 아래, 같은 모양. userinfo 중계는 토큰 없으면 401.
+        nv = pg.evaluate("""() => { const n = document.querySelector('[data-social-naver]'); const g = document.querySelector('[data-social-google]');
+            return n ? { txt: n.innerText.trim(), below: n.getBoundingClientRect().top >= g.getBoundingClientRect().bottom, h: n.offsetHeight === g.offsetHeight } : null }""")
+        assert nv is None or (nv["txt"] == "네이버로 계속" and nv["below"] and nv["h"]), nv
+        assert pg.request.get(f"{BASE}/api/auth/naver/userinfo").status == 401
+        assert pg.request.get(f"{BASE}/api/auth/naver/userinfo", headers={"Authorization": "Bearer not-a-real-token"}).status == 401
         # 우리 회사 저장(/welcome, 2026-10-28) — 비로그인은 로그인으로, next 에 /welcome 을 품는다
         pg.goto(f"{BASE}/welcome?next=%2Fsaved"); pg.wait_for_load_state("networkidle"); assert "/login?next=%2Fwelcome" in pg.url, pg.url
         # 약관
