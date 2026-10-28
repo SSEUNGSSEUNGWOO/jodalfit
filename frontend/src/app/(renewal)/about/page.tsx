@@ -2,7 +2,7 @@
 // 서비스 소개 — 리뉴얼 문법으로 다시 그림(2026-10-25). 09 컷오버는 nav·footer 껍데기만 바꾸고 본문은 옛 개찰판
 // (청색 밴드 `gc-*`, "적합 72" 점수 숫자, 폐기된 "검토 여유 +10" 보너스, "넣으면" 구어)을 그대로 두었었다.
 // 규칙(docs/design/README.md): 바닥 위 머리 + 흰 판, 먹 괘선은 머리 아래 하나, 주황은 선, 적합 점수 숫자 비노출, 공문 톤.
-// 점수표·단계 설명은 lib/how-we-pick.ts 하나만 참조한다(score.py 와 check_changelog.py 가 대조) — 여기에 숫자를 다시 적지 않는다.
+// 공개용 추천 기준과 한계는 lib/how-we-pick.ts 하나만 참조한다. 내부 가중치·실험 수치는 공개하지 않는다.
 // 예시 표는 실제 결과(data/sample.json, 한종산업개발 2026-10-16) 2건 — 가짜 공고·가짜 점수를 만들지 않는다.
 import type { Metadata } from "next";
 import { Btn } from "@/components/Btn";
@@ -11,7 +11,7 @@ import { Panel, PanelHead } from "@/components/Panel";
 import { SheetExpand, SheetHead, SheetRow } from "@/components/Sheet";
 import { getEntryData } from "@/lib/entry";
 import { dLeft, won } from "@/lib/format";
-import { NEGATIVE, NOTE, POSITIVE, steps } from "@/lib/how-we-pick";
+import { NOTE, SIGNALS, steps } from "@/lib/how-we-pick";
 import { fetchAboutStats, type AboutStats } from "@/lib/notice";
 
 export const metadata: Metadata = {
@@ -44,8 +44,8 @@ export default async function AboutPage() {
         </p>
         <dl className="mb-0 mt-7 grid grid-cols-4 gap-x-6 gap-y-5 max-sm:grid-cols-2">
           {[
-            { k: "지금 입찰 가능한 공고", v: n(active), s: "건", h: "마감 90일 이내 · 참가자격 등록 전" },
-            { k: "누적 공고", v: n(stats.totalNotices), s: "건", h: "2026년 이후 전량 벡터화" },
+            { k: "지금 입찰 가능한 공고", v: n(active), s: "건", h: "마감·참가자격 등록 기한 기준" },
+            { k: "누적 공고", v: n(stats.totalNotices), s: "건", h: "수집된 나라장터 공고" },
             { k: "등록 회사", v: n(stats.companies), s: "개사", h: "조달업체 등록정보" },
             { k: "계약 이력", v: n(stats.contracts), s: "건", h: "수주 신호의 원천" },
           ].map((d) => (
@@ -114,34 +114,25 @@ function Sample() {
 function HowWePick({ active }: { active: number }) {
   const st = steps(active);
   return (
-    <Panel className="mt-[22px]">
-      <PanelHead title="어떻게 고르는가" summary={["운영 점수표 값 그대로", <a key="c" href="/changelog" className="u-link text-ink">개선 기록 →</a>]} />
+    <Panel id="how-we-pick" className="mt-[22px] scroll-mt-6">
+      <PanelHead title="어떻게 고르는가" summary={[<a key="c" href="/changelog" className="u-link text-ink">개선 기록 →</a>]} />
       <ol className="m-0 list-none p-0">
         {st.map((s, i) => (
           <li key={s.k} className="grid grid-cols-[36px_220px_minmax(0,1fr)] gap-x-5 border-b border-rule py-4 last:border-b-0 max-sm:grid-cols-[28px_minmax(0,1fr)] max-sm:gap-y-1.5">
             <span className="num pt-0.5 text-[13px] text-ink-mute">{String(i + 1).padStart(2, "0")}</span>
             <div className="min-w-0">
               <div className="text-[15px] font-semibold text-ink break-keep">{s.k}</div>
-              <div className="mt-0.5 text-[13px] text-ink-g break-keep"><b className="num font-semibold text-ink">{s.n}</b>{s.n !== "회사마다" && "건"} · {s.sub}</div>
+              <div className="mt-0.5 text-[13px] text-ink-g break-keep">{s.n && <><b className="num font-semibold text-ink">{s.n}</b>건 · </>}{s.sub}</div>
             </div>
             <p className="m-0 text-[14px] leading-[1.7] text-ink-body break-keep max-sm:col-start-2">{s.d}</p>
           </li>
         ))}
       </ol>
-      <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-rule pt-5 max-sm:grid-cols-1">
-        {[{ k: "올리는 것", rows: POSITIVE }, { k: "내리는 것", rows: NEGATIVE }].map((g) => (
-          <div key={g.k}>
-            <span className="t-k mb-1.5 block">{g.k}</span>
-            <ul className="m-0 list-none p-0" data-factors>
-              {g.rows.map((f) => (
-                <li key={f.t} className="flex items-baseline justify-between gap-4 border-b border-rule py-2 text-[14px] last:border-b-0">
-                  <span className="text-ink-body break-keep">{f.t}{f.d && <span className="ml-1.5 text-[12.5px] text-ink-mute">({f.d})</span>}</span>
-                  <b className="num shrink-0 font-semibold text-ink">{f.v}</b>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div className="mt-6 border-t border-rule pt-5">
+        <span className="t-k mb-1.5 block">추천에 참고하는 정보</span>
+        <ul className="m-0 grid list-none grid-cols-2 gap-x-8 p-0 max-sm:grid-cols-1" data-factors>
+          {SIGNALS.map((text) => <li key={text} className="border-b border-rule py-2 text-[14px] text-ink-body break-keep">{text}</li>)}
+        </ul>
       </div>
       <p className="mb-0 mt-5 text-[13px] leading-[1.7] text-ink-g break-keep">{NOTE}</p>
     </Panel>

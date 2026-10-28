@@ -1,141 +1,59 @@
-// frontend/src/lib/changelog.ts
-// 개선 기록(08) 의 원천은 docs/recommender/changelog.md 하나다 — 화면용 사본을 따로 두지 않는다.
-// 사본을 두면 반드시 갈라진다(시안 숫자가 운영과 달랐던 2026-10-23 건과 같은 종류의 사고).
-// 빌드 때 파일을 읽어 파싱한다. 문서가 바뀌면 다음 빌드에 반영된다.
 import "server-only";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 
-export type ChangeEntry = {
-  date: string | null; // YYYY-MM-DD, "지금" 항목은 null
-  title: string;
-  blocks: Block[];
-  tag: "측정 전" | "처음 측정" | null;
-};
-export type Block =
-  | { kind: "p"; toks: Tok[] }
-  | { kind: "ul"; items: Tok[][] }
-  | { kind: "table"; head: Tok[][]; rows: Tok[][][] };
+export type ChangeEntry = { date: string; title: string; changes: string[] };
 
-/** 내부 작업 — 입찰 담당자에게 뜻이 없다. 원문에는 남기고 화면에서만 숨긴다(시안 gen_changelog.HIDE 와 같은 목록). */
-const HIDE = [
-  "재는 회사 수를 300곳에서 3,000곳으로",
-  '"성공인데 0건"을 잡는 건강 점검',
-  "프론트 검사 오류 4개 정리",
-  "조건 검색에 키워드·발주기관을 더하는 바탕",
+/** 사이트 공개용으로 작성한 항목만 등록한다. 내부 실험 문서와 연결하지 않는다.
+ * 가중치·모델·인프라·실험 지표·개별 사용자 행동·미출시 계획은 이 목록에 넣지 않는다.
+ * GitHub 저장소 공개 범위와는 별개다.
+ */
+const PUBLIC_CHANGES: ChangeEntry[] = [
+  {
+    date: "2026-10-28", title: "나라장터 바로가기 추가",
+    changes: ["홈 검색창 아래에서 나라장터를 새 탭으로 열 수 있습니다. 입력 중인 검색 내용은 유지됩니다."],
+  },
+  {
+    date: "2026-10-28", title: "추천 공고를 더 쉽게 확인",
+    changes: ["회사 상세 상단에서 추천 공고로 바로 이동할 수 있습니다.", "사전규격과 발주계획을 따로 접고 펼칠 수 있습니다. 발주계획은 일부를 먼저 보여주고 더 보기로 전체를 확인합니다."],
+  },
+  {
+    date: "2026-10-28", title: "검토할 공고 저장 개선",
+    changes: ["추천 목록에서 공고를 펼치지 않고 바로 저장할 수 있습니다. 저장한 공고는 로그인 후 검토함에서 다시 확인합니다.", "저장하지 못한 경우 다시 시도할 수 있도록 표시합니다."],
+  },
+  {
+    date: "2026-10-28", title: "키워드 검색 범위와 좁히기 개선",
+    changes: ["검색어가 제목·발주기관·참가 가능 지역에 포함된 진행 공고를 함께 찾습니다.", "물품·용역·공사 구분과 마감까지 남은 기간으로 검색 결과를 좁힐 수 있습니다."],
+  },
+  {
+    date: "2026-10-27", title: "일치하는 공고와 관련 공고 구분",
+    changes: ["키워드가 포함된 공고를 먼저 보여주고, 그 밖에 의미가 가까운 공고를 구분해 표시합니다."],
+  },
+  {
+    date: "2026-10-26", title: "영문 약어 검색 개선",
+    changes: ["SI·SM·CCTV 등 조달 분야에서 쓰는 영문 약어로 검색할 때 관련 공고를 더 잘 찾도록 개선했습니다."],
+  },
+  {
+    date: "2026-10-25", title: "취소 공고와 자격 확인 안내 개선",
+    changes: ["취소된 공고가 추천 결과에 남는 문제를 수정했습니다.", "회사 또는 공고의 면허 자료가 부족한 경우, 제한이 없는 것으로 표시하지 않고 확인이 필요하다고 안내합니다."],
+  },
+  {
+    date: "2026-10-23", title: "추천 공고 확인 범위 확대",
+    changes: ["추천 공고를 최대 20건까지 확인할 수 있습니다. 상위 5건은 로그인 없이 공개하며, 나머지는 로그인 후 확인합니다."],
+  },
+  {
+    date: "2026-10-23", title: "면허 자격 판정 개선",
+    changes: ["여러 면허 중 하나를 충족하면 되는 공고에서 참가 가능한 회사가 제외되던 문제를 수정했습니다."],
+  },
+  {
+    date: "2026-10-16", title: "지역 조건과 참가자격 등록 마감 확인 개선",
+    changes: ["공고의 지역 제한을 시·군·구 단위까지 대조하고, 이전 행정구역 명칭도 함께 확인합니다.", "입찰 마감일뿐 아니라 참가자격 등록 기한도 확인해 추천합니다."],
+  },
+  {
+    date: "2026-06-14", title: "사전규격과 발주계획 제공",
+    changes: ["입찰공고 전 준비에 참고할 수 있도록 사전규격과 발주계획을 함께 제공합니다."],
+  },
 ];
-/** 채점표가 생긴 날. 그 전 항목은 전후 수치가 없어 '측정 전'. */
-const MEASURED_FROM = "2026-10-13";
 
-/** 글 한 토막. HTML 문자열을 만들지 않는다 — 화면은 React 요소로 그린다(dangerouslySetInnerHTML 없음). */
-export type Tok = { t: string; b?: true; c?: true };
-
-/** 굵게(**)·코드(`)만 해석한다. 나머지는 글자 그대로. */
-function inline(s: string): Tok[] {
-  const out: Tok[] = [];
-  const re = /\*\*(.+?)\*\*|`(.+?)`/g;
-  let last = 0;
-  for (let m = re.exec(s); m; m = re.exec(s)) {
-    if (m.index > last) out.push({ t: s.slice(last, m.index) });
-    if (m[1] !== undefined) out.push({ t: m[1], b: true });
-    else out.push({ t: m[2], c: true });
-    last = m.index + m[0].length;
-  }
-  if (last < s.length) out.push({ t: s.slice(last) });
-  return out;
-}
-
-function parse(md: string): { lead: Tok[][]; entries: ChangeEntry[] } {
-  const lines = md.split(/\r?\n/);
-  const lead: Tok[][] = [];
-  const entries: ChangeEntry[] = [];
-  let cur: ChangeEntry | null = null;
-  let buf: string[] = [];
-
-  const flushPara = () => {
-    const t = buf.join(" ").trim();
-    buf = [];
-    if (!t) return;
-    if (cur) cur.blocks.push({ kind: "p", toks: inline(t) });
-    else lead.push(inline(t));
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const ln = lines[i];
-    if (ln.startsWith("# ")) continue; // 문서 제목은 페이지가 따로 쓴다
-    if (ln.startsWith("---")) {
-      flushPara();
-      continue;
-    }
-    if (ln.startsWith("## ")) {
-      flushPara();
-      const head = ln.slice(3).trim();
-      const m = head.match(/^(\d{4}-\d{2}-\d{2})\s*·\s*(.+)$/);
-      const date = m ? m[1] : null;
-      const title = m ? m[2] : head;
-      cur = {
-        date,
-        title,
-        blocks: [],
-        tag: !date ? null : date < MEASURED_FROM ? "측정 전" : title.startsWith("처음") ? "처음 측정" : null,
-      };
-      entries.push(cur);
-      continue;
-    }
-    if (ln.startsWith("|")) {
-      flushPara();
-      const rows: string[][] = [];
-      while (i < lines.length && lines[i].startsWith("|")) {
-        const cells = lines[i].slice(1, -1).split("|").map((c) => c.trim());
-        if (!cells.every((c) => /^-+$/.test(c.replace(/:/g, "")))) rows.push(cells);
-        i++;
-      }
-      i--;
-      if (rows.length && cur) cur.blocks.push({ kind: "table", head: rows[0].map(inline), rows: rows.slice(1).map((r) => r.map(inline)) });
-      continue;
-    }
-    if (/^[-*] /.test(ln)) {
-      flushPara();
-      const items: Tok[][] = [];
-      while (i < lines.length && /^[-*] /.test(lines[i])) {
-        items.push(inline(lines[i].replace(/^[-*] /, "")));
-        i++;
-      }
-      i--;
-      if (cur) cur.blocks.push({ kind: "ul", items });
-      continue;
-    }
-    if (!ln.trim()) {
-      flushPara();
-      continue;
-    }
-    buf.push(ln.trim());
-  }
-  flushPara();
-  return { lead, entries };
-}
-
-export type Changelog = {
-  lead: Tok[][];
-  now: ChangeEntry | null; // "지금" 항목 — 머리 숫자 판이 쓴다
-  entries: ChangeEntry[]; // 최신순, HIDE 제외
-  hidden: number;
-  lastDate: string | null;
-};
-
-export async function getChangelog(): Promise<Changelog> {
-  // 레포 안의 문서를 읽는다. 프론트 루트 기준 ../docs/…
-  const file = path.join(process.cwd(), "..", "docs", "recommender", "changelog.md");
-  const md = await readFile(file, "utf8");
-  const { lead, entries } = parse(md);
-  const now = entries.find((e) => !e.date && e.title.startsWith("지금")) ?? null;
-  const dated = entries.filter((e) => e.date && !HIDE.includes(e.title));
-  dated.sort((a, b) => (a.date! < b.date! ? 1 : a.date! > b.date! ? -1 : 0));
-  return {
-    lead,
-    now,
-    entries: dated,
-    hidden: entries.filter((e) => e.date && HIDE.includes(e.title)).length,
-    lastDate: dated[0]?.date ?? null,
-  };
+export async function getChangelog() {
+  const entries = [...PUBLIC_CHANGES].sort((a, b) => b.date.localeCompare(a.date));
+  return { entries, lastDate: entries[0]?.date ?? null };
 }

@@ -55,6 +55,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 하네스는 운영과 맞춰져 있다 — 채널당 1,000행 천장(`CHANNEL_MAX_ROWS`, Supabase REST 한계), 회사 프로필을 시점 t 로 복원(`rgst_dt`/`valid_to_dt`). 보고서에 `final@5`·`final@20`(운영 화면 조건)과 자격 탈락 사유가 나온다.
 - 점수 분해: `--ablate bonuses` 로 유사도 단독 기준선, `--ablate institution,region,...` 로 하나씩. `--channel-max-rows 0` 은 천장을 꺼 전수 채점 상한을 잰다(2026-10-23 실측: 후보를 전부 넣어도 final@20 은 안 오른다 — 병목은 점수다).
 - 결과는 `docs/recommender/exp-YYYY-MM-DD-<주제>.md`(실험 기록) + `docs/recommender/changelog.md`(사용자 언어로 "무엇이 왜 달라졌나")에 남긴다. 운영 전환 스위치(`RECO_RETRIEVAL`, `EMBED_SPACE`, `*_PROVIDER`)는 환경변수 하나로 롤백되게 유지한다.
+- **사이트 공개 기록은 별도 편집한다(2026-10-28).** `/changelog`는 `frontend/src/lib/changelog.ts`의 `PUBLIC_CHANGES`에 작성한 항목만 보여준다. 내부 문서 자동 공개·제목별 숨김 방식은 금지. 공개 내용은 기능 변화·사용자 이점·확인해야 할 한계만, 가중치·모델·인프라·실험 지표·개별 사용자 행동·미출시 계획은 옮기지 않는다. `/about`·`/faq`도 동일한 기준을 따른다. GitHub PUBLIC·Actions 운영은 유지하며 웹 공개 범위와 구분한다.
 
 ### backend 구조
 - `app/api/` — 라우터 (recommendations, events=행동 로깅 + `/events/helpful`(결과 화면 "도움이 됐습니까" → 0063 `result_feedback`, `/admin` 응답 건강 판), qualifications=자격 라벨, feedback=`/feedback` 폼 수신 → 0061 `feedback` 테이블, `/admin` 이 읽는다)

@@ -1,7 +1,8 @@
 # frontend/scripts/check_changelog.py
-"""개선 기록(08) 검증 — 원천 문서와 화면이 어긋나지 않는지, 점수표가 운영 코드와 같은지.
+"""공개 개선 기록의 명시적 목록·최신순·내부 정보 비노출 검증.
 
-사용: cd backend && uv run --no-sync python ../frontend/scripts/check_changelog.py
+cd backend; uv run --no-sync python ../frontend/scripts/check_changelog.py
+RESULTS_BASE 기본 http://localhost:3000. GitHub 공개 상태는 변경하지 않는다.
 """
 import os, re, sys
 from pathlib import Path
@@ -10,52 +11,47 @@ from playwright.sync_api import sync_playwright
 BASE = os.environ.get("RESULTS_BASE", "http://localhost:3000")
 ROOT = Path(__file__).resolve().parent.parent.parent
 OUT = Path(__file__).resolve().parent
-MD = ROOT / "docs" / "recommender" / "changelog.md"
-SCORE = ROOT / "backend" / "app" / "recommender" / "score.py"
-HOW = ROOT / "frontend" / "src" / "lib" / "how-we-pick.ts"
-HIDE = ["재는 회사 수를 300곳에서 3,000곳으로", '"성공인데 0건"을 잡는 건강 점검',
-        "프론트 검사 오류 4개 정리", "조건 검색에 키워드·발주기관을 더하는 바탕"]
+SOURCE = ROOT / "frontend/src/lib/changelog.ts"
 BANNED = ["해드려요", "예요", "에요", "하세요", "주십시오"]
+INTERNAL = ["KURE-v1", "0.65", "0.45", "+12", "−9", "다음 병목", "해 보고 뺀 것", "운영 점수표 값 그대로", "한 분이", "내부 작업", "HNSW", "채점표"]
 
 
-def main() -> None:
-    md = MD.read_text(encoding="utf-8")
-    heads = re.findall(r"^## (\d{4}-\d{2}-\d{2}) · (.+)$", md, re.M)
-    shown = [t for _, t in heads if t not in HIDE]
-
-    # 점수표가 운영 코드와 같은가 — 여기 어긋나면 페이지가 거짓말을 한다
-    sp, how = SCORE.read_text(encoding="utf-8"), HOW.read_text(encoding="utf-8")
-    for key, want in (("institution", "+12"), ("region", "+9"), ("instt_closed", "−3"), ("deadline_urgent", "−9")):
-        m = re.search(rf'"key": "{key}".*?"points": (-?\d+)', sp, re.S)
-        assert m, f"score.py 에서 {key} 를 못 찾음"
-        n = int(m.group(1))
-        txt = f"{'+' if n > 0 else '−'}{abs(n)}"
-        assert txt == want, f"{key}: score.py {txt} vs 검사 기대 {want} — 점수표가 바뀌었다"
-        assert f'v: "{txt}"' in how, f"how-we-pick.ts 에 {key} 의 {txt} 가 없다 — 운영 점수표와 어긋남"
-
+def main():
+    source = SOURCE.read_text(encoding="utf-8")
+    expected = re.findall(r'date: "(\d{4}-\d{2}-\d{2})", title: "([^"\n]+)"', source)
+    assert expected, "공개 허용 목록이 없다"
+    assert "PUBLIC_CHANGES" in source and "readFile" not in source and "node:fs" not in source, "내부 문서를 자동으로 읽는 구조가 돌아왔다"
+    exe = next(Path.home().glob("AppData/Local/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-win64/chrome-headless-shell.exe"), None)
     with sync_playwright() as p:
-        b = p.chromium.launch()
-        pg = b.new_page(viewport={"width": 1280, "height": 1000}, device_scale_factor=2)
-        pg.goto(f"{BASE}/changelog", wait_until="networkidle", timeout=40000)
-        txt = pg.evaluate("document.body.innerText")
-        bad = [w for w in BANNED if w in txt]
-        assert not bad, f"금지어 {bad}"
-        for t in HIDE:
-            assert t not in txt, f"숨겨야 할 내부 항목이 보인다: {t}"
-        arts = pg.evaluate("() => document.querySelectorAll('article').length")
-        assert arts == len(shown), f"항목 {arts} vs 문서 {len(shown)}"
-        # 최신순
-        dates = pg.evaluate(r"""() => [...document.querySelectorAll('article .num')].map(e => e.textContent.trim()).filter(t => /^\d{4}\./.test(t))""")
-        assert dates == sorted(dates, reverse=True), f"최신순이 아니다: {dates[:4]}"
-        assert "어떻게 고르는가" in txt and "점수를 올리는 것" in txt, "어떻게 고르는가 판이 없다"
-        assert "측정 전" in txt, "측정 전 표시가 없다"
-        assert not pg.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "가로 넘침"
-        pg.screenshot(path=str(OUT / "_shot_changelog.png"), full_page=True)
-        pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
-        pg2.goto(f"{BASE}/changelog", wait_until="networkidle", timeout=40000)
-        assert not pg2.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "390 가로 넘침"
+        b = p.chromium.launch(executable_path=str(exe) if exe else None)
+        pg = b.new_page(viewport={"width": 1280, "height": 1000})
+        pg.route("**/*posthog.com/**", lambda r: r.abort())
+        for width in (1280, 390):
+            pg.set_viewport_size({"width": width, "height": 1000})
+            response = pg.goto(BASE + "/changelog", wait_until="networkidle", timeout=40000)
+            assert response.status == 200
+            txt = pg.evaluate("document.body.innerText")
+            raw = response.text()
+            assert not [w for w in BANNED + INTERNAL if w in txt], "내부 정보 또는 금지어가 본문에 있다"
+            assert not [w for w in INTERNAL if w in raw], "숨겨진 HTML 또는 전달 데이터에 내부 정보가 있다"
+            titles = pg.locator("article h2").all_text_contents()
+            assert set(titles) == {title for _, title in expected} and len(titles) == len(expected)
+            dates = pg.locator("article time").evaluate_all("els => els.map(e => e.dateTime)")
+            assert dates == sorted(dates, reverse=True)
+            assert "서비스 개선 기록" in txt and "낙찰 가능성을 예측하지 않습니다" in txt
+            assert pg.locator('a[href="/about#how-we-pick"]').count() == 1
+            assert not pg.evaluate("document.documentElement.scrollWidth > innerWidth")
+        # 소개·FAQ의 중복 공개도 검사한다. 자격 확인불가·원문 확인 안내는 남아 있어야 한다.
+        for path in ("/about", "/faq"):
+            response = pg.goto(BASE + path, wait_until="networkidle", timeout=40000)
+            assert response.status == 200
+            txt = pg.evaluate("document.body.innerText")
+            assert not [w for w in INTERNAL if w in txt], path
+            assert not [w for w in INTERNAL if w in response.text()], path + " hidden payload"
+            assert "확인이 필요" in txt and "공고 원문" in txt, path + " 한계 안내가 없다"
+            assert not pg.evaluate("document.documentElement.scrollWidth > innerWidth")
         b.close()
-    print(f"ok changelog: 항목 {arts}건(숨김 {len(HIDE)}) · 최신 {dates[0]} · 점수표 운영 코드와 일치")
+    print(f"ok public changelog: {len(expected)} explicit entries · latest first · no internal payload · about/FAQ limits retained · 1280/390")
 
 
 if __name__ == "__main__":

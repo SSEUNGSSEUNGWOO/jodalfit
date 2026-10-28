@@ -12,7 +12,7 @@
 
 - [검색 입구](https://jodalfit.co.kr/): 회사명·사업자등록번호 또는 업종·품목 키워드로 검색합니다.
 - [자주 묻는 질문](https://jodalfit.co.kr/faq): 추천 기준, 참가 자격 판정, 데이터 갱신, 이용 방법.
-- [개선 기록](https://jodalfit.co.kr/changelog): 추천 방식을 무엇을 바꿔 얼마나 나아졌는지 측정 수치와 함께 기록합니다.
+- [개선 기록](https://jodalfit.co.kr/changelog): 검색·추천·검토함에서 달라진 기능과 이용에 도움이 되는 개선 사항을 안내합니다.
 - [소개](https://jodalfit.co.kr/about): 동작 방식과 한계.
 - [입찰공고 둘러보기](https://jodalfit.co.kr/notices): 지금 입찰 가능한 나라장터 공고 목록.
 - [회사 둘러보기](https://jodalfit.co.kr/companies): 지역·업종별 회사 목록.

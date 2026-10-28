@@ -3,7 +3,7 @@
 
 사용: cd backend && uv run --no-sync python ../frontend/scripts/check_about.py   (ABOUT_BASE 기본 http://localhost:3000)
 금지어 0, 주황 면 0(로고 타일 제외), 옛 토큰(gc-*) 0, 바닥색, 머리 숫자 넷(… 아님), 예시 표 2행(1행 펼침 + 자격·근거),
-점수표 항목 수 = lib/how-we-pick.ts(POSITIVE 6 + NEGATIVE 3), 적합 점수 숫자 비노출, 390 한 단·가로 넘침 없음, favicon.ico 200.
+공개 추천 기준 4항목, 내부 가중치 비노출, 적합 점수 숫자 비노출, 390 한 단·가로 넘침 없음, favicon.ico 200.
 """
 import os, re, sys, urllib.request
 from pathlib import Path
@@ -34,7 +34,8 @@ def main():
         s = pg.evaluate(RULES)
         assert s["bg"] == "rgb(250, 249, 247)" and s["orangeFaces"] == 0 and s["gc"] == 0 and not s["overflow"], s
         assert len(s["nums"]) == 4 and "…" not in "".join(s["nums"]), s["nums"]
-        assert s["rows"] == 2 and s["open"] >= 4 and s["factors"] == 9 and s["panels"] >= 5 and not s["score"], s
+        assert s["rows"] == 2 and s["open"] >= 4 and s["factors"] == 4 and s["panels"] >= 5 and not s["score"], s
+        assert "0.65" not in txt and "+12" not in txt and "운영 점수표 값 그대로" not in txt
         assert pg.locator('link[rel="icon"][href*="favicon.ico"]').count() >= 1, "favicon.ico 링크가 없다"
         with urllib.request.urlopen(BASE + "/favicon.ico") as r:
             assert r.status == 200 and r.read(4) == b"\x00\x00\x01\x00", "favicon.ico 가 ICO 가 아니다"
@@ -43,7 +44,7 @@ def main():
         m = pg.evaluate(RULES); assert not m["overflow"] and m["orangeFaces"] == 0, m
         pg.screenshot(path=str(OUT / "_shot_about_390.png"), full_page=True)
         b.close()
-    print("ok about: 금지어 0 · 주황 면 0 · gc 0 · 숫자 4 · 예시 2행 · 점수표 9 · favicon.ico · 390"); return 0
+    print("ok about: 금지어 0 · 주황 면 0 · gc 0 · 숫자 4 · 예시 2행 · 공개 기준 4 · favicon.ico · 390"); return 0
 
 if __name__ == "__main__":
     sys.exit(main())
