@@ -29,9 +29,10 @@ if (key) {
     },
   });
 
-  // 나라장터 원문 클릭 — BidCard는 서버 컴포넌트라 onClick을 못 붙여서 문서 레벨에서 잡는다.
+  // 나라장터 원문·첨부 클릭 — 서버 컴포넌트라 onClick을 못 붙여서 문서 레벨에서 잡는다.
+  // target="_blank" 조건을 두지 않는다 — 리뉴얼 공고 페이지의 첨부 링크(downloadFile.do)는 같은 탭이라 10/24~10/28 닷새가 0으로 잡혔다.
   document.addEventListener("click", (e) => {
-    const a = (e.target as Element | null)?.closest<HTMLAnchorElement>('a[target="_blank"]');
+    const a = (e.target as Element | null)?.closest<HTMLAnchorElement>("a[href]");
     if (a && a.hostname.endsWith("g2b.go.kr")) {
       posthog.capture("g2b_outbound", { href: a.href });
     }
