@@ -22,7 +22,14 @@ export function EntrySearch() {
       <div className="mx-auto mt-[18px] max-w-[760px]">
         <SearchSuggest autoFocus onModeChange={setMode} />
       </div>
-      <p className="mx-auto mt-[11px] max-w-[760px] text-[13.5px] text-ink-g">{c.note}</p>
+      <div className="mx-auto mt-[11px] flex max-w-[760px] items-start gap-x-4 gap-y-1.5 max-sm:flex-col">
+        <p className="min-w-0 flex-1 text-[13.5px] text-ink-g">{c.note}</p>
+        <a href="https://www.g2b.go.kr/" target="_blank" rel="noopener noreferrer"
+          aria-label="나라장터 바로가기 (새 탭)" data-g2b-shortcut
+          className="ml-auto shrink-0 border-b border-field text-[13px] text-ink-g transition-colors hover:border-orange hover:text-ink">
+          나라장터 바로가기 <span aria-hidden="true">↗</span>
+        </a>
+      </div>
     </>
   );
 }
