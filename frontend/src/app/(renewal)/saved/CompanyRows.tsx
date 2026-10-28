@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { SaveCompanyForm } from "@/components/SaveCompanyForm";
 import type { SavedCompanyRow } from "@/lib/saved";
 import { rgnBase } from "@/lib/format";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
@@ -63,7 +64,9 @@ export function CompanyRows({ rows }: { rows: SavedCompanyRow[] }) {
     return (
       <div data-saved-empty className="pb-2.5 pt-[30px] text-[14px] leading-[1.7] text-ink-g">
         <b className="mb-1 block text-[16px] font-[650] text-ink">저장한 회사가 없습니다</b>
-        회사 페이지 또는 결과 머리의 ☆ 로 저장합니다.
+        우리 회사를 저장해 두면 회사별 추천이 여기에 모이고, 알림 메일에 동의한 경우 새 공고가 있는 주에 월요일 아침 한 통을 보냅니다.
+        <div className="mt-3 max-w-[560px]"><SaveCompanyForm from="saved" /></div>
+        <span className="mt-2.5 block text-[13px] text-ink-dim">회사 페이지 또는 결과 머리의 ☆ 로도 저장합니다.</span>
       </div>
     );
   }

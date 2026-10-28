@@ -24,7 +24,8 @@ try {
   if (e2) throw e2;
   const r1 = await hit(`/auth/confirm?next=%2Fdev%2Ffoundation&token_hash=${l1.properties.hashed_token}&type=signup`);
   if (!(r1.status >= 300 && r1.status < 400)) throw new Error(`confirm(signup) status ${r1.status}`);
-  if (!r1.location?.endsWith("/dev/foundation")) throw new Error(`confirm(signup) location ${r1.location}`);
+  // 저장 회사 0곳 + next 에 회사 없음 → /welcome?next=… (2026-10-28). 회사 페이지로 돌아가는 next 면 그대로.
+  if (!r1.location?.endsWith("/welcome?next=%2Fdev%2Ffoundation")) throw new Error(`confirm(signup) location ${r1.location}`);
   if (!/sb-.*-auth-token/.test(r1.cookie)) throw new Error("confirm(signup) 세션 쿠키 없음");
   // 2) 같은 링크 재사용 → /login?error=link
   const r1b = await hit(`/auth/confirm?next=%2Fdev%2Ffoundation&token_hash=${l1.properties.hashed_token}&type=signup`);

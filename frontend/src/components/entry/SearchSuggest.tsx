@@ -23,11 +23,12 @@ const MODES: { mode: Mode; label: string; placeholder: string }[] = [
   { mode: "keywords", label: "키워드로 찾기", placeholder: "업종 또는 품목 — 예: 하수처리시설 관리대행" },
 ];
 
-export function SearchSuggest({ autoFocus = false, initialMode = "company", onModeChange, lock, placeholder, compact = false }: {
+export function SearchSuggest({ autoFocus = false, initialMode = "company", onModeChange, lock, placeholder, compact = false, onPick }: {
   autoFocus?: boolean; initialMode?: Mode; onModeChange?: (m: Mode) => void; // 입구 제목·안내 줄이 기준을 따라 바뀐다(EntrySearch)
   lock?: Mode;          // 기준을 고정하고 탭을 숨긴다 — 회사 페이지의 다리(OwnCompanyBridge)처럼 뜻이 이미 정해진 자리(2026-10-27)
   placeholder?: string; // 자리글을 그 자리의 말로
   compact?: boolean;    // 입구보다 한 단계 작게
+  onPick?: (nm: string) => void; // 회사 모드에서 고른 이름을 결과 페이지로 보내지 않고 넘긴다 — 회사 저장 폼(SaveCompanyForm, 2026-10-28). 키워드 폴백 줄은 없다.
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(lock ?? initialMode);
@@ -87,6 +88,7 @@ export function SearchSuggest({ autoFocus = false, initialMode = "company", onMo
     const v = q.trim();
     if (!v) return;
     const r = i == null ? undefined : rows[i];
+    if (onPick) { setClosed(true); return onPick(r?.co ? r.co.nm : v); }
     if (r?.co) return submit("company", r.co.nm, "suggest");
     if (r && !r.co) return submit("keywords", v, "suggest_keyword");
     // 목록 없이 제출 — 고른 기준 그대로. 회사 모드에서 못 찾으면 결과 페이지가 키워드로 넘긴다.
@@ -210,7 +212,7 @@ export function SearchSuggest({ autoFocus = false, initialMode = "company", onMo
               ) : (
                 <>
                   <span className="truncate text-ink-g">일치하는 회사 없음</span>
-                  <span className="ml-auto shrink-0 text-[12.5px] text-ink">&quot;{q.trim()}&quot; 키워드로 찾기</span>
+                  {!onPick && <span className="ml-auto shrink-0 text-[12.5px] text-ink">&quot;{q.trim()}&quot; 키워드로 찾기</span>}
                 </>
               )}
             </div>

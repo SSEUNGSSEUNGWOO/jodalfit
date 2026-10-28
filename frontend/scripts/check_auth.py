@@ -48,6 +48,8 @@ def main():
         assert pg.evaluate("document.querySelector('input[type=email]').value") == "you@company.co.kr" and not dis()
         # 새 비밀번호 — 비로그인은 /reset 으로
         pg.goto(f"{BASE}/reset/new"); pg.wait_for_load_state("networkidle"); assert pg.url.rstrip("/").endswith("/reset"), pg.url
+        # 우리 회사 저장(/welcome, 2026-10-28) — 비로그인은 로그인으로, next 에 /welcome 을 품는다
+        pg.goto(f"{BASE}/welcome?next=%2Fsaved"); pg.wait_for_load_state("networkidle"); assert "/login?next=%2Fwelcome" in pg.url, pg.url
         # 약관
         pg.goto(f"{BASE}/terms"); pg.wait_for_load_state("networkidle"); rules(pg)
         assert pg.evaluate("document.querySelectorAll('h2').length") >= 10

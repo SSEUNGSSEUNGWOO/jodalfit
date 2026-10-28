@@ -78,6 +78,23 @@ def main():
             goto(pg, "/login?next=%2Fdev%2Ffoundation")
             pg.fill("input[type=email]", email); pg.fill("input[type=password]", pw_); pg.click("button[type=submit]")
             pg.wait_for_url(re.compile(r"/dev/foundation")); pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(500)
+
+            # 우리 회사 저장(/welcome, 2026-10-28) — 저장 회사 0곳이면 폼, 목록에서 고르면 saved_companies 에 넣고 검토함으로. 1곳이라도 있으면 next 로.
+            goto(pg, "/welcome"); rules(pg)
+            assert pg.url.endswith("/welcome") and pg.evaluate("!!document.querySelector('[data-save-company] [data-suggest][data-mode=company]') && !!document.querySelector('[data-welcome-skip]')"), pg.url
+            pg.fill("[data-save-company] input[role=combobox]", "케이브레인컴퍼니"); pg.wait_for_selector("[data-save-company] [role=option]")
+            assert "키워드로 찾기" not in pg.inner_text("[data-save-company]"), "저장 폼에 키워드 폴백이 떴다"
+            pg.keyboard.press("Enter"); pg.wait_for_url(re.compile(r"/saved$")); pg.wait_for_load_state("networkidle")
+            pg.click("#tab-c"); pg.wait_for_timeout(200)
+            assert pg.evaluate("document.querySelectorAll('#pane-c [data-saved-company]').length") == 1 and "케이브레인컴퍼니" in pg.inner_text("#pane-c [data-saved-company] a"), "welcome 저장이 검토함에 없다"
+            goto(pg, "/welcome"); assert not pg.url.endswith("/welcome"), f"저장 회사가 있는데 /welcome 이 떴다 {pg.url}"
+            # 빈 상태로 되돌린다(해제) — 아래 검사는 회사 1곳(한종산업개발) 기준. 빈 상태엔 같은 폼이 있다.
+            goto(pg, "/saved"); pg.click("#tab-c"); pg.click("[data-unstar]"); pg.wait_for_timeout(500); goto(pg, "/saved"); pg.click("#tab-c"); pg.wait_for_timeout(200)
+            assert pg.evaluate("!!document.querySelector('[data-saved-empty] [data-save-company]')"), "빈 상태에 저장 폼이 없다"
+            pg.fill("[data-save-company] input[role=combobox]", "없는회사이름zz"); pg.keyboard.press("Enter"); pg.wait_for_selector("[data-save-company][data-state=notfound]")
+            rules(pg)
+
+            goto(pg, "/dev/foundation")
             pg.click("[data-star=off]"); pg.wait_for_selector("[data-star=on]"); pg.wait_for_timeout(800)
             if pg.evaluate("document.querySelectorAll('.x-wrap[data-open=true]').length") == 0:
                 pg.locator("button.num[aria-expanded]").first.click(); pg.wait_for_timeout(300)
