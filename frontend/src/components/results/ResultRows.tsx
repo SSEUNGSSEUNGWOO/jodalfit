@@ -1,5 +1,5 @@
 // frontend/src/components/results/ResultRows.tsx
-// 오른쪽 단 — 표 5건 + Gate + 흐림 미리보기 3건(로그인이면 전부).
+// 오른쪽 단 — 표 5건 + Gate + 흐림 미리보기 1건(로그인이면 전부).
 "use client";
 
 import { useState } from "react";
@@ -46,7 +46,7 @@ export function ResultRows({ results, loggedIn, reviewed, viaBizrno, next, today
       <SheetHead />
       {head.map(row)}
       {rest.length > 0 && <Gate rest={rest.length} next={next} />}
-      {rest.length > 0 && <SheetFade>{rest.slice(0, 3).map((b, i) => row(b, i + FREE))}</SheetFade>}
+      {rest.length > 0 && <SheetFade>{rest.slice(0, 1).map((b, i) => row(b, i + FREE))}</SheetFade>}
     </div>
   );
 }

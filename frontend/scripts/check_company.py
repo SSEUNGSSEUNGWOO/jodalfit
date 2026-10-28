@@ -47,6 +47,13 @@ def main() -> None:
         assert s["ogSite"] == "조달핏", f"og:site_name {s['ogSite']!r} — 페이지 openGraph 가 루트를 덮는다"
         assert not s["over"], "가로 넘침"
         assert "검토할 공고" in txt, "추천 판이 없다"
+        jump = pg.locator('[data-reco-jump] a[href="#company-recommendations"]')
+        assert jump.count() == 1 and jump.is_visible(), "상단 추천 바로가기가 없다"
+        assert pg.locator('[data-reco-jump]').bounding_box()["y"] < pg.locator('[data-bridge]').bounding_box()["y"], "추천 바로가기가 회사 검색 다리보다 뒤에 있다"
+        jump.click()
+        pg.wait_for_timeout(150)
+        assert pg.evaluate("(() => { const r = document.querySelector('#company-recommendations').getBoundingClientRect(); return location.hash === '#company-recommendations' && r.top < innerHeight && r.bottom > 0; })()"), "추천 판으로 이동하지 않았다"
+        pg.evaluate("window.scrollTo(0, 0)")
         # 결과 화면으로 가는 길 (2026-10-26) — 회사 페이지 방문자의 4% 만 추천 결과에 닿았다
         assert pg.locator('[data-reco-cta] a[href="/recommendations?company=1248177731"]').count() == 1, "추천 전체 보기 링크가 없다"
         assert "수주 이력" in txt or "계약" in txt, "수주 이력 판이 없다"

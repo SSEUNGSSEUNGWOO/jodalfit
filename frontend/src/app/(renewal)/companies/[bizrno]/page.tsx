@@ -8,7 +8,7 @@
 // 히트라 "계산이 안 걸리면 안 보여준다" 원칙상 캔버스가 설 자리가 없다. 걸러낸 경로는 숫자 한 줄.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import { Btn } from "@/components/Btn";
 import { AwardsPanel, ContractsPanel, Panel, PeersPanel } from "@/components/company/CompanyPanels";
 import { OwnCompanyBridge } from "@/components/company/OwnCompanyBridge";
@@ -38,6 +38,10 @@ import { maskBizrno } from "@/lib/utils";
 type Props = { params: Promise<{ bizrno: string }> };
 
 const nf = new Intl.NumberFormat("ko-KR");
+// 상단 바로가기와 아래 추천 판이 같은 요청에서 추천 API를 두 번 부르지 않는다.
+const companyRecommendations = cache((bizrnoNorm: string) =>
+  getRecommendations({ query: bizrnoNorm, mode: "company", limit: 20, candidate_pool: 200, with_explanation: false }).catch(() => null)
+);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bizrno } = await params;
@@ -116,6 +120,12 @@ export default async function CompanyPage({ params }: Props) {
         <CompanySummary corpNm={company.corp_nm} rgn={company.rgn_nm} profile={profile} closed={closed} recommends={company.has_embedding} />
       </header>
 
+      {!closed && company.has_embedding && (
+        <Suspense fallback={<RecommendationJump />}>
+          <RecommendationShortcut bizrnoNorm={normalized} />
+        </Suspense>
+      )}
+
       {/* 판 순서(2026-10-27 시안 B 채택): 다리 → 수주 이력·낙찰·같은 시장 → 검토할 공고.
           회사명으로 검색해 들어온 사람이 보러 온 것은 그 회사의 수주 이력이고, "이 회사가 검토할 공고"는 그 회사의 일이지
           방문자의 일이 아니다. 보러 온 것을 먼저 주고, 다리로 자기 회사를 치게 하고, 이 회사의 추천은 맨 아래. */}
@@ -126,7 +136,9 @@ export default async function CompanyPage({ params }: Props) {
       <PeersPanel peers={peers} />
 
       {/* 검토할 공고. 폐업이면 추천하지 않는다(낼 수 없는 회사에게 공고를 권하지 않는다). */}
-      <RecoSlot closed={closed} normalized={normalized} corpNm={company.corp_nm} hasEmbedding={company.has_embedding} />
+      <div id="company-recommendations" className="scroll-mt-6">
+        <RecoSlot closed={closed} normalized={normalized} corpNm={company.corp_nm} hasEmbedding={company.has_embedding} />
+      </div>
 
       {!closed && contracts.length === 0 && awards.length === 0 && (
         <p className="mt-5 text-[13px] leading-[1.7] text-ink-mute">
@@ -135,6 +147,20 @@ export default async function CompanyPage({ params }: Props) {
       )}
     </div>
   );
+}
+
+function RecommendationJump({ count }: { count?: number }) {
+  return (
+    <div data-reco-jump className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[8px] border border-hair bg-panel px-4 py-3 text-[13.5px]">
+      <span className="text-ink-g">이 회사 기준 <b className="font-semibold text-ink">추천 공고{count != null && <> <span className="num">{count}</span>건</>}</b></span>
+      <a href="#company-recommendations" className="shrink-0 border-b border-field font-medium text-ink hover:border-orange">추천 공고로 이동 ↓</a>
+    </div>
+  );
+}
+
+async function RecommendationShortcut({ bizrnoNorm }: { bizrnoNorm: string }) {
+  const d = await companyRecommendations(bizrnoNorm);
+  return <RecommendationJump count={d && !d.error ? d.results.length : undefined} />;
 }
 
 function RecoSlot({ closed, normalized, corpNm, hasEmbedding }: { closed: boolean; normalized: string; corpNm: string; hasEmbedding: boolean }) {
@@ -213,7 +239,7 @@ async function RecoPanel({ bizrnoNorm, corpNm, hasEmbedding }: { bizrnoNorm: str
     );
   }
   const [d, user] = await Promise.all([
-    getRecommendations({ query: bizrnoNorm, mode: "company", limit: 20, candidate_pool: 200, with_explanation: false }).catch(() => null),
+    companyRecommendations(bizrnoNorm),
     getSessionUser(),
   ]);
   if (!d || d.error) {

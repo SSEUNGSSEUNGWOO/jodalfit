@@ -9,7 +9,7 @@
 // 만들어 버렸다. 이 줄이 그 자리를 만든다. 둘 다 0건이면 줄 자체를 그리지 않는다.
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { OrderPlanRecommendation, PreSpecRecommendation } from "@/types/recommendations";
 import { cn } from "@/lib/utils";
 
@@ -44,77 +44,71 @@ function isLive(p: PreSpecRecommendation, now: Date): boolean {
 export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommendation[]; orderPlans: OrderPlanRecommendation[] }) {
   const now = new Date();
   const live = preSpecs.filter((p) => isLive(p, now)).length;
-  // 골든타임이 1건이라도 있으면 펼쳐서 시작한다 — 접힌 한 줄로는 아무도 못 봤다(승우님 2026-10-26).
-  const [open, setOpen] = useState(live > 0);
+  const [preOpen, setPreOpen] = useState(live > 0);
+  const [planOpen, setPlanOpen] = useState(true);
+  const [allPlans, setAllPlans] = useState(false);
+  const preId = useId();
+  const planId = useId();
   if (!preSpecs.length && !orderPlans.length) return null;
 
   const soon = preSpecs.filter((p) => when(p.opnin_rgst_clse_dt, now).hot).length;
+  const plans = allPlans ? orderPlans : orderPlans.slice(0, 3);
+  const toggleClass = "flex w-full cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 text-left";
   return (
     <div data-leads data-golden={live > 0 ? live : undefined} className="mt-6 border-t border-hair pt-5">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full cursor-pointer items-baseline gap-3 text-left max-sm:flex-wrap max-sm:gap-y-1"
-      >
-        <span className="shrink-0 text-[14px] font-[650] text-ink">
-          {live > 0 ? <><span className="text-orange-ink">골든타임</span> {nf.format(live)}건</> : <>공고 전 단계 {nf.format(preSpecs.length + orderPlans.length)}건</>}
-        </span>
-        <span className="break-keep text-[12.5px] text-ink-g max-sm:order-last max-sm:basis-full">
-          {preSpecs.length > 0 && <>의견 접수 중인 사전규격 {preSpecs.length}건{soon > 0 && <> (<b className="font-[650] text-orange-ink">{soon}건 곧 마감</b>)</>}</>}
-          {preSpecs.length > 0 && orderPlans.length > 0 && " · "}
-          {orderPlans.length > 0 && <>앞으로 나올 공고 {orderPlans.length}건</>}
-        </span>
-        <span className="ml-auto shrink-0 border-b border-field text-[13px] text-ink-g">{open ? "접기" : "펼치기"}</span>
-      </button>
-
-      {open && (
-        <div className="mt-3">
-          {preSpecs.length > 0 && (
-            <>
-              <div className="text-[12.5px] text-ink-g">
-                골든타임 — 사전규격에 의견을 내는 기간입니다. 본공고가 뜨면 사양은 거의 못 바꿉니다
-              </div>
-              <ul className="mt-1.5">
-                {preSpecs.map((p) => {
-                  const w = when(p.opnin_rgst_clse_dt, now);
-                  return (
-                    <li key={p.bf_spec_rgst_no} className="grid grid-cols-[1fr_auto_auto] items-baseline gap-3.5 border-b border-rule-2 py-2 max-sm:grid-cols-[1fr_auto]">
-                      <span className="truncate text-[13.5px]">
-                        {p.prdct_clsfc_no_nm || "—"}
-                        <span className="ml-2 text-[12px] text-ink-g">{p.rl_dminstt_nm || p.order_instt_nm || "—"}</span>
-                      </span>
-                      <span className={cn("min-w-[88px] text-right text-[13px] font-[650]", w.hot ? "text-orange-ink" : "text-ink")}>{w.text}</span>
-                      <span className="num min-w-[62px] text-right text-[13px] text-ink-g max-sm:hidden">{won(p.asign_bdgt_amt)}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
-
-          {orderPlans.length > 0 && (
-            <>
-              <div className={cn("text-[12.5px] text-ink-g", preSpecs.length > 0 && "mt-4")}>
-                앞으로 나올 공고 — 기관이 발주를 예고한 사업입니다. 사양은 아직 정해지지 않았습니다
-              </div>
-              <ul className="mt-1.5">
-                {orderPlans.map((o) => (
-                  <li key={o.order_plan_unty_no} className="grid grid-cols-[1fr_auto_auto] items-baseline gap-3.5 border-b border-rule-2 py-2 max-sm:grid-cols-[1fr_auto]">
-                    <span className="truncate text-[13.5px]">
-                      {o.prdct_clsfc_no_nm || o.biz_nm || "—"}
-                      <span className="ml-2 text-[12px] text-ink-g">{o.order_instt_nm || o.totlmng_instt_nm || "—"}</span>
-                    </span>
-                    <span className="min-w-[88px] text-right text-[13px] text-ink-g">
-                      {o.order_year && o.order_mnth ? `${o.order_year}.${String(o.order_mnth).padStart(2, "0")} 예정` : "시기 미정"}
-                    </span>
-                    <span className="num min-w-[62px] text-right text-[13px] text-ink-g max-sm:hidden">{won(o.sum_order_amt)}</span>
+      <h3 className="m-0 mb-3 text-[12px] font-semibold text-ink-g">공고 전 단계</h3>
+      {preSpecs.length > 0 && (
+        <section data-pre-specs>
+          <button type="button" onClick={() => setPreOpen((v) => !v)} aria-expanded={preOpen} aria-controls={preId}
+            aria-label={`사전규격 ${preOpen ? "접기" : "펼치기"}`} className={toggleClass}>
+            <span className="text-[14px] font-[650] text-ink">
+              {live > 0 ? <><span className="text-orange-ink">골든타임</span> {nf.format(live)}건</> : <>사전규격 {nf.format(preSpecs.length)}건</>}
+            </span>
+            {soon > 0 && <span className="text-[12.5px] text-orange-ink">{soon}건 곧 마감</span>}
+            <span className="ml-auto border-b border-field text-[13px] text-ink-g">{preOpen ? "접기" : "펼치기"}</span>
+          </button>
+          <div id={preId} hidden={!preOpen}>
+            <p className="mb-0 mt-2 text-[12.5px] leading-[1.7] text-ink-g">사전규격에 의견을 내는 기간입니다. 본공고가 뜨면 사양은 거의 못 바꿉니다.</p>
+            <ul className="mt-1.5">
+              {preSpecs.map((p) => {
+                const w = when(p.opnin_rgst_clse_dt, now);
+                return (
+                  <li key={p.bf_spec_rgst_no} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-3.5 border-b border-rule-2 py-2 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <span className="truncate text-[13.5px]">{p.prdct_clsfc_no_nm || "—"}<span className="ml-2 text-[12px] text-ink-g">{p.rl_dminstt_nm || p.order_instt_nm || "—"}</span></span>
+                    <span className={cn("min-w-[88px] text-right text-[13px] font-[650]", w.hot ? "text-orange-ink" : "text-ink")}>{w.text}</span>
+                    <span className="num min-w-[62px] text-right text-[13px] text-ink-g max-sm:hidden">{won(p.asign_bdgt_amt)}</span>
                   </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+      )}
+      {orderPlans.length > 0 && (
+        <section data-order-plans className={cn(preSpecs.length > 0 && "mt-4 border-t border-hair pt-4")}>
+          <button type="button" onClick={() => setPlanOpen((v) => !v)} aria-expanded={planOpen} aria-controls={planId}
+            aria-label={`발주계획 ${planOpen ? "접기" : "펼치기"}`} className={toggleClass}>
+            <span className="text-[14px] font-[650] text-ink">앞으로 나올 공고 {nf.format(orderPlans.length)}건</span>
+            <span className="text-[12.5px] text-ink-g">발주계획</span>
+            <span className="ml-auto border-b border-field text-[13px] text-ink-g">{planOpen ? "접기" : "펼치기"}</span>
+          </button>
+          <div id={planId} hidden={!planOpen}>
+            <p className="mb-0 mt-2 text-[12.5px] leading-[1.7] text-ink-g">기관이 발주를 예고한 사업입니다. 사양은 아직 정해지지 않았습니다.</p>
+            <ul id={`${planId}-rows`} className="mt-1.5">
+              {plans.map((o) => (
+                <li key={o.order_plan_unty_no} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-3.5 border-b border-rule-2 py-2 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <span className="truncate text-[13.5px]">{o.prdct_clsfc_no_nm || o.biz_nm || "—"}<span className="ml-2 text-[12px] text-ink-g">{o.order_instt_nm || o.totlmng_instt_nm || "—"}</span></span>
+                  <span className="min-w-[88px] text-right text-[13px] text-ink-g">{o.order_year && o.order_mnth ? `${o.order_year}.${String(o.order_mnth).padStart(2, "0")} 예정` : "시기 미정"}</span>
+                  <span className="num min-w-[62px] text-right text-[13px] text-ink-g max-sm:hidden">{won(o.sum_order_amt)}</span>
+                </li>
+              ))}
+            </ul>
+            {orderPlans.length > 3 && <button data-plans-more type="button" onClick={() => setAllPlans((v) => !v)} aria-expanded={allPlans} aria-controls={`${planId}-rows`}
+              className="mt-3 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange">
+              {allPlans ? "발주계획 3건만 보기" : `발주계획 ${nf.format(orderPlans.length - 3)}건 더 보기`}
+            </button>}
+          </div>
+        </section>
       )}
     </div>
   );

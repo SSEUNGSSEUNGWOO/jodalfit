@@ -27,7 +27,7 @@ import { HelpfulLine } from "./HelpfulLine";
 
 const TIMEOUT_MS = 8000;
 // 20 건 — 채점표 K 곡선(12→20 은 낙찰 포함률이 크게 오르고 20→30 은 거의 안 는다)과 실사용 로그(13~20위에서 저장의 27%)를 같이 보고 정했다. 2026-10-23.
-// 공개 5 + 흐림 미리보기 3. 인쇄 보고서는 A4 한 장에 맞춰 12 건으로 따로 간다(report/page.tsx).
+// 공개 5 + 흐림 미리보기 1. 인쇄 보고서는 A4 한 장에 맞춰 12 건으로 따로 간다(report/page.tsx).
 const RESULT_LIMIT = 20;
 const EMPTY: SceneCounts = { total: null, candidates: null, passed: null, results: null };
 // 같은 탭에서 다시 연 검색은 받아 둔 결과로 바로 — 계산이 없으면 가림막(머리 장면)도 없다(docs/design/README.md

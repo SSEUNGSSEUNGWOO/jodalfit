@@ -70,7 +70,7 @@ def main():
         for selector in ("[data-star=guest]", "[data-review=guest]"):
             href = pg.locator(selector).first.get_attribute("href")
             assert urllib.parse.parse_qs(urllib.parse.urlsplit(href).query)["next"] == [expected], href
-        assert pg.locator("[data-rows] > [inert] [data-sheet-row]").count() == 3
+        assert pg.locator("[data-rows] > [inert] [data-sheet-row]").count() == 1
         direct_save = pg.locator("[data-rows] > [data-sheet-row] [data-row-actions] [data-review=guest]")
         assert direct_save.count() == 5 and direct_save.first.is_visible()
         assert direct_save.first.inner_text() == "저장", "행을 펼치기 전에 저장 버튼이 보여야 한다"
@@ -107,8 +107,10 @@ def main():
         pg.screenshot(path=str(OUT / "_shot_results_390.png"), full_page=True)
         pg.set_viewport_size({"width": 1280, "height": 900})
         # 공고 전 단계 줄 — 의견 창 열린 사전규격이 없으면 접힌 채 "앞으로 나올 공고", 있으면(2026-10-27 CO 에 1건 생김) "골든타임" 으로 펼쳐진다
-        lead = pg.evaluate("() => { const e = document.querySelector('[data-leads]'); return e && { golden: e.dataset.golden ?? null, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText } }")
-        assert lead and "앞으로 나올 공고" in lead["txt"] and ((lead["golden"] is None and lead["open"] == "false") or (lead["golden"] and lead["open"] == "true" and "골든타임" in lead["txt"])), lead
+        lead = pg.evaluate("""() => { const e = document.querySelector('[data-leads]'); return e && { golden: e.dataset.golden ?? null,
+          preOpen: e.querySelector('[data-pre-specs] button')?.getAttribute('aria-expanded'), plans: e.querySelectorAll('[data-order-plans] li').length, txt: e.innerText } }""")
+        assert lead and "앞으로 나올 공고" in lead["txt"] and lead["plans"] <= 3, lead
+        assert not lead["golden"] or (lead["preOpen"] == "true" and "골든타임" in lead["txt"]), lead
         # 키워드 모드
         goto(pg, "/recommendations?q=%ED%95%98%EC%88%98%EC%B2%98%EB%A6%AC"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
         k = pg.evaluate("() => ({ scene: !!document.querySelector('[data-scene]'), rows: document.querySelectorAll('[data-rows] [data-sheet-row]').length, side: !!document.querySelector('[data-side]'), leads: !!document.querySelector('[data-leads]') })")

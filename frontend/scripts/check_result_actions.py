@@ -36,7 +36,7 @@ def main():
             assert "next=%2Frecommendations%3Fq%3Dtest" in save.get_attribute("href")
             assert first.locator("button[aria-expanded]").get_attribute("aria-expanded") == "false"
             assert not page.evaluate("document.documentElement.scrollWidth > innerWidth"), width
-            assert page.locator("[data-rows] > [inert] [data-review=guest]").count() == 3
+            assert page.locator("[data-rows] > [inert] [data-review=guest]").count() == 1
             # 제목 링크를 눌러도 행 펼침 이벤트와 겹치지 않으며 클릭은 한 번 기록한다.
             before = len(events)
             first.locator("a[href^='/notices/']").click()
