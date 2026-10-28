@@ -33,6 +33,8 @@ def main() -> None:
         assert h.get("x-content-type-options") == "nosniff", "X-Content-Type-Options 없음"
         assert "frame-ancestors 'none'" in h.get("content-security-policy", ""), "CSP frame-ancestors 없음"
         assert "x-powered-by" not in h, "X-Powered-By 가 노출된다"
+        fonts = pg.evaluate("({token: getComputedStyle(document.documentElement).getPropertyValue('--font-sans'), body: getComputedStyle(document.body).fontFamily})")
+        assert "Pretendard" in fonts["token"] and "Pretendard" in fonts["body"], f"폰트 토큰 순환 또는 기본 서체 폴백: {fonts}"
 
         txt = pg.evaluate("document.body.innerText")
         bad = [w for w in BANNED if w in txt]
