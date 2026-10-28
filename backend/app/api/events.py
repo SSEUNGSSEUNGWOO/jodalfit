@@ -34,7 +34,7 @@ def post_notice_event(
     req: NoticeEventRequest,
     background: BackgroundTasks,
 ):
-    background.add_task(log_notice_events, [req.model_dump()])
+    background.add_task(log_notice_events, [{**req.model_dump(), "source": classify_source(request)}])
     return {"ok": True}
 
 

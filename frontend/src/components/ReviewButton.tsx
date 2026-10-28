@@ -7,41 +7,49 @@ import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Btn } from "@/components/Btn";
 import { track } from "@/lib/analytics";
+import { emitNoticeEvent } from "@/lib/events";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 
-export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed, loggedIn, onChange, className, next: returnTo }: {
+export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed, loggedIn, onChange, className, next: returnTo, rank, score, algorithm, label = "검토", activeLabel = "검토함" }: {
   no: string; ord?: string; via?: string | null; why?: string | null; reviewed: boolean; loggedIn: boolean;
   onChange?: (reviewed: boolean) => void; className?: string; next?: string;
+  rank?: number; score?: number; algorithm?: string; label?: string; activeLabel?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
   const [on, setOn] = useState(reviewed);
   const [busy, setBusy] = useState(false);
   const [, start] = useTransition();
+  const [error, setError] = useState(false);
+  const intent = () => track("notice_save_intent", { bid_ntce_no: no, logged_in: loggedIn ? 1 : 0, rank_position: rank });
 
   if (!loggedIn) {
-    return <Btn variant="review" href={`/login?next=${encodeURIComponent(returnTo ?? pathname)}`} className={className} data-review="guest">검토</Btn>;
+    return <Btn variant="review" href={`/login?next=${encodeURIComponent(returnTo ?? pathname)}`} onClick={intent} className={className} data-review="guest">{label}</Btn>;
   }
 
   async function toggle() {
     if (busy) return;
     const next = !on;
-    setOn(next);
-    onChange?.(next);
+    if (next) intent();
+    setError(false);
     setBusy(true);
-    const sb = getBrowserSupabase();
-    const { error } = next
-      ? await sb.from("reviewed_notices").insert({ bid_ntce_no: no, bid_ntce_ord: ord, via_bizrno_norm: via, why: why?.slice(0, 60) ?? null }) // why 는 DB check 60자
-      : await sb.from("reviewed_notices").delete().eq("bid_ntce_no", no).eq("bid_ntce_ord", ord);
-    setBusy(false);
-    if (error && error.code !== "23505") { setOn(!next); onChange?.(!next); return; }
-    if (next) track("notice_save", { bid_ntce_no: no, via: via ?? undefined }); // 옛 보드의 save 와 같은 이름 — 리뉴얼(10/24) 뒤 끊겼던 집계를 잇는다
-    start(() => router.refresh());
+    try {
+      const sb = getBrowserSupabase();
+      const { error } = next
+        ? await sb.from("reviewed_notices").insert({ bid_ntce_no: no, bid_ntce_ord: ord, via_bizrno_norm: via, why: why?.slice(0, 60) ?? null }) // why 는 DB check 60자
+        : await sb.from("reviewed_notices").delete().eq("bid_ntce_no", no).eq("bid_ntce_ord", ord);
+      if (error && error.code !== "23505") { setError(true); return; }
+      setOn(next);
+      onChange?.(next);
+      if (next && !error) emitNoticeEvent({ event_type: "save", bid_ntce_no: no, bid_ntce_ord: ord, target_bizrno: via, rank_position: rank, score, algorithm_version: algorithm });
+      start(() => router.refresh());
+    } catch { setError(true); }
+    finally { setBusy(false); }
   }
 
   return (
-    <Btn variant="review" on={on} onClick={toggle} aria-pressed={on} className={className} data-review={on ? "on" : "off"}>
-      {on ? "검토함" : "검토"}
+    <Btn variant="review" on={on} onClick={toggle} disabled={busy} aria-busy={busy} aria-pressed={on} className={className} data-review={on ? "on" : "off"}>
+      {busy ? "처리 중" : error ? "다시 시도" : on ? activeLabel : label}
     </Btn>
   );
 }

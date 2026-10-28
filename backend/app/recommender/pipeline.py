@@ -112,7 +112,7 @@ def rank_v2(
         r["score_breakdown"] = breakdown
         r["base_similarity"] = r.get("similarity", 0)
         # 기존 UI(scorePercent)가 0~1 기대 → 표시용 정규화
-        r["score"] = max(0.01, min(raw / SCORE_DISPLAY_DIVISOR, 0.99))
+        r["score"] = max(0.01, min(r["score_raw"] / SCORE_DISPLAY_DIVISOR, 0.99))
 
     passed.sort(key=lambda r: r["score_raw"], reverse=True)
     pool = passed[:MMR_POOL]

@@ -45,11 +45,13 @@ export function TitleMatches({ rows, terms, capped, loggedIn, reviewed, next, to
         return (
           <SheetRow key={key} no={from + i + 1} title={b.bid_ntce_nm} org={b.bsns_div_nm ? `${b.bsns_div_nm} · ${org}` : org} dLeft={dLeft(b.bid_clse_date, today)} price={won(b.presmpt_prce)}
             why={where.length > 0 ? `${where.map((w) => (w === "기관" ? "발주기관" : "참가 지역")).join("·")}에 일치` : undefined}
-            reviewed={rv.has(key)} href={`/notices/${b.bid_ntce_no}`} expandLabel="원문·검토" onOpen={() => emitNoticeEvent({ event_type: "click", ...ev })}>
+            reviewed={rv.has(key)} href={`/notices/${b.bid_ntce_no}`} expandLabel="원문·검토"
+            onVisit={() => emitNoticeEvent({ event_type: "click", ...ev })} onOpen={() => emitNoticeEvent({ event_type: "click", ...ev })}
+            action={<ReviewButton no={b.bid_ntce_no} ord={b.bid_ntce_ord} reviewed={rv.has(key)} loggedIn={loggedIn} next={next}
+              rank={from + i + 1} algorithm="title" label="저장" activeLabel="저장됨"
+              onChange={(on) => setRv((s) => { const n = new Set(s); if (on) n.add(key); else n.delete(key); return n; })} />}>
             <SheetExpand quals={[]} whys={[]} actions={<>
               {b.bid_ntce_url && <Btn variant="dark" href={b.bid_ntce_url} target="_blank" rel="noopener">나라장터 원문</Btn>}
-              <ReviewButton no={b.bid_ntce_no} ord={b.bid_ntce_ord} reviewed={rv.has(key)} loggedIn={loggedIn} next={next}
-                onChange={(on) => { setRv((s) => { const n = new Set(s); if (on) n.add(key); else n.delete(key); return n; }); if (on) emitNoticeEvent({ event_type: "save", ...ev }); }} />
             </>} />
           </SheetRow>
         );

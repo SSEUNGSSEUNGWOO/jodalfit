@@ -9,6 +9,7 @@ import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
 import { fetchAdminData, isAdmin, type Funnel, type Health } from "@/lib/admin";
 import { getSessionUser } from "@/lib/auth";
+import { ConversionPanel } from "@/components/admin/ConversionPanel";
 import { PagedTable } from "./PagedTable";
 
 export const metadata: Metadata = { title: "관리 | 조달핏", robots: { index: false, follow: false } };
@@ -74,6 +75,8 @@ export default async function AdminPage() {
           />
         </div>
       </Panel>
+
+      <ConversionPanel data={d.conversions} />
 
       <Panel className="mt-[14px]" data-admin="visits">
         <PanelHead title="방문" small="PostHog $pageview · 봇 제외" summary={v.error ? undefined : [

@@ -3,9 +3,8 @@
 `POST /recommendations`의 회사 모드(사업자번호 질의)만 대상으로 한다. 대화형
 보드가 쓰는 `/stream`은 실사용자 경로라 항상 라이브로 둔다.
 
-무효화는 시간이 아니라 내용 기준이다. 0018이 마감 지평선을 D+90으로 자르므로
-저장된 공고는 90일 안에 전부 마감된다. 읽을 때 마감 지난 건을 걷어내고 남은
-결과가 MIN_SURVIVING 미만이면 미스로 취급해 재계산시킨다.
+최대 1시간만 재사용하고, 읽을 때 회사 공개·제재 상태와 공고 취소·참가 마감을
+재확인한다. 상태가 달라졌거나 확인하지 못하면 라이브로 다시 계산한다.
 
 캐시 조회·저장 실패는 전부 삼킨다. 캐시는 최적화지 정답의 출처가 아니다.
 """
@@ -13,7 +12,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from app.services.supabase_client import get_admin_client
@@ -23,6 +22,47 @@ logger = logging.getLogger("jodalfit")
 TABLE = "company_recommendations"
 # 마감 제외 후 이만큼도 안 남으면 캐시가 낡은 것으로 보고 재계산한다.
 MIN_SURVIVING = 5
+CACHE_VERSION = 2
+MAX_AGE = timedelta(hours=1)
+KST = timezone(timedelta(hours=9))
+
+
+def _current(client, bizrno_norm: str, payload: dict) -> bool:
+    """캐시도 회사 공개 상태와 공고의 최신 차수·참가 마감을 확인한다."""
+    from app.recommender.cancellation import cancel_ords, is_cancelled
+
+    companies = (client.table("companies").select("optout_at,is_restricted")
+                 .eq("bizrno_norm", bizrno_norm).execute().data or [])
+    if not companies or any(c.get("optout_at") or c.get("is_restricted") for c in companies):
+        return False
+    cached = payload.get("results") or []
+    nos = sorted({r["bid_ntce_no"] for r in cached})
+    if not nos:
+        return False
+    rows = (client.table("bid_notices")
+            .select("bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bid_clse_date,bid_qlfct_rgst_dt,"
+                    "bidprc_psbl_indstryty_nm,prtcpt_psbl_rgn_nm,"
+                    "status:raw->>bidNtceSttusNm,kind:raw->>ntceKindNm")
+            .in_("bid_ntce_no", nos).execute().data or [])
+    cmap = cancel_ords(rows)
+    by_key = {(r["bid_ntce_no"], r["bid_ntce_ord"]): r for r in rows}
+    now = datetime.now(timezone.utc)
+    for old in cached:
+        key = (old["bid_ntce_no"], old["bid_ntce_ord"])
+        row = by_key.get(key)
+        if not row or is_cancelled(*key, cmap):
+            return False
+        if not _alive(row.get("bid_clse_date"), now.astimezone(KST).date()):
+            return False
+        deadline = row.get("bid_qlfct_rgst_dt")
+        if deadline:
+            dt = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+            if dt.tzinfo is None or dt <= now:
+                return False
+        for field in ("bid_ntce_nm", "bid_clse_date", "bidprc_psbl_indstryty_nm", "prtcpt_psbl_rgn_nm"):
+            if row.get(field) != old.get(field):
+                return False
+    return True
 
 
 def cache_key(query: str, mode: str, keywords: str | None, algorithm: str) -> str | None:
@@ -81,10 +121,11 @@ def prune(payload: dict, today: date | None = None) -> dict:
 def load(bizrno_norm: str, algorithm: str, limit: int) -> dict | None:
     """살아있는 캐시 페이로드. 없거나 낡았으면 None."""
     try:
+        client = get_admin_client()
         rows = (
-            get_admin_client()
+            client
             .table(TABLE)
-            .select("payload,result_limit")
+            .select("payload,result_limit,computed_at")
             .eq("bizrno_norm", bizrno_norm)
             .eq("algorithm", algorithm)
             .limit(1)
@@ -100,11 +141,22 @@ def load(bizrno_norm: str, algorithm: str, limit: int) -> dict | None:
     if not rows:
         return None
     row = rows[0]
-    # 저장된 것보다 많이 요구하면 미스. 결과는 점수 내림차순이라 자르는 건 안전하다.
+    # 저장된 것보다 많이 요구하면 미스. 저장된 추천 순서를 유지하며 자른다.
     if row.get("result_limit", 0) < limit:
         return None
 
-    payload = prune(row.get("payload") or {})
+    original = row.get("payload") or {}
+    try:
+        computed = datetime.fromisoformat((row.get("computed_at") or "").replace("Z", "+00:00"))
+        if original.get("_cache_version") != CACHE_VERSION or not timedelta(0) <= datetime.now(timezone.utc) - computed < MAX_AGE:
+            return None
+        if not _current(client, bizrno_norm, original):
+            return None
+    except Exception as e:
+        logger.warning("추천 캐시 최신 상태 확인 실패 (%s) — 라이브 계산", type(e).__name__)
+        return None
+    payload = prune(original)
+    payload.pop("_cache_version", None)
     if len(payload.get("results") or []) < MIN_SURVIVING:
         return None
 
@@ -121,7 +173,7 @@ def store(bizrno_norm: str, algorithm: str, limit: int, payload: dict) -> None:
                 "bizrno_norm": bizrno_norm,
                 "algorithm": algorithm,
                 "result_limit": limit,
-                "payload": payload,
+                "payload": {**payload, "_cache_version": CACHE_VERSION},
                 "computed_at": "now()",
             },
             on_conflict="bizrno_norm",

@@ -90,8 +90,13 @@ def main():
                 health: document.querySelectorAll('[data-admin=health] dt').length,
                 visitsText: document.querySelector('[data-admin=visits]').innerText,
                 h1: document.querySelector('h1').textContent.trim() })""")
-            assert s["panels"] == ["funnel", "visits", "health", "zero", "feedback", "users", "searches", "saved", "reviewed"], s
-            assert s["funnel"] == 7 and s["daily"] == 7 and s["health"] == 3 and s["h1"].startswith("관리"), s
+            assert s["panels"] == ["funnel", "conversions", "visits", "health", "zero", "feedback", "users", "searches", "saved", "reviewed"], s
+            assert s["funnel"] == 7 and s["daily"] == 7 and s["health"] == 5 and s["h1"].startswith("관리"), s
+            conversion = pg.locator("[data-admin=conversions]")
+            assert "결과 이후 전환" in conversion.inner_text()
+            if conversion.locator("tbody").count():
+                assert conversion.locator("tbody tr").count() == 6
+                assert "가입 화면 진입은 가입 완료가 아닙니다" in conversion.inner_text()
             # PostHog 키가 없으면 안내 한 줄, 있으면 세 표(날짜·페이지·유입)
             assert ("미설정" in s["visitsText"]) or ("유입" in s["visitsText"] and "페이지뷰" in s["visitsText"]), s["visitsText"][:200]
             # 사람 검색 표는 25건씩 쪽으로 — 200행이 한 화면에 깔려 아래 판을 밀어냈다(2026-10-26)

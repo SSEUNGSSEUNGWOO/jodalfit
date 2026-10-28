@@ -2,7 +2,8 @@
 // 결과 페이지 본체(클라이언트). 상태: running(장면) → done(표) / zero / error / search(다른 회사). 키워드 모드는 장면 없이 표만.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { PageHead } from "@/components/PageHead";
 import { Panel } from "@/components/Panel";
 import { Btn } from "@/components/Btn";
@@ -112,6 +113,12 @@ export function ResultsView({ query, mode, keywords, algorithm, from, filter = N
   const titles = mode === "keywords" ? (data?.title_matches ?? []) : [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";
   const zero = state === "done" && results.length === 0 && titles.length === 0;
+  const trackedView = useRef(false);
+  useEffect(() => {
+    if (state !== "done" || !data || trackedView.current) return;
+    trackedView.current = true;
+    track("results_view", { mode, result_count: results.length + titles.length, logged_in: loggedIn ? 1 : 0, cached: cached ? 1 : 0 });
+  }, [state, data, mode, results.length, titles.length, loggedIn, cached]);
   const filtered = mode === "keywords" && hasFilter(filter);   // 칩으로 좁혀 0건이면 "없다"가 아니라 "조건에 없다"
   // 회사는 찾았는데 등록업종·공급물품이 없어 회사 기준 추천이 안 되는 경우(백엔드 fallback=keywords, 7일 27건 = 빈손 검색의 1/3).
   // 전엔 "참가 자격이 있는 공고가 없습니다"(ZeroBlock)로 보여 사실과 달랐다 — 자격을 본 게 아니라 기준이 없었던 것.

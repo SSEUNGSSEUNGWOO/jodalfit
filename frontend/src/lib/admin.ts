@@ -6,6 +6,8 @@
 import "server-only";
 import { getServerSupabase } from "@/lib/supabase-server";
 import { kstDate } from "@/lib/format";
+import { fetchConversions } from "./admin-conversion-server";
+import type { Conversions } from "./admin-conversion";
 
 /** 관리자 — 환경변수 ADMIN_EMAILS(쉼표 구분). 비어 있으면 아무도 아니다(운영에서 빠뜨려도 열리지 않는다). */
 export function isAdmin(email: string | null | undefined): boolean {
@@ -46,6 +48,7 @@ export type AdminData = {
   health: { today: Health; week: Health };
   zeroQueries: SearchRow[];              // 7일, 결과 0건(오류 제외), 최신순
   visits: Visits;
+  conversions: Conversions;
   feedback: FeedbackRow[];               // 최근 50, 최신순 (0061)
   users: UserRow[];
   searches: SearchRow[];                 // 최근 7일, 최신순, 최대 200
@@ -131,7 +134,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   const weekStart = new Date(todayStart.getTime() - 6 * 86_400_000);
   const since = weekStart.toISOString();
 
-  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes] = await Promise.all([
+  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes, conversions] = await Promise.all([
     sb.from("search_logs")
       .select("created_at,query,mode,matched_corp_nm,matched_bizrno,result_count,has_error,ip_hash,referer,latency_ms")
       .gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).limit(1000),
@@ -143,6 +146,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     fetchVisits(todayKst),
     sb.from("feedback").select("id,created_at,kind,message,email,page,handled_at").order("created_at", { ascending: false }).limit(50),
     sb.from("result_feedback").select("created_at,helpful").gte("created_at", since).eq("source", "user").limit(2000),
+    fetchConversions(todayKst),
   ]);
   const helpfulRows = (helpfulRes.data ?? []) as { created_at: string; helpful: boolean }[];
 
@@ -206,6 +210,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     health: { today: health(todayStart), week: health(weekStart) },
     zeroQueries: logRows.filter((r) => !r.has_error && r.result_count === 0).slice(0, 50).map(toRow),
     visits,
+    conversions,
     feedback: ((fb.data ?? []) as { id: number; created_at: string; kind: FeedbackRow["kind"]; message: string; email: string | null; page: string | null; handled_at: string | null }[])
       .map((r) => ({ id: r.id, at: r.created_at, kind: r.kind, message: r.message, email: r.email, page: r.page, handled: !!r.handled_at })),
     users: users

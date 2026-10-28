@@ -27,12 +27,14 @@ export function ResultRows({ results, loggedIn, reviewed, viaBizrno, next, today
     return (
       <SheetRow key={key} no={i + 1} title={b.bid_ntce_nm} org={org} why={why ?? undefined} dLeft={dLeft(b.bid_clse_date, today)} price={won(b.presmpt_prce)}
         reviewed={rv.has(key)} href={`/notices/${b.bid_ntce_no}`} expandLabel={keywordMode ? "원문·검토" : undefined}
-        onOpen={() => emitNoticeEvent({ event_type: "click", ...ev })}>
+        onVisit={() => emitNoticeEvent({ event_type: "click", ...ev })}
+        onOpen={() => emitNoticeEvent({ event_type: "click", ...ev })}
+        action={<ReviewButton no={b.bid_ntce_no} ord={b.bid_ntce_ord} via={viaBizrno} why={why} reviewed={rv.has(key)} loggedIn={loggedIn} next={next}
+          rank={i + 1} score={b.score} algorithm="v2" label="저장" activeLabel="저장됨"
+          onChange={(on) => setRv((s) => { const n = new Set(s); if (on) n.add(key); else n.delete(key); return n; })} />}>
         <SheetExpand quals={keywordMode ? [] : qualLines(b.qualification)} whys={keywordMode ? [] : whyLines(b.score_breakdown, org)}
           actions={<>
             {b.bid_ntce_url && <Btn variant="dark" href={b.bid_ntce_url} target="_blank" rel="noopener">나라장터 원문</Btn>}
-            <ReviewButton no={b.bid_ntce_no} ord={b.bid_ntce_ord} via={viaBizrno} why={why} reviewed={rv.has(key)} loggedIn={loggedIn} next={next}
-              onChange={(on) => { setRv((s) => { const n = new Set(s); if (on) n.add(key); else n.delete(key); return n; }); if (on) emitNoticeEvent({ event_type: "save", ...ev }); }} />
           </>} />
       </SheetRow>
     );

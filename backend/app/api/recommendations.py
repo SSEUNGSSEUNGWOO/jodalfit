@@ -148,7 +148,7 @@ def post_recommendations(
             top_results = result["results"][: req.explain_top]
             # v2 회사 모드는 /stream과 같은 규칙 — 카드는 rule 배지가 설명 역할이라
             # LLM은 상단 요약 1회만. SSR 회사 페이지가 이 경로를 타므로 렌더당
-            # LLM 호출이 5회 → 1회(24시간 캐시)로 줄어든다.
+            # LLM 호출이 5회 → 1회(최대 1시간 캐시)로 줄어든다.
             if req.algorithm == "v2" and result.get("company"):
                 try:
                     result["summary"] = explain_summary(result["company"], top_results)
@@ -293,7 +293,7 @@ def post_recommendations_stream(
                 kw_result_count=len(result.get("keyword_results") or []),
                 has_error=bool(result.get("error")),
                 error_msg=result.get("error"),
-                with_explanation=True,
+                with_explanation=req.with_explanation,
                 ip=_client_ip(request),
                 user_agent=request.headers.get("user-agent"),
                 referer=request.headers.get("referer"),
@@ -323,7 +323,7 @@ def post_recommendations_stream(
         # v2 회사 모드: 카드는 rule 배지가 설명 역할 → LLM은 상단 요약 1회만 (호출 5회 → 1회)
         use_summary = req.algorithm == "v2" and use_company_ctx and bool(primary_top)
 
-        if req.explain_top <= 0 or (not primary_top and not keyword_top):
+        if not req.with_explanation or req.explain_top <= 0 or (not primary_top and not keyword_top):
             yield _line({"type": "done"})
             return
 

@@ -71,6 +71,9 @@ def main():
             href = pg.locator(selector).first.get_attribute("href")
             assert urllib.parse.parse_qs(urllib.parse.urlsplit(href).query)["next"] == [expected], href
         assert pg.locator("[data-rows] > [inert] [data-sheet-row]").count() == 3
+        direct_save = pg.locator("[data-rows] > [data-sheet-row] [data-row-actions] [data-review=guest]")
+        assert direct_save.count() == 5 and direct_save.first.is_visible()
+        assert direct_save.first.inner_text() == "저장", "행을 펼치기 전에 저장 버튼이 보여야 한다"
         hidden = pg.locator(".x-wrap[data-open=false] a").first
         hidden.focus()
         assert not hidden.evaluate("e => document.activeElement === e"), "접힌 공고의 링크에 포커스가 들어간다"

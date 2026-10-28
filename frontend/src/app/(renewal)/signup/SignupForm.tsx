@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { track } from "@/lib/analytics";
 import { Btn } from "@/components/Btn";
 import { Consent, NO_CONSENT, requiredConsented, type ConsentValue } from "@/components/Consent";
 import { PasswordField, TextField } from "@/components/Field";
@@ -12,6 +13,8 @@ import { TERMS_VERSION } from "@/lib/terms";
 
 export function SignupForm({ next }: { next: string }) {
   const router = useRouter();
+  const tracked = useRef(false);
+  useEffect(() => { if (!tracked.current) { tracked.current = true; track("signup_view"); } }, []);
   const [email, setEmail] = useState(""); const [pw, setPw] = useState(""); const [consent, setConsent] = useState<ConsentValue>(NO_CONSENT);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState<string | null>(null);
   const ok = /.+@.+\..+/.test(email) && pw.length >= 8 && requiredConsented(consent) && !busy;
