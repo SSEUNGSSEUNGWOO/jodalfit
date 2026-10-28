@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { afterAuthDestination } from "@/lib/after-auth";
 import { safeNext } from "@/lib/safe-next";
 
 let warned = false;
@@ -19,12 +20,8 @@ export async function GET(req: NextRequest) {
   const supabase = await getServerSupabase({ strict: true });
   const { error } = await supabase.auth.verifyOtp({ token_hash, type });
   if (error) return NextResponse.redirect(new URL("/login?error=link", url.origin));
-  // 가입 확인이고 돌아갈 곳에 회사가 없으면(회사 페이지·결과 머리의 ☆ 로 온 게 아니면) 저장 회사 0곳인 사람을 /welcome 으로(2026-10-28).
-  let dest = next;
-  if ((type === "signup" || type === "email") && !/\/companies\/|[?&]company=/.test(next)) {
-    const { data } = await supabase.from("saved_companies").select("bizrno_norm").limit(1);
-    if (!data?.length) dest = `/welcome?next=${encodeURIComponent(next)}`;
-  }
+  // 가입 확인이면 저장 회사 0곳인 사람을 /welcome 으로(lib/after-auth, 2026-10-28). recovery 는 /reset/new 그대로.
+  const dest = type === "recovery" ? next : await afterAuthDestination(supabase, next, { signup: type === "signup" || type === "email" });
   const res = NextResponse.redirect(new URL(dest, url.origin));
   res.headers.set("Cache-Control", "no-store");
   return res;

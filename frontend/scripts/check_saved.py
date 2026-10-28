@@ -162,8 +162,31 @@ def main():
             assert pg.locator("[data-star=on]").is_visible(), "회사 상세에 저장 상태가 반영되지 않았다"
         finally:
             admin(url, srv, "DELETE", f"/admin/users/{user['id']}")
+
+        # ── 소셜 가입의 동의 한 판(/consent, 2026-10-28) — 메타데이터 없이 만든 사용자(OAuth 와 같은 모양)는 user_consents 가 ''/'' 로 생긴다(0052).
+        #    로그인 → /consent → 필수 둘 체크 전엔 버튼 꺼짐 → 동의하고 계속 → next 로, 행이 채워진다(0064). 다시 열면 next 로 통과.
+        pg.context.clear_cookies()
+        email2 = "check-consent@jodalfit.test"
+        for u in admin(url, srv, "GET", "/admin/users?per_page=200").get("users", []):
+            if u.get("email") == email2: admin(url, srv, "DELETE", f"/admin/users/{u['id']}")
+        user2 = admin(url, srv, "POST", "/admin/users", {"email": email2, "password": pw_, "email_confirm": True})
+        try:
+            rest = lambda q: json.loads(urllib.request.urlopen(urllib.request.Request(f"{url}/rest/v1/user_consents?{q}", headers={"apikey": srv, "Authorization": f"Bearer {srv}"})).read())
+            assert rest(f"user_id=eq.{user2['id']}&select=terms_version")[0]["terms_version"] == "", "빈 동의 행이 없다"
+            goto(pg, "/login?next=%2Fconsent%3Fnext%3D%252Fsaved")
+            pg.fill("input[type=email]", email2); pg.fill("input[type=password]", pw_); pg.click("button[type=submit]")
+            pg.wait_for_url(re.compile(r"/consent")); pg.wait_for_load_state("networkidle"); rules(pg)
+            assert pg.evaluate("document.querySelector('[data-consent-form] button[type=submit]').disabled"), "필수 동의 전인데 버튼이 켜졌다"
+            cb = pg.locator("[data-consent-form] input[type=checkbox]"); assert cb.count() == 3; cb.nth(0).check(); cb.nth(1).check(); cb.nth(2).check()
+            pg.click("[data-consent-form] button[type=submit]"); pg.wait_for_url(re.compile(r"/saved$")); pg.wait_for_load_state("networkidle")
+            row = rest(f"user_id=eq.{user2['id']}&select=terms_version,privacy_version,marketing_opt_in")[0]
+            assert row["terms_version"] != "" and row["privacy_version"] != "" and row["marketing_opt_in"] is True, row
+            assert pg.evaluate("document.querySelector('[data-weekly-mail]')?.dataset.on") == "1", "동의 때 켠 알림 메일이 검토함 토글에 안 보인다"
+            goto(pg, "/consent?next=%2Fsaved"); assert pg.url.endswith("/saved"), f"동의 뒤인데 /consent 가 다시 떴다 {pg.url}"
+        finally:
+            admin(url, srv, "DELETE", f"/admin/users/{user2['id']}")
         b.close()
-        print("ok saved: guest gate · login · ☆ · 검토 · notices 1(★·why) · 해제/되돌리기 · companies 1 · nav ★ 1/검토 1건 · 390 actions · banned 0")
+        print("ok saved: guest gate · consent · login · ☆ · 검토 · notices 1(★·why) · 해제/되돌리기 · companies 1 · nav ★ 1/검토 1건 · 390 actions · banned 0")
         return 0
 
 if __name__ == "__main__":

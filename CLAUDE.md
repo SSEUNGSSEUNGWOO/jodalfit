@@ -109,6 +109,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **금지어가 있다.** `frontend/scripts/check_*.py` 의 `BANNED` 목록 — "하세요"·"주십시오"·"예요"·"에요"·"넣으면"·"낼 수 있"·"이메일 구독"·"매직링크" 등. 공문 톤 유지와 "낼 수 있다"는 단정 금지 때문이다. 문구를 쓰면 검증이 잡는다.
 - **디자인 리뉴얼 작업 전 `docs/design/README.md`를 먼저 읽는다.** 결정 사항(주황은 선이지 면이 아니다, 공문 톤 문체, 적합 점수 숫자 비노출·근거는 유지, 폐기한 컨셉 목록, 머리 장면은 로딩 가림막)이 거기 있고 최종 시안은 `prototypes/final/*.html`(그 밖의 `prototypes/*.html`은 폐기·중간안)(생성 스크립트 `scripts/`). 루트 `DESIGN.md`(개찰판·청색 장부)는 **폐기된 옛 디자인** 기록이다 — 현행이 아니다. 로고 자산은 `docs/design/brand/`.
 - 한글 브랜드명은 "조달핏". 폰트 Pretendard, 다크모드/회원가입 강제 없음. **로그인은 이메일 + 비밀번호(8자 이상, 조합 규칙 없음) + 확인 메일 1회**(README §"이메일 + 비밀번호", 2026-10-17 결정) — 1차 시안의 매직링크는 폐기됐고 "매직링크"·"이메일 구독"은 금지어다. README 상단 §1의 "매직링크 = 알림 구독" 문장은 옛 기술이다.
+  - **구글 로그인**(2026-10-28, Supabase 기본 공급자): `SocialButtons` → `signInWithOAuth` → `/auth/callback`(code 교환) → `lib/after-auth.ts`가 목적지를 정한다. 소셜 가입은 가입 폼을 안 거쳐 `user_consents`가 `''/''`로 생기므로 `/consent` 한 판에서 받아 `/api/consent`가 채운다(0064 — 빈 행만 한 번). 네이버는 Supabase 기본 목록에 없다(커스텀 OAuth 공급자로 시도 예정, 안 되면 카카오). 대시보드 설정: Providers → Google, URL Configuration → Redirect URLs 에 사이트 `/**`.
 - `backend/.env`의 `SUPABASE_SERVICE_ROLE_KEY`는 RLS 우회 admin 키 — frontend/git 노출 금지. 환경변수 전체 목록은 README.md §9.
 - `data/`는 gitignored 임시 수집 데이터.
 

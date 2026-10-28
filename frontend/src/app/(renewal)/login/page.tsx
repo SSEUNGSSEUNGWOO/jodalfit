@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Narrow } from "@/components/Narrow";
+import { SocialButtons } from "@/components/SocialButtons";
 import { getSessionUser } from "@/lib/auth";
 import { safeNext } from "@/lib/safe-next";
 import { LoginForm } from "./LoginForm";
@@ -13,7 +14,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getSessionUser()) redirect(next);
   return (
     <Narrow title="로그인">
-      <LoginForm next={next} linkError={p.error === "link"} />
+      <SocialButtons next={next} from="login" />
+      <LoginForm next={next} linkError={p.error === "link"} oauthError={p.error === "oauth"} />
     </Narrow>
   );
 }

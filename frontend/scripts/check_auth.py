@@ -48,6 +48,14 @@ def main():
         assert pg.evaluate("document.querySelector('input[type=email]').value") == "you@company.co.kr" and not dis()
         # 새 비밀번호 — 비로그인은 /reset 으로
         pg.goto(f"{BASE}/reset/new"); pg.wait_for_load_state("networkidle"); assert pg.url.rstrip("/").endswith("/reset"), pg.url
+        # 소셜 로그인(2026-10-28) — 로그인·가입 둘 다 "Google로 계속" 버튼이 폼 위에, 주황 면 아님. /consent 는 비로그인이면 로그인으로.
+        for path in ("/login?next=%2Fsaved", "/signup?next=%2Fsaved"):
+            pg.goto(BASE + path); pg.wait_for_load_state("networkidle")
+            g = pg.evaluate("""() => { const b = document.querySelector('[data-social-google]'); const f = document.querySelector('form');
+                return { txt: b?.innerText.trim(), bg: getComputedStyle(b).backgroundColor, above: b.getBoundingClientRect().bottom <= f.getBoundingClientRect().top } }""")
+            assert g["txt"] == "Google로 계속" and g["bg"] == "rgb(255, 255, 255)" and g["above"], (path, g)
+        pg.goto(f"{BASE}/consent?next=%2Fsaved"); pg.wait_for_load_state("networkidle"); assert "/login?next=%2Fconsent" in pg.url, pg.url
+        pg.goto(f"{BASE}/login?error=oauth"); pg.wait_for_load_state("networkidle"); assert "Google 로그인이 완료되지 않았습니다" in pg.evaluate("document.body.innerText")
         # 우리 회사 저장(/welcome, 2026-10-28) — 비로그인은 로그인으로, next 에 /welcome 을 품는다
         pg.goto(f"{BASE}/welcome?next=%2Fsaved"); pg.wait_for_load_state("networkidle"); assert "/login?next=%2Fwelcome" in pg.url, pg.url
         # 약관
