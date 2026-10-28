@@ -7,6 +7,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 export type StreamBody = {
   query: string; mode: "company" | "keywords"; keywords?: string | null; algorithm: "v1" | "v2";
   session_id?: string | null; limit: number; candidate_pool: number; explain_top: number; with_explanation: boolean;
+  div?: string | null; due?: number | null;   // 키워드 모드 좁히기(구분·마감까지 일수)
 };
 
 /** 이벤트마다 onEvent. 네트워크/HTTP 오류는 throw — 호출자가 오류 상태로 바꾼다. */

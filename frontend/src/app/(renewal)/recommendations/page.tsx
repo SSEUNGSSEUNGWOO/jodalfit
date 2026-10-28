@@ -1,12 +1,13 @@
 // frontend/src/app/(renewal)/recommendations/page.tsx
 // 결과 페이지. URL 계약은 옛 페이지 그대로: company=회사명|사업자번호 / q=키워드 / keywords=하이브리드 / algorithm=v1|v2 / from=company. 공고번호면 공고 상세로.
+// 키워드 모드 좁히기(2026-10-28): div=물품|용역|공사 / due=7|30 — 칩이 주소를 바꾸고 페이지가 다시 마운트해 다시 계산한다(공유·뒤로가기가 그대로 된다).
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ResultsView } from "@/components/results/ResultsView";
 import { getSessionUser } from "@/lib/auth";
 import { getReviewedKeys, getSavedCompanyKeys } from "@/lib/saved";
 import { fetchCompanyByBizrno } from "@/lib/company";
-import type { CompanyDigest } from "@/types/recommendations";
+import type { CompanyDigest, KeywordFilter } from "@/types/recommendations";
 
 export const metadata: Metadata = { title: "추천 공고 | 조달핏", robots: { index: false, follow: false } };
 
@@ -17,6 +18,8 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
   const one = (k: string) => { const v = p[k]; return (Array.isArray(v) ? v[0] : v)?.trim() || ""; };
   const company = one("company"), q = one("q"), keywords = one("keywords") || null, from = one("from") || null;
   const algorithm = one("algorithm") === "v1" ? "v1" : "v2";
+  const dv = one("div"), du = one("due");
+  const filter: KeywordFilter = { div: dv === "물품" || dv === "용역" || dv === "공사" ? dv : null, due: du === "7" ? 7 : du === "30" ? 30 : null };
   const query = company || q;
   const m = query.match(NOTICE_NO);
   if (m) redirect(`/notices/${m[1].toUpperCase()}`);
@@ -39,8 +42,8 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
   if (!query) redirect("/");
 
   return (
-    <ResultsView key={`${company ? "company" : "keywords"}:${query}:${keywords ?? ""}:${algorithm}`}
-      query={query} mode={company ? "company" : "keywords"} keywords={keywords} algorithm={algorithm} from={from}
+    <ResultsView key={`${company ? "company" : "keywords"}:${query}:${keywords ?? ""}:${algorithm}:${filter.div ?? ""}:${filter.due ?? ""}`}
+      query={query} mode={company ? "company" : "keywords"} keywords={keywords} algorithm={algorithm} from={from} filter={filter}
       loggedIn={!!user} savedKeys={[...saved]} reviewedKeys={[...reviewed]} next={next} initialCompany={initialCompany} />
   );
 }

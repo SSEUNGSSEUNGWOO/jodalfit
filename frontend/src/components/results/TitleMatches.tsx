@@ -1,6 +1,7 @@
 // frontend/src/components/results/TitleMatches.tsx
-// 키워드 모드 첫 판 — 제목에 검색어가 든 진행 공고 전부(마감 가까운 순). 순위가 아니라 찾기라 게이트 없이 다 보이고,
+// 키워드 모드 첫 판 — 제목·발주기관·참가 지역에 검색어가 든 진행 공고 전부(마감 가까운 순). 순위가 아니라 찾기라 게이트 없이 다 보이고,
 // 25건씩 쪽을 넘긴다(admin/PagedTable 과 같은 모양). 의미 유사 20건은 이 아래 ResultRows 가 "그 밖에" 로 잇는다. 2026-10-27.
+// 제목에 없는 낱말이 기관·지역에서 맞은 행은 둘째 줄 칩으로 어디서 맞았는지 적는다(백엔드 matched_in). 2026-10-28.
 "use client";
 
 import { useState } from "react";
@@ -27,7 +28,7 @@ export function TitleMatches({ rows, terms, capped, loggedIn, reviewed, next, to
     <section data-title-matches data-page={cur + 1} data-pages={pages}>
       <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-3 border-b border-ink pb-5 max-sm:pb-4">
         <div>
-          <h2 className="text-[24px] font-semibold tracking-[-0.035em] text-ink max-sm:text-[21px]">제목 일치 <span className="num">{rows.length}</span><span className="ml-0.5 text-[16px] font-medium">건</span>{capped && <span className="ml-1.5 text-[14px] font-medium text-ink-g">이상</span>}</h2>
+          <h2 className="text-[24px] font-semibold tracking-[-0.035em] text-ink max-sm:text-[21px]">제목·기관·지역 일치 <span className="num">{rows.length}</span><span className="ml-0.5 text-[16px] font-medium">건</span>{capped && <span className="ml-1.5 text-[14px] font-medium text-ink-g">이상</span>}</h2>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-g">
             <span>{terms.map((t) => `‘${t}’`).join(" · ")} {terms.length > 1 ? "모두 포함" : "포함"}</span>
             <span>마감 가까운 순</span>
@@ -40,8 +41,10 @@ export function TitleMatches({ rows, terms, capped, loggedIn, reviewed, next, to
         const key = `${b.bid_ntce_no}-${b.bid_ntce_ord}`;
         const org = b.dmnd_instt_nm || b.ntce_instt_nm || "—";
         const ev = { bid_ntce_no: b.bid_ntce_no, bid_ntce_ord: b.bid_ntce_ord, rank_position: from + i + 1, algorithm_version: "title" };
+        const where = b.matched_in ?? [];
         return (
-          <SheetRow key={key} no={from + i + 1} title={b.bid_ntce_nm} org={org} dLeft={dLeft(b.bid_clse_date, today)} price={won(b.presmpt_prce)}
+          <SheetRow key={key} no={from + i + 1} title={b.bid_ntce_nm} org={b.bsns_div_nm ? `${b.bsns_div_nm} · ${org}` : org} dLeft={dLeft(b.bid_clse_date, today)} price={won(b.presmpt_prce)}
+            why={where.length > 0 ? `${where.map((w) => (w === "기관" ? "발주기관" : "참가 지역")).join("·")}에 일치` : undefined}
             reviewed={rv.has(key)} href={`/notices/${b.bid_ntce_no}`} expandLabel="원문·검토" onOpen={() => emitNoticeEvent({ event_type: "click", ...ev })}>
             <SheetExpand quals={[]} whys={[]} actions={<>
               {b.bid_ntce_url && <Btn variant="dark" href={b.bid_ntce_url} target="_blank" rel="noopener">나라장터 원문</Btn>}

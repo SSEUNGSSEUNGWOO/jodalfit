@@ -4,7 +4,7 @@
 사용: cd backend && uv run --no-sync python ../frontend/scripts/check_results.py   (RESULTS_BASE 기본 http://localhost:3000)
 회사 1248177731(한종산업개발): 장면 → 건너뛰기 → done, 숫자 넷(… 아님), 표 5 + 게이트 2버튼 + 흐림 ≥1, 행 펼침에 자격·근거 줄,
 다른 회사 → 상자·흐림 → Esc 복귀, 금지어·주황 면·인주 0, 바닥색·판 14px, 390 한 단·넘침 없음.
-키워드(하수처리): 장면 없음, 표 ≥1. 키워드(폐기물): 제목 일치 판 전부·25건 쪽 넘김·의미 판과 중복 없음. 오타 매칭(한종산업개빌): "가장 가까운 이름" 줄. 번호 못 찾음(000-00-00001): "다음 시간부터" 판. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
+키워드(하수처리): 장면 없음, 표 ≥1. 키워드(폐기물): 제목·기관·지역 일치 판 전부·25건 쪽 넘김·의미 판과 중복 없음. 좁히기(폐기물 용역·30일): 칩 2개 켜짐·행 전부 용역·D-30 이내. 기관명(국무조정실): 제목 0건인데 "발주기관에 일치" 칩. 좁혀서 0건: "조건 해제". 오타 매칭(한종산업개빌): "가장 가까운 이름" 줄. 번호 못 찾음(000-00-00001): "다음 시간부터" 판. 업종 0건 회사(4191800117): 면허 판정 불가 안내 줄. 로그인(키 있으면): 게이트 없음·20행, 검토 → 괘선, 보고서.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -122,13 +122,31 @@ def main():
         t = pg.evaluate("""() => { const e = document.querySelector('[data-title-matches]'); const hrefs = s => [...document.querySelectorAll(s + ' [data-sheet-row] a[href^="/notices/"]')].map(a => a.getAttribute('href'));
           return { n: +e.querySelector('h2 .num').textContent, page: e.dataset.page, pages: +e.dataset.pages, rows: e.querySelectorAll('[data-sheet-row]').length, pager: !!e.querySelector('[data-pager]'),
                    head: e.querySelector('h2').textContent, first: e.querySelector('[data-sheet-row]').textContent, title: hrefs('[data-title-matches]'), sem: hrefs('[data-rows]'), zero: !!document.querySelector('[data-zero]') } }""")
-        assert t["n"] > 25 and t["page"] == "1" and t["pages"] == -(-t["n"] // 25) and t["rows"] == 25 and t["pager"] and "제목 일치" in t["head"] and not t["zero"], t
-        assert not (set(t["title"]) & set(t["sem"])), "같은 공고가 제목 일치와 의미 유사 두 판에 있다"
-        assert all("폐기물" in x for x in pg.evaluate("() => [...document.querySelectorAll('[data-title-matches] [data-sheet-row]')].map(r => r.textContent)")), "제목에 낱말이 없는 행이 제목 일치 판에 있다"
+        assert t["n"] > 25 and t["page"] == "1" and t["pages"] == -(-t["n"] // 25) and t["rows"] == 25 and t["pager"] and "제목·기관·지역 일치" in t["head"] and not t["zero"], t
+        assert not (set(t["title"]) & set(t["sem"])), "같은 공고가 글자 일치와 의미 유사 두 판에 있다"
+        # 행 글에 낱말이 있어야 한다 — 제목에 없으면 기관명(둘째 줄)에 있고 "발주기관에 일치" 칩이 붙는다(2026-10-28)
+        assert all("폐기물" in x for x in pg.evaluate("() => [...document.querySelectorAll('[data-title-matches] [data-sheet-row]')].map(r => r.textContent)")), "낱말이 없는 행이 글자 일치 판에 있다"
+        assert pg.evaluate("() => ({ bar: !!document.querySelector('[data-kw-filters]'), on: [...document.querySelectorAll('[data-kw-filters] a[aria-current]')].map(a => a.textContent) })") == {"bar": True, "on": ["전체", "전체"]}
         pg.screenshot(path=str(OUT / "_shot_results_title.png"), full_page=False)
         pg.click("[data-title-matches] [data-pager] button:has-text('다음')")
         t2 = pg.evaluate("() => { const e = document.querySelector('[data-title-matches]'); return { page: e.dataset.page, first: e.querySelector('[data-sheet-row]').textContent } }")
         assert t2["page"] == "2" and t2["first"] != t["first"], t2
+        # 좁히기 칩(2026-10-28) — 용역 → 주소에 div, 30일 이내 → due. 글자 일치 행은 전부 "용역 ·" 로 시작하고 D-30 이내, 의미 유사 판도 같은 조건.
+        pg.click("[data-kw-filters] a:has-text('용역')"); pg.wait_for_url("**div=%EC%9A%A9%EC%97%AD**"); pg.wait_for_selector("[data-title-matches]", timeout=30000)
+        pg.click("[data-kw-filters] a:has-text('30일 이내')"); pg.wait_for_url("**due=30**"); pg.wait_for_selector("[data-title-matches]", timeout=30000); rules(pg)
+        f = pg.evaluate("""() => { const rows = s => [...document.querySelectorAll(s + ' [data-sheet-row]')]; const days = s => rows(s).map(r => +(r.dataset.days ?? 999));
+          return { on: [...document.querySelectorAll('[data-kw-filters] a[aria-current]')].map(a => a.textContent), n: +document.querySelector('[data-title-matches] h2 .num').textContent,
+          div: rows('[data-title-matches]').every(r => r.textContent.includes('용역 ·')), due: Math.max(...days('[data-title-matches]'), ...days('[data-rows]')), sem: rows('[data-rows]').length } }""")
+        assert f["on"] == ["용역", "30일 이내"] and 0 < f["n"] < t["n"] and f["div"] and f["due"] <= 30, f
+        pg.screenshot(path=str(OUT / "_shot_results_filtered.png"), full_page=False)
+        # 기관명 검색(2026-10-28) — 제목에는 없고 발주기관에만 있는 낱말. 행마다 "발주기관에 일치" 칩. 기관이 공고를 안 내면 다른 기관으로 바꾼다
+        goto(pg, "/recommendations?q=%EA%B5%AD%EB%AC%B4%EC%A1%B0%EC%A0%95%EC%8B%A4"); pg.wait_for_selector("[data-title-matches]", timeout=30000); rules(pg)
+        i = pg.evaluate("() => [...document.querySelectorAll('[data-title-matches] [data-sheet-row]')].map(r => r.textContent)")
+        assert len(i) >= 1 and all("국무조정실" in x and "발주기관에 일치" in x for x in i), i[:3]
+        # 좁혀서 0건 — 공사 구분에는 국무조정실 공고가 없다 → "조건 해제" 링크로 되돌린다
+        goto(pg, "/recommendations?q=%EA%B5%AD%EB%AC%B4%EC%A1%B0%EC%A0%95%EC%8B%A4&div=%EA%B3%B5%EC%82%AC&due=7"); pg.wait_for_selector("[data-zero][data-filtered], [data-title-matches]", timeout=30000); rules(pg)
+        z = pg.evaluate("() => { const e = document.querySelector('[data-zero][data-filtered]'); return e && { txt: e.textContent, href: e.querySelector('a').getAttribute('href'), bar: !!document.querySelector('[data-kw-filters]') } }")
+        assert z and "조건 해제" in z["txt"] and z["href"] == "/recommendations?q=%EA%B5%AD%EB%AC%B4%EC%A1%B0%EC%A0%95%EC%8B%A4" and z["bar"], z
         # 골든타임 — 의견 창이 열린 사전규격을 DB 에서 하나 골라 그 품명으로 키워드 검색하면 사전규격 줄이 "골든타임" 으로 펼쳐져 있어야 한다
         if srv and (surl := env(ROOT / "backend/.env", "SUPABASE_URL")):
             now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()

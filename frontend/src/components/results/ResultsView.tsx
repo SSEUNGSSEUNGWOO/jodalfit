@@ -13,7 +13,7 @@ import { getSessionId } from "@/lib/events";
 import { cn, maskBizrno } from "@/lib/utils";
 import { companyStats } from "@/lib/saved-stats";
 import { kstDate } from "@/lib/format";
-import type { CompanyDigest, RecommendationResponse } from "@/types/recommendations";
+import type { CompanyDigest, KeywordFilter, RecommendationResponse } from "@/types/recommendations";
 import { Scene, type SceneCounts } from "./Scene";
 import { FunnelLine } from "./FunnelLine";
 import { LeadsLine } from "./LeadsLine";
@@ -21,6 +21,7 @@ import { rememberCompany } from "@/components/entry/RecentChips";
 import { CompanySide } from "./CompanySide";
 import { ResultRows, ZeroBlock } from "./ResultRows";
 import { TitleMatches } from "./TitleMatches";
+import { KeywordFilters, NO_FILTER, hasFilter } from "./KeywordFilters";
 import { HelpfulLine } from "./HelpfulLine";
 
 const TIMEOUT_MS = 8000;
@@ -34,8 +35,8 @@ const CACHE_MS = 30 * 60 * 1000;
 type Cached = { at: number; data: RecommendationResponse; counts: SceneCounts };
 const OTHER = "ml-3.5 cursor-pointer border-b border-field text-[13px] font-medium text-ink-g hover:border-orange";
 
-export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, savedKeys, reviewedKeys, next, initialCompany }: {
-  query: string; mode: "company" | "keywords"; keywords: string | null; algorithm: "v1" | "v2"; from: string | null;
+export function ResultsView({ query, mode, keywords, algorithm, from, filter = NO_FILTER, loggedIn, savedKeys, reviewedKeys, next, initialCompany }: {
+  query: string; mode: "company" | "keywords"; keywords: string | null; algorithm: "v1" | "v2"; from: string | null; filter?: KeywordFilter;
   loggedIn: boolean; savedKeys: string[]; reviewedKeys: string[]; next: string; initialCompany?: CompanyDigest | null;
 }) {
   const [counts, setCounts] = useState<SceneCounts>(EMPTY);
@@ -48,7 +49,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const [today] = useState(() => new Date()); // 렌더 동안 읽히는 값 — ref 가 아니라 state(react-hooks/refs)
   const [cached, setCached] = useState(false);
   const [checked, setChecked] = useState(false); // 캐시를 본 뒤에야 장면을 그린다 — 안 그러면 캐시 히트에도 첫 프레임이 비친다
-  const cacheKey = `jf:reco:${mode}:${query}:${keywords ?? ""}:${algorithm}`;
+  const cacheKey = `jf:reco:${mode}:${query}:${keywords ?? ""}:${algorithm}:${filter.div ?? ""}:${filter.due ?? ""}`;
   // 사업자번호로 찾지 못해 키워드로 넘어온 경우 — 숫자를 키워드로 검색해 봐야 뜻이 없다. 계산하지 않고 "다음 시간부터 검색된다"를 적는다.
   // 번호 검색 실패는 시간 잡(register_searched_companies)이 조달청 API 로 등록한다(2026-10-26 (주)에이데이타가 그렇게 들어왔다).
   const noBizrno = mode === "keywords" && from === "company" && isBizrnoLike(query);
@@ -71,7 +72,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
     let got = false;
     const timer = setTimeout(() => { if (!got) { ac.abort(); setError("결과를 불러오지 못했습니다"); } }, TIMEOUT_MS);
     streamRecommendations(
-      { query, mode, keywords, algorithm, session_id: getSessionId(), limit: RESULT_LIMIT, candidate_pool: 200, explain_top: 0, with_explanation: false },
+      { query, mode, keywords, algorithm, session_id: getSessionId(), limit: RESULT_LIMIT, candidate_pool: 200, explain_top: 0, with_explanation: false, div: filter.div, due: filter.due },
       (e) => {
         // 0057 부터 funnel 은 total 하나만 준다 — 등록업종 허용 수는 깔때기의 칸이 아니었다(Scene.tsx 주석).
         if (e.type === "funnel") setCounts((c) => ({ ...c, total: e.total }));
@@ -85,7 +86,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       ac.signal,
     ).catch((err) => { if (!ac.signal.aborted && !got) { clearTimeout(timer); setError(String(err?.message || "결과를 불러오지 못했습니다")); } });
     return () => { clearTimeout(timer); ac.abort(); };
-  }, [query, mode, keywords, algorithm, attempt, cacheKey, noBizrno]);
+  }, [query, mode, keywords, algorithm, filter.div, filter.due, attempt, cacheKey, noBizrno]);
 
   // 회사 모드인데 회사를 못 찾았으면 키워드로 넘어간다(옛 보드와 같은 규칙)
   useEffect(() => {
@@ -111,6 +112,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
   const titles = mode === "keywords" ? (data?.title_matches ?? []) : [];
   const state: "running" | "done" | "error" = error ? "error" : settled && data ? "done" : "running";
   const zero = state === "done" && results.length === 0 && titles.length === 0;
+  const filtered = mode === "keywords" && hasFilter(filter);   // 칩으로 좁혀 0건이면 "없다"가 아니라 "조건에 없다"
   // 회사는 찾았는데 등록업종·공급물품이 없어 회사 기준 추천이 안 되는 경우(백엔드 fallback=keywords, 7일 27건 = 빈손 검색의 1/3).
   // 전엔 "참가 자격이 있는 공고가 없습니다"(ZeroBlock)로 보여 사실과 달랐다 — 자격을 본 게 아니라 기준이 없었던 것.
   const noInfo = zero && !!data?.error && data?.fallback === "keywords" && !!data?.company;
@@ -144,7 +146,7 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
           meta={co ? [co.rgn_nm ?? "—", `기준일 ${kstDate(today)}`] : [" "]} />
       ) : (
         <PageHead title={`“${query}”`} className="border-b-0! pb-0" aside={<button type="button" data-other className={OTHER} onClick={() => setSearch(true)}>다른 검색</button>}
-          meta={[noBizrno ? "사업자번호로 찾지 못했습니다" : from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "제목에 든 공고 전부 · 이어서 뜻이 가까운 공고"]} />
+          meta={[noBizrno ? "사업자번호로 찾지 못했습니다" : from === "company" ? "회사명으로 찾지 못해 키워드로 검색" : "제목·기관·지역에 든 공고 전부 · 이어서 뜻이 가까운 공고"]} />
       )}
 
       {mode === "company" && checked && !cached && <Scene key={attempt} counts={counts} state={state} onSettled={() => setSettled(true)} />}
@@ -183,6 +185,8 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
       {state === "done" && data && !noBizrno && (
         <Panel data-res className="mt-4 translate-y-0 opacity-100 transition-[opacity,transform] duration-500 [transition-timing-function:var(--ease-sheet)] starting:translate-y-2.5 starting:opacity-0">
           <div className="pt-6 max-sm:pt-5">
+            {/* 좁히기 칩은 판이 비어도 남는다 — 안 그러면 좁혀서 0건이 된 뒤 되돌릴 길이 없다 */}
+            {mode === "keywords" && <KeywordFilters query={query} from={from} filter={filter} />}
             {titles.length > 0 && <TitleMatches rows={titles} terms={data.title_terms ?? [query]} capped={!!data.title_match_capped} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} next={next} today={today} />}
             {!zero && results.length > 0 && (
               <div className={cn("flex flex-wrap items-start justify-between gap-x-5 gap-y-3 border-b border-ink pb-5 max-sm:pb-4", titles.length > 0 && "mt-12 max-sm:mt-10")}>
@@ -201,6 +205,12 @@ export function ResultsView({ query, mode, keywords, algorithm, from, loggedIn, 
               </div>
             )}
             {noInfo ? <NoInfoBlock corpNm={co?.corp_nm ?? query} />
+                  : zero && filtered ? (
+                    <p data-zero data-filtered className="pb-[34px] pt-[22px] text-[14px] leading-[1.7] text-ink-dim">
+                      <b className="mr-3 text-[18px] font-[650] tracking-[-0.015em] text-ink">좁힌 조건에 맞는 공고가 없습니다</b>
+                      <a href={`/recommendations?q=${encodeURIComponent(query)}${from ? `&from=${encodeURIComponent(from)}` : ""}`} className="border-b border-field font-medium text-ink-g hover:border-orange">조건 해제</a>
+                    </p>
+                  )
                   : zero ? <ZeroBlock reason={counts.passed === 0 ? "qualify" : "rank"} viaBizrno={bizrno} />
                   : results.length > 0 && <ResultRows results={results} loggedIn={loggedIn} reviewed={new Set(reviewedKeys)} viaBizrno={bizrno} next={next} today={today} keywordMode={mode === "keywords"} />}
             {/* 키워드 모드에도 — 백엔드는 사전규격·발주계획을 두 모드 다 돌려준다(2026-10-26 전엔 회사 모드만 그렸다). */}

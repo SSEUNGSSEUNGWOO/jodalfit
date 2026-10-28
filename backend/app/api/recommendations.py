@@ -72,6 +72,9 @@ class RecommendRequest(BaseModel):
         5, ge=0, le=10, description="LLM 설명은 상위 explain_top건만 (비용 절약)"
     )
     with_explanation: bool = Field(False, description="LLM 추천 이유 생성 (OpenAI 비용 발생)")
+    # 키워드 모드 좁히기 칩(2026-10-28) — 글자 일치는 조회 조건으로, 의미 유사 20건은 뽑은 뒤 거른다. 회사 모드는 무시.
+    div: Literal["물품", "용역", "공사"] | None = Field(None, description="키워드 모드 — 공고 구분으로 좁힘")
+    due: int | None = Field(None, ge=1, le=365, description="키워드 모드 — 마감까지 일수로 좁힘")
 
 
 @router.post("", dependencies=[Depends(guard_external_traffic)])
@@ -126,6 +129,8 @@ def post_recommendations(
         mode=req.mode,
         keywords=req.keywords,
         algorithm=req.algorithm,
+        div=req.div,
+        due=req.due,
     )
 
     has_any_results = bool(result.get("results") or result.get("keyword_results") or result.get("title_matches"))
@@ -244,6 +249,8 @@ def post_recommendations_stream(
                 mode=req.mode,
                 keywords=req.keywords,
                 algorithm=req.algorithm,
+                div=req.div,
+                due=req.due,
             )
         except Exception as e:  # 제너레이터 쪽에서 다시 던진다
             box["error"] = e

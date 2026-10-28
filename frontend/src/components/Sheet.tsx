@@ -40,7 +40,7 @@ export function SheetRow({ no, title, org, why, dLeft, price, reviewed, defaultO
   const toggle = () => { if (!open) onOpen?.(); setOpen((v) => !v); };
   return (
     <>
-      <div data-sheet-row onClick={children ? toggle : undefined}
+      <div data-sheet-row data-days={dLeft?.days} onClick={children ? toggle : undefined}
         className={cn(GRID, "relative border-b border-rule py-5 text-[14px] max-sm:py-[18px]", children && "cursor-pointer transition-colors hover:bg-paper/60",
           "before:absolute before:-left-4 before:top-0 before:bottom-0 before:w-0.5 before:origin-top before:bg-orange before:transition-transform before:duration-300 before:[transition-timing-function:var(--ease-sheet)]",
           reviewed ? "before:scale-y-100" : "before:scale-y-0")}>

@@ -941,11 +941,13 @@ def recommend(
     mode: Literal["company", "keywords", "auto"] = "company",
     keywords: str | None = None,
     algorithm: Literal["v1", "v2"] = "v1",
+    div: str | None = None,
+    due: int | None = None,
 ) -> dict[str, Any]:
     """추천 메인 진입점.
 
     company 모드: query는 회사명/사업자번호. keywords가 있으면 회사 벡터에 하이브리드 블렌딩
-    keywords 모드: query는 자유 텍스트 (keywords 파라미터는 무시)
+    keywords 모드: query는 자유 텍스트 (keywords 파라미터는 무시). div(물품·용역·공사)·due(마감까지 일수)로 좁힌다
     auto 모드: 입력 자동 감지 + 회사/키워드 결과 둘 다 반환 (UI 탭)
 
     algorithm (A/B):
@@ -961,7 +963,7 @@ def recommend(
     if mode == "auto":
         return _recommend_auto(query, limit, candidate_pool, keywords, algorithm)
     if mode == "keywords":
-        return _recommend_by_keywords(query, limit, candidate_pool)
+        return _recommend_by_keywords(query, limit, candidate_pool, div, due)
     return _recommend_by_company(query, limit, candidate_pool, keywords, algorithm)
 
 
@@ -1013,7 +1015,7 @@ def _recommend_auto(
 
 
 def _recommend_by_keywords(
-    query: str, limit: int, candidate_pool: int
+    query: str, limit: int, candidate_pool: int, div: str | None = None, due: int | None = None
 ) -> dict[str, Any]:
     text = query.strip()
     if not text:
@@ -1030,7 +1032,7 @@ def _recommend_by_keywords(
 
     # 제목 일치(전부)는 임베딩 검색과 독립 — 같이 띄워 왕복 한 번 값으로 끝낸다. 실패해도 의미 검색은 그대로 나간다.
     with ThreadPoolExecutor(max_workers=1) as ex:
-        f_title = submit_timed(ex, "title_match", _search_title_matches, get_admin_client(), text)
+        f_title = submit_timed(ex, "title_match", _search_title_matches, get_admin_client(), text, div, due)
         with timed("embed_query"):
             embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"])[0]
         embedding_str = vector_to_pgvector_str(embedding)
@@ -1046,6 +1048,12 @@ def _recommend_by_keywords(
     # 제목에 이미 든 공고는 의미 검색 쪽에서 뺀다 — 같은 공고가 두 판에 두 번 보이지 않게(번호 기준, 차수는 다를 수 있다)
     title_nos = {r.get("bid_ntce_no") for r in title["rows"]}
     ranked = [r for r in ranked if r.get("bid_ntce_no") not in title_nos]
+    # 좁히기 칩은 의미 유사 판에도 — 20건을 뽑은 뒤 거르므로 줄어들 수 있다(순위를 다시 매기지 않는다)
+    if div:
+        ranked = [r for r in ranked if r.get("bsns_div_nm") == div]
+    if due:
+        horizon = (date.today() + timedelta(days=due)).isoformat()
+        ranked = [r for r in ranked if (r.get("bid_clse_date") or "9999") <= horizon]
 
     return {
         "company": None,
@@ -1068,15 +1076,16 @@ TITLE_MATCH_COLS = (
 )
 
 
-def _search_title_matches(client, text: str) -> dict[str, Any]:
-    """제목에 질의 낱말이 전부 든 진행 공고 — 전부(상한 CAP), 마감 가까운 순. 규칙은 app/recommender/title_match.py.
+def _search_title_matches(client, text: str, div: str | None = None, due: int | None = None) -> dict[str, Any]:
+    """제목·발주기관·참가 지역에 질의 낱말이 전부 든 진행 공고 — 전부(상한 CAP), 마감 가까운 순. 규칙은 app/recommender/title_match.py.
 
     진행 = 마감 전 + 입찰참가자격 등록 마감이 안 지남(0057 funnel_counts 와 같은 기준). 마감 90일 지평선은 두지 않는다 —
     찾기는 추천이 아니다. 같은 번호의 다른 차수가 결과 밖에 있을 수 있어 취소 판정은 번호 전체 차수를 다시 읽는다.
     실측 2026-10-27: "폐기물" 249행 381ms, "옥상방수" 11행.
+    div(물품·용역·공사)·due(마감까지 일수)는 결과 화면의 좁히기 칩 — 상한 300 에 잘리기 전에 조회 조건으로 건다(2026-10-28).
     """
     from app.recommender.cancellation import cancel_ords          # lazy — recommend ↔ recommender 순환 import 회피
-    from app.recommender.title_match import CAP, parse_terms, select_rows, term_filters
+    from app.recommender.title_match import CAP, matched_in, parse_terms, select_rows, term_or_filters
 
     terms = parse_terms(text)
     if not terms:
@@ -1087,8 +1096,12 @@ def _search_title_matches(client, text: str) -> dict[str, Any]:
         .gte("bid_clse_date", date.today().isoformat())
         .or_(f"bid_qlfct_rgst_dt.is.null,bid_qlfct_rgst_dt.gt.{datetime.now(timezone.utc).isoformat()}")
     )
-    for op, crit in term_filters(terms):
-        q = q.filter("bid_ntce_nm", op, crit)
+    if div:
+        q = q.eq("bsns_div_nm", div)
+    if due:
+        q = q.lte("bid_clse_date", (date.today() + timedelta(days=due)).isoformat())
+    for expr in term_or_filters(terms):   # or 파라미터를 낱말 수만큼 — PostgREST 는 거듭된 or 를 AND 로 묶는다
+        q = q.or_(expr)
     rows = (
         q.order("bid_clse_date").order("bid_ntce_no").order("bid_ntce_ord", desc=True)
         .limit(CAP * 2)   # 차수 중복·취소를 걷어낸 뒤에도 CAP 이 차도록 넉넉히
@@ -1107,6 +1120,7 @@ def _search_title_matches(client, text: str) -> dict[str, Any]:
         r.pop("status", None)
         r.pop("kind", None)
         r["stage"] = "notice"
+        r["matched_in"] = matched_in(r, terms)   # 제목에 없는 낱말이 기관·지역에서 맞았으면 화면이 칩으로 적는다
     return {"rows": kept, "capped": capped, "terms": terms}
 
 

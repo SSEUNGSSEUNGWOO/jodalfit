@@ -77,7 +77,13 @@ export interface BidRecommendation {
 /** 키워드 모드 — 제목에 검색어 낱말이 전부 든 진행 공고(전부, 마감 가까운 순). 순위·점수가 없다(backend title_match.py). */
 export type TitleMatch = Pick<BidRecommendation,
   "stage" | "bid_ntce_no" | "bid_ntce_ord" | "bid_ntce_nm" | "bsns_div_nm" | "bid_ntce_date" | "bid_clse_date" | "openg_date"
-  | "presmpt_prce" | "ntce_instt_nm" | "dmnd_instt_nm" | "bidprc_psbl_indstryty_nm" | "prtcpt_psbl_rgn_nm" | "bid_ntce_url">;
+  | "presmpt_prce" | "ntce_instt_nm" | "dmnd_instt_nm" | "bidprc_psbl_indstryty_nm" | "prtcpt_psbl_rgn_nm" | "bid_ntce_url"> & {
+  /** 제목에 없는 낱말이 어디서 맞았는가(기관 = 수요·공고기관명, 지역 = 참가 가능 지역). 제목에 다 있으면 빈 목록. 2026-10-28 */
+  matched_in?: ("기관" | "지역")[];
+};
+
+/** 키워드 모드 좁히기 — URL `div`·`due` 와 스트림 본문이 같은 값을 쓴다 */
+export type KeywordFilter = { div: "물품" | "용역" | "공사" | null; due: 7 | 30 | null };
 
 /** v2 랭킹 시그널 1건 — 가산/감산 근거 */
 export interface ScoreSignal {
