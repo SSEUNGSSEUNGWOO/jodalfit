@@ -176,12 +176,20 @@ def main():
             goto(pg, "/login?next=%2Fconsent%3Fnext%3D%252Fsaved")
             pg.fill("input[type=email]", email2); pg.fill("input[type=password]", pw_); pg.click("button[type=submit]")
             pg.wait_for_url(re.compile(r"/consent")); pg.wait_for_load_state("networkidle"); rules(pg)
-            assert pg.evaluate("document.querySelector('[data-consent-form] button[type=submit]').disabled"), "필수 동의 전인데 버튼이 켜졌다"
+            assert pg.evaluate("document.querySelector('[data-consent-submit]').disabled"), "필수 동의 전인데 버튼이 켜졌다"
+            # 같은 화면의 선택 칸 "우리 회사 저장" — 고르면 바로 저장되고 "저장됨" 줄로 바뀐다(이동 없음)
+            assert pg.evaluate("!!document.querySelector('[data-consent-form] [data-save-company]')"), "가입 마무리에 회사 저장 칸이 없다"
+            pg.fill("[data-consent-form] [data-save-company] input[role=combobox]", "한종산업개발"); pg.wait_for_selector("[data-consent-form] [role=option]"); pg.keyboard.press("Enter")
+            pg.wait_for_selector("[data-save-company][data-state=done]")
+            assert "한종산업개발" in pg.inner_text("[data-save-company][data-state=done]") and "/consent" in pg.url, ("저장됨 줄 또는 화면 이동", pg.url)
             cb = pg.locator("[data-consent-form] input[type=checkbox]"); assert cb.count() == 3; cb.nth(0).check(); cb.nth(1).check(); cb.nth(2).check()
-            pg.click("[data-consent-form] button[type=submit]"); pg.wait_for_url(re.compile(r"/saved$")); pg.wait_for_load_state("networkidle")
+            assert pg.inner_text("[data-consent-submit]").strip() == "동의하고 시작"
+            pg.click("[data-consent-submit]"); pg.wait_for_url(re.compile(r"/saved$")); pg.wait_for_load_state("networkidle")
             row = rest(f"user_id=eq.{user2['id']}&select=terms_version,privacy_version,marketing_opt_in")[0]
             assert row["terms_version"] != "" and row["privacy_version"] != "" and row["marketing_opt_in"] is True, row
             assert pg.evaluate("document.querySelector('[data-weekly-mail]')?.dataset.on") == "1", "동의 때 켠 알림 메일이 검토함 토글에 안 보인다"
+            pg.click("#tab-c"); pg.wait_for_timeout(200)
+            assert pg.evaluate("document.querySelectorAll('#pane-c [data-saved-company]').length") == 1, "가입 마무리에서 저장한 회사가 검토함에 없다"
             goto(pg, "/consent?next=%2Fsaved"); assert pg.url.endswith("/saved"), f"동의 뒤인데 /consent 가 다시 떴다 {pg.url}"
         finally:
             admin(url, srv, "DELETE", f"/admin/users/{user2['id']}")

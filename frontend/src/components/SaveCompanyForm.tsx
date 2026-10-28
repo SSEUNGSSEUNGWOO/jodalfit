@@ -1,6 +1,7 @@
 // frontend/src/components/SaveCompanyForm.tsx
 // 우리 회사 저장 폼 — 입구 검색창(회사 모드 고정)에서 고른 이름을 /api/saved/companies 로 보내 saved_companies 에 넣는다.
-// 자리: 가입 확인 직후 /welcome(저장 회사 0곳) 과 검토함 회사 탭의 빈 상태. 주간 메일이 "저장한 회사" 기준이라 여기가 메일의 입구다(2026-10-28).
+// 자리: 가입 확인 직후 /welcome(저장 회사 0곳), 검토함 회사 탭의 빈 상태, 소셜 가입 마무리 /consent 의 선택 칸(onSaved).
+// 주간 메일이 "저장한 회사" 기준이라 여기가 메일의 입구다(2026-10-28).
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -8,11 +9,12 @@ import { useState } from "react";
 import { SearchSuggest } from "@/components/entry/SearchSuggest";
 import { track } from "@/lib/analytics";
 
-type Status = { k: "idle" } | { k: "busy"; nm: string } | { k: "notfound"; nm: string } | { k: "error" };
+type Status = { k: "idle" } | { k: "busy"; nm: string } | { k: "notfound"; nm: string } | { k: "error" } | { k: "done"; nm: string };
 
-export function SaveCompanyForm({ next, from }: {
+export function SaveCompanyForm({ next, from, onSaved }: {
   next?: string; // 저장 뒤 갈 곳. 없으면 그 자리에서 다시 그린다(검토함 빈 상태 → 행이 나타난다)
-  from: "welcome" | "saved";
+  from: "welcome" | "saved" | "consent";
+  onSaved?: (name: string) => void; // 있으면 이동도 새로고침도 하지 않고 "저장됨" 줄만 보인다 — 한 페이지 안의 선택 칸(/consent)
 }) {
   const router = useRouter();
   const [st, setSt] = useState<Status>({ k: "idle" });
@@ -24,11 +26,21 @@ export function SaveCompanyForm({ next, from }: {
       const r = await fetch("/api/saved/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nm }) });
       if (r.status === 404) { setSt({ k: "notfound", nm }); return; }
       if (!r.ok) { setSt({ k: "error" }); return; }
+      const { name } = (await r.json()) as { name: string };
       track("company_save", { from });
+      if (onSaved) { setSt({ k: "done", nm: name }); onSaved(name); return; }
       if (next) router.push(next); else { setSt({ k: "idle" }); router.refresh(); }
     } catch { setSt({ k: "error" }); }
   }
 
+  if (st.k === "done") {
+    return (
+      <p data-save-company data-state="done" className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14.5px]">
+        <span><span className="mr-1 text-[13px] text-orange-ink">★</span><b className="font-semibold text-ink">{st.nm}</b> <span className="text-ink-g">저장됨</span></span>
+        <button type="button" onClick={() => setSt({ k: "idle" })} className="cursor-pointer border-b border-field text-[13px] text-ink-g hover:border-orange">다른 회사도 저장</button>
+      </p>
+    );
+  }
   return (
     <div data-save-company data-state={st.k}>
       <SearchSuggest lock="company" placeholder="우리 회사 이름 또는 사업자번호" compact onPick={pick} submitLabel="저장" autoFocus={from === "welcome"} />
