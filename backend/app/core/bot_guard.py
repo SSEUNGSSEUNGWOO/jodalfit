@@ -21,6 +21,9 @@ from fastapi import HTTPException, Request
 from app.core.config import get_settings
 
 # 자동화 도구 UA. Next.js SSR("node")은 토큰으로 통과하므로 여기 포함 안전.
+# 2026-10-28: JS 를 실행하는 크롤러(meta-externalagent·Reflectionbot 등)가 /recommendations?company= 를 돌며 /stream 을 하루 1,000번 넘게
+# 불렀다(전부 LLM 설명 포함). 브라우저 UA 뒤에 "(compatible; …bot…)" 을 달고 오므로 크롤러 표식도 막는다. "headless" 는 넣지 않는다 —
+# check_*.py(Playwright) 가 같은 UA 로 로컬 스트림을 친다. 결과 페이지는 noindex 라 크롤러가 못 봐도 잃는 게 없다.
 _UA_BLOCKLIST = (
     "python-requests",
     "aiohttp",
@@ -32,6 +35,13 @@ _UA_BLOCKLIST = (
     "java/",
     "scrapy",
     "node",
+    "bot",
+    "crawl",
+    "spider",
+    "slurp",
+    "yeti",
+    "meta-externalagent",
+    "facebookexternalhit",
 )
 
 # 전역 cap — 분산 IP 봇 우회 차단용. in-process(단일 instance 가정).

@@ -6,6 +6,7 @@
 import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Btn } from "@/components/Btn";
+import { track } from "@/lib/analytics";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 
 export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed, loggedIn, onChange, className, next: returnTo }: {
@@ -34,6 +35,7 @@ export function ReviewButton({ no, ord = "000", via = null, why = null, reviewed
       : await sb.from("reviewed_notices").delete().eq("bid_ntce_no", no).eq("bid_ntce_ord", ord);
     setBusy(false);
     if (error && error.code !== "23505") { setOn(!next); onChange?.(!next); return; }
+    if (next) track("notice_save", { bid_ntce_no: no, via: via ?? undefined }); // 옛 보드의 save 와 같은 이름 — 리뉴얼(10/24) 뒤 끊겼던 집계를 잇는다
     start(() => router.refresh());
   }
 

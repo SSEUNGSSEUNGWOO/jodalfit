@@ -6,6 +6,7 @@
 import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Btn } from "@/components/Btn";
+import { track } from "@/lib/analytics";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export function StarCompany({ bizrnoNorm, saved, loggedIn, className, next: retu
       : await sb.from("saved_companies").delete().eq("bizrno_norm", bizrnoNorm);
     setBusy(false);
     if (error && error.code !== "23505") { setOn(!next); return; } // 23505 = 이미 저장됨 → 성공으로 본다
+    if (next) track("company_save", { from: "star" }); // 저장 폼(SaveCompanyForm)과 같은 이름, from 으로 구분
     start(() => router.refresh()); // Nav ★ 목록·검토함 숫자 갱신
   }
 
