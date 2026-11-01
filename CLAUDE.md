@@ -73,7 +73,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 회사·공고 SEO 페이지는 서버 렌더링 때마다 추천 API를 self-call한다. 그래서 로그를 그냥 세면 사용자 지표가 아니다 — **2026-09-18 확인: `search_logs` 최근 1,000건 중 982건이 내부 SSR, `notice_events` 누적 110만 건 중 사용자 행동(save)은 3건.**
 
 - `app/core/traffic_source.py`의 `classify_source(request)`가 출처를 판정한다. 추측이 아니라 `X-Internal-Token`(bot_guard와 같은 신호) → `internal`, 자동화 UA → `bot`, 나머지 → `user`. 자체 점검: `uv run python -m app.core.traffic_source`
-- `search_logs.source`는 라벨만 붙인다(내부 호출도 캐시 히트율 분석에 쓰인다). **숫자를 인용할 때는 `v_search_logs_daily_user`·`v_search_logs_top_queries_user` 뷰를 쓴다.** 전체 기준 옛 뷰(`v_search_logs_daily` 등)를 실사용 지표로 착각하지 말 것.
+- `search_logs.source`는 라벨만 붙인다(내부 호출도 캐시 히트율 분석에 쓰인다). **숫자를 인용할 때는 `v_search_logs_daily_user`·`v_search_logs_top_queries_user` 뷰를 쓴다.** 전체 기준 옛 뷰(`v_search_logs_daily` 등)를 실사용 지표로 착각하지 말 것. 키워드 모드 좁히기 칩은 `filter_div`·`filter_due`(0065, 안 걸면 null), `kw_result_count`는 키워드 모드에선 "제목·기관·지역 일치" 건수(auto 모드는 보조 결과 수)다.
 - `notice_events`는 내부 SSR impression을 **적재하지 않는다** (`log_impressions`가 `source != "user"`면 즉시 return). 렌더링마다 20건씩 쌓여 테이블만 커졌다.
 - 새 로그 경로를 추가하면 `source`를 같이 넘긴다. `v_search_logs_sources`에서 internal 비중이 갑자기 오르면 계측이 깨진 신호다.
 
@@ -85,7 +85,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 나라장터 API 제약이 코드 전반에 배어 있음: 일일 호출 한도(UsrInfoService02 4,500/일), 조회범위 30일 초과 시 에러 → 청크 처리, 429 백오프 등.
 
 ### Supabase migrations
-`supabase/migrations/0001~0063` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
+`supabase/migrations/0001~0065` — **CLI 아님, Dashboard SQL Editor에서 번호 순서대로 수동 실행**(psycopg 로 직접 넣기도 한다 — 함수 교체처럼 되돌릴 수 있는 것만). 코드 주석의 "0044 필요" 같은 숫자는 이 파일 번호다. 새 RPC를 쓰는 코드는 미적용 환경에서도 죽지 않게 try/except로 감싸 degrade시키는 패턴 유지 (예: `pipeline.py`의 0015 협업 RPC).
 - **뷰는 RLS 를 우회한다**(`security_invoker` 기본 off → 소유자 권한). 표에 RLS 를 켜도 그 위의 뷰는 anon 키로 읽혔다(2026-10-26, `v_search_logs_*`). 0062 가 public 기본 권한에서 anon/authenticated 를 뺐으니 새 표·뷰는 자동으로 anon 에 안 열린다 — 사용자 세션으로 읽을 표만 명시적으로 `grant` + 정책. 점검은 `docs/security/2026-10-26-review.md`.
 
 ### frontend 구조
