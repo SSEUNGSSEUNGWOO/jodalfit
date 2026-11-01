@@ -23,6 +23,10 @@ export default async function RecommendationsPage({ searchParams }: { searchPara
   const query = company || q;
   const m = query.match(NOTICE_NO);
   if (m) redirect(`/notices/${m[1].toUpperCase()}`);
+  // 사업자번호를 키워드로 치면(입구에서 회사를 못 찾고 "키워드로 찾기"로 넘어온 경우) 번호를 임베딩해 뜻 없는 20건이 나왔다(10/27~11/1 15건).
+  // 회사 모드로 보낸다 — 있으면 회사 결과, 없으면 백엔드가 "회사를 찾을 수 없습니다"를 남기고(시간 잡이 이 로그를 보고 조달청에 등록한다)
+  // ResultsView 가 from=company 로 돌아와 "다음 시간부터 검색됩니다" 판을 띄운다. from=company 로 이미 돌아온 요청은 그대로 둔다.
+  if (!company && from !== "company" && /^[\d\-\s]+$/.test(q) && q.replace(/\D/g, "").length === 10) redirect(`/recommendations?company=${encodeURIComponent(q)}`);
 
   const bizrnoNorm = company.replace(/\D/g, "");
   const [user, companyRow] = await Promise.all([

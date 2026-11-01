@@ -46,6 +46,12 @@ def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
+def _kw_count(result: dict) -> int:
+    """search_logs.kw_result_count — auto 모드는 보조 키워드 결과 수, 키워드 모드는 '제목·기관·지역 일치' 판 건수.
+    2026-11-01 전엔 키워드 모드에서 늘 0 이라 좁히기 칩의 효과를 잴 수 없었다."""
+    return len(result.get("keyword_results") or result.get("title_matches") or [])
+
+
 class RecommendRequest(BaseModel):
     query: str = Field(
         ..., min_length=1, max_length=200, description="회사명/사업자번호 또는 관심 키워드"
@@ -178,7 +184,7 @@ def post_recommendations(
         matched_bizrno=company.get("bizrno"),
         matched_corp_nm=company.get("corp_nm"),
         result_count=len(result.get("results") or []),
-        kw_result_count=len(result.get("keyword_results") or []),
+        kw_result_count=_kw_count(result),
         has_error=bool(result.get("error")),
         error_msg=result.get("error"),
         with_explanation=req.with_explanation,
@@ -187,6 +193,8 @@ def post_recommendations(
         referer=request.headers.get("referer"),
         latency_ms=int((time.time() - t0) * 1000),
         source=source,
+        filter_div=req.div,
+        filter_due=req.due,
     )
     if result.get("results"):
         background.add_task(
@@ -290,7 +298,7 @@ def post_recommendations_stream(
                 matched_bizrno=company.get("bizrno"),
                 matched_corp_nm=company.get("corp_nm"),
                 result_count=len(result.get("results") or []),
-                kw_result_count=len(result.get("keyword_results") or []),
+                kw_result_count=_kw_count(result),
                 has_error=bool(result.get("error")),
                 error_msg=result.get("error"),
                 with_explanation=req.with_explanation,
@@ -298,6 +306,8 @@ def post_recommendations_stream(
                 user_agent=request.headers.get("user-agent"),
                 referer=request.headers.get("referer"),
                 latency_ms=int((time.time() - t0) * 1000),
+                filter_div=req.div,
+                filter_due=req.due,
                 source=source,
             ),
             daemon=True,

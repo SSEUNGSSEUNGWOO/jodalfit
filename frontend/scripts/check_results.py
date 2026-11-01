@@ -171,6 +171,10 @@ def main():
         goto(pg, "/recommendations?company=000-00-00001"); pg.wait_for_selector("[data-nobizrno]", timeout=20000); rules(pg)
         nb = pg.evaluate("() => ({ url: location.search, txt: document.querySelector('[data-nobizrno]').innerText, rows: document.querySelectorAll('[data-sheet-row]').length, input: !!document.querySelector('[data-nobizrno] input') })")
         assert "from=company" in nb["url"] and "다음 시간부터 검색됩니다" in nb["txt"] and nb["rows"] == 0 and nb["input"], nb
+        # 번호를 키워드로 쳐도(q=) 회사 모드를 거쳐 같은 판으로 — 번호를 임베딩한 뜻 없는 20건이 나오지 않는다(2026-11-01)
+        goto(pg, "/recommendations?q=000-00-00001"); pg.wait_for_selector("[data-nobizrno]", timeout=20000)
+        nb2 = pg.evaluate("() => ({ url: location.search, rows: document.querySelectorAll('[data-sheet-row]').length })")
+        assert "from=company" in nb2["url"] and "q=000-00-00001" in nb2["url"] and nb2["rows"] == 0, nb2
         # 등록업종 0건 회사(유원디자인연구소) — 면허 자격을 판정하지 못했다는 줄이 있고, 업종 있는 회사(위 CO)에는 없다
         goto(pg, f"/recommendations?company={NO_IND}"); pg.wait_for_selector("[data-scene]", timeout=10000)
         pg.evaluate("document.querySelector('[data-scene]')?.click()"); wait_done(pg); rules(pg)

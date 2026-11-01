@@ -39,10 +39,15 @@ def log_search(
     referer: str | None,
     latency_ms: int | None,
     source: str = "user",
+    filter_div: str | None = None,
+    filter_due: int | None = None,
 ) -> None:
     try:
+        # 좁히기 칩(0065)은 값이 있을 때만 싣는다 — 열이 없는 환경에서도 나머지 로그가 통째로 빠지지 않게.
+        filters = {k: v for k, v in (("filter_div", filter_div), ("filter_due", filter_due)) if v is not None}
         get_admin_client().table("search_logs").insert(
             {
+                **filters,
                 "query": query[:500],
                 "mode": mode,
                 "matched_bizrno": matched_bizrno,
