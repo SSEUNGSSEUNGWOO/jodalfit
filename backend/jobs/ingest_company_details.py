@@ -30,6 +30,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import sys
 from typing import Any
@@ -49,6 +50,7 @@ API_KEY = os.getenv("NARAJANGTEO_API_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
 BASE = "https://apis.data.go.kr/1230000/ao/UsrInfoService02"
 JOB_NAME = "ingest_company_details"
+logger = logging.getLogger(__name__)
 
 PAGE = 1000
 
@@ -95,12 +97,16 @@ def fetch_industries(bizrno_norm: str) -> list[dict[str, Any]]:
             f"{BASE}/getPrcrmntCorpIndstrytyInfo02", params=params, timeout=15.0
         )
         data = resp.json()
+        if resp.status_code != 200 or "response" not in data:
+            # 키 불일치는 403 + 다른 꼴의 JSON 으로 와서 조용히 빈 목록이 됐다(2026-11-01 운영 요청 경로에서 발견).
+            logger.warning("g2b industries rejected bizno=%s status=%s body=%s", bizrno_norm, resp.status_code, resp.text[:200])
         body = data.get("response", {}).get("body", {})
         items = body.get("items", [])
         if isinstance(items, dict):
             items = items.get("item", [])
         return items if isinstance(items, list) else []
-    except Exception:
+    except Exception as e:
+        logger.warning("g2b industries fetch failed bizno=%s: %r", bizrno_norm, e)
         return []
 
 
@@ -120,12 +126,15 @@ def fetch_supply(bizrno_norm: str) -> list[dict[str, Any]]:
             f"{BASE}/getPrcrmntCorpSplyPrdctInfo02", params=params, timeout=15.0
         )
         data = resp.json()
+        if resp.status_code != 200 or "response" not in data:
+            logger.warning("g2b supply rejected bizno=%s status=%s body=%s", bizrno_norm, resp.status_code, resp.text[:200])
         body = data.get("response", {}).get("body", {})
         items = body.get("items", [])
         if isinstance(items, dict):
             items = items.get("item", [])
         return items if isinstance(items, list) else []
-    except Exception:
+    except Exception as e:
+        logger.warning("g2b supply fetch failed bizno=%s: %r", bizrno_norm, e)
         return []
 
 
