@@ -178,5 +178,52 @@ class EventSourceTests(unittest.TestCase):
                 self.assertEqual(log.call_args.args[0][0]["source"], source)
 
 
+class ProfileFetchTests(unittest.TestCase):
+    """벡터도 프로필도 없는 회사 — 요청 시점에 조달청에서 받아 오고, 오타 등급 매칭이면 '못 찾음'으로 돌린다."""
+
+    def _run(self, match, fetched, texts):
+        from app.services import recommend as svc
+        company = {"bizrno": "1-1", "corp_nm": "회사", "match": match, "embedding": None}
+        with patch.object(svc, "find_company", return_value=company), \
+             patch.object(svc, "get_admin_client", return_value=MagicMock()), \
+             patch.object(svc, "_build_industry_text", side_effect=texts) as build, \
+             patch.object(svc, "_fetch_profile_now", return_value=fetched) as fetch, \
+             patch.object(svc, "embed_texts", side_effect=RuntimeError("stop")):
+            try:
+                out = svc._recommend_by_company("회사", 20, 200)
+            except RuntimeError:
+                out = "embedded"
+        return out, build, fetch
+
+    def test_profile_fetched_on_the_spot_then_embedded(self):
+        out, build, fetch = self._run("exact", True, [None, "등록업종: 전기공사업"])
+        self.assertEqual(out, "embedded")
+        fetch.assert_called_once()
+        self.assertEqual(build.call_count, 2)
+
+    def test_exact_match_without_profile_keeps_error(self):
+        out, _, fetch = self._run("exact", False, [None])
+        self.assertEqual(out["error"], "등록업종·공급물품 정보가 없어 추천할 수 없습니다")
+        fetch.assert_called_once()
+
+    def test_fuzzy_match_without_profile_is_not_found(self):
+        out, _, _ = self._run("fuzzy", False, [None])
+        self.assertEqual(out["error"], "회사를 찾을 수 없습니다")
+        self.assertIsNone(out["company"])
+
+    def test_fetch_once_per_day_per_company(self):
+        from app.services import recommend as svc
+        import jobs.ingest_company_details as job
+        svc._PROFILE_FETCHED_AT.clear()
+        with patch.object(job, "fetch_industries", return_value=[{"indstrytyCd": "0037", "indstrytyNm": "전기공사업"}]) as ind, \
+             patch.object(job, "fetch_supply", return_value=[]), \
+             patch("app.services.supabase_client.upsert_rows") as up:
+            self.assertTrue(svc._fetch_profile_now(MagicMock(), "610-81-93004"))
+            self.assertFalse(svc._fetch_profile_now(MagicMock(), "610-81-93004"))
+        ind.assert_called_once_with("6108193004")
+        self.assertEqual(up.call_args.args[0], "company_industries")
+        svc._PROFILE_FETCHED_AT.clear()
+
+
 if __name__ == "__main__":
     unittest.main()

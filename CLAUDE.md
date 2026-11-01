@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 추천 파이프라인 (요청 경로)
 `POST /recommendations`(회사 SEO 페이지 SSR self-call, `recommendation_cache.py` read-through — 0019 `company_recommendations`, 마감 지난 건 걷어내고 5건 미만이면 미스) / `POST /recommendations/stream`(대화형 보드가 쓰는 실사용자 경로, 항상 라이브) → `app/api/recommendations.py` → `app/services/recommend.py`:
-1. `find_company` — pg_trgm fuzzy + 사업자번호로 회사 식별 (실패 시 키워드 모드)
+1. `find_company` — pg_trgm fuzzy + 사업자번호로 회사 식별 (실패 시 키워드 모드). 벡터도 업종·물품 행도 없는 회사는 `_fetch_profile_now` 가 요청 시점에 조달청에서 받아 저장하고 그 자리에서 임베딩한다(회사당 하루 1회, 2026-11-01). 그래도 비었는데 오타 등급(fuzzy) 매칭이면 "회사를 찾을 수 없습니다"로 돌린다.
 2. `_search_with_embedding` — pgvector RPC(`match_bid_notices`) 3채널(dense + 회사 업종 허용 공고 0044 + 회사 공급물품 코드 공고 0048, `RECO_RETRIEVAL`)을 번갈아 합쳐 후보 풀
 3. **v2 랭커 (현재 기본)** — `app/recommender/pipeline.py::rank_v2`:
    취소공고 제외(`cancellation.py`, 공고상태 `bidNtceSttusNm` — 진행 공고의 9.5%) → 자격 하드 제외(`qualifications.py`; 회사 업종이 비면 "면허 확인불가"로 통과 + 감점 12, 공고 쪽 면허 행 없음은 라벨만) → 가중치 score + breakdown(`score.py`) → 협업 시그널(peer 기관, `collaborative.py`) → MMR 다양성(`mmr.py`)

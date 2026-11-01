@@ -13,6 +13,7 @@ v0.3 (단계 풀 확장 + 키워드 하이브리드):
 from __future__ import annotations
 
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from itertools import zip_longest
@@ -766,6 +767,41 @@ def _build_industry_text(client, bizrno: str) -> str | None:
     return "\n".join(parts) if parts else None
 
 
+# 요청 시점에 조달청에 프로필을 물어본 회사 — 같은 회사는 하루 한 번만 (봇·SSR 반복 대비, UsrInfoService02 일일 한도 4,500).
+_PROFILE_FETCHED_AT: dict[str, float] = {}
+_PROFILE_FETCH_TTL = 24 * 3600
+
+
+def _fetch_profile_now(client, bizrno: str) -> bool:
+    """등록업종·공급물품이 없는 회사의 프로필을 조달청에서 지금 받아 저장한다. 하나라도 받았으면 True.
+
+    companies 에는 있는데(참가 이력 등으로 들어온 회사) 업종·물품 행이 없는 회사가 11.8만 곳이고, 이 회사를
+    검색하면 "등록업종·공급물품 정보가 없어" 로 끝났다. 프로필은 다음날 아침 daily 잡(ingest_company_details)이
+    채우는데 — 2026-10-27~11-01 사용자 25건 중 10건이 그렇게 하루 뒤 프로필이 생겼고 사용자는 다시 오지 않았다.
+    register_searched_companies 와 같은 fetch/map 을 써서 호출 2번(1~2초)으로 그 자리에서 추천한다.
+    """
+    now = time.time()
+    if now - _PROFILE_FETCHED_AT.get(bizrno, 0.0) < _PROFILE_FETCH_TTL:
+        return False
+    _PROFILE_FETCHED_AT[bizrno] = now
+    # lazy — 잡 모듈은 import 시 dotenv·환경변수를 읽는다. app → jobs 방향 의존은 여기뿐.
+    from jobs.ingest_company_details import fetch_industries, fetch_supply, map_industry, map_supply
+    from app.services.supabase_client import upsert_rows
+
+    norm = "".join(ch for ch in bizrno if ch.isdigit())
+    try:
+        inds = [r for r in (map_industry(it, bizrno) for it in fetch_industries(norm)) if r]
+        sups = [r for r in (map_supply(it, bizrno) for it in fetch_supply(norm)) if r]
+        if inds:
+            upsert_rows("company_industries", inds, on_conflict="bizrno,indstryty_cd", ignore_duplicates=True)
+        if sups:
+            upsert_rows("company_supply_products", sups, on_conflict="bizrno,dtl_prdct_clsfc_no", ignore_duplicates=True)
+    except Exception as e:   # 조달청 장애·저장 실패 — 예전과 같은 오류 응답으로 내려간다
+        logger.warning("profile fetch skipped bizrno=%s: %s", bizrno, e)
+        return False
+    return bool(inds or sups)
+
+
 def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
     """후보 공고들의 면허/지역 제한 한 번에 fetch.
 
@@ -1131,18 +1167,19 @@ def _recommend_by_company(
     keywords: str | None = None,
     algorithm: str = "v1",
 ) -> dict[str, Any]:
+    not_found: dict[str, Any] = {
+        "company": None,
+        "mode": "company",
+        "error": "회사를 찾을 수 없습니다",
+        "fallback": "keywords",
+        "results": [],
+        "pre_spec_results": [],
+        "order_plan_results": [],
+    }
     with timed("find"):
         company = find_company(query)
     if not company:
-        return {
-            "company": None,
-            "mode": "company",
-            "error": "회사를 찾을 수 없습니다",
-            "fallback": "keywords",
-            "results": [],
-            "pre_spec_results": [],
-            "order_plan_results": [],
-        }
+        return not_found
     if company.get("is_restricted"):
         # 행을 통째로 내보내지 않는다 — embedding·ceo_nm·optout_at 까지 응답에 실렸다(2026-10-26 보안 점검).
         return {
@@ -1168,6 +1205,15 @@ def _recommend_by_company(
         # 남는다. 예전엔 여기서 바로 오류를 냈고, 사용자는 빈 화면을 받았다.
         with timed("vec_fallback"):
             industry_text = _build_industry_text(client, company["bizrno"])
+        if not industry_text:
+            # 프로필 행이 아직 없다 — 조달청에서 지금 받아 온다 (_fetch_profile_now 주석 참조).
+            with timed("profile_fetch"):
+                if _fetch_profile_now(client, company["bizrno"]):
+                    industry_text = _build_industry_text(client, company["bizrno"])
+        if not industry_text and company.get("match") == "fuzzy":
+            # 오타 등급으로 잡힌 회사에 프로필까지 없으면 다른 회사일 공산이 크다 — 2026-10-30 "고창레미콘" 네 표기가
+            # 전부 성창·고성레미콘에 붙어 이 오류로 끝났다. 못 찾은 것으로 돌려 키워드 모드·번호 입력 안내로 보낸다.
+            return not_found
         if not industry_text:
             return {
                 "company": {
