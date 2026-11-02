@@ -86,8 +86,10 @@ def unhandled_exception_handler(request: Request, exc: Exception) -> JSONRespons
     이게 없으면 Starlette 기본 핸들러가 본문 "Internal Server Error"만 돌려주고
     원인이 어디에도 안 남아, 간헐적 500을 사후 추적할 수 없다.
     """
-    logger.exception(
-        "unhandled error: %s %s", request.method, request.url.path
+    # exc_info=exc 를 명시한다 — 이 핸들러는 동기 함수라 Starlette 가 워커 스레드에서 돌리고, 거기선 sys.exc_info() 가
+    # 비어 logger.exception 이 "NoneType: None" 만 남겼다(2026-11-02 운영 로그). 원인 추적이 목적인 핸들러가 원인을 못 적고 있었다.
+    logger.error(
+        "unhandled error: %s %s", request.method, request.url.path, exc_info=exc
     )
     return JSONResponse(
         status_code=500,
