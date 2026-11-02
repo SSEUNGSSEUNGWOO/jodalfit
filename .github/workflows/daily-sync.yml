@@ -197,7 +197,10 @@ jobs:
     # 회사 벡터 재계산은 enrich-companies 에서 분리 — 풍부화가 API 지연으로 90분을 넘기면 이 단계가
     # 잘려 벡터가 하루 밀리던 문제(2026-10-10, 10-14). 수집(sync)이 끝난 뒤 풍부화와 나란히 돈다.
     # 풍부화 중인 회사는 다음 날 벡터에 반영된다.
+    # 2026-11-02: sync 의 건강 점검이 경고만 있어도 exit 1 이라 sync=failure 가 되고, needs 만 걸려 있던 이 잡이
+    # 10-19 부터 14일 내리 skipped 였다(프로필 있는데 벡터 없는 회사 9,523곳). 순서만 지키고 sync 결과는 안 본다.
     needs: sync
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
