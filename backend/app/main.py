@@ -23,7 +23,13 @@ if settings.sentry_dsn:
 
     # FastAPI 통합은 자동 감지. 미처리 예외 + 로거의 error 이상을 보낸다. 트레이싱은 끔(무료 한도).
     # max_request_body_size="never": 기본값(medium)은 예외 때 요청 본문을 같이 보낸다 — /feedback 본문·이메일이 Sentry 로 새는 걸 막는다.
-    sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0, send_default_pii=False, max_request_body_size="never")
+    # trace_propagation_targets=[]: httpx 통합이 바깥 요청마다 sentry-trace·baggage 헤더를 붙이는데, 조달청(data.go.kr)
+    # 게이트웨이는 baggage 헤더가 있으면 400 INVALID_REQUEST_PARAMETER_ERROR(코드 10)를 돌려준다 — 2026-11-02 요청 시점
+    # 프로필 조회(_fetch_profile_now)가 운영에서만 빈 결과였던 원인. 트레이싱을 안 쓰니 전파 대상을 비운다.
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn, traces_sample_rate=0, send_default_pii=False, max_request_body_size="never",
+        trace_propagation_targets=[],
+    )
 
 logger = logging.getLogger("jodalfit")
 
