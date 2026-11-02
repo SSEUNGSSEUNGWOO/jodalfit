@@ -42,15 +42,37 @@ export default async function SavedPage() {
     getServerSupabase().from("user_consents").select("marketing_opt_in").eq("user_id", user.id).maybeSingle(),
   ]);
   const weeklyOn = !!(consent.data as { marketing_opt_in: boolean } | null)?.marketing_opt_in;
+  // 회사는 저장했는데 메일은 꺼진 사용자(2026-11-02 실사용자 4명 중 3명)에겐 아래 각주 대신 탭 위에 한 판으로 묻는다 — /welcome·빈 상태 저장이 여기로 온다.
+  const ask = companies.length > 0 && !weeklyOn;
   return (
     <>
+      {ask && <WeeklyMailAsk userId={user.id} email={user.email ?? ""} />}
       <SavedTabs
         counts={{ n: live.length, c: companies.length }}
         notices={<NoticeRows live={live} past={past} />}
         companies={<CompanyRows rows={companies} />}
       />
-      <WeeklyMailLine userId={user.id} on={weeklyOn} />
+      {!ask && <WeeklyMailLine userId={user.id} on={weeklyOn} />}
     </>
+  );
+}
+
+/** 저장한 회사가 있고 메일이 꺼진 사용자에게 한 번 묻는 판. 같은 폼(/api/mail/weekly POST)으로 켠다. 받는 주소를 보여줘 옛 사서함이면 알게 한다. */
+function WeeklyMailAsk({ userId, email }: { userId: string; email: string }) {
+  const t = weeklyMailToken(userId);
+  if (!t) return null;
+  return (
+    <Panel className="mt-[22px]">
+      <form method="post" action="/api/mail/weekly" data-weekly-mail data-on="0" className="flex flex-wrap items-center gap-3.5 pb-2.5 pt-[26px] text-[14.5px]">
+        <input type="hidden" name="u" value={userId} /><input type="hidden" name="t" value={t} /><input type="hidden" name="on" value="1" /><input type="hidden" name="back" value="saved" />
+        <div className="min-w-0">
+          <b className="font-semibold text-ink">저장한 회사에 새 공고가 있으면 월요일 아침 메일로 보냅니다</b>
+          <span className="mt-1 block text-[13.5px] text-ink-dim">새 공고가 있는 주에만 한 통. 받는 주소 <b className="font-medium text-ink-g">{email}</b>. 검토함에서 언제든 끕니다.</span>
+        </div>
+        <span className="grow" />
+        <Btn variant="dark" type="submit" data-weekly-on>월요일 메일 받기</Btn>
+      </form>
+    </Panel>
   );
 }
 
