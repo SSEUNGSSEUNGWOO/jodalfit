@@ -19,6 +19,7 @@ from datetime import date, datetime, timedelta, timezone
 from itertools import zip_longest
 from typing import Any, Literal
 
+import httpx
 import numpy as np
 from postgrest.exceptions import APIError
 
@@ -71,6 +72,20 @@ def _rpc_with_retry(client, fn: str, params: dict):
             raise
         logger.warning("RPC %s statement timeout — 1회 재시도", fn)
         return client.rpc(fn, params).execute()
+
+
+def _execute_with_reconnect(builder):
+    """PostgREST 질의 — 유휴로 끊긴 keep-alive 연결이면 1회 재시도.
+
+    병렬 스레드에서 쓰는 연결이 서버 쪽에서 닫힌 뒤 재사용되면 httpx.RemoteProtocolError("Server disconnected")가
+    난다. 로컬 :3100 검증에서 간헐적으로 보던 것이 2026-11-02 운영 로그(_fetch_eligibility)에서도 확인됐다 —
+    요청 하나가 통째로 500 이 된다. 빌더는 다시 execute 할 수 있다.
+    """
+    try:
+        return builder.execute()
+    except httpx.RemoteProtocolError as e:
+        logger.warning("PostgREST 연결 끊김 — 1회 재시도: %s", e)
+        return builder.execute()
 
 
 _INDUSTRY_CHANNEL = True  # ponytail: 프로세스 로컬 1회성 — 0044 미적용이면 첫 실패 후 업종 채널을 끈다(재배포로 리셋)
@@ -818,11 +833,11 @@ def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
     for i in range(0, len(bid_nos), PAGE):
         sub = bid_nos[i : i + PAGE]
         rows = (
-            client.table("bid_license_limits")
-            .select("bid_ntce_no,bid_ntce_ord,lcns_lmt_nm,lmt_grp_no")
-            .in_("bid_ntce_no", sub)
-            .execute()
-            .data
+            _execute_with_reconnect(
+                client.table("bid_license_limits")
+                .select("bid_ntce_no,bid_ntce_ord,lcns_lmt_nm,lmt_grp_no")
+                .in_("bid_ntce_no", sub)
+            ).data
             or []
         )
         for r in rows:
@@ -833,11 +848,11 @@ def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
     for i in range(0, len(bid_nos), PAGE):
         sub = bid_nos[i : i + PAGE]
         rows = (
-            client.table("bid_rgn_limits")
-            .select("bid_ntce_no,bid_ntce_ord,prtcpt_psbl_rgn_nm")
-            .in_("bid_ntce_no", sub)
-            .execute()
-            .data
+            _execute_with_reconnect(
+                client.table("bid_rgn_limits")
+                .select("bid_ntce_no,bid_ntce_ord,prtcpt_psbl_rgn_nm")
+                .in_("bid_ntce_no", sub)
+            ).data
             or []
         )
         for r in rows:

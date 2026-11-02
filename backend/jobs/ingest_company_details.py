@@ -97,8 +97,9 @@ def fetch_industries(bizrno_norm: str) -> list[dict[str, Any]]:
             f"{BASE}/getPrcrmntCorpIndstrytyInfo02", params=params, timeout=15.0
         )
         data = resp.json()
-        if resp.status_code != 200 or "response" not in data:
-            # 키 불일치는 403 + 다른 꼴의 JSON 으로 와서 조용히 빈 목록이 됐다(2026-11-01 운영 요청 경로에서 발견).
+        if resp.status_code != 200 or "response" not in data or data["response"].get("header", {}).get("resultCode") != "00":
+            # 키 불일치는 403 + 다른 꼴의 JSON, 한도 초과·트래픽 제한은 200 + resultCode≠00 으로 와서 조용히 빈 목록이 됐다
+            # (2026-11-01 운영 요청 경로에서 발견).
             logger.warning("g2b industries rejected bizno=%s status=%s body=%s", bizrno_norm, resp.status_code, resp.text[:200])
         body = data.get("response", {}).get("body", {})
         items = body.get("items", [])
@@ -126,7 +127,7 @@ def fetch_supply(bizrno_norm: str) -> list[dict[str, Any]]:
             f"{BASE}/getPrcrmntCorpSplyPrdctInfo02", params=params, timeout=15.0
         )
         data = resp.json()
-        if resp.status_code != 200 or "response" not in data:
+        if resp.status_code != 200 or "response" not in data or data["response"].get("header", {}).get("resultCode") != "00":
             logger.warning("g2b supply rejected bizno=%s status=%s body=%s", bizrno_norm, resp.status_code, resp.text[:200])
         body = data.get("response", {}).get("body", {})
         items = body.get("items", [])
