@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from app.core import progress, timing
 from app.core.bot_guard import guard_external_traffic
-from app.core.rate_limit import limiter
+from app.core.rate_limit import internal_exempt, limiter, mark_internal
 from app.services import recommendation_cache
 from app.services.explain import (
     explain_batch,
@@ -83,8 +83,8 @@ class RecommendRequest(BaseModel):
     due: int | None = Field(None, ge=1, le=365, description="키워드 모드 — 마감까지 일수로 좁힘")
 
 
-@router.post("", dependencies=[Depends(guard_external_traffic)])
-@limiter.limit(RATE_LIMIT)
+@router.post("", dependencies=[Depends(guard_external_traffic), Depends(mark_internal)])
+@limiter.limit(RATE_LIMIT, exempt_when=internal_exempt)  # 내부 SSR 은 IP 제한 면제 — rate_limit.py 주석
 def post_recommendations(
     request: Request,
     req: RecommendRequest,
