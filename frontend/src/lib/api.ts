@@ -14,6 +14,8 @@ export interface RecommendInput {
   limit?: number;
   candidate_pool?: number;
   with_explanation?: boolean;
+  /** SSR 자체 호출을 일으킨 원래 방문자의 UA — 백엔드가 search_logs.user_agent 에 "node" 대신 이걸 적는다(2026-11-04, 누가 회사 페이지를 긁는지). */
+  originUa?: string | null;
 }
 
 export async function getRecommendations(
@@ -28,6 +30,7 @@ export async function getRecommendations(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (typeof window === "undefined" && process.env.INTERNAL_API_TOKEN) {
     headers["X-Internal-Token"] = process.env.INTERNAL_API_TOKEN;
+    if (input.originUa) headers["X-Origin-UA"] = input.originUa.slice(0, 500);
   }
 
   try {

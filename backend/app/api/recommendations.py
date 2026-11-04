@@ -25,7 +25,7 @@ from app.services.explain import (
     explain_recommendation,
     explain_summary,
 )
-from app.core.traffic_source import classify_source
+from app.core.traffic_source import INTERNAL, classify_source
 from app.services.notice_events import log_impressions
 from app.services.recommend import recommend
 from app.services.search_log import log_search
@@ -44,6 +44,16 @@ def _client_ip(request: Request) -> str | None:
     if xff:
         return xff.split(",")[0].strip()
     return request.client.host if request.client else None
+
+
+def _log_ua(request: Request, source: str) -> str | None:
+    """search_logs.user_agent — 내부 SSR 호출은 그 호출을 일으킨 원래 방문자의 UA(프론트가 X-Origin-UA 로 넘김, 2026-11-04).
+
+    전엔 전부 "node" 라 하루 5천 건의 회사 페이지 SSR 이 구글인지 네이버인지 AI 크롤러인지 알 수 없었다. 토큰이 맞는 내부 호출만
+    믿는다 — 외부가 이 헤더를 보내도 무시."""
+    if source == INTERNAL:
+        return request.headers.get("x-origin-ua") or request.headers.get("user-agent")
+    return request.headers.get("user-agent")
 
 
 def _kw_count(result: dict) -> int:
@@ -121,7 +131,7 @@ def post_recommendations(
                 error_msg=None,
                 with_explanation=req.with_explanation,
                 ip=_client_ip(request),
-                user_agent=request.headers.get("user-agent"),
+                user_agent=_log_ua(request, source),
                 referer=request.headers.get("referer"),
                 latency_ms=int((time.time() - t0) * 1000),
                 source=source,
@@ -189,7 +199,7 @@ def post_recommendations(
         error_msg=result.get("error"),
         with_explanation=req.with_explanation,
         ip=_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
+        user_agent=_log_ua(request, source),
         referer=request.headers.get("referer"),
         latency_ms=int((time.time() - t0) * 1000),
         source=source,

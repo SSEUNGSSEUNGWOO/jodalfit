@@ -74,6 +74,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `app/core/traffic_source.py`의 `classify_source(request)`가 출처를 판정한다. 추측이 아니라 `X-Internal-Token`(bot_guard와 같은 신호) → `internal`, 자동화 UA → `bot`, 나머지 → `user`. 자체 점검: `uv run python -m app.core.traffic_source`
 - `search_logs.source`는 라벨만 붙인다(내부 호출도 캐시 히트율 분석에 쓰인다). **숫자를 인용할 때는 `v_search_logs_daily_user`·`v_search_logs_top_queries_user` 뷰를 쓴다.** 전체 기준 옛 뷰(`v_search_logs_daily` 등)를 실사용 지표로 착각하지 말 것. 키워드 모드 좁히기 칩은 `filter_div`·`filter_due`(0065, 안 걸면 null), `kw_result_count`는 키워드 모드에선 "제목·기관·지역 일치" 건수(auto 모드는 보조 결과 수)다.
+- 내부 SSR 행의 `search_logs.user_agent`는 2026-11-04부터 그 SSR을 일으킨 **원래 방문자의 UA**다(회사 페이지가 `X-Origin-UA`로 넘김, 그 전엔 전부 "node"). 하루 5천 건의 회사 페이지 SSR이 어느 크롤러 때문인지 여기서 센다.
 - `notice_events`는 내부 SSR impression을 **적재하지 않는다** (`log_impressions`가 `source != "user"`면 즉시 return). 렌더링마다 20건씩 쌓여 테이블만 커졌다.
 - 새 로그 경로를 추가하면 `source`를 같이 넘긴다. `v_search_logs_sources`에서 internal 비중이 갑자기 오르면 계측이 깨진 신호다.
 

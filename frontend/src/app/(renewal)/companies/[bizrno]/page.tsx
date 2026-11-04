@@ -7,6 +7,7 @@
 // 머리 장면(캔버스)은 없다 — 2026-10-17 결정: 회사 페이지는 SSR 문서이고 추천은 대부분 캐시
 // 히트라 "계산이 안 걸리면 안 보여준다" 원칙상 캔버스가 설 자리가 없다. 걸러낸 경로는 숫자 한 줄.
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
 import { Btn } from "@/components/Btn";
@@ -39,9 +40,11 @@ type Props = { params: Promise<{ bizrno: string }> };
 
 const nf = new Intl.NumberFormat("ko-KR");
 // 상단 바로가기와 아래 추천 판이 같은 요청에서 추천 API를 두 번 부르지 않는다.
-const companyRecommendations = cache((bizrnoNorm: string) =>
-  getRecommendations({ query: bizrnoNorm, mode: "company", limit: 20, candidate_pool: 200, with_explanation: false }).catch(() => null)
-);
+// 방문자 UA 를 같이 보낸다 — 이 호출의 97% 가 크롤러가 긁을 때 생기는데 누구인지 몰랐다(2026-11-04). 페이지는 이미 동적(nav 쿠키)이라 headers() 비용 없음.
+const companyRecommendations = cache(async (bizrnoNorm: string) => {
+  const originUa = (await headers()).get("user-agent");
+  return getRecommendations({ query: bizrnoNorm, mode: "company", limit: 20, candidate_pool: 200, with_explanation: false, originUa }).catch(() => null);
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bizrno } = await params;
