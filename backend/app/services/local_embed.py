@@ -15,6 +15,7 @@ from __future__ import annotations
 import io
 import os
 import tempfile
+import threading
 import time
 import urllib.request
 import zipfile
@@ -50,6 +51,11 @@ def _download(dest: Path) -> None:
     with zipfile.ZipFile(io.BytesIO(blob)) as z:
         z.extractall(dest)
     print(f"  {len(blob) / 1e6:.0f} MB, {time.time() - t0:.0f}s")
+
+
+# lru_cache 는 첫 호출을 직렬화하지 않는다 — Railway 기동 때 예열 스레드와 첫 요청 둘이 동시에 들어와 409MB 를 세 번
+# 내려받고 같은 폴더에 동시에 풀었다(2026-11-02 로그 "KURE 모델 다운로드" ×3, 메모리 1.2GB 순간 상승). 로드는 이 잠금 안에서만.
+_load_lock = threading.Lock()
 
 
 @lru_cache
@@ -91,7 +97,8 @@ def embed_texts_kure(texts: list[str], batch: int = 16) -> list[list[float]]:
             cleaned, batch_size=32, normalize_embeddings=True, convert_to_numpy=True
         ).astype(np.float32).tolist()
 
-    tok, sess = _onnx()
+    with _load_lock:  # 로드된 뒤엔 캐시 히트라 잠금 구간이 사실상 0
+        tok, sess = _onnx()
     out: list[list[float]] = []
     for i in range(0, len(cleaned), batch):
         enc = tok.encode_batch(cleaned[i : i + batch])

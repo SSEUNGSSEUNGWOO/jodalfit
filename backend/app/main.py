@@ -106,7 +106,7 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])  # UptimeRobot 은 HEAD 로 먼저 두드린다 — 405 면 GET 으로 한 번 더 온다
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
