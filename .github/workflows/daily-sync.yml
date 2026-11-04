@@ -243,7 +243,10 @@ jobs:
 
       - name: 회사 벡터 재계산
         # kure 공간의 런타임은 업종 텍스트 캐시 적중률이 결정한다(0046 text_embeddings).
-        # 2.5만 회사 중 업종 텍스트가 바뀌는 건 하루 수백 건 — 나머지는 캐시 히트라 모델 호출이
-        # 거의 없다. 캐시가 빈 첫 실행만 CPU 로 2.5만 건(시간당 ~1만) → 60분 timeout 을 넘긴다.
-        # 그래서 첫 적재는 백필(Task 4, 노트북 GPU)이 하고, 이 스텝은 그 뒤 증분만 맡는다.
-        run: uv run python -m jobs.compute_company_vectors --limit 25000 --chunk-size 100
+        # 2026-11-04 실측: 2.5만 건은 60분 안에 못 끝난다 — 11/03·11/04 둘 다 취소됐고 10/15 이후 완주 0회. 54분에
+        # 약 4,400곳(벡터 없던 회사, 캐시 미스)을 처리했으니 분당 80곳. 대상 집계만 3분. 3,000곳이면 설정 포함 45분 안.
+        # 우선순위(검색됨·벡터없음 → 재료있음·벡터없음 → 갱신 순환)는 잡이 정하므로 상한을 줄여도 급한 회사가 먼저다.
+        # PYTHONUNBUFFERED: 진행 로그가 버퍼에 갇혀 취소되면 통째로 사라졌다 — 다음 실행부터는 5청크마다 보인다.
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: uv run python -m jobs.compute_company_vectors --limit 3000 --chunk-size 100
