@@ -19,6 +19,10 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/api/", "/recommendations", "/saved", "/welcome", "/consent", "/login", "/signup", "/reset", "/auth/", "/admin"],
       },
+      // 검색 노출과 무관한 수집 봇은 통째로 막는다. 회사 페이지 SSR(추천 API self-call) 12시간 3,831건 중
+      // AhrefsBot(SEO 데이터 판매) 825 + KeenableBot(AI 검색 API 업체 색인) 554 = 36%(2026-11-05, search_logs.user_agent).
+      // Keenable 은 공식 이름이 Keenable-SearchBot 인데 로그엔 KeenableBot 으로 찍혀 둘 다 적는다.
+      { userAgent: ["AhrefsBot", "KeenableBot", "Keenable-SearchBot"], disallow: "/" },
     ],
     // 색인 대상이 5만 URL 한도를 넘어 사이트맵을 세그먼트로 나눴다(lib/sitemap-segments.ts).
     sitemap: Array.from(
