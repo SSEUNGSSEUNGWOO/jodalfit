@@ -144,73 +144,74 @@ flowchart LR
 ## 5. 폴더 구조
 
 <details>
-<summary>펼치기</summary>
+<summary>펼치기 (2026-11-05 기준)</summary>
 
 ```
 jodalfit/
-├── backend/                   FastAPI + 데이터 수집/임베딩 잡
+├── backend/                       FastAPI + 데이터 수집/임베딩/평가 잡 (Python 3.12, uv) — Railway
 │   ├── app/
-│   │   ├── api/               FastAPI 라우터 (POST /recommendations)
-│   │   ├── core/              config (pydantic-settings)
-│   │   ├── services/          supabase / openai 클라이언트, recommend, explain
-│   │   └── main.py            FastAPI 진입점
-│   ├── jobs/                  데이터 수집 + 임베딩 잡 (CLI)
-│   │   ├── _common.py         API fetch + 페이징 + 타입 변환 + 로깅
-│   │   ├── ingest_*.py        나라장터 OpenAPI 수집 잡들
-│   │   ├── embed_*.py         OpenAI 임베딩 생성 잡들
-│   │   ├── compute_company_vectors.py    회사 벡터 통합 (batched)
-│   │   ├── probe_*.py         endpoint 응답 구조 탐색 (개발용)
-│   │   ├── verify_*.py        Supabase 연결 + row count 검증
-│   │   └── diag_*.py          데이터 정합성 진단
-│   ├── pyproject.toml         uv 패키지
-│   ├── uv.lock
-│   └── .env.example           NARAJANGTEO_API_KEY, OPENAI_API_KEY, SUPABASE_*
+│   │   ├── main.py                FastAPI 진입점 (Sentry: 바깥 요청에 trace 헤더 안 붙임)
+│   │   ├── api/                   recommendations(추천·스트림) / qualifications(자격 라벨) / events(행동 로그·도움됨) / feedback
+│   │   ├── core/                  config(환경변수 스위치 전부) / rate_limit / bot_guard / traffic_source(internal·bot·user) / timing / progress
+│   │   ├── services/              recommend(회사 식별·후보 검색·v1) / recommendation_cache / explain(LLM 설명)
+│   │   │                          embedding(공간 스위치 openai·kure·gemini + 캐시) / local_embed(KURE ONNX) / gemini_client
+│   │   │                          doc_extract(hwp·hwpx·pdf·xlsx 본문) / notice_insights(LLM 구조화) / viz / search_log / notice_events
+│   │   └── recommender/           v2 랭커 — pipeline / cancellation(취소공고 제외) / qualifications(자격 하드 필터) / score / collaborative / mmr
+│   │                              + evaluation(지표) / keyword_expand(영문 약어 풀이) / title_match(키워드 모드 글자 일치)
+│   ├── jobs/                      CLI 잡. 접두사 규칙 — ingest_*(나라장터 API 수집 14종) / embed_*(공고·사전규격·발주계획) /
+│   │   │                          compute_company_vectors / extract·summarize·purge_*(첨부문서 파이프라인) / check_*·verify_*·diag_*(건강 점검)
+│   │   │                          evaluate_recommender(채점표)·fit_score_weights·sweep_score_scale / send_weekly_mail / register_searched_companies
+│   │   └── marketing_report/      일일 마케팅 성적표 (서치콘솔·GA4·네이버 서치어드바이저)
+│   ├── pyproject.toml             extras: embed-cpu / embed-gpu (상호 배제)
+│   └── .env.example
 │
-├── frontend/                  Next.js 16 + TS + Tailwind v4 + shadcn/ui (base-nova)
+├── frontend/                      Next.js 16 (App Router, React 19, TS, Tailwind v4) — Vercel
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── page.tsx                            랜딩 (Hero + 검색 + 차별화 + 결과 미리보기)
-│   │   │   ├── recommendations/page.tsx            추천 결과 (mode=company|keywords)
-│   │   │   ├── companies/page.tsx                  활동 기업 인덱스
-│   │   │   ├── companies/[bizrno]/page.tsx         ★ 회사별 SEO 페이지 (분석 + 추천 + 수주 표)
-│   │   │   ├── notices/page.tsx                    진행 공고 인덱스 (업무구분 탭)
-│   │   │   ├── notices/[bid_ntce_no]/page.tsx      ★★ 공고 라이프사이클 6 stages
-│   │   │   ├── sitemap.ts                          정적 + 회사/공고 동적 (~2,002 URL)
-│   │   │   ├── robots.ts                           /icon.svg (favicon)
-│   │   │   ├── layout.tsx                          Pretendard, 메타데이터
-│   │   │   └── globals.css                         컬러 토큰 (종이색 + 먹 + 주황 선)
-│   │   ├── components/                             Brand(ㄱㄴ 틀 마크), BidCard, CompanyCard,
-│   │   │                                           MatchScore, ExplanationBlock, DDayBadge,
-│   │   │                                           KeywordFallback, Header, Lifecycle, …
-│   │   ├── lib/
-│   │   │   ├── api.ts                              백엔드 호출 + Mock fallback
-│   │   │   ├── supabase-server.ts                  server-only Supabase client
-│   │   │   ├── mock-data.ts
-│   │   │   └── utils.ts                            cn, maskBizrno, formatKRW, daysUntil, scoreLabel
-│   │   └── types/recommendations.ts
-│   ├── public/brand/                               로고 SVG 자산 (결정본은 docs/design/brand/)
-│   └── package.json
+│   │   │   ├── (renewal)/         모든 페이지 (라우트 그룹 — URL 은 그대로). layout.tsx 가 nav·footer, 쿠키를 읽어 전부 동적 렌더
+│   │   │   │   ├── page.tsx                      입구 — 회사·키워드 검색 + 오늘의 공고
+│   │   │   │   ├── recommendations/              추천 결과 (비로그인 5건 + 15건 흐림) · report/ (A4 인쇄)
+│   │   │   │   ├── companies/[bizrno]/           ★ 회사 SEO 페이지 (수주 이력 → 검토할 공고) · browse/[sido] · industry/[code]
+│   │   │   │   ├── notices/[bid_ntce_no]/        ★★ 공고 상세 (근거·자격·라이프사이클·첨부 인사이트)
+│   │   │   │   ├── saved/ · welcome/             검토함(저장 회사·공고, 주간 메일 토글) · 가입 직후 우리 회사 저장
+│   │   │   │   ├── login/ signup/ reset/ consent/  이메일+비밀번호 · 구글 · 네이버(custom OAuth) 로그인
+│   │   │   │   ├── changelog/ about/ faq/ feedback/  개선 기록(lib/changelog.ts 의 PUBLIC_CHANGES 만) · 소개 · FAQ · 의견
+│   │   │   │   ├── admin/                        읽기 전용 운영 숫자 (ADMIN_EMAILS 만, 아니면 404)
+│   │   │   │   ├── mail/weekly/                  주간 메일 그만 받기 확인
+│   │   │   │   └── terms/ privacy/ dev/foundation/
+│   │   │   ├── api/               route handler — companies/suggest(자동완성, 사업자번호 비노출) · companies/[bizrno]/{profile,recommendations}
+│   │   │   │                      notices/[no]/similar · saved/companies · consent · interest(미출시 기능 수요 조사) · mail/weekly · auth/naver/userinfo
+│   │   │   ├── auth/              confirm(메일 링크 → 세션) · callback(OAuth code 교환)
+│   │   │   ├── sitemap.ts · sitemap-index.xml/ · robots.ts · opengraph-image.tsx (루트·회사·공고)
+│   │   │   └── layout.tsx         Pretendard, 메타데이터
+│   │   ├── components/            entry/ · results/ · company/ · notice/ · admin/ · ui/(shadcn base-nova) + Brand·Nav·Gate·JsonLd 등 낱개
+│   │   ├── lib/                   server-only 읽기(supabase-server·company·notice·saved·entry·changelog·admin) /
+│   │   │   │                      auth(getSessionUser)·after-auth·safe-next / supabase/{browser,server}(쿠키 세션) /
+│   │   │   │                      analytics(PostHog)·events / mail-link(HMAC) / jsonld / why·format(+ *.test.ts)
+│   │   ├── proxy.ts               Next 16 의 middleware — 세션 갱신만
+│   │   └── instrumentation*.ts · sentry.server.config.ts
+│   ├── scripts/                   check_*.py — Playwright 화면 검증 9종(금지어·주황 면·390 가로 넘침) · auth_smoke.mjs · shoot_design.py
+│   ├── public/                    brand/ · llms.txt(GEO) · 검색엔진 소유 확인 파일
+│   └── vercel.json
 │
-├── .github/workflows/
-│   └── daily-sync.yml         매일 KST 5시 cron — 신규 공고/계약/임베딩 + 일요일 회사 풍부화
+├── supabase/migrations/           0001~0068 — Dashboard SQL Editor 에서 번호 순 수동 적용
+│                                  (0045 kure 공간 · 0046 임베딩 캐시 · 0062 anon 기본 권한 회수 · 0067 gemini 공간 · 0068 feature_interest)
 │
-├── supabase/
-│   └── migrations/             스키마 + RPC
-│       ├── 0001_init.sql                 12개 테이블 + pgvector + pg_trgm
-│       ├── 0002_bizrno_normalize.sql     사업자번호 정규화 generated column
-│       ├── 0003_match_rpc.sql            find_companies / match_bid_notices RPC
-│       ├── 0004_embedding_update_rpc.sql 임베딩 batch UPDATE RPC
-│       └── 0005_license_rgn_tables.sql   면허 + 지역 제한 테이블
+├── .github/workflows/             daily-sync(매일 05:00 수집→임베딩→건강 점검) · hourly-sync(매시 공고·상세·임베딩 500건)
+│                                  documents-sync(2시간, 첨부 추출·요약) · weekly-mail(월 08:00)
 │
-├── data/                       임시 수집 데이터 (gitignored)
-│   └── api_probe/              probe 응답 dump
+├── docs/
+│   ├── recommender/               evaluation.md(채점 규칙) · baseline-*.md · exp-*.md(실험) · changelog.md(사용자 언어 변경 기록)
+│   ├── design/                    리뉴얼 결정(README.md) · brand/(로고) · prototypes/final/(최종 시안) · scripts/
+│   ├── security/ · infra/ · marketing/ · superpowers/plans/(실행한 구현 계획)
+│   └── roadmap-2026-10.md
 │
-├── docs/                       설계 문서 (예정)
-├── README.md                   (이 파일)
-└── CLAUDE.md                   프로젝트 가이드 (한국어)
+├── data/                          임시 수집 데이터 (gitignored)
+├── PRODUCT.md                     사용자·성공 기준·카피 원칙
+├── CLAUDE.md                      프로젝트 가이드
+├── DESIGN.md                      폐기된 옛 디자인 기록 (현행 아님 — docs/design/README.md 가 현행)
+└── README.md                      (이 파일)
 ```
-
----
 
 </details>
 
