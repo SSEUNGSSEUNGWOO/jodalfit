@@ -6,7 +6,7 @@
 ![stack](https://img.shields.io/badge/FastAPI-Next.js%2016%20·%20Supabase%20pgvector-000000)
 [![live](https://img.shields.io/badge/live-jodalfit.co.kr-f97316)](https://jodalfit.co.kr)
 
-![jodalfit.co.kr](docs/screenshot.png)
+![jodalfit.co.kr](docs/screenshot.png?v=20261105)
 
 ## 한눈에
 
