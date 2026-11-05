@@ -8,6 +8,9 @@ import { getServerSupabase } from "@/lib/supabase-server";
 import { kstDate } from "@/lib/format";
 import { fetchConversions } from "./admin-conversion-server";
 import type { Conversions } from "./admin-conversion";
+import type { User } from "@supabase/supabase-js";
+import { fetchAdminPulse } from "./admin-pulse-server";
+import { isExcludedMember, readAdminRows, summarizeMembers, summarizeSearches, type AdminOverview } from "./admin-summary";
 
 /** 관리자 — 환경변수 ADMIN_EMAILS(쉼표 구분). 비어 있으면 아무도 아니다(운영에서 빠뜨려도 열리지 않는다). */
 export function isAdmin(email: string | null | undefined): boolean {
@@ -25,7 +28,7 @@ export function maskEmail(email: string | null | undefined): string {
 
 export type SearchRow = {
   at: string; mode: string; query: string; matched: string | null; matchedBizrno: string | null;
-  results: number | null; error: boolean; ip: string; referer: string | null;
+  results: number | null; error: boolean; errorMsg: string | null; ip: string; referer: string | null;
 };
 export type UserRow = { id: string; email: string; createdAt: string; lastSignInAt: string | null; confirmed: boolean; saved: number; reviewed: number };
 export type SavedRow = { at: string; user: string; bizrnoNorm: string; name: string };
@@ -41,17 +44,19 @@ export type Visits = {
 };
 
 /** 미출시 기능 수요 조사(0068 feature_interest, 최근 30일). views = 버튼이 화면에 들어온 수(봇 제외) — 클릭률의 분모.
- *  registers = 클릭 전부, registeredUsers = 로그인 상태로 등록한 고유 회원, anonRegisters = 비로그인 클릭(가입 과정에서 이탈한 관심).
+ *  registers = 클릭 전부, registeredUsers = 로그인 상태로 등록한 고유 회원, anonRegisters = 비로그인 클릭(가입 완료 여부와 별도).
  *  byDiv 는 관심 공고의 업무구분 — 클릭 수만 보면 노출이 많은 구분이 커 보이므로 노출과 같이 둔다. */
-export type Interest = { views: number; registers: number; registeredUsers: number; anonRegisters: number; byDiv: { div: string; views: number; registers: number }[] };
+export type Interest = { views: number; registers: number; registeredUsers: number; anonRegisters: number; byDiv: { div: string; views: number; registers: number }[]; error: string | null };
 
 export type AdminData = {
   todayKst: string;
+  overview: AdminOverview;
   today: Funnel;
   week: Funnel;
   daily: ({ date: string } & Funnel)[];   // 오늘 포함 7일, 최신 먼저
   health: { today: Health; week: Health };
   zeroQueries: SearchRow[];              // 7일, 결과 0건(오류 제외), 최신순
+  problemQueries: SearchRow[];
   visits: Visits;
   conversions: Conversions;
   feedback: FeedbackRow[];               // 최근 50, 최신순 (0061)
@@ -62,7 +67,7 @@ export type AdminData = {
   reviewedRows: ReviewedRow[];
 };
 
-type LogRow = { created_at: string; query: string | null; mode: string | null; matched_corp_nm: string | null; matched_bizrno: string | null; result_count: number | null; has_error: boolean | null; ip_hash: string | null; referer: string | null; latency_ms: number | null };
+type LogRow = { created_at: string; query: string | null; mode: string | null; matched_corp_nm: string | null; matched_bizrno: string | null; result_count: number | null; has_error: boolean | null; error_msg: string | null; ip_hash: string | null; referer: string | null; latency_ms: number | null };
 type EventRow = { created_at: string; event_type: string; source: string | null };
 type SavedKey = { user_id: string; bizrno_norm: string; created_at: string };
 type ReviewedKey = { user_id: string; bid_ntce_no: string; bid_ntce_ord: string; created_at: string };
@@ -89,7 +94,7 @@ function p50(xs: number[]): number | null {
 function toRow(r: LogRow): SearchRow {
   return {
     at: r.created_at, mode: r.mode ?? "—", query: r.query ?? "", matched: r.matched_corp_nm, matchedBizrno: r.matched_bizrno,
-    results: r.result_count, error: !!r.has_error, ip: (r.ip_hash ?? "").slice(0, 4), referer: refererPage(r.referer),
+    results: r.result_count, error: !!r.has_error, errorMsg: r.error_msg, ip: (r.ip_hash ?? "").slice(0, 4), referer: refererPage(r.referer),
   };
 }
 
@@ -103,7 +108,9 @@ async function fetchVisits(todayKst: string): Promise<Visits> {
   const api = ingest.replace(/\/\/(\w+)\.i\.posthog\.com/, "//$1.posthog.com").replace(/\/$/, "");
   // 하한은 UTC 문자열로(KST 자정 − 6일). HogQL 의 toDate 는 인자 하나라 날짜 묶기는 toTimeZone 으로(2026-10-26 확인)
   const sinceUtc = new Date(new Date(`${todayKst}T00:00:00+09:00`).getTime() - 6 * 86_400_000).toISOString().slice(0, 19).replace("T", " ");
-  const base = `FROM events WHERE event = '$pageview' AND timestamp >= toDateTime('${sinceUtc}', 'UTC')`;
+  const base = `FROM events WHERE event = '$pageview' AND timestamp >= toDateTime('${sinceUtc}', 'UTC')
+    AND (properties.$current_url LIKE 'https://jodalfit.co.kr/%' OR properties.$current_url LIKE 'https://www.jodalfit.co.kr/%')
+    AND NOT startsWith(coalesce(properties.$pathname, ''), '/admin') AND NOT startsWith(coalesce(properties.$pathname, ''), '/dev/')`;
   const q = async <T,>(query: string): Promise<T[]> => {
     const res = await fetch(`${api}/api/projects/${project}/query`, {
       method: "POST",
@@ -118,9 +125,9 @@ async function fetchVisits(todayKst: string): Promise<Visits> {
   };
   try {
     const [daily, byType, refs] = await Promise.all([
-      q<[string, number, number]>(`SELECT toString(toDate(toTimeZone(timestamp, 'Asia/Seoul'))) AS d, count() AS v, count(DISTINCT person_id) AS u ${base} GROUP BY d ORDER BY d DESC`),
-      q<[string, number, number]>(`SELECT multiIf(properties.$pathname = '/', 'home', properties.$pathname LIKE '/companies/%', 'company', properties.$pathname = '/companies', 'companies', properties.$pathname LIKE '/notices/%', 'notice', properties.$pathname = '/notices', 'notices', properties.$pathname LIKE '/recommendations%', 'results', properties.$pathname LIKE '/saved%', 'saved', startsWith(properties.$pathname, '/login') OR startsWith(properties.$pathname, '/signup') OR startsWith(properties.$pathname, '/reset'), 'auth', 'other') AS t, count() AS v, count(DISTINCT person_id) AS u ${base} GROUP BY t ORDER BY v DESC`),
-      q<[string | null, number, number]>(`SELECT coalesce(nullIf(properties.$referring_domain, ''), '$direct') AS r, count() AS v, count(DISTINCT person_id) AS u ${base} GROUP BY r ORDER BY v DESC LIMIT 10`),
+      q<[string, number, number]>(`SELECT toString(toDate(toTimeZone(timestamp, 'Asia/Seoul'))) AS d, count() AS v, count(DISTINCT distinct_id) AS u ${base} GROUP BY d ORDER BY d DESC`),
+      q<[string, number, number]>(`SELECT multiIf(properties.$pathname = '/', 'home', properties.$pathname LIKE '/companies/%', 'company', properties.$pathname = '/companies', 'companies', properties.$pathname LIKE '/notices/%', 'notice', properties.$pathname = '/notices', 'notices', properties.$pathname LIKE '/recommendations%', 'results', properties.$pathname LIKE '/saved%', 'saved', startsWith(properties.$pathname, '/login') OR startsWith(properties.$pathname, '/signup') OR startsWith(properties.$pathname, '/reset'), 'auth', 'other') AS t, count() AS v, count(DISTINCT distinct_id) AS u ${base} GROUP BY t ORDER BY v DESC`),
+      q<[string | null, number, number]>(`SELECT coalesce(nullIf(properties.$referring_domain, ''), '$direct') AS r, count() AS v, count(DISTINCT distinct_id) AS u ${base} GROUP BY r ORDER BY v DESC LIMIT 10`),
     ]);
     return {
       daily: daily.map(([date, views, visitors]) => ({ date, views, visitors })),
@@ -138,33 +145,44 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   const todayKst = kstDate(now);
   const todayStart = new Date(`${todayKst}T00:00:00+09:00`);
   const weekStart = new Date(todayStart.getTime() - 6 * 86_400_000);
-  const since = weekStart.toISOString();
+  const completeStart = new Date(todayStart.getTime() - 7 * 86_400_000);
+  const since = completeStart.toISOString(); // 완료된 7일 + 오늘. 상세 판은 아래에서 기간을 좁힌다.
 
   const since30 = new Date(todayStart.getTime() - 29 * 86_400_000).toISOString();
-  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes, conversions, interestRes] = await Promise.all([
-    sb.from("search_logs")
-      .select("created_at,query,mode,matched_corp_nm,matched_bizrno,result_count,has_error,ip_hash,referer,latency_ms")
-      .gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).limit(1000),
-    sb.from("notice_events").select("created_at,event_type,source")
-      .gte("created_at", since).eq("event_type", "click").neq("source", "internal").limit(5000),
-    sb.auth.admin.listUsers({ page: 1, perPage: 200 }),
-    sb.from("saved_companies").select("user_id,bizrno_norm,created_at").order("created_at", { ascending: false }).limit(200),
-    sb.from("reviewed_notices").select("user_id,bid_ntce_no,bid_ntce_ord,created_at").order("created_at", { ascending: false }).limit(200),
+  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes, conversions, interestRes, pulse] = await Promise.all([
+    readAdminRows<LogRow>((from, to) => sb.from("search_logs")
+      .select("created_at,query,mode,matched_corp_nm,matched_bizrno,result_count,has_error,error_msg,ip_hash,referer,latency_ms")
+      .gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to)),
+    readAdminRows<EventRow>((from, to) => sb.from("notice_events").select("created_at,event_type,source")
+      .gte("created_at", since).eq("event_type", "click").eq("source", "user").order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to)),
+    readAdminRows<User>(async (from) => { const r = await sb.auth.admin.listUsers({ page: Math.floor(from / 200) + 1, perPage: 200 }); return { data: r.data?.users ?? null, error: r.error }; }, 200, 2000),
+    readAdminRows<SavedKey>((from, to) => sb.from("saved_companies").select("user_id,bizrno_norm,created_at").order("created_at", { ascending: false }).order("user_id").order("bizrno_norm").range(from, to)),
+    readAdminRows<ReviewedKey>((from, to) => sb.from("reviewed_notices").select("user_id,bid_ntce_no,bid_ntce_ord,created_at").order("created_at", { ascending: false }).order("user_id").order("bid_ntce_no").order("bid_ntce_ord").range(from, to)),
     fetchVisits(todayKst),
     sb.from("feedback").select("id,created_at,kind,message,email,page,handled_at").order("created_at", { ascending: false }).limit(50),
-    sb.from("result_feedback").select("created_at,helpful").gte("created_at", since).eq("source", "user").limit(2000),
+    readAdminRows<{ created_at: string; helpful: boolean }>((from, to) => sb.from("result_feedback").select("created_at,helpful").gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to)),
     fetchConversions(todayKst),
-    sb.from("feature_interest").select("event,bid_ntce_no,user_id").eq("feature", "proposal_prep").gte("created_at", since30).limit(5000),
+    readAdminRows<{ event: "view" | "register"; bid_ntce_no: string; user_id: string | null }>((from, to) => sb.from("feature_interest").select("event,bid_ntce_no,user_id").eq("feature", "proposal_prep").gte("created_at", since30).order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to)),
+    fetchAdminPulse(todayKst),
   ]);
   const helpfulRows = (helpfulRes.data ?? []) as { created_at: string; helpful: boolean }[];
-  const interestRows = (interestRes.data ?? []) as { event: "view" | "register"; bid_ntce_no: string; user_id: string | null }[];
+  const rawInterestRows = interestRes.data;
 
   // 로컬 개발 서버(check_*.py 검증)도 운영 DB 에 source='user' 로 남는다 — referer 가 localhost 면 사람이 아니다(2026-10-26 화면에서 확인)
   const logRows = ((logs.data ?? []) as LogRow[]).filter((r) => !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(r.referer ?? ""));
   const clickRows = ((events.data ?? []) as EventRow[]).filter((e) => e.source !== "bot");
-  const users = usersRes.data?.users ?? [];
-  const savedRows = (saved.data ?? []) as SavedKey[];
-  const reviewedRows = (reviewed.data ?? []) as ReviewedKey[];
+  const allUsers = usersRes.data;
+  const excludedEmails = [...(process.env.ADMIN_EMAILS ?? "").split(","), ...(process.env.ADMIN_EXCLUDE_EMAILS ?? "").split(",")].map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const users = allUsers.filter((u) => !isExcludedMember(u.email, excludedEmails));
+  const userIds = new Set(users.map((u) => u.id));
+  const interestRows = rawInterestRows.filter((r) => !r.user_id || userIds.has(r.user_id));
+  const savedRows = saved.data.filter((r) => userIds.has(r.user_id));
+  const reviewedRows = reviewed.data.filter((r) => userIds.has(r.user_id));
+  const issues = [
+    ...([["검색", logs], ["공고 행동", events], ["회원", usersRes], ["회사 저장", saved], ["공고 저장", reviewed], ["추천 도움 응답", helpfulRes], ["기능 관심", interestRes]] as const)
+      .flatMap(([name, r]) => r.error ? [`${name} 조회 실패`] : r.truncated ? [`${name} 조회 상한 도달 — 일부 기록 기준`] : []),
+    ...(fb.error ? ["의견·문의 조회 실패"] : []),
+  ];
 
   // 회사명·공고명은 공개 테이블에서 한 번에
   const norms = [...new Set(savedRows.map((r) => r.bizrno_norm))];
@@ -190,6 +208,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     registeredUsers: new Set(interestRows.filter((r) => r.event === "register" && r.user_id).map((r) => r.user_id)).size,
     anonRegisters: interestRows.filter((r) => r.event === "register" && !r.user_id).length,
     byDiv: [...byDivMap.entries()].map(([div, v]) => ({ div, ...v })).sort((a, b) => b.registers - a.registers || b.views - a.views),
+    error: interestRes.error || usersRes.error || interestRes.truncated || usersRes.truncated ? "기능 관심 조회 실패" : null,
   };
   const nameOf = new Map<string, string>();
   for (const c of (cos.data ?? []) as { bizrno_norm: string; corp_nm: string }[]) if (!nameOf.has(c.bizrno_norm)) nameOf.set(c.bizrno_norm, c.corp_nm);
@@ -231,11 +250,19 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
 
   return {
     todayKst,
+    overview: {
+      from: kstDate(completeStart), through: kstDate(new Date(todayStart.getTime() - 1)), previousFrom: kstDate(new Date(completeStart.getTime() - 7 * 86_400_000)),
+      members: summarizeMembers(allUsers, saved.data, reviewed.data, completeStart.getTime(), todayStart.getTime(), excludedEmails),
+      searches: summarizeSearches(logRows, completeStart.getTime(), todayStart.getTime()), pulse, issues,
+      membersAvailable: !usersRes.error && !saved.error && !reviewed.error && !usersRes.truncated && !saved.truncated && !reviewed.truncated,
+      searchesAvailable: !logs.error && !logs.truncated,
+    },
     today: funnel(todayStart),
     week: funnel(weekStart),
     daily,
     health: { today: health(todayStart), week: health(weekStart) },
-    zeroQueries: logRows.filter((r) => !r.has_error && r.result_count === 0).slice(0, 50).map(toRow),
+    zeroQueries: logRows.filter((r) => Date.parse(r.created_at) >= weekStart.getTime() && !r.has_error && r.result_count === 0).slice(0, 50).map(toRow),
+    problemQueries: logRows.filter((r) => r.has_error && Date.parse(r.created_at) < todayStart.getTime()).slice(0, 30).map(toRow),
     visits,
     conversions,
     feedback: ((fb.data ?? []) as { id: number; created_at: string; kind: FeedbackRow["kind"]; message: string; email: string | null; page: string | null; handled_at: string | null }[])
@@ -250,7 +277,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
         saved: savedRows.filter((r) => r.user_id === u.id).length,
         reviewed: reviewedRows.filter((r) => r.user_id === u.id).length,
       })),
-    searches: logRows.slice(0, 200).map(toRow),
+    searches: logRows.filter((r) => Date.parse(r.created_at) >= weekStart.getTime()).slice(0, 200).map(toRow),
     savedRows: savedRows.slice(0, 50).map((r) => ({ at: r.created_at, user: emailOf.get(r.user_id) ?? "—", bizrnoNorm: r.bizrno_norm, name: nameOf.get(r.bizrno_norm) ?? r.bizrno_norm })),
     reviewedRows: reviewedRows.slice(0, 50).map((r) => ({ at: r.created_at, user: emailOf.get(r.user_id) ?? "—", bidNtceNo: r.bid_ntce_no, title: titleOf.get(r.bid_ntce_no) ?? r.bid_ntce_no })),
   };

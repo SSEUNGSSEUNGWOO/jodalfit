@@ -6,9 +6,9 @@
 
 비로그인: /admin 은 404(403 아님 — 경로 존재를 알리지 않는다). robots.txt 에 admin 이 없다.
 로그인(키 있을 때만): 서버가 ADMIN_EMAILS 에 `@jodalfit.test` 주소를 갖고 있어야 한다 — ADMIN_TEST_EMAIL 로 알려 준다(기본 check-admin@jodalfit.test).
-  Admin API 로 그 사용자 생성 → /login → /admin 200 · 판 8(깔때기·방문·건강·0건·가입자·검색·저장·검토) · 깔때기 7 + 날짜별 7행 · 건강 3 ·
-  방문 판은 PostHog 키 없으면 "미설정" 한 줄, 있으면 표 3 · 가입자 표에 본인(마스킹) ·
-  원문 이메일 비노출 · 금지어 0 · 주황 면 0 · 390 → 일반 사용자는 404 → 사용자 삭제.
+  Admin API로 관리자·일반 테스트 계정을 생성하고 로그인한 뒤 삭제한다.
+  핵심 현황·상세 펼침·7일 집계·관리자/테스트 제외·마스킹·390px·일반 사용자 404를 확인한다.
+  테스트 브라우저의 PostHog 수집은 차단하고 스크린샷은 git에서 제외된 data/에 저장한다.
 """
 import json, os, re, sys, urllib.request
 from pathlib import Path
@@ -60,16 +60,17 @@ def main():
     with sync_playwright() as pw:
         b = pw.chromium.launch(executable_path=str(exe) if exe else None)
         pg = b.new_page(viewport={"width": 1280, "height": 900})
+        pg.route("**/*posthog.com/**", lambda route: route.abort())
 
         # ── 비로그인: 404, robots 에 없음
         r = goto(pg, "/admin")
         assert r.status == 404, f"비로그인 /admin 이 {r.status} (404 여야 한다)"
         robots = pg.request.get(BASE + "/robots.txt").text()
-        assert "admin" not in robots, "robots.txt 에 admin 이 있다 — 경로를 광고하지 않는다"
+        assert "admin" not in robots, "robots.txt 에 관리 경로가 노출됐다"
 
         if not (url and anon and srv):
             b.close()
-            print("ok admin(guest): 404 · robots 에 없음 — 로그인 검사 건너뜀(키 없음)")
+            print("ok admin(guest): 404 · robots 비노출 — 로그인 검사 건너뜀(키 없음)")
             return 0
 
         pw_ = "check-admin-pw-1"
@@ -83,6 +84,11 @@ def main():
             login(pg, ADMIN_EMAIL, pw_)
             r = goto(pg, "/admin")
             assert r.status == 200, f"관리자 /admin 이 {r.status} — 서버 ADMIN_EMAILS 에 {ADMIN_EMAIL} 가 있어야 한다"
+            assert pg.locator('[data-admin=overview]').is_visible()
+            assert not pg.locator('[data-admin-details]').evaluate('(e) => e.open')
+            assert '최근 완료 7일' in pg.locator('[data-admin=overview]').inner_text()
+            assert pg.locator('[data-admin=interest]').is_visible()
+            pg.locator('[data-admin-details] > summary').click()
             txt = rules(pg)
             s = pg.evaluate("""() => ({ panels: [...document.querySelectorAll('[data-admin]')].map(e => e.dataset.admin),
                 funnel: document.querySelectorAll('[data-admin=funnel] dl dt').length,
@@ -90,7 +96,7 @@ def main():
                 health: document.querySelectorAll('[data-admin=health] dt').length,
                 visitsText: document.querySelector('[data-admin=visits]').innerText,
                 h1: document.querySelector('h1').textContent.trim() })""")
-            assert s["panels"] == ["funnel", "conversions", "visits", "health", "zero", "feedback", "users", "searches", "saved", "reviewed"], s
+            assert s["panels"] == ["overview", "retention", "search-problems", "activation", "interest", "funnel", "conversions", "visits", "health", "zero", "feedback", "users", "searches", "saved", "reviewed"], s
             assert s["funnel"] == 7 and s["daily"] == 7 and s["health"] == 5 and s["h1"].startswith("관리"), s
             conversion = pg.locator("[data-admin=conversions]")
             assert "결과 이후 전환" in conversion.inner_text()
@@ -106,11 +112,11 @@ def main():
                 pg.locator("[data-admin=searches] [data-pager] button", has_text="다음").click(); pg.wait_for_timeout(200)
                 after = pg.evaluate("() => { const e = document.querySelector('[data-admin=searches] [data-paged]'); return { page: +e.dataset.page, first: e.querySelector('tbody tr')?.innerText } }")
                 assert after["page"] == 2 and after["first"] != pgd["first"], after
-            assert "ch***@jodalfit.test" in txt, "가입자 표에 본인(마스킹)이 없다"
+            assert "ch***@jodalfit.test" not in pg.locator("[data-admin=users]").inner_text(), "관리자·테스트 계정이 회원 목록에 포함됐다"
             assert ADMIN_EMAIL not in txt.replace("ch***@jodalfit.test", ""), "원문 이메일이 화면에 보인다"
-            pg.screenshot(path=str(OUT / "_shot_admin.png"), full_page=True)
+            pg.screenshot(path=str(ROOT / "data/_shot_admin.png"), full_page=True)
             pg.set_viewport_size({"width": 390, "height": 844}); goto(pg, "/admin"); rules(pg)
-            pg.screenshot(path=str(OUT / "_shot_admin_390.png"), full_page=True)
+            pg.screenshot(path=str(ROOT / "data/_shot_admin_390.png"), full_page=True)
             pg.set_viewport_size({"width": 1280, "height": 900})
 
             # ── 일반 사용자: 404
@@ -123,7 +129,7 @@ def main():
             admin(url, srv, "DELETE", f"/admin/users/{a['id']}")
             admin(url, srv, "DELETE", f"/admin/users/{n['id']}")
         b.close()
-        print("ok admin: guest 404 · robots 없음 · 관리자 200 · 판 9 · 깔때기 7+일별 7 · 건강 3 · 방문 판 · 의견 판 · 마스킹 · 390 · 일반 사용자 404")
+        print("ok admin: guest 404 · robots 비노출 · 관리자 200 · 핵심 요약 · 상세 펼침 · 관리자/테스트 제외 · 390 · 일반 사용자 404")
         return 0
 
 if __name__ == "__main__":

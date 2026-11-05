@@ -1,6 +1,6 @@
 // frontend/src/app/(renewal)/admin/page.tsx
 // 관리 — 읽기 전용 운영 숫자. 관리자(ADMIN_EMAILS)만. 아니면 403 이 아니라 404 — 경로의 존재를 알리지 않는다.
-// robots.txt 에도 적지 않는다(적으면 경로를 광고하는 셈). noindex 메타만. nav 링크 없음 — 주소를 아는 사람이 직접 친다.
+// robots.txt 에 관리 경로를 노출하지 않는다. noindex 메타. nav 링크 없음 — 관리자가 직접 접근한다.
 // 쓰기 동작(사용자 삭제·비밀번호 초기화·공고 비공개)은 두지 않는다 — Supabase 대시보드가 맡는다(2026-10-26 결정).
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -9,6 +9,8 @@ import { PageHead } from "@/components/PageHead";
 import { Panel, PanelHead } from "@/components/Panel";
 import { fetchAdminData, isAdmin, type Funnel, type Health } from "@/lib/admin";
 import { getSessionUser } from "@/lib/auth";
+import { OverviewPanel } from "@/components/admin/OverviewPanel";
+import { InterestPanel } from "@/components/admin/InterestPanel";
 import { ConversionPanel } from "@/components/admin/ConversionPanel";
 import { PagedTable } from "./PagedTable";
 
@@ -23,15 +25,15 @@ const ms = (v: number | null) => (v == null ? "—" : `${nf.format(v)} ms`);
 
 const FUNNEL: { k: keyof Funnel; label: string; h: string }[] = [
   { k: "searches", label: "사람 검색", h: "내부 SSR·봇 제외" },
-  { k: "visitors", label: "검색한 사람", h: "IP 해시 기준" },
+  { k: "visitors", label: "검색 IP", h: "IP 해시 수 · 사람 수 아님" },
   { k: "identified", label: "회사 식별", h: "회사 모드 중 매칭" },
   { k: "clicks", label: "공고 클릭", h: "결과·회사 페이지" },
-  { k: "signups", label: "가입", h: "메일 인증 포함" },
+  { k: "signups", label: "가입 계정", h: "인증 전 포함 · 관리자·테스트 제외" },
   { k: "saved", label: "회사 저장", h: "☆" },
-  { k: "reviewed", label: "공고 검토", h: "검토함" },
+  { k: "reviewed", label: "공고 저장", h: "현재 보관된 공고" },
 ];
 const HEALTH: { k: keyof Health; label: string; f: (v: number | null) => string; h: string }[] = [
-  { k: "errorRate", label: "빈손 검색", f: pct, h: "회사 못 찾음·등록정보 없음 포함 — 서버 오류 아님" },
+  { k: "errorRate", label: "검색 문제 비율", f: pct, h: "회사 못 찾음·등록정보 없음 포함 — 서버 오류 아님" },
   { k: "zeroRate", label: "결과 0건 비율", f: pct, h: "오류 아닌데 0건" },
   { k: "p50", label: "p50 응답", f: ms, h: "추천 API latency_ms" },
   { k: "helpful", label: "도움이 됐다", f: pct, h: "결과 화면 '도움이 됐습니까' 예 비율 (0063)" },
@@ -46,14 +48,27 @@ export default async function AdminPage() {
   const d = await fetchAdminData();
   const v = d.visits;
   const vToday = v.daily.find((x) => x.date === d.todayKst);
-  const vWeek = v.daily.reduce((a, x) => ({ views: a.views + x.views, visitors: a.visitors + x.visitors }), { views: 0, visitors: 0 });
+  const weekViews = v.daily.reduce((sum, row) => sum + row.views, 0);
 
   return (
     <>
-      <PageHead title="관리" small="읽기 전용" meta={[`${d.todayKst} 기준`, "search_logs · notice_events · Auth · PostHog"]} />
+      <PageHead title="관리" small="서비스 현황" meta={[`${d.todayKst} 한국 시간 기준`, "읽기 전용 · 방문과 실제 사용을 함께 확인"]} />
+
+      <OverviewPanel data={d.overview} />
+      <InterestPanel data={d.interest} />
+
+      <details id="admin-problems" data-admin-problems className="mt-[14px] scroll-mt-6 rounded-[12px] border border-hair bg-panel px-5 py-4">
+        <summary className="cursor-pointer text-[14px] font-semibold text-ink">문제가 기록된 검색 보기 · 최근 완료 7일 · 최신 30건</summary>
+        <Table head={["시각", "검색어", "모드", "기록된 문제"]}
+          rows={d.problemQueries.map((r) => [t(r.at), r.query, r.mode, r.errorMsg ?? "상세 사유 없음"])}
+          empty={d.overview.searchesAvailable ? "이 기간에 기록된 검색 문제가 없습니다." : "검색 기록을 모두 읽지 못했습니다."} />
+      </details>
+
+      <details id="admin-details" data-admin-details className="mt-6">
+        <summary className="cursor-pointer rounded-[8px] border border-field px-4 py-3 text-[14px] font-semibold text-ink">상세 기록 보기 — 오늘 활동·전환·방문 경로·회원·검색·문의</summary>
 
       <Panel className="mt-[22px]" data-admin="funnel">
-        <PanelHead title="깔때기" summary={[<span key="w">큰 숫자 = 오늘 · 작은 숫자 = 오늘 포함 7일</span>]} />
+        <PanelHead title="활동 건수" small="오늘 진행 중 / 오늘 포함 7일" summary={[<span key="w">각 항목은 별도 집계이며 같은 사용자의 전환 단계가 아닙니다</span>]} />
         <dl className="m-0 grid grid-cols-7 gap-x-5 gap-y-5 pt-5 max-sm:grid-cols-2">
           {FUNNEL.map((f) => (
             <div key={f.k}>
@@ -79,12 +94,12 @@ export default async function AdminPage() {
       <ConversionPanel data={d.conversions} />
 
       <Panel className="mt-[14px]" data-admin="visits">
-        <PanelHead title="방문" small="PostHog $pageview · 봇 제외" summary={v.error ? undefined : [
+        <PanelHead title="방문" small="브라우저 계측 · 오늘 포함 7일" summary={v.error ? undefined : [
           <span key="t">오늘 페이지뷰 <b>{nf.format(vToday?.views ?? 0)}</b> · 방문자 <b>{nf.format(vToday?.visitors ?? 0)}</b></span>,
-          <span key="w">7일 {nf.format(vWeek.views)} · {nf.format(vWeek.visitors)}</span>,
+          <span key="w">7일 페이지뷰 {nf.format(weekViews)}회 · 일별 방문자는 합산하지 않습니다</span>,
         ]} />
         {v.error ? (
-          <p className="m-0 pt-5 text-[14px] text-ink-mute">방문 숫자를 못 읽었습니다 — {v.error}. 깔때기의 &lsquo;검색한 사람&rsquo;은 검색 로그 기준이라 페이지만 보고 나간 사람은 세지 않습니다.</p>
+          <p className="m-0 pt-5 text-[14px] text-ink-mute">방문 숫자를 못 읽었습니다 — {v.error}. 활동 건수의 &lsquo;검색 IP&rsquo;는 검색 로그 기준이라 페이지만 보고 나간 사람은 세지 않습니다.</p>
         ) : (
           <div className="grid grid-cols-3 gap-6 max-sm:grid-cols-1">
             <Table head={["날짜", "페이지뷰", "방문자"]} rows={v.daily.map((r) => [md(r.date), nf.format(r.views), nf.format(r.visitors)])} empty="7일 페이지뷰가 없습니다." numeric />
@@ -111,7 +126,7 @@ export default async function AdminPage() {
           </dl>
         </Panel>
         <Panel data-admin="zero">
-          <PanelHead title="결과 0건 질의" small="최근 7일 · 최대 50" summary={[<span key="n">회사 모드 0건은 벡터 없는 회사, 키워드 모드 0건은 찾을 공고가 없는 말</span>]} />
+          <PanelHead title="의미 유사 추천 0건 검색" small="최근 7일 · 최대 50" summary={[<span key="n">글자 일치 검색 결과는 별도이므로 공고 전체가 0건이라는 뜻은 아닙니다</span>]} />
           <Table
             head={["시각", "모드", "질의", "매칭 회사"]}
             rows={d.zeroQueries.map((s) => [t(s.at), s.mode, s.query, s.matchedBizrno ? <Link key="m" href={`/companies/${s.matchedBizrno}`} className="u-link">{s.matched ?? s.matchedBizrno}</Link> : (s.matched ?? "—")])}
@@ -119,30 +134,6 @@ export default async function AdminPage() {
           />
         </Panel>
       </div>
-
-      <Panel className="mt-[14px]" data-admin="interest">
-        <PanelHead title="제안서 작성 준비안 관심" small="최근 30일 · 공고 상세 버튼 (0068)" summary={[<span key="n">노출은 버튼이 실제 화면에 들어온 수(봇 제외) · 클릭률은 노출 대비 · 업무구분은 노출과 같이 본다</span>]} />
-        <dl className="m-0 grid grid-cols-4 gap-x-5 gap-y-5 pt-5 max-sm:grid-cols-2">
-          {[
-            ["노출", String(d.interest.views), "버튼이 화면에 들어옴"],
-            ["관심 등록", String(d.interest.registers), d.interest.views ? `클릭률 ${pct(d.interest.registers / d.interest.views)}` : "노출 0"],
-            ["등록 회원", String(d.interest.registeredUsers), "로그인 상태 · 고유"],
-            ["비로그인 클릭", String(d.interest.anonRegisters), "가입 전 이탈한 관심"],
-          ].map(([k, v, h]) => (
-            <div key={k}>
-              <dt className="t-k">{k}</dt>
-              <dd className="m-0 mt-1 num text-[22px] font-semibold leading-none tracking-[-0.03em] text-ink">{v}</dd>
-              <dd className="m-0 mt-1 text-[12px] text-ink-mute">{h}</dd>
-            </div>
-          ))}
-        </dl>
-        <Table
-          head={["업무구분", "노출", "관심 등록"]}
-          rows={d.interest.byDiv.map((r) => [r.div, String(r.views), String(r.registers)])}
-          empty="아직 노출·등록이 없습니다."
-          numeric
-        />
-      </Panel>
 
       <Panel className="mt-[14px]" data-admin="feedback">
         <PanelHead title="의견·문의" small="최근 50 · /feedback" summary={[<span key="n">답장은 적힌 이메일로 직접 · 처리 표시는 Supabase feedback.handled_at</span>]} />
@@ -160,7 +151,7 @@ export default async function AdminPage() {
       </Panel>
 
       <Panel className="mt-[14px]" data-admin="users">
-        <PanelHead title="가입자" small={`${d.users.length}명`} />
+        <PanelHead title="가입자" small={`${d.users.length}계정 · 관리자·테스트 제외`} />
         <Table
           head={["가입", "이메일", "인증", "마지막 로그인", "저장", "검토"]}
           rows={d.users.map((u) => [t(u.createdAt), u.email, u.confirmed ? "완료" : "대기", t(u.lastSignInAt), nf.format(u.saved), nf.format(u.reviewed)])}
@@ -200,6 +191,7 @@ export default async function AdminPage() {
           />
         </Panel>
       </div>
+      </details>
     </>
   );
 }
