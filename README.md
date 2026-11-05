@@ -4,7 +4,7 @@
 
 ![status](https://img.shields.io/badge/status-beta-f59e0b)
 ![stack](https://img.shields.io/badge/FastAPI-Next.js%2016%20·%20Supabase%20pgvector-000000)
-[![live](https://img.shields.io/badge/live-jodalfit.co.kr-047857)](https://jodalfit.co.kr)
+[![live](https://img.shields.io/badge/live-jodalfit.co.kr-f97316)](https://jodalfit.co.kr)
 
 ![jodalfit.co.kr](docs/screenshot.png)
 
@@ -178,8 +178,8 @@ jodalfit/
 │   │   │   ├── sitemap.ts                          정적 + 회사/공고 동적 (~2,002 URL)
 │   │   │   ├── robots.ts                           /icon.svg (favicon)
 │   │   │   ├── layout.tsx                          Pretendard, 메타데이터
-│   │   │   └── globals.css                         컬러 토큰 (Forest Green primary)
-│   │   ├── components/                             Brand(Halves 로고), BidCard, CompanyCard,
+│   │   │   └── globals.css                         컬러 토큰 (종이색 + 먹 + 주황 선)
+│   │   ├── components/                             Brand(ㄱㄴ 틀 마크), BidCard, CompanyCard,
 │   │   │                                           MatchScore, ExplanationBlock, DDayBadge,
 │   │   │                                           KeywordFallback, Header, Lifecycle, …
 │   │   ├── lib/
@@ -188,7 +188,7 @@ jodalfit/
 │   │   │   ├── mock-data.ts
 │   │   │   └── utils.ts                            cn, maskBizrno, formatKRW, daysUntil, scoreLabel
 │   │   └── types/recommendations.ts
-│   ├── public/brand/                               Halves 로고 SVG 자산
+│   ├── public/brand/                               로고 SVG 자산 (결정본은 docs/design/brand/)
 │   └── package.json
 │
 ├── .github/workflows/
@@ -502,24 +502,28 @@ curl -X POST http://localhost:8000/recommendations \
 
 ---
 
-## 13. 디자인 토큰
+## 13. 디자인 토큰 (2026-10-24 리뉴얼)
 
-토스 톤(깨끗한 흰색 + 큰 한국어 카피 + 부드러운 카드) + 에메랄드 primary.
-로고 컨셉: **Halves** — 채워진 삼각형(회사 이력) + 윤곽 삼각형(공고)이 대각선으로 맞물려 사각형(=fit).
+종이색 바닥 + 흰 판 + 헤어라인, 먹 글자, **주황 하나**. 결정 사항·시안은 `docs/design/README.md`, 로고는 `docs/design/brand/`.
+로고 컨셉: **ㄱㄴ 틀 "찰칵"** — 갈고리 둘(ㄱ 오른 위·ㄴ 왼 아래)이 비껴 마주 보며 네모를 틀 짓는다. 골라서 담는 사진 틀.
 
 ```css
-/* jodalfit — Toss tone + Deep Forest accent */
---color-primary: #047857;  /* CTA, 강조, 매칭 점수 (2026-08 에메랄드로 리브랜딩) */
---color-bg:      #FFFFFF;  /* 배경 (clean white) */
---color-surface: #F7F9FC;  /* 카드/섹션 */
---color-ink:     #111827;  /* 본문 */
---color-muted:   #6B7280;  /* 메타 */
---color-border:  #E5E7EB;
---color-warning: #F59E0B;  /* 마감 임박 (D-3 ~ D-5) */
---color-danger:  #DC2626;  /* 마감 직전 (D-1 ~ D-2) */
+/* jodalfit — 종이 · 먹 · 주황 (frontend/src/app/globals.css) */
+--color-paper:      #faf9f7;  /* 바닥 */
+--color-panel:      #ffffff;  /* 판 */
+--color-hair:       #e6e4df;  /* 판 테두리·헤어라인 */
+--color-ink:        #141414;  /* 먹 */
+--color-ink-dim:    #6b6b67;  /* 흐림 (대비 4.9:1) */
+--color-orange:     #f97316;  /* 선·밑줄·점·테두리·D-day. 면 금지 (로고 타일 예외) */
+--color-orange-ink: #b85510;  /* 글자용 주황 — #f97316 은 종이색 위 대비 2.66:1 */
 
 --font-sans: 'Pretendard Variable', system-ui, ...;
 ```
+
+- **주황은 선이지 면이 아니다** — 테두리·밑줄·점에만. 주황 면 위 흰 글씨 금지.
+- 문체는 공문 톤(명사형 종결·격식체). "~있어요"류 구어는 `frontend/scripts/check_*.py` 의 금지어 검사가 잡는다.
+- 적합 점수 숫자는 노출하지 않고 근거(신호 칩·근거 문장)만 남긴다.
+- 다크 모드 없음.
 
 UI 라이브러리: **shadcn/ui base-nova preset** (@base-ui/react 기반). `Button`은 base-ui라 `asChild` 미지원 — 링크는 `<a>` 직접 스타일.
 
