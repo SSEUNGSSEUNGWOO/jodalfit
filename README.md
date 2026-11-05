@@ -1,8 +1,8 @@
 # jodalfit (조달핏)
 
-회사명을 입력하면 등록업종·공급물품·수주 이력을 함께 분석해, 검토할 만한 나라장터(G2B) 입찰공고 TOP 5를 추천한다.
+회사명을 입력하면 등록업종·공급물품·수주 이력을 함께 분석해, 검토할 만한 나라장터(G2B) 입찰공고 20건을 추천한다 (비로그인은 상위 5건 공개).
 
-![status](https://img.shields.io/badge/status-beta-f59e0b)
+![status](https://img.shields.io/badge/status-production-16a34a)
 ![stack](https://img.shields.io/badge/FastAPI-Next.js%2016%20·%20Supabase%20pgvector-000000)
 [![live](https://img.shields.io/badge/live-jodalfit.co.kr-f97316)](https://jodalfit.co.kr)
 
@@ -17,9 +17,9 @@
 **실데이터로 확인한 것.** 초기 설계는 "과거 수주 이력"을 메인 시그널(α=0.7)로 잡았다. 실데이터에 돌려 보니 수주 이력이 매칭되는 회사가 1.1%에 그쳐 추천이 성립하지 않았다.
 "이 회사가 뭐 하는 회사인가"(등록업종·공급물품)를 메인으로 옮기고, 가중치를 회사 데이터 양에 따라 동적으로 정하는 쪽으로 피벗했다 (2026-05-25).
 
-**규모.** 공고 10,990건 임베딩, 계약 32,580건, 회사 34,517개. 나라장터 OpenAPI 8종을 매일 GitHub Actions cron으로 누적한다.
+**규모 (2026-11-05).** 공고 누적 41.8만 건(지금 입찰 가능 약 9,500건), 계약 67.6만 건, 회사 19.6만 개(벡터 91,585). 나라장터 OpenAPI 8종을 GitHub Actions(매일 05:00 + 매시)로 누적한다.
 
-**상태.** WIP MVP. 사내 수주 영업 도입 추진 중.
+**상태.** [jodalfit.co.kr](https://jodalfit.co.kr) 운영 중. 이메일·구글·네이버 로그인, 검토함, 저장 회사 주간 메일, 어드민. 임베딩은 KURE-v1 운영 중이고 Gemini embedding-001 로 전환하기 위한 백필이 진행 중이다(아래 6장).
 
 ---
 
@@ -30,7 +30,7 @@
 **컨셉:**
 1. 사용자가 **회사명** 또는 **사업자번호**를 입력
 2. **등록업종 · 공급물품 (메인)** + **과거 수주 이력 (보조)**을 합쳐 회사 임베딩 벡터 생성
-3. 신규 입찰공고와 의미적으로 비교 → **TOP 5** 반환
+3. 신규 입찰공고와 의미적으로 비교 → **20건** 반환 (비로그인은 상위 5건 공개 + 15건 흐림)
 4. **LLM**이 "왜 이 공고가 맞는지" 자연어로 설명 (병렬 호출로 ~3초)
 
 회사명/벡터 미확보 시에는 **자유 키워드 모드**로 폴백 — 콜드스타트에도 즉시 추천.
@@ -88,9 +88,9 @@
     ↓
 [4] 휴리스틱 rerank  ← 마감 임박 패널티, 지역 매칭 보너스 등
     ↓
-[5] LLM 설명 생성  ← gpt-4o-mini, ThreadPoolExecutor(5) 병렬 호출 (~3초)
+[5] LLM 설명 생성  ← Claude Haiku 4.5, ThreadPoolExecutor(5) 병렬 호출 (~3초)
     ↓
-TOP 5 + 매칭 이유 반환
+20건 + 매칭 이유 반환
 ```
 
 **핵심 통찰**:
@@ -130,9 +130,9 @@ flowchart LR
   U[회사명 입력] --> FE[Next.js 16<br/>SEO 회사·공고 페이지]
   FE -->|POST /recommendations| BE[FastAPI]
   BE --> DB[(Supabase Postgres<br/>pgvector HNSW · pg_trgm)]
-  BE -->|추천 이유| LLM[gpt-4o-mini]
-  subgraph J[GitHub Actions · 매일 KST 5시]
-    I[ingest 잡들<br/>나라장터 OpenAPI 8종] --> E[embed 잡들<br/>text-embedding-3-small] --> CV[compute_company_vectors]
+  BE -->|추천 이유| LLM[Claude Haiku 4.5]
+  subgraph J[GitHub Actions · 매일 KST 5시 + 매시]
+    I[ingest 잡들<br/>나라장터 OpenAPI 8종] --> E[embed 잡들<br/>KURE-v1 · Gemini 백필] --> CV[compute_company_vectors]
   end
   CV --> DB
 ```
@@ -222,8 +222,10 @@ jodalfit/
 | --- | --- | --- |
 | **백엔드** | FastAPI (Python 3.12, uv) | 비동기 잘 됨, 한국 데이터 다루기 편함 |
 | **DB / Auth** | Supabase (Postgres + pgvector + pg_trgm) | pgvector HNSW로 임베딩 검색, fuzzy 회사명 매칭, Auth 내장 |
-| **임베딩** | OpenAI `text-embedding-3-small` (1536d) | 한국어 성능 좋음, 비용 저렴 ($0.02/1M tokens) |
-| **LLM 설명** | OpenAI `gpt-4o-mini` | 추천 이유 생성용, 비용/품질 균형 |
+| **임베딩 (운영)** | KURE-v1 (1024d, `embedding_k`) — Railway 에 int8 ONNX 상주 | 한국어 전용 모델. 2026-10-15 OpenAI 3-small 에서 전환 |
+| **임베딩 (전환 중)** | Gemini `gemini-embedding-001` (768d, `embedding_g`) | 2026-11-04 재대결(회사 3,000곳 × 3시점)에서 KURE 대비 final@20 +0.06, 전 시점·전 군 상승 (`docs/recommender/exp-2026-11-04-embedding-rematch.md`). 백필 완료 후 `EMBED_SPACE=gemini` 로 전환 |
+| **임베딩 공간 스위치** | `EMBED_SPACE` = `openai` / `kure` / `gemini` | 공간마다 열·RPC 접미사·함수가 한 벌(`app/services/embedding.py`). 환경변수 하나로 전환·롤백 |
+| **LLM 설명** | Claude Haiku 4.5 (`EXPLAIN_PROVIDER=anthropic`, 키 없으면 `gpt-4o-mini` 로 degrade) | 추천 이유 생성용 |
 | **프론트엔드** | Next.js 16 (App Router, TS, Tailwind v4) | SSR/SSG, SEO 강점, React 19 |
 | **UI** | shadcn 패턴 + Radix UI primitive + Pretendard | 한국 B2B 신뢰감 + 접근성 |
 
@@ -474,17 +476,17 @@ curl -X POST http://localhost:8000/recommendations \
 | 버전 | 상태 | 핵심 변화 |
 | --- | --- | --- |
 | v0.1 | ✅ 완료 | 수주 시그널 + 코사인 + 하드 필터 + LLM 설명 (α=0.7 수주 메인) |
-| **v0.2** | 🔄 진행 중 | **PIVOT** — 업종/공급물품 메인(γ), 동적 가중치, 회사 풍부화 8.4k/16k, 라이프사이클 페이지, GitHub Actions cron, LLM 병렬 |
+| v0.2 | ✅ 완료 | **PIVOT** — 업종/공급물품 메인(γ), 동적 가중치, 회사 풍부화, 라이프사이클 페이지, GitHub Actions cron, LLM 병렬 |
 | v0.3 | ⏳ | 자격 하드 필터 강화 (면허제한 정밀 매칭), 관심 시그널(사전규격 의견) 활성화 |
 | v0.4 | ⏳ | 참가업체 시그널(개찰결과) 적재, 시간가중 exp decay (반감기 1년) |
 | v0.5 | ⏳ | LightGBM learning-to-rank (수주/참여/노출 데이터 누적 후) |
 
-### 현재 데이터 상태 (2026-05-25)
-- `bid_notices` 10,990건 (모두 임베딩 완료)
-- `contracts` 32,580건
-- `companies` 34,517개
-- `company_industries` 40,384행 / `company_supply_products` 74,553행
-- **풍부화 진행률: enriched 8,393 / active 16,236 = 51.7%** (UsrInfoService02 일일 한도 4,500/일로 분산 처리 중)
+### 현재 데이터 상태 (2026-11-05)
+- `bid_notices` 약 41.8만 건 — KURE 벡터 41.8만, Gemini 벡터 32.7만 (백필 중)
+- `contracts` 약 67.6만 건
+- `companies` 약 19.6만 개 — 회사 벡터(KURE) 91,585
+- `company_industries` 25.6만 행 / `company_supply_products` 101.7만 행
+- 추천 알고리즘 변경 이력(사용자 언어)은 `docs/recommender/changelog.md`, 실험 기록은 `docs/recommender/exp-*.md`
 
 자세한 결정 근거는 [`docs/`](./docs/) 또는 깃 커밋 히스토리.
 
