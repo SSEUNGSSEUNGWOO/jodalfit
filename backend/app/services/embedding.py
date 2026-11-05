@@ -1,4 +1,9 @@
-"""임베딩 공간 스위치 — openai(1536d) / kure(1024d). 모든 호출부는 이 모듈만 쓴다."""
+"""임베딩 공간 스위치 — openai(1536d) / kure(1024d) / gemini(768d). 모든 호출부는 이 모듈만 쓴다.
+
+공간마다 (열, 시각 열, RPC 접미사, 임베딩 함수)가 한 벌이다. 전환은 `EMBED_SPACE` 하나(0045 kure, 0067 gemini).
+gemini 는 질의/문서 taskType 이 다르다 — 업종 텍스트·키워드 질의는 kind="query", 공고·사전규격·발주계획은 "document".
+다른 공간은 kind 를 무시한다.
+"""
 
 from __future__ import annotations
 
@@ -7,25 +12,50 @@ from typing import Callable
 
 from app.core.config import get_settings
 
-DIMS = {"openai": 1536, "kure": 1024}
+SPACES = {
+    #            차원   벡터 열          시각 열           RPC 접미사
+    "openai": (1536, "embedding", "embedded_at", ""),
+    "kure": (1024, "embedding_k", "embedded_k_at", "_k"),
+    "gemini": (768, "embedding_g", "embedded_g_at", "_g"),
+}
 CACHE_TABLE = "text_embeddings"
+CACHE_COL = {"kure": "embedding", "gemini": "embedding_g"}  # 0046 표는 vector(1024) 고정이라 gemini 는 별도 열(0067)
 CACHE_LOOKUP_CHUNK = 150  # PostgREST URL 길이 ~7KB 안전선 — compute_company_vectors EMB_PAGE 와 같은 근거
 
 
+def _space(space: str | None) -> str:
+    return space or get_settings().embed_space
+
+
 def dim(space: str | None = None) -> int:
-    return DIMS[space or get_settings().embed_space]
+    return SPACES[_space(space)][0]
 
 
 def emb_col(space: str | None = None) -> str:
-    """벡터 컬럼 이름 — kure 는 0045 의 `_k` 변형. recommend.py::_emb_col 과 같은 규칙."""
-    return "embedding_k" if (space or get_settings().embed_space) == "kure" else "embedding"
+    """벡터 컬럼 이름. recommend.py::_emb_col 과 같은 규칙."""
+    return SPACES[_space(space)][1]
 
 
-def embed_texts(texts: list[str], space: str | None = None) -> list[list[float]]:
-    if (space or get_settings().embed_space) == "kure":
+def at_col(space: str | None = None) -> str:
+    """임베딩 시각 컬럼 — 잡이 '아직 안 한 행' 을 고를 때 본다."""
+    return SPACES[_space(space)][2]
+
+
+def rpc_name(base: str, space: str | None = None) -> str:
+    """공간에 맞는 RPC 이름 (match_bid_notices → match_bid_notices_k / _g)."""
+    return base + SPACES[_space(space)][3]
+
+
+def embed_texts(texts: list[str], space: str | None = None, kind: str = "document") -> list[list[float]]:
+    s = _space(space)
+    if s == "kure":
         from app.services.local_embed import embed_texts_kure
 
         return embed_texts_kure(texts)
+    if s == "gemini":
+        from app.services.gemini_client import embed_texts as _gemini_embed
+
+        return _gemini_embed(texts, kind)
     from app.services.openai_client import embed_texts as _openai_embed
 
     return _openai_embed(texts)
@@ -68,16 +98,18 @@ def _parse_vector(v: str | list) -> list[float]:
     return [float(x) for x in v.strip()[1:-1].split(",")]
 
 
-def embed_texts_cached(texts: list[str], space: str | None = None) -> list[list[float]]:
-    """같은 텍스트를 두 번 임베딩하지 않는다 (kure 전용 — 0046 text_embeddings).
+def embed_texts_cached(texts: list[str], space: str | None = None, kind: str = "document") -> list[list[float]]:
+    """같은 텍스트를 두 번 임베딩하지 않는다 (kure·gemini — 0046 text_embeddings, gemini 열은 0067).
 
     openai 는 API 가 싸고 빨라서 캐시 가치가 없다 → 그대로 통과.
     테이블이 없으면 PostgREST 에러를 그대로 올린다 — 조용히 건너뛰면 Actions 가
     업종 텍스트 2.5만 건을 매일 CPU 로 다시 임베딩하며 timeout 날 때까지 모른다.
+    캐시 키는 (space, sha1) 뿐이다 — 질의와 문서가 같은 글일 일이 없어 kind 는 키에 넣지 않는다.
     """
-    space = space or get_settings().embed_space
-    if space != "kure" or not texts:
-        return embed_texts(texts, space) if texts else []
+    space = _space(space)
+    col = CACHE_COL.get(space)
+    if col is None or not texts:
+        return embed_texts(texts, space, kind) if texts else []
 
     from app.services.openai_client import vector_to_pgvector_str
     from app.services.supabase_client import get_admin_client
@@ -87,23 +119,24 @@ def embed_texts_cached(texts: list[str], space: str | None = None) -> list[list[
     def lookup(shas: list[str]) -> dict[str, list[float]]:
         rows = (
             client.table(CACHE_TABLE)
-            .select("text_sha1,embedding")
+            .select(f"text_sha1,vec:{col}")
             .eq("space", space)
             .in_("text_sha1", shas)
+            .not_.is_(col, "null")
             .execute()
             .data
         )
-        return {r["text_sha1"]: _parse_vector(r["embedding"]) for r in rows}
+        return {r["text_sha1"]: _parse_vector(r["vec"]) for r in rows}
 
     def store(fresh: dict[str, list[float]]) -> None:
         client.table(CACHE_TABLE).upsert(
             [
-                {"space": space, "text_sha1": s, "embedding": vector_to_pgvector_str(e)}
+                {"space": space, "text_sha1": s, col: vector_to_pgvector_str(e)}
                 for s, e in fresh.items()
             ]
         ).execute()
 
-    return _cached(texts, lookup, store, lambda t: embed_texts(t, space))
+    return _cached(texts, lookup, store, lambda t: embed_texts(t, space, kind))
 
 
 if __name__ == "__main__":
@@ -128,4 +161,6 @@ if __name__ == "__main__":
     out2 = _cached(texts, lambda shas: {s: store_db[s] for s in shas if s in store_db},
                    lambda fresh: store_db.update(fresh), fake_embed)
     assert out2 == out and len(calls) == 1, (out2, calls)  # 두 번째는 전부 캐시
-    print("embed_texts_cached 자체 점검 OK (sha1 키, 순서 복원, 중복/히트 생략)")
+    assert (dim("gemini"), emb_col("gemini"), at_col("gemini"), rpc_name("match_bid_notices", "gemini")) == (768, "embedding_g", "embedded_g_at", "match_bid_notices_g")
+    assert rpc_name("match_bid_notices", "openai") == "match_bid_notices" and emb_col("kure") == "embedding_k"
+    print("embed_texts_cached 자체 점검 OK (sha1 키, 순서 복원, 중복/히트 생략, 공간 표)")

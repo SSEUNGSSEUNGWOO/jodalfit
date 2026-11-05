@@ -15,7 +15,7 @@ import argparse
 from datetime import datetime, timezone
 
 from app.core.config import get_settings
-from app.services.embedding import embed_texts
+from app.services.embedding import emb_col, embed_texts, rpc_name
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from jobs._common import (
@@ -46,7 +46,7 @@ def pending_query(client, space: str, select: str, count: str | None = None):
     # 공고 예정일이 늦은 것부터 — 발주계획은 '앞으로 나올 공고'라 최근 것이 쓸모 있다.
     # embed_pre_specs 와 같은 이유(2026-10-23): 정렬이 없으면 적재 순서대로 집어가 오래된 것만 채운다.
     q = client.table("order_plans").select(select, count=count)
-    q = q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+    q = q.is_("embedded_at", "null") if space == "openai" else q.is_(emb_col(space), "null")
     return q.order("ntice_dt", desc=True, nullsfirst=False)
 
 
@@ -54,7 +54,7 @@ def run(
     limit: int = 5000, batch: int = 200, space: str | None = None, dry_run: bool = False
 ) -> None:
     space = space or get_settings().embed_space
-    rpc = "update_order_plans_embeddings_k" if space == "kure" else "update_order_plans_embeddings"
+    rpc = rpc_name("update_order_plans_embeddings", space)
     if dry_run:
         res = pending_query(get_admin_client(), space, "order_plan_unty_no", count="exact").limit(1).execute()
         print(f"[{JOB_NAME}] dry-run space={space} rpc={rpc} 대상={res.count:,} 첫행={res.data}")
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=5000)
     parser.add_argument("--batch", type=int, default=200)
-    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--space", choices=["openai", "kure", "gemini"], default=None)
     parser.add_argument("--dry-run", action="store_true", help="대상 건수만 출력, 쓰기 없음")
     args = parser.parse_args()
     run(args.limit, args.batch, args.space, args.dry_run)

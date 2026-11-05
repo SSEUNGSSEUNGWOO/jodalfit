@@ -37,7 +37,8 @@ from typing import Iterator
 import numpy as np
 
 from app.core.config import get_settings
-from app.services.embedding import embed_texts_cached
+from app.services.embedding import at_col, embed_texts_cached, rpc_name
+from app.services.embedding import emb_col as embedding_col
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from jobs._common import (
@@ -391,7 +392,7 @@ def process_chunk(
         | {p["bid_ntce_no"] for p in participations if p.get("bid_ntce_no")}
     )
     emb_map: dict[tuple[str, str], np.ndarray] = {}
-    emb_col = "embedding_k" if space == "kure" else "embedding"
+    emb_col = embedding_col(space)
     EMB_PAGE = 300
     for sub in chunks(bid_nos, EMB_PAGE):
         rows = (
@@ -470,7 +471,7 @@ def process_chunk(
 
     industry_by_biz: dict[str, np.ndarray] = {}
     if industry_texts:
-        embs = embed_texts_cached(industry_texts, space)
+        embs = embed_texts_cached(industry_texts, space, kind="query")  # 업종 텍스트는 질의 쪽(gemini RETRIEVAL_QUERY)
         for b, e in zip(industry_targets, embs):
             industry_by_biz[b] = np.array(e, dtype=np.float32)
 
@@ -527,8 +528,8 @@ def run(
     dry_run: bool = False,
 ) -> None:
     space = space or get_settings().embed_space
-    at_col = "embedded_k_at" if space == "kure" else "embedded_at"
-    rpc = "update_company_embeddings_k" if space == "kure" else "update_company_embeddings"
+    at = at_col(space)
+    rpc = rpc_name("update_company_embeddings", space)
     run_id = log_ingest_start(
         JOB_NAME,
         {"limit": limit, "chunk": chunk_size, "version": "dynamic_weights_v3", "space": space},
@@ -540,7 +541,7 @@ def run(
 
     # 대상(~13만) > limit(25k)라 절단 필요 — 순서는 order_targets 참고.
     # companies 에 없는 회사는 process_chunk 에서 어차피 스킵되므로 제외.
-    emb_at = fetch_embedded_at_map(client, at_col)
+    emb_at = fetch_embedded_at_map(client, at)
     searched = fetch_user_searched(client)
     enriched = fetch_enriched(client)
     ordered, tier_sizes = order_targets(active, emb_at, searched, enriched, date.today().isoformat())
@@ -586,7 +587,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=25000)
     parser.add_argument("--chunk-size", type=int, default=100)
-    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--space", choices=["openai", "kure", "gemini"], default=None)
     parser.add_argument("--dry-run", action="store_true", help="대상 집계만, 쓰기 없음")
     args = parser.parse_args()
     run(args.limit, args.chunk_size, args.space, args.dry_run)

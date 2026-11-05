@@ -22,7 +22,7 @@ import argparse
 from datetime import datetime, timezone
 
 from app.core.config import get_settings
-from app.services.embedding import embed_texts
+from app.services.embedding import at_col, emb_col, embed_texts, rpc_name
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from jobs._common import (
@@ -78,15 +78,15 @@ SELECT_COLS = (
 def pending_query(
     client, space: str, reembed_all: bool, job_start: str, select: str, count: str | None = None
 ):
-    at_col = "embedded_k_at" if space == "kure" else "embedded_at"
+    at = at_col(space)
     q = client.table("bid_notices").select(select, count=count)
     if reembed_all:
         # 이번 사이클 시작 이전 임베딩 + NULL → 한 번씩만 처리됨
-        q = q.or_(f"{at_col}.is.null,{at_col}.lt.{job_start}")
-    elif space == "kure":
-        q = q.is_("embedding_k", "null")
-    else:
+        q = q.or_(f"{at}.is.null,{at}.lt.{job_start}")
+    elif space == "openai":
         q = q.is_("embedded_at", "null")
+    else:
+        q = q.is_(emb_col(space), "null")
     return q
 
 
@@ -98,7 +98,7 @@ def run(
     dry_run: bool = False,
 ) -> None:
     space = space or get_settings().embed_space
-    rpc = "update_bid_notice_embeddings_k" if space == "kure" else "update_bid_notice_embeddings"
+    rpc = rpc_name("update_bid_notice_embeddings", space)
     job_start = datetime.now(timezone.utc).isoformat()  # tz 없는 지역시각을 쓰면 Postgres 가 UTC 로 해석해 KST PC 에서 9시간 밀린다
     if dry_run:
         res = (
@@ -157,7 +157,7 @@ if __name__ == "__main__":
         action="store_true",
         help="모든 행 재임베딩 (이번 사이클 시작 이전 임베딩만 대상)",
     )
-    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--space", choices=["openai", "kure", "gemini"], default=None)
     parser.add_argument("--dry-run", action="store_true", help="대상 건수만 출력, 쓰기 없음")
     args = parser.parse_args()
     run(args.limit, args.batch, args.reembed_all, args.space, args.dry_run)

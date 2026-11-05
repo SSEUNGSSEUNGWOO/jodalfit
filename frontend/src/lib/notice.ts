@@ -1,7 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
-import { IS_KURE, rpcName } from "./embed-space";
+import { IS_GEMINI, IS_KURE, rpcName } from "./embed-space";
 import type { NoticeInsight } from "@/types/recommendations";
 import { diffNoticeVersions, type Amendment, type NoticeVersion } from "./notice-diff";
 
@@ -115,7 +115,9 @@ export interface NoticeLifecycle {
 /** 벡터 컬럼은 공간에 따라 다르다 — select 리터럴을 분기해야 supabase-js 타입 추론이 산다. */
 const BID_NOTICE_COLUMNS = IS_KURE
   ? "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,order_plan_unty_no,embedding:embedding_k"
-  : "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,order_plan_unty_no,embedding";
+  : IS_GEMINI
+    ? "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,order_plan_unty_no,embedding:embedding_g"
+    : "bid_ntce_no,bid_ntce_ord,bid_ntce_nm,bsns_div_nm,bid_ntce_date,bid_clse_date,openg_date,presmpt_prce,asign_bdgt_amt,ntce_instt_nm,dmnd_instt_nm,bidprc_psbl_indstryty_nm,bidwinr_dcsn_mthd_nm,cntrct_cncls_mthd_nm,bid_ntce_url,rgn_lmt_yn,prtcpt_psbl_rgn_nm,indstryty_lmt_yn,attachments,bf_spec_rgst_no,bid_qlfct_rgst_dt,order_plan_unty_no,embedding";
 
 export async function fetchBidNotice(
   bidNtceNo: string
@@ -327,7 +329,9 @@ export async function fetchSimilarNotices(
     .select(
       IS_KURE
         ? "bid_ntce_no,bid_ntce_ord,embedding:embedding_k"
-        : "bid_ntce_no,bid_ntce_ord,embedding"
+        : IS_GEMINI
+          ? "bid_ntce_no,bid_ntce_ord,embedding:embedding_g"
+          : "bid_ntce_no,bid_ntce_ord,embedding"
     )
     .eq("bid_ntce_no", bidNtceNo)
     .order("bid_ntce_ord", { ascending: false })

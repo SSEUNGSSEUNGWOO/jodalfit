@@ -15,7 +15,7 @@ import argparse
 from datetime import datetime, timezone
 
 from app.core.config import get_settings
-from app.services.embedding import embed_texts
+from app.services.embedding import emb_col, embed_texts, rpc_name
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from jobs._common import (
@@ -46,7 +46,7 @@ def pending_query(client, space: str, select: str, count: str | None = None):
     # 벡터가 있는 건 20건(0.8%)뿐이었고, 밀린 54,943건을 하루 1,000건으로 소화하면 55일 — 평균 공개
     # 기간 6.2일인 사전규격은 영원히 못 따라잡는다. 입찰공고 쪽은 마감 조건이 있어 같은 문제가 없었다.
     q = client.table("pre_specs").select(select, count=count)
-    q = q.is_("embedding_k", "null") if space == "kure" else q.is_("embedded_at", "null")
+    q = q.is_("embedded_at", "null") if space == "openai" else q.is_(emb_col(space), "null")
     return q.order("opnin_rgst_clse_dt", desc=True, nullsfirst=False)
 
 
@@ -54,7 +54,7 @@ def run(
     limit: int = 5000, batch: int = 200, space: str | None = None, dry_run: bool = False
 ) -> None:
     space = space or get_settings().embed_space
-    rpc = "update_pre_specs_embeddings_k" if space == "kure" else "update_pre_specs_embeddings"
+    rpc = rpc_name("update_pre_specs_embeddings", space)
     if dry_run:
         res = pending_query(get_admin_client(), space, "bf_spec_rgst_no", count="exact").limit(1).execute()
         print(f"[{JOB_NAME}] dry-run space={space} rpc={rpc} 대상={res.count:,} 첫행={res.data}")
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=5000)
     parser.add_argument("--batch", type=int, default=200)
-    parser.add_argument("--space", choices=["openai", "kure"], default=None)
+    parser.add_argument("--space", choices=["openai", "kure", "gemini"], default=None)
     parser.add_argument("--dry-run", action="store_true", help="대상 건수만 출력, 쓰기 없음")
     args = parser.parse_args()
     run(args.limit, args.batch, args.space, args.dry_run)

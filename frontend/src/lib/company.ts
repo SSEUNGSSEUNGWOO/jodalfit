@@ -1,6 +1,6 @@
 import "server-only";
 import { getServerSupabase } from "./supabase-server";
-import { EMB_COL, IS_KURE, rpcName } from "./embed-space";
+import { EMB_COL, IS_GEMINI, IS_KURE, rpcName } from "./embed-space";
 
 export interface CompanyDetail {
   bizrno: string;
@@ -213,7 +213,9 @@ export async function fetchCompanyByBizrno(
     .select(
       IS_KURE
         ? "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding:embedding_k,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
-        : "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
+        : IS_GEMINI
+          ? "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding:embedding_g,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
+          : "bizrno,bizrno_norm,corp_nm,english_nm,ceo_nm,rgn_nm,corp_bsns_div_nm,mnfctr_div_nm,embedding,is_restricted,contract_count,biz_status_cd,biz_closed_dt,biz_status_checked_at,optout_at"
     )
     .eq("bizrno_norm", bizrnoNorm)
     // 같은 사업자번호가 하이픈 유무로 두 행인 경우가 있다 — 벡터 있는 행(업종이 붙은 쪽)을 고른다(백엔드 _row_by_norm 과 동일)

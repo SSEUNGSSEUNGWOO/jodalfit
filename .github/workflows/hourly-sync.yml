@@ -29,11 +29,12 @@ jobs:
     env:
       NARAJANGTEO_API_KEY: ${{ secrets.NARAJANGTEO_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # gemini 공간(0067)에서만 쓴다
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # summarize_bid_documents (Haiku Message Batches)
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}  # ingest_bid_notices_full --fill 이 psycopg 직결로 UPDATE
-      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure, 0045/0046 적용 후).
+      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure|gemini, 0045/0046/0067 적용 후).
       # kure 면 모델이 로컬 CPU 에서 돈다 → KURE_BACKEND=torch(sentence-transformers fp32, 정확).
       EMBED_SPACE: ${{ vars.EMBED_SPACE || 'openai' }}
       KURE_BACKEND: torch

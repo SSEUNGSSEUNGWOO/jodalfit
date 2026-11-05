@@ -26,7 +26,7 @@ from postgrest.exceptions import APIError
 from app.core.config import get_settings
 from app.core.progress import emit
 from app.core.timing import submit_timed, timed
-from app.services.embedding import embed_texts
+from app.services.embedding import embed_texts, emb_col, rpc_name
 from app.services.openai_client import vector_to_pgvector_str
 from app.services.supabase_client import get_admin_client
 from app.services.viz import anchor_positions, project_many, project_point
@@ -93,13 +93,13 @@ _PRODUCT_CHANNEL = True  # 같은 1회성 — 0048 미적용이면 첫 실패 �
 
 
 def _rpc_name(base: str) -> str:
-    """임베딩 공간에 맞는 RPC 이름. kure(1024d)는 `_k` 변형(0045)을 쓴다."""
-    return f"{base}_k" if get_settings().embed_space == "kure" else base
+    """임베딩 공간에 맞는 RPC 이름. kure 는 `_k`(0045), gemini 는 `_g`(0067) 변형."""
+    return rpc_name(base)
 
 
 def _emb_col() -> str:
     """임베딩 공간에 맞는 벡터 컬럼. 읽을 때 `embedding:<col>` 별칭을 줘서 호출부는 늘 'embedding' 키를 본다."""
-    return "embedding_k" if get_settings().embed_space == "kure" else "embedding"
+    return emb_col()
 
 
 def _match_notices(client, params: dict, horizon: date) -> list[dict]:
@@ -1082,14 +1082,23 @@ def _recommend_by_keywords(
     from app.recommender.keyword_expand import expand_keywords  # lazy — recommend ↔ recommender 순환 import 회피
 
     # 제목 일치(전부)는 임베딩 검색과 독립 — 같이 띄워 왕복 한 번 값으로 끝낸다. 실패해도 의미 검색은 그대로 나간다.
+    semantic_unavailable = False
     with ThreadPoolExecutor(max_workers=1) as ex:
         f_title = submit_timed(ex, "title_match", _search_title_matches, get_admin_client(), text, div, due)
-        with timed("embed_query"):
-            embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"])[0]
-        embedding_str = vector_to_pgvector_str(embedding)
-        ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
-        pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
-        order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
+        try:
+            with timed("embed_query"):
+                embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"], kind="query")[0]
+        except Exception as e:
+            # 임베딩 API(gemini) 장애·차단기 — 의미 유사 판만 비우고 제목 일치는 그대로 보낸다.
+            # 회사 모드는 저장된 벡터를 써서 여기 안 걸린다. 차단기는 app/services/gemini_client.py.
+            logger.warning("embed_query 실패 — 제목 일치만 보낸다: %s", e)
+            semantic_unavailable = True
+            ranked, pre_specs, order_plans = [], [], []
+        else:
+            embedding_str = vector_to_pgvector_str(embedding)
+            ranked = _search_with_embedding(embedding_str, None, limit, candidate_pool)
+            pre_specs = _search_pre_specs(embedding_str, limit, candidate_pool)
+            order_plans = _search_order_plans(embedding_str, limit, candidate_pool)
         try:
             title = f_title.result()
         except Exception as e:
@@ -1116,6 +1125,7 @@ def _recommend_by_keywords(
         "title_terms": title["terms"],
         "pre_spec_results": pre_specs,
         "order_plan_results": order_plans,
+        "semantic_unavailable": semantic_unavailable,
     }
 
 
@@ -1245,7 +1255,7 @@ def _recommend_by_company(
                 "order_plan_results": [],
             }
         with timed("vec_fallback_embed"):
-            raw_company_vec = embed_texts([industry_text])[0]
+            raw_company_vec = embed_texts([industry_text], kind="query")[0]
 
     if isinstance(raw_company_vec, str):
         # pgvector "[a,b,...]" 문자열 → list[float]
@@ -1257,7 +1267,7 @@ def _recommend_by_company(
         from app.recommender.keyword_expand import expand_keywords  # lazy — 순환 import 회피
 
         with timed("embed_query"):
-            keyword_vec = embed_texts([f"관심 영역: {expand_keywords(keywords_text)}"])[0]
+            keyword_vec = embed_texts([f"관심 영역: {expand_keywords(keywords_text)}"], kind="query")[0]
         blended = _blend_embeddings(raw_company_vec, keyword_vec)
         embedding_str = vector_to_pgvector_str(blended)
     else:

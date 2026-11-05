@@ -25,7 +25,7 @@ from app.core.config import get_settings
 from app.recommender.evaluation import (
     aggregate, company_tier, mrr, recall_at_k, stage_lost, strip_leaked_history,
 )
-from app.services.embedding import embed_texts
+from app.services.embedding import emb_col, embed_texts
 from jobs.compute_company_vectors import build_industry_text, dynamic_weights
 from app.recommender.cancellation import cancel_ords, drop_cancelled
 from app.recommender.mmr import mmr_diversify
@@ -119,7 +119,7 @@ def sample_companies(conn, positives: dict, t: date, n: int, seed: int) -> list[
     return out
 
 
-EMB_SPACE = "openai"  # --space: openai(embedding, 1536) | kure(embedding_k, 1024)
+EMB_SPACE = "openai"  # --space: openai(embedding, 1536) | kure(embedding_k, 1024) | gemini(embedding_g, 768)
 EMB_COL = "embedding"
 EMB_STORE: dict | None = None  # --embeddings: {"n": {(no, ord): vec}, "t": {industry_text: vec}} — 다른 임베딩 모델 실험용
 
@@ -243,7 +243,7 @@ def company_vector_at(conn, prof: dict, hist: list[dict], t: date, cache: dict, 
                 sys.exit("--embeddings 에 업종 텍스트 없음: " + text[:60])
             cache[text] = np.array(EMB_STORE["t"][text], dtype=np.float32)
         else:
-            cache[text] = np.array(embed_texts([text], space=EMB_SPACE)[0], dtype=np.float32)
+            cache[text] = np.array(embed_texts([text], space=EMB_SPACE, kind="query")[0], dtype=np.float32)
     ind = cache[text]; ind = ind / (np.linalg.norm(ind) + 1e-9)
     keys = [(h["bid_ntce_no"], h["bid_ntce_ord"]) for h in hist]
     emb: dict[tuple[str, str], np.ndarray] = {}
@@ -433,12 +433,12 @@ def main() -> None:
     ap.add_argument("--keep-cancelled", action="store_true", help="취소공고를 후보에서 빼지 않는다(2026-10-25 이전 운영 재현, 전후 비교용)")
     ap.add_argument("--no-license-text", action="store_true", help="면허 행 없음 + 원문 있음 → 확인불가 처리를 끈다(2026-10-25 이전 운영 재현)")
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
-    ap.add_argument("--space", choices=["openai", "kure"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045 적용 후)")
+    ap.add_argument("--space", choices=["openai", "kure", "gemini"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045) / gemini(embedding_g, 0067)")
     ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
     args = ap.parse_args()
     ablate = resolve_ablate(args.ablate)
     global EMB_STORE, EMB_SPACE, EMB_COL
-    EMB_SPACE = args.space; EMB_COL = "embedding_k" if args.space == "kure" else "embedding"
+    EMB_SPACE = args.space; EMB_COL = emb_col(args.space)
     t = date.fromisoformat(args.as_of); horizon = t + timedelta(days=HORIZON_DAYS)
     run_id = args.run_id or f"{t.isoformat()}_{datetime.now():%m%d%H%M}"
     out_dir = Path(__file__).resolve().parents[1] / "data" / "recommender_eval" / run_id; out_dir.mkdir(parents=True, exist_ok=True)

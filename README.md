@@ -396,7 +396,8 @@ uv run python -m jobs.verify_setup
 | `INSIGHT_PROVIDER` | 인사이트 공급자, openai 로 롤백 | `anthropic` |
 | `EXPLAIN_PROVIDER` | 추천 설명 공급자 (anthropic=Haiku 4.5 기본 / openai=gpt-4o-mini). anthropic 인데 키 없으면 openai 로 degrade | `anthropic` |
 | `DATABASE_URL` | Postgres 직결(세션 풀러 :5432) — backfill/사업자상태/purge/채점표 잡 | `postgresql://...` |
-| `EMBED_SPACE` | 임베딩 공간 `openai`(1536d, `embedding`) / `kure`(1024d, `embedding_k`+`_k` RPC, 0045 필요). 롤백 = 이 값 하나 | `openai` |
+| `EMBED_SPACE` | 임베딩 공간 `openai`(1536d, `embedding`) / `kure`(1024d, `embedding_k`+`_k` RPC, 0045) / `gemini`(768d, `embedding_g`+`_g` RPC, 0067). 롤백 = 이 값 하나 | `openai` |
+| `GEMINI_API_KEY` | Google AI Studio 키 — `EMBED_SPACE=gemini` 일 때만(질의/문서 taskType 분리, `app/services/gemini_client.py`). 결제 연결 필수(무료 등급은 분당 한도) | `AIza...` |
 | `KURE_MODEL_DIR` | KURE ONNX 모델 캐시 경로. 비우면 임시 폴더 → Railway 재시작마다 409MB 재다운로드. 영구 볼륨을 가리킬 것 | `/data/kure` |
 | `INDEXNOW_KEY` | (선택) IndexNow 키 — `jobs.ping_indexnow`(매시, Bing·네이버). 비우면 코드의 기본 키. 바꾸면 `frontend/public/<key>.txt` 도 같이 | (비움) |
 | `RESEND_API_KEY` | (선택) `/feedback` 접수 때 운영자 알림 메일과 주간 메일(`jobs.send_weekly_mail`, GitHub Actions `weekly-mail.yml` — 리포 Secrets 에도 넣는다). 발신 `noreply@jodalfit.co.kr`. 비우면 DB 저장만·주간 메일은 dry-run. Supabase SMTP 와 별도 키를 발급해 둔다(하나를 갈아도 다른 쪽이 안 죽게) | `re_...` |
@@ -411,7 +412,7 @@ uv run python -m jobs.verify_setup
 | `NEXT_PUBLIC_USE_MOCK` | `true` 시 백엔드 없이 mock 데이터로 디자인 미리보기 |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon 키 (frontend 전용) |
-| `NEXT_PUBLIC_EMBED_SPACE` | `openai`(기본) / `kure` — 직접 RPC 호출·벡터 컬럼 분기. 백엔드 `EMBED_SPACE` 와 같이 바꾼다 |
+| `NEXT_PUBLIC_EMBED_SPACE` | `openai`(기본) / `kure` / `gemini` — 직접 RPC 호출·벡터 컬럼 분기. 백엔드 `EMBED_SPACE` 와 같이 바꾼다 |
 | `ADMIN_EMAILS` | `/admin`(읽기 전용 운영 숫자)을 볼 수 있는 로그인 이메일, 쉼표 구분. 비우면 아무도 못 본다(404) |
 | `POSTHOG_PERSONAL_API_KEY` · `POSTHOG_PROJECT_ID` | `/admin` 방문 판(페이지뷰·방문자·유입)이 PostHog 쿼리 API 를 읽는 개인 키(`phx_…`, Settings → Personal API keys, 읽기 권한)와 프로젝트 번호. 없으면 그 판만 "미설정" |
 

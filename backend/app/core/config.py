@@ -40,9 +40,12 @@ class Settings(BaseSettings):
     reco_retrieval: Literal["dense", "hybrid"] = "hybrid"
 
     # 임베딩 공간 — openai(text-embedding-3-small 1536d, `embedding` 컬럼) /
-    # kure(KURE-v1 1024d, `embedding_k` 컬럼). 근거: docs/recommender/exp-2026-10-15-embedding-model.md.
+    # kure(KURE-v1 1024d, `embedding_k` 컬럼, 0045) / gemini(gemini-embedding-001 768d, `embedding_g` 컬럼, 0067).
+    # 근거: docs/recommender/exp-2026-10-15-embedding-model.md, exp-2026-11-04-embedding-rematch.md.
     # 전환은 환경변수 하나, 롤백도 하나. 컬럼·RPC 가 준비될 때까지 기본 openai.
-    embed_space: Literal["openai", "kure"] = "openai"
+    embed_space: Literal["openai", "kure", "gemini"] = "openai"
+    # Google AI Studio 키 — gemini 공간에서만 쓴다(질의/문서 taskType 분리, app/services/gemini_client.py).
+    gemini_api_key: str | None = None
     # KURE ONNX 모델 캐시 폴더. 미설정 시 임시 폴더(Railway 는 재시작마다 재다운로드 ~409MB).
     kure_model_dir: str | None = None
 

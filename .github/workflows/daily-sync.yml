@@ -16,10 +16,11 @@ jobs:
     env:
       NARAJANGTEO_API_KEY: ${{ secrets.NARAJANGTEO_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # gemini 공간(0067)에서만 쓴다
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}  # purge_expired_documents 는 psycopg 직결
-      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure, 0045/0046 적용 후).
+      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure|gemini, 0045/0046/0067 적용 후).
       # kure 면 모델이 로컬 CPU 에서 돈다 → KURE_BACKEND=torch(sentence-transformers fp32, 정확).
       EMBED_SPACE: ${{ vars.EMBED_SPACE || 'openai' }}
       KURE_BACKEND: torch
@@ -155,6 +156,7 @@ jobs:
     env:
       NARAJANGTEO_API_KEY: ${{ secrets.NARAJANGTEO_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # gemini 공간(0067)에서만 쓴다
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       # backfill_companies_basic·check_business_status 는 psycopg 직결 — 이 변수가 없어 매일 1초 만에 exit 1
@@ -209,9 +211,10 @@ jobs:
     env:
       NARAJANGTEO_API_KEY: ${{ secrets.NARAJANGTEO_API_KEY }}  # jobs/_common import 가드용
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # gemini 공간(0067)에서만 쓴다
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure, 0045/0046 적용 후).
+      # 임베딩 공간 전환은 리포 Variables 하나(EMBED_SPACE=openai|kure|gemini, 0045/0046/0067 적용 후).
       # kure 면 모델이 로컬 CPU 에서 돈다 → KURE_BACKEND=torch(sentence-transformers fp32, 정확).
       EMBED_SPACE: ${{ vars.EMBED_SPACE || 'openai' }}
       KURE_BACKEND: torch
