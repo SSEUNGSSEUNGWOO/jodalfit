@@ -183,8 +183,9 @@ export default async function NoticesIndexPage({ searchParams }: Props) {
           </div>
         </section>
 
-        {/* 필터 바 */}
-        <section className="border-b border-border bg-paper sticky top-16 z-30 backdrop-blur">
+        {/* 필터 바 — 리뉴얼 Nav 는 고정이 아니라 같이 스크롤되므로 top-0. top-16 은 옛 고정 헤더(64px) 기준이라
+            위에 64px 틈이 생겨 공고가 비쳐 보였다(2026-11-05). */}
+        <section className="border-b border-border bg-paper sticky top-0 z-30 backdrop-blur">
           <div className="mx-auto max-w-[1140px] px-5 sm:px-8 py-4 space-y-2.5">
             <FilterRow label="분야">
               <ChipLink
