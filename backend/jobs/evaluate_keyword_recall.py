@@ -85,6 +85,8 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--run-id", default=None)
+    ap.add_argument("--no-prefix", action="store_true", help='운영의 "관심 영역: " 접두어·약어 풀이 없이 질의 원문만 임베딩 (접두어가 모델마다 득실이 다른지 확인용)')
+    ap.add_argument("--expand-only", action="store_true", help='약어 풀이(expand_keywords)는 하되 "관심 영역: " 접두어만 뺀다')
     args = ap.parse_args()
     t = date.fromisoformat(args.as_of)
     horizon = t + timedelta(days=er.HORIZON_DAYS)
@@ -101,7 +103,7 @@ def main() -> None:
     results = {}
     for variant in ("full", "short"):
         texts = [q["name"] if variant == "full" else short_query(q["name"]) for q in queries]
-        prompts = [f"관심 영역: {expand_keywords(x)}" for x in texts]
+        prompts = texts if args.no_prefix else [expand_keywords(x) for x in texts] if args.expand_only else [f"관심 영역: {expand_keywords(x)}" for x in texts]
         Q = np.zeros((len(prompts), X.shape[1]), dtype=np.float32)
         for s in range(0, len(prompts), 100):
             Q[s : s + 100] = np.array(embed_texts(prompts[s : s + 100], space=args.space, kind="query"), dtype=np.float32)
@@ -123,7 +125,7 @@ def main() -> None:
         }
         print(f"  {variant:5s} hit@5 {results[variant]['hit5']:.3f}  hit@20 {results[variant]['hit20']:.3f}  MRR {results[variant]['mrr20']:.3f}", flush=True)
 
-    run_id = args.run_id or f"kw-{args.space}-{t.strftime('%Y%m%d')}"
+    run_id = args.run_id or f"kw-{args.space}{'-noprefix' if args.no_prefix else '-expandonly' if args.expand_only else ''}-{t.strftime('%Y%m%d')}"
     out_dir = Path(__file__).resolve().parents[1] / "data" / "recommender_eval" / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "metrics.json").write_text(json.dumps({"as_of": t.isoformat(), "space": args.space, "active": len(notices),

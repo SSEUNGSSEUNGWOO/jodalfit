@@ -20,6 +20,7 @@ alter table companies       add column if not exists embedding_g vector(768), ad
 alter table pre_specs       add column if not exists embedding_g vector(768), add column if not exists embedded_g_at timestamptz;
 alter table order_plans     add column if not exists embedding_g vector(768), add column if not exists embedded_g_at timestamptz;
 alter table text_embeddings add column if not exists embedding_g vector(768);  -- (space='gemini', sha1) 행은 이 열만 채운다
+alter table text_embeddings alter column embedding drop not null;              -- 0046 은 not null — gemini 행이 23502 로 막혔다(2026-11-05 19:05)
 
 -- ====================================================================
 -- match_bid_notices_g — 운영 match_bid_notices_k(0049 최신: product_codes·참가자격 등록 마감) 복사
