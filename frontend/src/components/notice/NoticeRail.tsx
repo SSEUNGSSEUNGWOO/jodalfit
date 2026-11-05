@@ -4,6 +4,7 @@
 import type { BidNotice } from "@/lib/notice";
 import { cn } from "@/lib/utils";
 import { dLeft } from "@/lib/format";
+import { ProposalInterest } from "./ProposalInterest";
 
 const nf = new Intl.NumberFormat("ko-KR");
 
@@ -97,6 +98,9 @@ export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[
           나라장터 원문
         </a>
       )}
+
+      {/* 미출시 기능 수요 조사 — 이 공고를 보고 있는 사람에게만 묻는다(0068). 마감된 공고에는 묻지 않는다. */}
+      {!closed && <ProposalInterest bidNtceNo={n.bid_ntce_no} bidNtceOrd={n.bid_ntce_ord ?? null} />}
     </aside>
   );
 }

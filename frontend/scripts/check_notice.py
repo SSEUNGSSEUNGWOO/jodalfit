@@ -41,6 +41,18 @@ def main() -> None:
         assert "과업 내용" in txt and "단계" in txt, "본문 블록이 없다"
         assert "참가 자격" in txt, "레일에 자격이 없다"
         assert "첨부문서를 아직 읽지 않았습니다" not in txt, "요약이 있는 공고인데 '안 읽음' 문구가 뜬다"
+        # 제안서 작성 준비안 관심 등록(0068) — 마감 전 공고에만. 헤드리스 UA 는 /api/interest 가 기록하지 않고 ok 만 돌려주므로 운영 표가 더러워지지 않는다.
+        closed = pg.evaluate("!!document.querySelector('aside b') && document.querySelector('aside b').innerText.trim() === '마감'")
+        if closed:
+            assert "제안서 작성 준비안 관심 등록" not in txt, "마감 공고에 관심 등록이 뜬다"
+            interest = "마감 공고라 생략"
+        else:
+            assert "제안서 작성 준비안 관심 등록" in txt and "평가항목 대응표" in txt, "관심 등록 블록이 없다"
+            pg.get_by_role("button", name="관심 등록").click()
+            pg.get_by_role("status").wait_for(timeout=10000)
+            assert "관심이 등록되었습니다" in pg.evaluate("document.body.innerText"), "등록 뒤 안내가 없다"
+            assert pg.evaluate("document.querySelectorAll('[data-interest] button').length") == 0, "등록 뒤에도 버튼이 남아 있다"
+            interest = "관심 등록 ok"
         pg.screenshot(path=str(OUT / "_shot_notice_with.png"), full_page=True)
 
         pg.goto(f"{BASE}/notices/{WITHOUT}", wait_until="networkidle", timeout=60000)
@@ -56,7 +68,7 @@ def main() -> None:
         assert not pg2.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "390 가로 넘침"
         pg2.screenshot(path=str(OUT / "_shot_notice_390.png"), full_page=True)
         b.close()
-    print(f"ok notice: 레일 sticky · JSON-LD {s['jsonld']} · 첨부 직링크 {s2['files']} · 금지어 0 · 390 ok")
+    print(f"ok notice: 레일 sticky · JSON-LD {s['jsonld']} · 첨부 직링크 {s2['files']} · 금지어 0 · {interest} · 390 ok")
 
 
 if __name__ == "__main__":

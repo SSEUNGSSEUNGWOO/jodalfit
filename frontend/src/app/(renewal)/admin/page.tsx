@@ -120,6 +120,30 @@ export default async function AdminPage() {
         </Panel>
       </div>
 
+      <Panel className="mt-[14px]" data-admin="interest">
+        <PanelHead title="제안서 작성 준비안 관심" small="최근 30일 · 공고 상세 버튼 (0068)" summary={[<span key="n">노출은 버튼이 실제 화면에 들어온 수(봇 제외) · 클릭률은 노출 대비 · 업무구분은 노출과 같이 본다</span>]} />
+        <dl className="m-0 grid grid-cols-4 gap-x-5 gap-y-5 pt-5 max-sm:grid-cols-2">
+          {[
+            ["노출", String(d.interest.views), "버튼이 화면에 들어옴"],
+            ["관심 등록", String(d.interest.registers), d.interest.views ? `클릭률 ${pct(d.interest.registers / d.interest.views)}` : "노출 0"],
+            ["등록 회원", String(d.interest.registeredUsers), "로그인 상태 · 고유"],
+            ["비로그인 클릭", String(d.interest.anonRegisters), "가입 전 이탈한 관심"],
+          ].map(([k, v, h]) => (
+            <div key={k}>
+              <dt className="t-k">{k}</dt>
+              <dd className="m-0 mt-1 num text-[22px] font-semibold leading-none tracking-[-0.03em] text-ink">{v}</dd>
+              <dd className="m-0 mt-1 text-[12px] text-ink-mute">{h}</dd>
+            </div>
+          ))}
+        </dl>
+        <Table
+          head={["업무구분", "노출", "관심 등록"]}
+          rows={d.interest.byDiv.map((r) => [r.div, String(r.views), String(r.registers)])}
+          empty="아직 노출·등록이 없습니다."
+          numeric
+        />
+      </Panel>
+
       <Panel className="mt-[14px]" data-admin="feedback">
         <PanelHead title="의견·문의" small="최근 50 · /feedback" summary={[<span key="n">답장은 적힌 이메일로 직접 · 처리 표시는 Supabase feedback.handled_at</span>]} />
         <Table

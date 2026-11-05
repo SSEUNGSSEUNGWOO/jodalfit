@@ -40,6 +40,11 @@ export type Visits = {
   error: string | null;                                                       // 키 없음·API 실패 — 판에 한 줄로
 };
 
+/** 미출시 기능 수요 조사(0068 feature_interest, 최근 30일). views = 버튼이 화면에 들어온 수(봇 제외) — 클릭률의 분모.
+ *  registers = 클릭 전부, registeredUsers = 로그인 상태로 등록한 고유 회원, anonRegisters = 비로그인 클릭(가입 과정에서 이탈한 관심).
+ *  byDiv 는 관심 공고의 업무구분 — 클릭 수만 보면 노출이 많은 구분이 커 보이므로 노출과 같이 둔다. */
+export type Interest = { views: number; registers: number; registeredUsers: number; anonRegisters: number; byDiv: { div: string; views: number; registers: number }[] };
+
 export type AdminData = {
   todayKst: string;
   today: Funnel;
@@ -50,6 +55,7 @@ export type AdminData = {
   visits: Visits;
   conversions: Conversions;
   feedback: FeedbackRow[];               // 최근 50, 최신순 (0061)
+  interest: Interest;                    // 제안서 작성 준비안 관심 등록, 최근 30일 (0068)
   users: UserRow[];
   searches: SearchRow[];                 // 최근 7일, 최신순, 최대 200
   savedRows: SavedRow[];
@@ -134,7 +140,8 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   const weekStart = new Date(todayStart.getTime() - 6 * 86_400_000);
   const since = weekStart.toISOString();
 
-  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes, conversions] = await Promise.all([
+  const since30 = new Date(todayStart.getTime() - 29 * 86_400_000).toISOString();
+  const [logs, events, usersRes, saved, reviewed, visits, fb, helpfulRes, conversions, interestRes] = await Promise.all([
     sb.from("search_logs")
       .select("created_at,query,mode,matched_corp_nm,matched_bizrno,result_count,has_error,ip_hash,referer,latency_ms")
       .gte("created_at", since).eq("source", "user").order("created_at", { ascending: false }).limit(1000),
@@ -147,8 +154,10 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     sb.from("feedback").select("id,created_at,kind,message,email,page,handled_at").order("created_at", { ascending: false }).limit(50),
     sb.from("result_feedback").select("created_at,helpful").gte("created_at", since).eq("source", "user").limit(2000),
     fetchConversions(todayKst),
+    sb.from("feature_interest").select("event,bid_ntce_no,user_id").eq("feature", "proposal_prep").gte("created_at", since30).limit(5000),
   ]);
   const helpfulRows = (helpfulRes.data ?? []) as { created_at: string; helpful: boolean }[];
+  const interestRows = (interestRes.data ?? []) as { event: "view" | "register"; bid_ntce_no: string; user_id: string | null }[];
 
   // 로컬 개발 서버(check_*.py 검증)도 운영 DB 에 source='user' 로 남는다 — referer 가 localhost 면 사람이 아니다(2026-10-26 화면에서 확인)
   const logRows = ((logs.data ?? []) as LogRow[]).filter((r) => !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(r.referer ?? ""));
@@ -160,10 +169,28 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
   // 회사명·공고명은 공개 테이블에서 한 번에
   const norms = [...new Set(savedRows.map((r) => r.bizrno_norm))];
   const nos = [...new Set(reviewedRows.map((r) => r.bid_ntce_no))];
-  const [cos, nts] = await Promise.all([
+  const interestNos = [...new Set(interestRows.map((r) => r.bid_ntce_no))];
+  const [cos, nts, intNts] = await Promise.all([
     norms.length ? sb.from("companies").select("bizrno_norm,corp_nm").in("bizrno_norm", norms).order("embedded_at", { ascending: false, nullsFirst: false }) : Promise.resolve({ data: [] as { bizrno_norm: string; corp_nm: string }[] }),
     nos.length ? sb.from("bid_notices").select("bid_ntce_no,bid_ntce_nm").in("bid_ntce_no", nos) : Promise.resolve({ data: [] as { bid_ntce_no: string; bid_ntce_nm: string }[] }),
+    interestNos.length ? sb.from("bid_notices").select("bid_ntce_no,bsns_div_nm").in("bid_ntce_no", interestNos) : Promise.resolve({ data: [] as { bid_ntce_no: string; bsns_div_nm: string | null }[] }),
   ]);
+  const divOf = new Map<string, string>();
+  for (const n of (intNts.data ?? []) as { bid_ntce_no: string; bsns_div_nm: string | null }[]) if (!divOf.has(n.bid_ntce_no)) divOf.set(n.bid_ntce_no, n.bsns_div_nm || "—");
+  const byDivMap = new Map<string, { views: number; registers: number }>();
+  for (const r of interestRows) {
+    const d = divOf.get(r.bid_ntce_no) ?? "—";
+    const acc = byDivMap.get(d) ?? { views: 0, registers: 0 };
+    if (r.event === "view") acc.views += 1; else acc.registers += 1;
+    byDivMap.set(d, acc);
+  }
+  const interest: Interest = {
+    views: interestRows.filter((r) => r.event === "view").length,
+    registers: interestRows.filter((r) => r.event === "register").length,
+    registeredUsers: new Set(interestRows.filter((r) => r.event === "register" && r.user_id).map((r) => r.user_id)).size,
+    anonRegisters: interestRows.filter((r) => r.event === "register" && !r.user_id).length,
+    byDiv: [...byDivMap.entries()].map(([div, v]) => ({ div, ...v })).sort((a, b) => b.registers - a.registers || b.views - a.views),
+  };
   const nameOf = new Map<string, string>();
   for (const c of (cos.data ?? []) as { bizrno_norm: string; corp_nm: string }[]) if (!nameOf.has(c.bizrno_norm)) nameOf.set(c.bizrno_norm, c.corp_nm);
   const titleOf = new Map<string, string>();
@@ -213,6 +240,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     conversions,
     feedback: ((fb.data ?? []) as { id: number; created_at: string; kind: FeedbackRow["kind"]; message: string; email: string | null; page: string | null; handled_at: string | null }[])
       .map((r) => ({ id: r.id, at: r.created_at, kind: r.kind, message: r.message, email: r.email, page: r.page, handled: !!r.handled_at })),
+    interest,
     users: users
       .slice()
       .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
