@@ -14,7 +14,7 @@ BASE = os.environ.get("RESULTS_BASE", "http://localhost:3000")
 OUT = Path(__file__).resolve().parent; ROOT = OUT.parent.parent
 BANNED = ["낼 수 있", "왜 남았", "맞아요", "검토 인장", "하는 일", "넣으면", "안 맞아요", "이메일 구독", "매직링크", "회사 연결", "해드려요", "예요", "에요", "하세요", "주십시오"]
 CO = "1248177731"
-NO_INFO = "1138635250"  # (주)윈디자인 — 등록업종·공급물품 둘 다 없음 → 회사 기준 추천 불가, 키워드 검색창(2026-10-26). 업종이 생기면 바꾼다
+NO_INFO = "7928602590"  # 에이앤유 주식회사 — 등록업종·공급물품 둘 다 없고 조달청에도 없음 → 회사 기준 추천 불가, 키워드 검색창. 2026-11-06 교체: 전 기준(윈디자인)은 요청 시점 조달청 조회(_fetch_profile_now)로 업종 3·물품 4 가 들어왔다. 실패하면 조달청에 자료가 생긴 것 — 운영 API 로 error='등록업종·공급물품 정보가 없어' 가 나는 회사를 다시 찾는다
 NO_IND = "3208703862"   # 지안관리 주식회사 — 나라장터 등록업종 0건 (면허 확인불가 안내 줄 검사용). 2026-10-26 교체: 전 기준(유원디자인연구소)에 업종 10건이 들어왔다. 실패하면 업종이 생긴 것 — companies 에서 company_industries 행 없는 회사로 바꾼다
 
 def env(path, key):
@@ -148,14 +148,16 @@ def main():
         goto(pg, "/recommendations?q=%EA%B5%AD%EB%AC%B4%EC%A1%B0%EC%A0%95%EC%8B%A4"); pg.wait_for_selector("[data-title-matches]", timeout=30000); rules(pg)
         i = pg.evaluate("() => [...document.querySelectorAll('[data-title-matches] [data-sheet-row]')].map(r => r.textContent)")
         assert len(i) >= 1 and all("국무조정실" in x and "발주기관에 일치" in x for x in i), i[:3]
-        # 좁혀서 0건 — 공사 구분에는 국무조정실 공고가 없다 → "조건 해제" 링크로 되돌린다
-        goto(pg, "/recommendations?q=%EA%B5%AD%EB%AC%B4%EC%A1%B0%EC%A0%95%EC%8B%A4&div=%EA%B3%B5%EC%82%AC&due=7"); pg.wait_for_selector("[data-zero][data-filtered], [data-title-matches]", timeout=30000); rules(pg)
+        # 좁혀서 0건 — "국무조정실 정책연구 용역" 은 제목 일치·의미 유사 모두 용역이라 공사+7일로 좁히면 비어야 한다 → "조건 해제" 링크로 되돌린다.
+        # (2026-11-06 전에는 "국무조정실" 하나였는데 임베딩 교체·접두어 제거 뒤 의미 유사 20건에 공사가 섞여 0건이 안 나왔다 — 질의를 용역으로 못 박는다)
+        zq = urllib.parse.quote("국무조정실 정책연구 용역")
+        goto(pg, f"/recommendations?q={zq}&div=%EA%B3%B5%EC%82%AC&due=7"); pg.wait_for_selector("[data-zero][data-filtered], [data-title-matches]", timeout=30000); rules(pg)
         z = pg.evaluate("() => { const e = document.querySelector('[data-zero][data-filtered]'); return e && { txt: e.textContent, href: e.querySelector('a').getAttribute('href'), bar: !!document.querySelector('[data-kw-filters]') } }")
-        assert z and "조건 해제" in z["txt"] and z["href"] == "/recommendations?q=%EA%B5%AD%EB%AC%B4%EC%A1%B0%EC%A0%95%EC%8B%A4" and z["bar"], z
+        assert z and "조건 해제" in z["txt"] and z["href"] == f"/recommendations?q={zq}" and z["bar"], z
         # 골든타임 — 의견 창이 열린 사전규격을 DB 에서 하나 골라 그 품명으로 키워드 검색하면 사전규격 줄이 "골든타임" 으로 펼쳐져 있어야 한다
         if srv and (surl := env(ROOT / "backend/.env", "SUPABASE_URL")):
             now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
-            req = urllib.request.Request(f"{surl}/rest/v1/pre_specs?select=prdct_clsfc_no_nm&opnin_rgst_clse_dt=gt.{urllib.parse.quote(now)}&embedding_k=not.is.null&order=opnin_rgst_clse_dt.desc&limit=1", headers={"apikey": srv, "Authorization": f"Bearer {srv}"})
+            req = urllib.request.Request(f"{surl}/rest/v1/pre_specs?select=prdct_clsfc_no_nm&opnin_rgst_clse_dt=gt.{urllib.parse.quote(now)}&embedding_g=not.is.null&order=opnin_rgst_clse_dt.desc&limit=1", headers={"apikey": srv, "Authorization": f"Bearer {srv}"})
             with urllib.request.urlopen(req) as r: spec = json.loads(r.read())[0]["prdct_clsfc_no_nm"]
             goto(pg, f"/recommendations?q={urllib.parse.quote(spec)}"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
             g = pg.evaluate("() => { const e = document.querySelector('[data-leads][data-golden]'); return e && { golden: e.dataset.golden, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText, rows: e.querySelectorAll('ul li').length } }")
