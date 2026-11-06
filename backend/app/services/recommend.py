@@ -1086,8 +1086,10 @@ def _recommend_by_keywords(
     with ThreadPoolExecutor(max_workers=1) as ex:
         f_title = submit_timed(ex, "title_match", _search_title_matches, get_admin_client(), text, div, due)
         try:
+            # 접두어 없이 질의 원문(약어만 풀어서). "관심 영역: " 를 붙이던 틀은 키워드 채점표에서 KURE·Gemini 모두 손해였다
+            # (short hit@20 KURE 0.79→0.85, exp-2026-11-05-gemini-switch-validation.md). 2026-11-06 제거.
             with timed("embed_query"):
-                embedding = embed_texts([f"관심 영역: {expand_keywords(text)}"], kind="query")[0]
+                embedding = embed_texts([expand_keywords(text)], kind="query")[0]
         except Exception as e:
             # 임베딩 API(gemini) 장애·차단기 — 의미 유사 판만 비우고 제목 일치는 그대로 보낸다.
             # 회사 모드는 저장된 벡터를 써서 여기 안 걸린다. 차단기는 app/services/gemini_client.py.
@@ -1267,7 +1269,7 @@ def _recommend_by_company(
         from app.recommender.keyword_expand import expand_keywords  # lazy — 순환 import 회피
 
         with timed("embed_query"):
-            keyword_vec = embed_texts([f"관심 영역: {expand_keywords(keywords_text)}"], kind="query")[0]
+            keyword_vec = embed_texts([expand_keywords(keywords_text)], kind="query")[0]  # 접두어 없음 — 키워드 모드와 같은 이유(2026-11-06)
         blended = _blend_embeddings(raw_company_vec, keyword_vec)
         embedding_str = vector_to_pgvector_str(blended)
     else:
