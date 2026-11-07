@@ -144,8 +144,9 @@ def company_cols() -> str:
 
 
 def _name_core(name: str | None) -> str:
-    """회사명 비교용 핵심부 — 법인 표기·공백·구두점을 뗀다. '주식회사 광덕기업' → '광덕기업'."""
-    s = name or ""
+    """회사명 비교용 핵심부 — 법인 표기·공백·구두점을 뗀다. '주식회사 광덕기업' → '광덕기업'.
+    괄호 안도 뗀다: '주식회사 위더팀 (WEtheTEAM Inc.)' 을 '위더팀' 으로 찾던 검색이 괄호 속 영문 때문에 실패했다(2026-11-07, 30일 실패 검색 표본)."""
+    s = _re.sub(r"[\(（][^\)）]*[\)）]", "", name or "")
     for f in _LEGAL_FORMS:
         s = s.replace(f, "")
     return "".join(ch for ch in s if ch.isalnum()).lower()
@@ -817,6 +818,42 @@ def _fetch_profile_now(client, bizrno: str) -> bool:
     return bool(inds or sups)
 
 
+_REGISTER_TRIED_AT: dict[str, float] = {}
+
+
+def _register_company_now(norm: str) -> bool:
+    """companies 에 없는 사업자번호를 조달청에서 받아 그 자리에서 등록한다(기본정보·업종·물품·벡터). 등록되면 True.
+
+    30일 실패 검색 245건 중 75건(31%)이 사업자번호 입력이었다(2026-11-07). 매시 잡 register_searched_companies 가 같은 일을
+    한 시간 뒤에 했는데 사용자는 그때 없다. 조달청에 없는 번호는 company_lookup_attempts 에 not_found 로 남겨 7일간 다시 묻지 않는다
+    (잡과 같은 규칙). 호출은 회사당 3~4번(1~3초). 조달청 장애면 예전처럼 "회사를 찾을 수 없습니다" 로 간다.
+    """
+    now = time.time()
+    if now - _REGISTER_TRIED_AT.get(norm, 0.0) < _PROFILE_FETCH_TTL:
+        return False
+    _REGISTER_TRIED_AT[norm] = now
+    from jobs.register_searched_companies import RETRY_NOT_FOUND_DAYS, register  # lazy — app → jobs 의존은 _fetch_profile_now 와 같은 자리뿐
+
+    client = get_admin_client()
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=RETRY_NOT_FOUND_DAYS)).isoformat()
+        miss = (
+            client.table("company_lookup_attempts").select("bizrno_norm").eq("bizrno_norm", norm)
+            .eq("result", "not_found").gte("checked_at", cutoff).limit(1).execute().data
+        )
+        if miss:
+            return False
+        out = register(client, norm)
+        client.table("company_lookup_attempts").upsert(
+            {"bizrno_norm": norm, "result": out["result"], "checked_at": datetime.now(timezone.utc).isoformat()}, on_conflict="bizrno_norm"
+        ).execute()
+        logger.info("register_now bizrno=%s %s", norm, out)
+        return out["result"] == "registered"
+    except Exception as e:  # 조달청 장애·저장 실패 — 예전과 같은 오류 응답으로 내려간다
+        logger.warning("register_now skipped bizrno=%s: %s", norm, e)
+        return False
+
+
 def _fetch_eligibility(client, bid_keys: list[tuple[str, str]]) -> dict:
     """후보 공고들의 면허/지역 제한 한 번에 fetch.
 
@@ -1205,6 +1242,13 @@ def _recommend_by_company(
     }
     with timed("find"):
         company = find_company(query)
+    if not company:
+        # 10자리 사업자번호인데 companies 에 없다 — 조달청에서 지금 등록한다(옛날엔 매시 잡이 한 시간 뒤에 했고 사용자는 다시 오지 않았다).
+        digits = "".join(ch for ch in query if ch.isdigit())
+        if len(digits) == 10:
+            with timed("register_now"):
+                if _register_company_now(digits):
+                    company = find_company(digits)
     if not company:
         return not_found
     if company.get("is_restricted"):

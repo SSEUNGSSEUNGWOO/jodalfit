@@ -79,9 +79,9 @@ def register(client, norm: str) -> dict:
         upsert_rows("company_supply_products", sups, on_conflict="bizrno,dtl_prdct_clsfc_no", ignore_duplicates=True)
     updates, _ = process_chunk(client, [norm])
     if updates:
-        space = get_settings().embed_space
-        rpc = "update_company_embeddings_k" if space == "kure" else "update_company_embeddings"
-        upsert_embeddings_with_retry(client, rpc, updates)
+        from app.services.embedding import rpc_name  # 공간별 `_k`/`_g` — gemini 전환 뒤 openai RPC 로 보내 차원 불일치로 죽었다(2026-11-07)
+
+        upsert_embeddings_with_retry(client, rpc_name("update_company_embeddings", get_settings().embed_space), updates)
     return {"bizrno_norm": norm, "result": "registered", "corp_nm": row.get("corp_nm"),
             "n_industries": len(inds), "n_supplies": len(sups), "vector_built": bool(updates)}
 
