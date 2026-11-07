@@ -57,3 +57,12 @@ Gemini − KURE final@20: 7/1 **+0.073** · 8/1 **+0.052** · 9/1 **+0.066** · 
 - 남은 검증: 실사용자 질의 40개 블라인드(`docs/recommender/scripts/blind_keyword.py`, 접두어 뗀 상태로 두 모델). 전환 뒤 `sweep_score_scale` 로 배율 k 재훑기.
 - 전환 절차: Railway `EMBED_SPACE=gemini`+`GEMINI_API_KEY` → Vercel `NEXT_PUBLIC_EMBED_SPACE=gemini` → 리포 Variables `EMBED_SPACE=gemini` → check_*.py 9종 + Server-Timing.
   롤백은 같은 변수. KURE 열은 전환 뒤 한두 달 유지(단, 매시 잡이 Gemini 만 채우므로 KURE 열은 전환 시점에서 멈춘다 — 롤백하면 그 사이 공고는 재임베딩 필요).
+
+## 추가 (2026-11-07) — 전환 완료 + 키워드 블라인드
+- 2026-11-06 22:43 KST Railway·GitHub Variables, 11/07 새벽 Vercel 까지 `gemini` 전환. 첫 3시간 5xx 0, 캐시 미스 p50 0.88초(전 0.95), 매시 잡 Gemini 임베딩 416건 32초.
+  같은 날 키워드 질의 "관심 영역: " 접두어 제거(`2c96b74`).
+- **키워드 블라인드 40문항**(`docs/recommender/scripts/blind_keyword.py`, 최근 90일 실사용자 질의, 좌우 무작위, 심사 = Codex CLI 가 "입찰 검토 실무자" 역할로,
+  모델 정체 숨김): **Gemini 28 · KURE 3 · 무승부 9.** KURE 승 3 은 "여수"·"거창lt"·"(주)서연건설"(지역명·회사명), 무승부 9 도 대부분 회사명·지역명·공고번호.
+  채점표(사업명 → 전환 공고 찾기)에선 KURE 근소 우위였지만 실사용자의 짧은 주제어("기념품 제작", "하수처리", "nvida")에선 Gemini 가 목록 전체를 주제에 맞춘다.
+  LLM 심사 편향 가능성은 있으나 28:3 폭을 설명할 정도는 아니다. 사람 확인은 Q14·Q35·Q25·Q13 부터.
+- 결론: 전환 조건(회사 모드 4시점 전 칸 상승 · 운영 경로 재현 · 키워드 블라인드) 모두 충족. 남은 것 = 점수표 배율 k(첫 읽기 0.4, 운영 경로 특징으로 재확인 중).
