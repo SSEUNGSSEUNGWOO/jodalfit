@@ -19,6 +19,23 @@ from __future__ import annotations
 import re
 from datetime import date
 
+
+def _bonus_scale() -> float:
+    """settings.reco_bonus_scale — 유사도를 뺀 모든 보너스에 곱한다(2026-11-07). 설정을 못 읽는 자리(순수 점검)는 1.0."""
+    try:
+        from app.core.config import get_settings
+
+        return float(get_settings().reco_bonus_scale)
+    except Exception:
+        return 1.0
+
+
+BONUS_SCALE = _bonus_scale()  # 하네스가 --bonus-scale 로 덮어쓴다(score.BONUS_SCALE)
+
+
+def _p(points: float) -> float:
+    return round(points * BONUS_SCALE, 1)
+
 TOKEN_SPLIT = re.compile(r"[\s,·/\-]+")
 
 
@@ -46,11 +63,11 @@ def score_notice(
 
     instt = (r.get("dmnd_instt_nm") or r.get("ntce_instt_nm") or "").strip()
     if instt and instt in company_institutions:
-        breakdown.append({"key": "institution", "label": "재출현 기관", "points": 12, "instt": instt})
+        breakdown.append({"key": "institution", "label": "재출현 기관", "points": _p(12), "instt": instt})
     elif instt and peer_instt_counts and peer_instt_counts.get(instt, 0) >= 2:
         # 재출현(+50)과 스택 방지 — 미거래 기관만. 1건짜리 기관은 노이즈라 2건+만,
         # 점수는 재출현(50)보다 낮은 보조 시그널로
-        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": 9, "peer_awards": peer_instt_counts[instt]})
+        breakdown.append({"key": "peer_institution", "label": "유사 회사 수주 기관", "points": _p(9), "peer_awards": peer_instt_counts[instt]})
 
     if instt and instt_stats and instt in instt_stats:
         st = instt_stats[instt]
@@ -58,35 +75,35 @@ def score_notice(
         if total >= 10:
             repeat_ratio = 1 - (st.get("distinct_winners") or 0) / total
             if repeat_ratio >= 0.5:
-                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": -3, "repeat_ratio": round(repeat_ratio, 2)})
+                breakdown.append({"key": "instt_closed", "label": "고정 거래처 경향", "points": _p(-3), "repeat_ratio": round(repeat_ratio, 2)})
             # '신규 진입 열린 기관'(repeat_ratio ≤ 0.25, +15) 은 낙찰 예측력이 없어(lift 0.79) 제거
 
     sido = company_rgn.split()[0] if company_rgn else None
     if sido and r.get("prtcpt_psbl_rgn_nm") and sido in r["prtcpt_psbl_rgn_nm"]:
-        breakdown.append({"key": "region", "label": "지역 매칭", "points": 9, "rgn": sido})
+        breakdown.append({"key": "region", "label": "지역 매칭", "points": _p(9), "rgn": sido})
 
     if company_amt_median and company_amt_median > 0:
         price = r.get("presmpt_prce") or r.get("asign_bdgt_amt")
         if price and price > 0:
             ratio = price / company_amt_median
             if 0.7 <= ratio <= 1.5:
-                breakdown.append({"key": "budget", "label": "예산대 매칭", "points": 2, "ratio": round(ratio, 2)})
+                breakdown.append({"key": "budget", "label": "예산대 매칭", "points": _p(2), "ratio": round(ratio, 2)})
             elif ratio < 0.1 or ratio > 10.0:
-                breakdown.append({"key": "budget_mismatch", "label": "예산대 괴리", "points": -2, "ratio": round(ratio, 2)})
+                breakdown.append({"key": "budget_mismatch", "label": "예산대 괴리", "points": _p(-2), "ratio": round(ratio, 2)})
 
     if company_terms:
         notice_terms = _tokenize(r.get("bidprc_psbl_indstryty_nm")) | _tokenize(r.get("bid_ntce_nm"))
         overlap = sorted(company_terms & notice_terms)
         if overlap:
             pts = min(3 * len(overlap), 9)
-            breakdown.append({"key": "industry_tokens", "label": "업종·물품 일치", "points": pts, "matched": overlap[:5]})
+            breakdown.append({"key": "industry_tokens", "label": "업종·물품 일치", "points": _p(pts), "matched": overlap[:5]})
 
     clse = r.get("bid_clse_date")
     if clse:
         clse_dt = date.fromisoformat(clse) if isinstance(clse, str) else clse
         days_left = (clse_dt - today).days
         if days_left <= 1:
-            breakdown.append({"key": "deadline_urgent", "label": "마감 임박", "points": -9, "days_left": days_left})
+            breakdown.append({"key": "deadline_urgent", "label": "마감 임박", "points": _p(-9), "days_left": days_left})
         # '검토 여유'(6~14일, +10) 은 낙찰 예측력이 없어(lift 0.75) 제거
 
     return sum(b["points"] for b in breakdown), breakdown

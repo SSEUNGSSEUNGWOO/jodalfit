@@ -435,7 +435,11 @@ def main() -> None:
     ap.add_argument("--positives", choices=["winner", "participant"], default="winner", help="정답: 낙찰만 / 입찰 참가(낙찰 포함)")
     ap.add_argument("--space", choices=["openai", "kure", "gemini"], default=get_settings().embed_space, help="벡터 공간: openai(embedding) / kure(embedding_k, 0045) / gemini(embedding_g, 0067)")
     ap.add_argument("--embeddings", default=None, help="로컬 모델 임베딩 npz (embed_local.py) — 공고·업종 벡터를 DB/OpenAI 대신 이걸로 (모델 비교 실험)")
+    ap.add_argument("--bonus-scale", type=float, default=None, help="점수표 보너스 배율(settings.reco_bonus_scale 덮어쓰기) — sweep_score_scale 로 고른 k 의 하네스 확인용")
     args = ap.parse_args()
+    if args.bonus_scale is not None:
+        import app.recommender.score as _score_mod
+        _score_mod.BONUS_SCALE = args.bonus_scale
     ablate = resolve_ablate(args.ablate)
     global EMB_STORE, EMB_SPACE, EMB_COL
     EMB_SPACE = args.space; EMB_COL = emb_col(args.space)

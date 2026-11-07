@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # 추천 후보 검색 방식 — dense(벡터 1채널) / hybrid(dense + 업종 허용 공고 채널, 0044 필요).
     # 근거: docs/recommender/exp-2026-10-14-retrieval.md. 문제 시 dense 로 즉시 롤백.
     reco_retrieval: Literal["dense", "hybrid"] = "hybrid"
+    # 점수표 보너스 배율 — 유사도(0~100) 위에 더하는 기관·지역·예산·토큰·마감 점수를 한 번에 곱한다. 항목 간 비율은 score.py 그대로.
+    # 임베딩 모델이 바뀌면 유사도가 퍼진 폭이 달라 같은 보너스의 상대 세기가 변한다(exp-2026-10-15-score-kure.md). 1.0 = KURE 때 표.
+    # gemini 전환 뒤 특징 파일 훑기(jobs.sweep_score_scale, 2026-11-07)에서 0.45 가 꼭짓점 — 하네스 전후 비교 뒤 바꾼다. 롤백 = 이 값.
+    reco_bonus_scale: float = 1.0
 
     # 임베딩 공간 — openai(text-embedding-3-small 1536d, `embedding` 컬럼) /
     # kure(KURE-v1 1024d, `embedding_k` 컬럼, 0045) / gemini(gemini-embedding-001 768d, `embedding_g` 컬럼, 0067).
