@@ -10,9 +10,11 @@ const admin = createClient(url, key, { auth: { persistSession: false, autoRefres
 const email = `smoke+${Date.now()}@jodalfit.co.kr`, password = "smoke-pass-12345";
 const meta = { terms_version: "2026-10-19", privacy_version: "2026-10-19", marketing_opt_in: true, consented_at: new Date().toISOString() };
 
-async function hit(path) {
-  const r = await fetch(BASE + path, { redirect: "manual" });
-  return { status: r.status, location: r.headers.get("location"), cookie: r.headers.get("set-cookie") ?? "" };
+async function hit(path, { cookie, method = "GET", body } = {}) {
+  const r = await fetch(BASE + path, { redirect: "manual", method, body, headers: { ...(cookie ? { cookie } : {}), ...(body ? { "content-type": "application/json" } : {}) } });
+  const set = r.headers.getSetCookie?.() ?? [];
+  // jar: 이 응답이 심은 쿠키를 다음 요청의 Cookie 헤더로 — 세션이 필요한 /welcome·API 를 같은 사용자로 친다
+  return { status: r.status, location: r.headers.get("location"), cookie: set.join("; "), jar: set.map((c) => c.split(";")[0]).join("; "), text: () => r.text() };
 }
 
 let userId;
@@ -20,19 +22,30 @@ try {
   // 1) 가입 확인 링크 — 미확인 사용자 생성 → signup 링크 → /auth/confirm → next 로 302 + sb- 쿠키
   const { data: created, error: e1 } = await admin.auth.admin.createUser({ email, password, email_confirm: false, user_metadata: meta });
   if (e1) throw e1; userId = created.user.id;
-  const { data: l1, error: e2 } = await admin.auth.admin.generateLink({ type: "signup", email, password, options: { redirectTo: `${BASE}/auth/confirm?next=%2Fdev%2Ffoundation` } });
+  const { data: l1, error: e2 } = await admin.auth.admin.generateLink({ type: "signup", email, password, options: { redirectTo: `${BASE}/auth/confirm?next=%2Fcompanies%2F1248177731` } });
   if (e2) throw e2;
-  const r1 = await hit(`/auth/confirm?next=%2Fdev%2Ffoundation&token_hash=${l1.properties.hashed_token}&type=signup`);
+  const r1 = await hit(`/auth/confirm?next=%2Fcompanies%2F1248177731&token_hash=${l1.properties.hashed_token}&type=signup`);
   if (!(r1.status >= 300 && r1.status < 400)) throw new Error(`confirm(signup) status ${r1.status}`);
-  // 저장 회사 0곳 + next 에 회사 없음 → /welcome?next=… (2026-10-28). 회사 페이지로 돌아가는 next 면 그대로.
-  if (!r1.location?.endsWith("/welcome?next=%2Fdev%2Ffoundation")) throw new Error(`confirm(signup) location ${r1.location}`);
+  // 저장 회사 0곳 → /welcome?next=… (2026-10-28). next 에 회사가 있어도 간다(2026-11-09 — 그 전엔 회사 페이지로 바로 보냈다). /welcome 이 그 회사를 체크로 저장하게 한다.
+  if (!r1.location?.endsWith("/welcome?next=%2Fcompanies%2F1248177731")) throw new Error(`confirm(signup) location ${r1.location}`);
   if (!/sb-.*-auth-token/.test(r1.cookie)) throw new Error("confirm(signup) 세션 쿠키 없음");
+  // 1b) /welcome 은 next 의 회사(1248177731)를 "방금 조회한 회사" 체크로 내민다(data-suggested=1, 2026-11-09). 메일 체크 API 가 동작하고,
+  //     저장 API 로 그 회사를 넣은 뒤엔 /welcome 이 next 로 바로 보낸다(저장 회사 1곳).
+  const w1 = await hit("/welcome?next=%2Fcompanies%2F1248177731", { cookie: r1.jar });
+  const html = await w1.text();
+  if (w1.status !== 200 || !html.includes('data-suggested="1"') || !html.includes("data-save-suggested")) throw new Error(`welcome 추정 회사 없음: status ${w1.status}`);
+  const m1 = await hit("/api/consent/marketing", { cookie: r1.jar, method: "POST", body: JSON.stringify({ on: false }) });
+  if (m1.status !== 200) throw new Error(`consent/marketing ${m1.status}`);
+  const s1 = await hit("/api/saved/companies", { cookie: r1.jar, method: "POST", body: JSON.stringify({ nm: "1248177731" }) });
+  if (s1.status !== 200) throw new Error(`saved/companies ${s1.status}`);
+  const w2 = await hit("/welcome?next=%2Fcompanies%2F1248177731", { cookie: r1.jar });
+  if (!w2.location?.endsWith("/companies/1248177731")) throw new Error(`저장 뒤 welcome 이 next 로 안 감: ${w2.status} ${w2.location}`);
   // 2) 같은 링크 재사용 → /login?error=link
-  const r1b = await hit(`/auth/confirm?next=%2Fdev%2Ffoundation&token_hash=${l1.properties.hashed_token}&type=signup`);
+  const r1b = await hit(`/auth/confirm?next=%2Fcompanies%2F1248177731&token_hash=${l1.properties.hashed_token}&type=signup`);
   if (!r1b.location?.includes("/login?error=link")) throw new Error(`재사용 링크가 막히지 않음: ${r1b.location}`);
-  // 3) 동의 기록 — 트리거
+  // 3) 동의 기록 — 트리거가 user_metadata 로 만든 행. marketing_opt_in 은 1b 의 API 가 true → false 로 바꿨어야 한다
   const { data: consent } = await admin.from("user_consents").select("*").eq("user_id", userId).maybeSingle();
-  if (!consent || consent.terms_version !== meta.terms_version || consent.marketing_opt_in !== true) throw new Error(`user_consents 불일치: ${JSON.stringify(consent)}`);
+  if (!consent || consent.terms_version !== meta.terms_version || consent.marketing_opt_in !== false) throw new Error(`user_consents 불일치: ${JSON.stringify(consent)}`);
   // 3b) authenticated RLS — 본인 동의 읽기는 되고, 잠긴 컬럼 수정은 막힌다
   const anon = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
   const { error: eIn } = await anon.auth.signInWithPassword({ email, password });
@@ -52,7 +65,7 @@ try {
   // 6) 로그아웃 라우트
   const r4 = await hit("/logout");
   if (!(r4.status >= 300 && r4.status < 400) || !r4.location?.includes("/?logout=1")) throw new Error(`logout ${r4.status} ${r4.location}`);
-  console.log("ok auth smoke: signup confirm → next + cookie · reuse blocked · consents row · recovery → /reset/new · bogus next blocked · logout · RLS own read · immutable");
+  console.log("ok auth smoke: signup confirm → /welcome + cookie · welcome 추정 회사 · 메일 체크 API · 저장 뒤 next · reuse blocked · consents row · recovery → /reset/new · bogus next blocked · logout · RLS own read · immutable");
 } finally {
-  if (userId) await admin.auth.admin.deleteUser(userId);
+  if (userId) { await admin.from("saved_companies").delete().eq("user_id", userId); await admin.auth.admin.deleteUser(userId); }
 }

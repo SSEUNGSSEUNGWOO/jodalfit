@@ -1,6 +1,7 @@
 // frontend/src/app/(renewal)/consent/page.tsx
 // 소셜 가입 마무리 한 판(2026-10-28) — 가입 폼을 안 거친 계정(구글·네이버 OAuth)은 user_consents 가 ''/'' 로 생긴다(0052 트리거).
 // auth/callback 이 lib/after-auth 로 여기 보낸다. 동의(필수)와 우리 회사 저장(선택)을 한 화면에 — 저장 회사가 이미 있으면 회사 칸은 뺀다.
+// 회사 칸은 next 의 회사(방금 조회한 회사)를 체크 하나로 저장하게 한다(lib/suggested-company, 2026-11-09) — 없을 때만 검색창.
 // 이미 동의한 계정이면 next 로. 비로그인은 로그인으로. 이메일 가입은 가입 폼에서 동의를 받으므로 여기 안 온다(/welcome 만).
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -8,6 +9,7 @@ import { Narrow } from "@/components/Narrow";
 import { getSessionUser } from "@/lib/auth";
 import { safeNext } from "@/lib/safe-next";
 import { getSavedCompanyKeys } from "@/lib/saved";
+import { suggestedCompanyFromNext } from "@/lib/suggested-company";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { ConsentForm } from "./ConsentForm";
 
@@ -22,12 +24,13 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
     getSavedCompanyKeys(),
   ]);
   if (data && data.terms_version !== "") redirect(next);
+  const suggested = saved.size === 0 ? await suggestedCompanyFromNext(next) : null;
   return (
     <Narrow title="가입 마무리">
       <p data-consent className="m-0 mb-1 text-[14.5px] leading-[1.75] text-ink-body">
         <b className="font-semibold text-ink">{user.email}</b> 계정으로 처음 로그인했습니다. 아래 두 항목에 동의하면 바로 시작합니다.
       </p>
-      <ConsentForm next={next} showCompany={saved.size === 0} />
+      <ConsentForm next={next} showCompany={saved.size === 0} suggested={suggested} />
     </Narrow>
   );
 }
