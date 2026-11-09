@@ -33,12 +33,12 @@ def fetch(conn) -> dict:
     one = lambda q: conn.execute(q).fetchone()[0]
     active = one("""select count(*) from bid_notices
                      where bid_clse_date between current_date and current_date + 90
-                       and embedding_k is not null
+                       and embedding_g is not null
                        and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > now())""")
     spec_open = one("select count(*) from pre_specs where opnin_rgst_clse_dt > now()")
     spec_soon = one("""select count(*) from pre_specs
                         where opnin_rgst_clse_dt between now() and now() + interval '2 day'""")
-    companies = one("select count(*) from companies where embedding_k is not null and optout_at is null")
+    companies = one("select count(*) from companies where embedding_g is not null and optout_at is null")
     # 의견 마감이 가장 임박한 사전규격 — 입구에서 '지금 할 수 있는 일'을 보여주는 줄
     specs = [dict(nm=r[0], instt=r[1], clse=r[2], amt=r[3]) for r in conn.execute(
         """select prdct_clsfc_no_nm, rl_dminstt_nm, opnin_rgst_clse_dt, asign_bdgt_amt
@@ -56,7 +56,7 @@ def fetch(conn) -> dict:
                     coalesce(presmpt_prce, asign_bdgt_amt) amt
                from bid_notices
               where bid_clse_date between current_date and current_date + 7
-                and embedding_k is not null and bid_ntce_nm is not null
+                and embedding_g is not null and bid_ntce_nm is not null
                 and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > now())
               order by bid_clse_date, bid_ntce_no desc
               limit 200) t
@@ -71,7 +71,7 @@ def fetch(conn) -> dict:
                     bid_ntce_date, bid_clse_date, coalesce(presmpt_prce, asign_bdgt_amt) amt
                from bid_notices
               where bid_ntce_date >= current_date - (case when %s then 0 else 3 end)
-                and bid_ntce_nm is not null and embedding_k is not null
+                and bid_ntce_nm is not null and embedding_g is not null
                 -- 갓 올라왔는데 이미 마감인 공고가 있다(재공고·정정). 거르지 않으면 'D--1' 이 찍힌다.
                 and bid_clse_date >= current_date
                 and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > now())
@@ -84,7 +84,7 @@ def fetch(conn) -> dict:
     cos = [dict(nm=r[0], rgn=r[1], n=r[2]) for r in conn.execute(
         """select c.corp_nm, coalesce(c.rgn_nm,''), count(i.indstryty_cd)
              from companies c left join company_industries i on i.bizrno = c.bizrno
-            where c.embedding_k is not null and c.optout_at is null and c.corp_nm is not null
+            where c.embedding_g is not null and c.optout_at is null and c.corp_nm is not null
             group by 1,2 having count(i.indstryty_cd) > 0
             order by count(i.indstryty_cd) desc, c.corp_nm limit 600""")]
     return dict(active=active, spec_open=spec_open, spec_soon=spec_soon, companies=companies,

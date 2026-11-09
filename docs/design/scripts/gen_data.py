@@ -55,7 +55,7 @@ def funnel(conn, prof, events, n_res):
     if by.get("total") is None:  # 0057 미적용 환경 — 같은 정의로 직접 센다
         by["total"] = conn.execute("""select count(*) from bid_notices
                                        where bid_clse_date between current_date and current_date + 90
-                                         and embedding_k is not null
+                                         and embedding_g is not null
                                          and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > now())""").fetchone()[0]
     f = dict(total=by["total"], candidate=by.get("candidate"), qualified=by.get("qualified"), result=n_res)
     assert all(v is not None for v in f.values()), f
@@ -65,7 +65,7 @@ def funnel(conn, prof, events, n_res):
     # 떨어졌는지 알 수 없으므로(후보 풀 id 를 돌려주지 않는다) '추린 200 밖' 과 '업종 불일치'로만 나눈다.
     rows = conn.execute("""select bid_ntce_nm, bidprc_psbl_indstryty_nm from bid_notices
                             where bid_clse_date between current_date and current_date + 90
-                              and embedding_k is not null and bid_ntce_nm is not null
+                              and embedding_g is not null and bid_ntce_nm is not null
                               and (bid_qlfct_rgst_dt is null or bid_qlfct_rgst_dt > now())""").fetchall()
     names = prof["names"]
     rnd = random.Random(7)
