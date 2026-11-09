@@ -157,11 +157,13 @@ def main():
         # 골든타임 — 의견 창이 열린 사전규격을 DB 에서 하나 골라 그 품명으로 키워드 검색하면 사전규격 줄이 "골든타임" 으로 펼쳐져 있어야 한다
         if srv and (surl := env(ROOT / "backend/.env", "SUPABASE_URL")):
             now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
-            req = urllib.request.Request(f"{surl}/rest/v1/pre_specs?select=prdct_clsfc_no_nm&opnin_rgst_clse_dt=gt.{urllib.parse.quote(now)}&embedding_g=not.is.null&order=opnin_rgst_clse_dt.desc&limit=1", headers={"apikey": srv, "Authorization": f"Bearer {srv}"})
+            # 규격서 파일이 있는 행을 고른다(86%) — 행 제목이 그 파일을 새 탭으로 여는 링크여야 한다(0070, 2026-11-09). 파일 없는 행은 글줄.
+            req = urllib.request.Request(f"{surl}/rest/v1/pre_specs?select=prdct_clsfc_no_nm&opnin_rgst_clse_dt=gt.{urllib.parse.quote(now)}&embedding_g=not.is.null&spec_doc_file_url_1=not.is.null&order=opnin_rgst_clse_dt.desc&limit=1", headers={"apikey": srv, "Authorization": f"Bearer {srv}"})
             with urllib.request.urlopen(req) as r: spec = json.loads(r.read())[0]["prdct_clsfc_no_nm"]
             goto(pg, f"/recommendations?q={urllib.parse.quote(spec)}"); pg.wait_for_selector("[data-res]", timeout=30000); rules(pg)
-            g = pg.evaluate("() => { const e = document.querySelector('[data-leads][data-golden]'); return e && { golden: e.dataset.golden, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText, rows: e.querySelectorAll('ul li').length } }")
+            g = pg.evaluate("() => { const e = document.querySelector('[data-leads][data-golden]'); const a = e && e.querySelector('ul li a[data-spec-doc]'); return e && { golden: e.dataset.golden, open: e.querySelector('button').getAttribute('aria-expanded'), txt: e.innerText, rows: e.querySelectorAll('ul li').length, doc: a && { href: a.getAttribute('href'), target: a.getAttribute('target') } } }")
             assert g and int(g["golden"]) >= 1 and g["open"] == "true" and "골든타임" in g["txt"] and g["rows"] >= 1, (spec, g)
+            assert g["doc"] and g["doc"]["href"].startswith("http") and g["doc"]["target"] == "_blank", (spec, g)
             pg.screenshot(path=str(OUT / "_shot_results_golden.png"), full_page=True)
         # 오타 등급으로만 잡힌 회사(2026-10-27) — "한종산업개빌" 은 difflib 0.83 으로 CO 에 잡힌다. 머리 아래 "가장 가까운 이름" 줄 + 번호 검색 버튼. 정확 매칭(CO 번호)에는 없다.
         goto(pg, "/recommendations?company=%ED%95%9C%EC%A2%85%EC%82%B0%EC%97%85%EA%B0%9C%EB%B9%8C"); pg.wait_for_selector("[data-scene]", timeout=10000)

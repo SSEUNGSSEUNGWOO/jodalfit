@@ -108,6 +108,8 @@ export interface PreSpecRecommendation {
   rl_dminstt_nm: string | null;
   prdct_dtl_list: string | null;
   ref_no: string | null;
+  /** 규격서 첨부파일 URL(0070 부터 RPC 가 돌려준다). 사전규격은 상세 페이지 URL 이 없어 행의 링크는 이 파일이다. 캐시된 옛 응답엔 없다. */
+  spec_doc_file_url_1?: string | null;
   base_similarity: number;
   score: number;
 }

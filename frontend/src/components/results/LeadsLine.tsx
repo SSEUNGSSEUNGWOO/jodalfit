@@ -72,9 +72,16 @@ export function LeadsLine({ preSpecs, orderPlans }: { preSpecs: PreSpecRecommend
             <ul className="mt-1.5">
               {preSpecs.map((p) => {
                 const w = when(p.opnin_rgst_clse_dt, now);
+                // 사전규격은 우리 사이트에도 나라장터에도 상세 페이지 URL 이 없다 — 규격서 파일(0070)이 있으면 제목이 그 파일을 연다.
+                const nm = p.prdct_clsfc_no_nm || "—";
+                const instt = <span className="ml-2 text-[12px] text-ink-g">{p.rl_dminstt_nm || p.order_instt_nm || "—"}</span>;
                 return (
                   <li key={p.bf_spec_rgst_no} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-3.5 border-b border-rule-2 py-2 max-sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <span className="truncate text-[13.5px]">{p.prdct_clsfc_no_nm || "—"}<span className="ml-2 text-[12px] text-ink-g">{p.rl_dminstt_nm || p.order_instt_nm || "—"}</span></span>
+                    {p.spec_doc_file_url_1
+                      ? <a href={p.spec_doc_file_url_1} target="_blank" rel="noopener" title="규격서 파일 열기" data-spec-doc className="truncate text-[13.5px] text-ink">
+                          <u className="no-underline border-b border-line hover:border-orange">{nm}</u>{instt}
+                        </a>
+                      : <span className="truncate text-[13.5px]">{nm}{instt}</span>}
                     <span className={cn("min-w-[88px] text-right text-[13px] font-[650]", w.hot ? "text-orange-ink" : "text-ink")}>{w.text}</span>
                     <span className="num min-w-[62px] text-right text-[13px] text-ink-g max-sm:hidden">{won(p.asign_bdgt_amt)}</span>
                   </li>
