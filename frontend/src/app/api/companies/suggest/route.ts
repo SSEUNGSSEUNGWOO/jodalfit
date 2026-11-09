@@ -6,6 +6,7 @@
 // 비공개 요청(optout_at) 회사는 애초에 제외한다.
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase-server";
+import { EMB_COL } from "@/lib/embed-space";
 
 export type CompanySuggestion = { nm: string; rgn: string; industries: number };
 
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     .select("bizrno,corp_nm,rgn_nm")
     .ilike("corp_nm", pattern)
     .is("optout_at", null)
-    .not("embedding_k", "is", null)
+    .not(EMB_COL, "is", null)
     .order("contract_count", { ascending: false, nullsFirst: false })
     .limit(LIMIT * 3); // 같은 이름이 하이픈 유무로 두 행인 경우가 있다 — 넉넉히 받아 이름으로 접는다
   if (error || !data?.length) return NextResponse.json<CompanySuggestion[]>([]);

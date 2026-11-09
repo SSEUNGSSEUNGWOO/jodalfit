@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase as getSessionSupabase } from "@/lib/supabase/server";
 import { getServerSupabase as getPublicSupabase } from "@/lib/supabase-server";
+import { EMB_COL } from "@/lib/embed-space";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { nm?: unknown } | null;
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
 
   const pub = getPublicSupabase();
   const digits = nm.replace(/-/g, "");
-  let query = pub.from("companies").select("bizrno_norm,corp_nm").is("optout_at", null).not("embedding_k", "is", null);
+  let query = pub.from("companies").select("bizrno_norm,corp_nm").is("optout_at", null).not(EMB_COL, "is", null);
   query = /^\d{10}$/.test(digits) ? query.eq("bizrno_norm", digits) : query.eq("corp_nm", nm);
   const { data } = await query.order("contract_count", { ascending: false, nullsFirst: false }).limit(1);
   const co = data?.[0] as { bizrno_norm: string; corp_nm: string } | undefined;

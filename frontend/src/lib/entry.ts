@@ -5,6 +5,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "./supabase-server";
 import { kstDate } from "./format";
+import { EMB_COL } from "./embed-space";
 
 export type EntryNotice = { no: string; nm: string; instt: string; clse: string | null; amt: number | null }; // no → /notices/[no] 링크
 export type EntryData = {
@@ -44,9 +45,9 @@ async function getEntryDataUncached(): Promise<EntryData> {
   const [activeR, specR, coR, todayR] = await Promise.all([
     sb.from("bid_notices").select("*", head)
       .gte("bid_clse_date", ymd(today)).lte("bid_clse_date", ymd(horizon))
-      .not("embedding_k", "is", null).or(qlfctOk),
+      .not(EMB_COL, "is", null).or(qlfctOk),
     sb.from("pre_specs").select("*", head).gt("opnin_rgst_clse_dt", nowIso),
-    sb.from("companies").select("*", head).not("embedding_k", "is", null).is("optout_at", null),
+    sb.from("companies").select("*", head).not(EMB_COL, "is", null).is("optout_at", null),
     sb.from("bid_notices").select("*", head).eq("bid_ntce_date", ymd(today)),
   ]);
 
@@ -60,7 +61,7 @@ async function getEntryDataUncached(): Promise<EntryData> {
     .select("bid_ntce_no,bid_ntce_nm,dmnd_instt_nm,ntce_instt_nm,bid_ntce_date,bid_clse_date,presmpt_prce,asign_bdgt_amt")
     .gte("bid_ntce_date", ymd(since))
     .gte("bid_clse_date", ymd(today))
-    .not("embedding_k", "is", null)
+    .not(EMB_COL, "is", null) // 운영 공간의 벡터 열 — embedding_k 고정이던 때 Gemini 전환(11/06) 뒤 새 공고가 전부 빠져 띠가 비었다(2026-11-09)
     .not("bid_ntce_nm", "is", null)
     .or(qlfctOk)
     .order("bid_ntce_date", { ascending: false })
