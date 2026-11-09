@@ -60,7 +60,7 @@ export default async function AdminPage() {
       <details id="admin-problems" data-admin-problems className="mt-[14px] scroll-mt-6 rounded-[12px] border border-hair bg-panel px-5 py-4">
         <summary className="cursor-pointer text-[14px] font-semibold text-ink">문제가 기록된 검색 보기 · 최근 완료 7일 · 최신 30건</summary>
         <Table head={["시각", "검색어", "모드", "기록된 문제"]}
-          rows={d.problemQueries.map((r) => [t(r.at), r.query, r.mode, r.errorMsg ?? "상세 사유 없음"])}
+          rows={d.problemQueries.map((r) => [t(r.at), r.query, r.mode, `${r.errorMsg ?? "상세 사유 없음"}${r.fallback ? " · 키워드 결과로 이어짐" : ""}`])}
           empty={d.overview.searchesAvailable ? "이 기간에 기록된 검색 문제가 없습니다." : "검색 기록을 모두 읽지 못했습니다."} />
       </details>
 

@@ -10,7 +10,7 @@ import { fetchConversions } from "./admin-conversion-server";
 import type { Conversions } from "./admin-conversion";
 import type { User } from "@supabase/supabase-js";
 import { fetchAdminPulse } from "./admin-pulse-server";
-import { isExcludedMember, readAdminRows, summarizeMembers, summarizeSearches, type AdminOverview } from "./admin-summary";
+import { fallbackKeys, isExcludedMember, readAdminRows, searchKey, summarizeMembers, summarizeSearches, type AdminOverview } from "./admin-summary";
 
 /** 관리자 — 환경변수 ADMIN_EMAILS(쉼표 구분). 비어 있으면 아무도 아니다(운영에서 빠뜨려도 열리지 않는다). */
 export function isAdmin(email: string | null | undefined): boolean {
@@ -29,6 +29,7 @@ export function maskEmail(email: string | null | undefined): string {
 export type SearchRow = {
   at: string; mode: string; query: string; matched: string | null; matchedBizrno: string | null;
   results: number | null; error: boolean; errorMsg: string | null; ip: string; referer: string | null;
+  fallback: boolean; // 회사를 못 찾았지만 화면이 키워드로 넘겨 결과를 본 검색(admin-summary.fallbackKeys) — 막힌 검색이 아니다
 };
 export type UserRow = { id: string; email: string; createdAt: string; lastSignInAt: string | null; confirmed: boolean; saved: number; reviewed: number };
 export type SavedRow = { at: string; user: string; bizrnoNorm: string; name: string };
@@ -91,10 +92,11 @@ function p50(xs: number[]): number | null {
   return s[Math.floor((s.length - 1) / 2)];
 }
 
-function toRow(r: LogRow): SearchRow {
+function toRow(r: LogRow, fallback?: Set<string>): SearchRow {
   return {
     at: r.created_at, mode: r.mode ?? "—", query: r.query ?? "", matched: r.matched_corp_nm, matchedBizrno: r.matched_bizrno,
     results: r.result_count, error: !!r.has_error, errorMsg: r.error_msg, ip: (r.ip_hash ?? "").slice(0, 4), referer: refererPage(r.referer),
+    fallback: !!fallback?.has(searchKey(r)),
   };
 }
 
@@ -261,8 +263,8 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
     week: funnel(weekStart),
     daily,
     health: { today: health(todayStart), week: health(weekStart) },
-    zeroQueries: logRows.filter((r) => Date.parse(r.created_at) >= weekStart.getTime() && !r.has_error && r.result_count === 0).slice(0, 50).map(toRow),
-    problemQueries: logRows.filter((r) => r.has_error && Date.parse(r.created_at) < todayStart.getTime()).slice(0, 30).map(toRow),
+    zeroQueries: logRows.filter((r) => Date.parse(r.created_at) >= weekStart.getTime() && !r.has_error && r.result_count === 0).slice(0, 50).map((r) => toRow(r)),
+    problemQueries: ((fb) => logRows.filter((r) => r.has_error && Date.parse(r.created_at) < todayStart.getTime()).slice(0, 30).map((r) => toRow(r, fb)))(fallbackKeys(logRows)),
     visits,
     conversions,
     feedback: ((fb.data ?? []) as { id: number; created_at: string; kind: FeedbackRow["kind"]; message: string; email: string | null; page: string | null; handled_at: string | null }[])
@@ -277,7 +279,7 @@ export async function fetchAdminData(now: Date = new Date()): Promise<AdminData>
         saved: savedRows.filter((r) => r.user_id === u.id).length,
         reviewed: reviewedRows.filter((r) => r.user_id === u.id).length,
       })),
-    searches: logRows.filter((r) => Date.parse(r.created_at) >= weekStart.getTime()).slice(0, 200).map(toRow),
+    searches: logRows.filter((r) => Date.parse(r.created_at) >= weekStart.getTime()).slice(0, 200).map((r) => toRow(r)),
     savedRows: savedRows.slice(0, 50).map((r) => ({ at: r.created_at, user: emailOf.get(r.user_id) ?? "—", bizrnoNorm: r.bizrno_norm, name: nameOf.get(r.bizrno_norm) ?? r.bizrno_norm })),
     reviewedRows: reviewedRows.slice(0, 50).map((r) => ({ at: r.created_at, user: emailOf.get(r.user_id) ?? "—", bidNtceNo: r.bid_ntce_no, title: titleOf.get(r.bid_ntce_no) ?? r.bid_ntce_no })),
   };

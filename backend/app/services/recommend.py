@@ -173,6 +173,17 @@ def _match_score(query: str, corp_nm: str | None) -> int:
     return 0
 
 
+def _unique_prefix(core: str, cands: list[dict]) -> list[str] | None:
+    """핵심부(_name_core)가 core 로 시작하는 회사가 한 이름뿐이면 그 사업자번호들(같은 이름의 여러 행), 아니면 None.
+    cands 는 corp_nm 에 core 를 품은 행 전부여야 한다(find_company 의 ilike 결과)."""
+    by_core: dict[str, list[str]] = {}
+    for c in cands:
+        cc = _name_core(c.get("corp_nm"))
+        if cc.startswith(core) and cc != core:
+            by_core.setdefault(cc, []).append(c["bizrno"])
+    return next(iter(by_core.values())) if len(by_core) == 1 else None
+
+
 def _pick_best(client, bizrnos: list[str]) -> dict | None:
     """이름이 같은 회사가 여럿이면 벡터가 있고 계약이 많은 회사 (결정적으로 같은 결과가 나오게)."""
     norms = list({"".join(ch for ch in b if ch.isdigit()) for b in bizrnos})
@@ -222,6 +233,7 @@ def find_company(query: str) -> dict | None:
             return _with_match(row, "bizrno")
 
     core = _name_core(query)
+    cands: list[dict] = []
     if len(core) >= 3:  # 2글자 이하는 trigram 인덱스를 못 타 전수 스캔이 된다
         cands = (
             client.table("companies").select("bizrno,corp_nm")
@@ -243,7 +255,11 @@ def find_company(query: str) -> dict | None:
     scored = [(_match_score(query, c["corp_nm"]), c.get("similarity") or 0, c) for c in fuzzy.values()]
     scored = [x for x in scored if x[0] > 0]
     if not scored:
-        return None
+        # 4) 앞부분만 적은 이름 — 핵심부가 질의로 시작하는 회사가 딱 하나면 그 회사 ('이노클' → '주식회사 이노클파트너스').
+        #    _match_score 2 는 절반 이상 겹쳐야 해서('이노클' 3/7) 놓쳤다(2026-11-09, 7일 실패 검색 표본 6건). 후보가 둘 이상('천마' → 천마엔텍·천마엔지니어링…)이면 고르지 않는다.
+        #    오타 등급과 같은 "fuzzy" 로 돌려 화면이 "가장 가까운 이름으로 찾았다 — 다른 회사면 사업자번호로" 를 적게 한다.
+        prefixed = _unique_prefix(core, cands) if len(core) >= 3 and len(cands) < 50 else None  # 50건이면 ilike 가 잘린 목록이라 '유일'을 믿을 수 없다
+        return _with_match(_pick_best(client, prefixed), "fuzzy") if prefixed else None
     top = max(x[0] for x in scored)
     best_sim = max(x[1] for x in scored if x[0] == top)
     tied = [x[2]["bizrno"] for x in scored if x[0] == top and x[1] == best_sim]
@@ -1382,3 +1398,14 @@ def _recommend_by_company(
         "funnel": funnel,
         "viz": viz,
     }
+
+
+if __name__ == "__main__":
+    # 순수 로직 자체 점검: uv run python -m app.services.recommend
+    assert _name_core("주식회사 위더팀 (WEtheTEAM Inc.)") == "위더팀"
+    assert _match_score("가야문물", "재단법인 가야문물연구원") == 2 and _match_score("이노클", "주식회사 이노클파트너스") == 0
+    assert _unique_prefix("이노클", [{"bizrno": "1", "corp_nm": "주식회사 이노클파트너스"}]) == ["1"]
+    assert _unique_prefix("천마", [{"bizrno": "1", "corp_nm": "천마엔텍"}, {"bizrno": "2", "corp_nm": "주식회사 천마엔지니어링"}]) is None
+    assert _unique_prefix("이노클", [{"bizrno": "1", "corp_nm": "이노클"}]) is None  # 같은 이름은 exact 단계 몫
+    assert _unique_prefix("리가온", [{"bizrno": "1", "corp_nm": "주식회사 리가온건축사사무소"}, {"bizrno": "1-", "corp_nm": "리가온건축사사무소"}]) == ["1", "1-"]
+    print("ok recommend: _name_core / _match_score / _unique_prefix")

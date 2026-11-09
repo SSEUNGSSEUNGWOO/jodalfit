@@ -45,8 +45,8 @@ export function OverviewPanel({ data }: { data: AdminOverview }) {
       <Panel data-admin="search-problems">
         <PanelHead title="검색에서 막히는가" small="검색 로그 기준" />
         <p className="mb-0 mt-5"><b className="num text-[30px] font-semibold tracking-[-0.03em] text-ink">{searchOk ? percent(s.problems, s.total) : "—"}</b><span className="ml-2 text-[13px] text-ink-g">{searchOk ? `${nf.format(s.total)}회 중 ${nf.format(s.problems)}회` : "검색 조회 불가"}</span></p>
-        <p className="mb-0 mt-2 text-[13px] leading-[1.7] text-ink-g">{searchOk ? <>회사 식별 실패 <b className="num text-ink">{s.missingCompany}</b> · 등록정보 부족 <b className="num text-ink">{s.missingProfile}</b> · 기타 <b className="num text-ink">{s.other}</b></> : "검색 데이터를 읽지 못해 문제 비율을 판단할 수 없습니다."}</p>
-        <p className="mb-0 mt-2 text-[12px] leading-[1.7] text-ink-mute">회사 검색 실패 뒤 키워드 검색으로 이어질 수 있습니다. 모두 서버 장애라는 뜻은 아닙니다.</p>
+        <p className="mb-0 mt-2 text-[13px] leading-[1.7] text-ink-g">{searchOk ? <>회사 식별 실패 <b className="num text-ink">{s.missingCompany}</b> · 등록정보 부족 <b className="num text-ink">{s.missingProfile}</b> · 기타 <b className="num text-ink">{s.other}</b> · 그중 키워드 결과로 이어짐 <b className="num text-ink">{s.fallback}</b></> : "검색 데이터를 읽지 못해 문제 비율을 판단할 수 없습니다."}</p>
+        <p className="mb-0 mt-2 text-[12px] leading-[1.7] text-ink-mute">회사를 못 찾으면 화면이 키워드 검색으로 넘깁니다. &ldquo;키워드 결과로 이어짐&rdquo;은 사용자가 결과를 본 경우라 막힌 검색이 아닙니다. 사업자번호는 다음 시간 잡이 조달청에서 가져옵니다.</p>
         <a href="#admin-problems" className="mt-3 inline-block border-b border-field text-[13px] font-medium text-ink hover:border-orange">문제가 기록된 검색 확인 ↓</a>
       </Panel>
     </div>
