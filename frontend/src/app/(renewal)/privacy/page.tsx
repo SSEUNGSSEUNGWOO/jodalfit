@@ -87,7 +87,11 @@ export default function PrivacyPage() {
                 ["Supabase Inc.", "데이터 저장", "싱가포르 (AWS)", "1번의 모든 항목"],
                 ["Vercel Inc.", "웹페이지 제공, 메일 신청 접수", "싱가포르", "이메일 주소, 접속 정보"],
                 ["Railway Corporation", "추천 계산 서버", "싱가포르", "검색어, 접속 정보"],
-                ["OpenAI, L.L.C.", "검색어 의미 분석", "미국", "검색어"],
+                ["Google LLC", "검색어 의미 분석", "미국", "검색어"],
+                ["Anthropic, PBC", "추천 설명 문장 생성", "미국", "검색어"],
+                ["OpenAI, L.L.C.", "추천 설명 문장 생성(위 업체 장애 시 예비)", "미국", "검색어"],
+                ["PostHog, Inc.", "이용 통계 분석", "미국", "접속 정보"],
+                ["Functional Software, Inc. (Sentry)", "오류 기록", "미국", "접속 정보"],
                 ["Resend", "가입 확인·비밀번호 재설정 메일 발송", "미국", "이메일 주소"],
               ]}
             />
