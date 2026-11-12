@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/JsonLd";
+import { NoticeBridge } from "@/components/notice/NoticeBridge";
 import { NoticeRailClient } from "@/components/notice/NoticeRailClient";
 import { InstitutionSection, RequirementsSection, StagesSection, WorkSection } from "@/components/notice/NoticeBody";
 import { toLifecycleData } from "@/lib/lifecycle-data";
@@ -103,6 +104,8 @@ export default async function NoticePage({ params }: Props) {
         </p>
         <NoticeAbstract n={notice} />
       </header>
+
+      <NoticeBridge />
 
       <div className="mt-5 grid grid-cols-[260px_minmax(0,1fr)] items-start gap-x-10 max-sm:grid-cols-1 max-sm:gap-y-6">
         <NoticeRailClient n={notice} />

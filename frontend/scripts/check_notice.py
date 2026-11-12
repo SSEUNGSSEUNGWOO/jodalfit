@@ -40,6 +40,12 @@ def main() -> None:
         assert not s["over"], "가로 넘침"
         assert "과업 내용" in txt and "단계" in txt, "본문 블록이 없다"
         assert "참가 자격" in txt, "레일에 자격이 없다"
+        # 우리 회사 검색 다리(2026-11-12) — 머리 바로 아래, 레일·본문보다 앞. 회사 모드 고정(탭 없음), 자동완성이 붙는다.
+        assert pg.locator("[data-bridge]").count() == 1 and "우리 회사가 검토할 공고 보기" in txt, "회사 검색 다리가 없다"
+        assert pg.locator("[data-bridge]").bounding_box()["y"] < pg.locator("aside").bounding_box()["y"], "다리가 레일보다 뒤에 있다"
+        assert pg.locator("[data-bridge] [role=radiogroup]").count() == 0, "다리에 검색 기준 탭이 보인다"
+        pg.fill("[data-bridge] input", "한종산업"); pg.wait_for_selector("[data-bridge] [role=option]", timeout=8000)
+        pg.keyboard.press("Escape"); pg.fill("[data-bridge] input", "")
         assert "첨부문서를 아직 읽지 않았습니다" not in txt, "요약이 있는 공고인데 '안 읽음' 문구가 뜬다"
         # 제안서 작성 준비안 관심 등록(0068) — 마감 전 공고에만. 헤드리스 UA 는 /api/interest 가 기록하지 않고 ok 만 돌려주므로 운영 표가 더러워지지 않는다.
         closed = pg.evaluate("!!document.querySelector('aside b') && document.querySelector('aside b').innerText.trim() === '마감'")
