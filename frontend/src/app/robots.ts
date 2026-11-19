@@ -24,7 +24,16 @@ export default function robots(): MetadataRoute.Robots {
       // AhrefsBot(SEO 데이터 판매) 825 + KeenableBot(AI 검색 API 업체 색인) 554 = 36%(2026-11-05, search_logs.user_agent).
       // Keenable 은 공식 이름이 Keenable-SearchBot 인데 로그엔 KeenableBot 으로 찍혀 둘 다 적는다.
       // SERankingBacklinksBot(백링크 수집)·AwarioBot(브랜드 모니터링)·ElevenlabsCrawler 추가(2026-11-19) — 11/17 회사 페이지 SSR 30,515건 중 24,729건.
-      { userAgent: ["AhrefsBot", "KeenableBot", "Keenable-SearchBot", "SERankingBacklinksBot", "AwarioBot", "ElevenlabsCrawler"], disallow: "/" },
+      // 2차(2026-11-19, 14일 search_logs): SEO 데이터 판매(Semrush·MJ12)·AI 수집(Bytespider·Reflection·meta-externalagent·ExaSearchBot)·정체 불명 수집기.
+      // 남기는 것: Yeti·bingbot·Googlebot·Applebot(검색 유입), PerplexityBot·GPTBot·OAI-SearchBot·ChatGPT-User·ExaUser(AI 답변 인용).
+      {
+        userAgent: [
+          "AhrefsBot", "KeenableBot", "Keenable-SearchBot", "SERankingBacklinksBot", "AwarioBot", "ElevenlabsCrawler",
+          "Bytespider", "Reflectionbot", "SemrushBot", "MJ12bot", "ConsultingCrawler", "ExaSearchBot", "meta-externalagent",
+          "InterviewContactFinder", "OnseangRegistrationPublicPageVerifier",
+        ],
+        disallow: "/",
+      },
     ],
     // 색인 대상이 5만 URL 한도를 넘어 사이트맵을 세그먼트로 나눴다(lib/sitemap-segments.ts).
     sitemap: Array.from(
