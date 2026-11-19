@@ -51,7 +51,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const normalized = bizrno.replace(/\D/g, "");
   const company = await fetchCompanyByBizrno(normalized);
   // 비공개 요청 회사는 존재하지 않는 것처럼 다룬다 (0037). 메타까지 막아야 상호가 새어나가지 않는다.
-  if (!company || company.optout_at) return { title: "회사 정보 없음 | 조달핏", robots: { index: false } };
+  if (company?.optout_at) return { title: "회사 요청으로 비공개 처리된 회사 | 조달핏", robots: { index: false } };
+  if (!company) return { title: "회사 정보 없음 | 조달핏", robots: { index: false } };
 
   const awards = await fetchCompanyAwards(normalized, 50);
   const hasHistory = summarizeAwards(awards).count >= 1 || company.contract_count >= 1;

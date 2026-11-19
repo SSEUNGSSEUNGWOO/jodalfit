@@ -3,13 +3,15 @@
 import { Btn } from "@/components/Btn";
 import { Panel } from "@/components/Panel";
 
-export function NotFoundBlock() {
+export function NotFoundBlock({ optout = false }: { optout?: boolean }) {
   return (
     <div className="mx-auto mt-12 max-w-[520px] max-sm:mt-5">
-      <h1 className="m-0 mb-3 text-[28px] font-semibold tracking-[-0.03em] text-ink max-sm:text-[22px]">페이지가 없습니다</h1>
+      <h1 className="m-0 mb-3 text-[28px] font-semibold tracking-[-0.03em] text-ink max-sm:text-[22px]">{optout ? "비공개 처리된 회사입니다" : "페이지가 없습니다"}</h1>
       <Panel className="px-7 pb-7 pt-[26px] max-sm:px-4 max-sm:pb-[22px] max-sm:pt-5">
         <p className="m-0 text-[14.5px] leading-[1.75] text-ink-body break-keep">
-          주소가 바뀌었거나 삭제된 페이지입니다. 회사 또는 공고를 찾으려면 입구에서 검색합니다.
+          {optout
+            ? "이 회사의 정보는 회사 요청으로 비공개 처리되었습니다. 다른 회사 또는 공고를 찾으려면 입구에서 검색합니다."
+            : "주소가 바뀌었거나 삭제된 페이지입니다. 회사 또는 공고를 찾으려면 입구에서 검색합니다."}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Btn variant="dark" href="/">회사로 찾기</Btn>

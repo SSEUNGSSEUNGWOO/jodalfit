@@ -74,6 +74,14 @@ def main() -> None:
         closed_ok = "폐업" not in t2 or "추천을 하지 않습니다" in t2
         assert closed_ok, "폐업 회사인데 추천을 한다"
 
+        # 비공개 요청 회사(0037) — 404 그대로, "없는 페이지"가 아니라 회사 요청으로 비공개라고 적는다(2026-11-19). 상호는 싣지 않는다.
+        r3 = pg.goto(f"{BASE}/companies/4626300687", wait_until="networkidle", timeout=60000)
+        t3 = pg.evaluate("document.body.innerText")
+        assert r3.status == 404, f"비공개 요청 회사가 {r3.status}"
+        assert "회사 요청으로 비공개 처리되었습니다" in t3 and "수건설안전" not in t3 + pg.title(), "비공개 안내가 없거나 상호가 보인다"
+        r4 = pg.goto(f"{BASE}/companies/9999999991", wait_until="networkidle", timeout=60000)
+        assert r4.status == 404 and "페이지가 없습니다" in pg.evaluate("document.body.innerText"), "없는 회사가 일반 404 가 아니다"
+
         pg2 = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
         pg2.goto(f"{BASE}/companies/1248177731", wait_until="networkidle", timeout=60000)
         assert not pg2.evaluate("document.documentElement.scrollWidth > window.innerWidth"), "390 가로 넘침"
