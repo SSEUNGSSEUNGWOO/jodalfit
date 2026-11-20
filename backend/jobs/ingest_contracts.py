@@ -16,7 +16,6 @@ import argparse
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from app.services.supabase_client import get_admin_client
 from jobs._common import (
     DATE_FMT,
     iter_all_items,
@@ -74,10 +73,8 @@ def upsert_companies_from_contracts(rows: list[dict]) -> int:
     if not by_biz:
         return 0
     # ON CONFLICT DO NOTHING - corp_nm/ceo_nm은 사용자정보 API가 권위 있는 소스이므로 overwrite 안 함
-    client = get_admin_client()
-    client.table("companies").upsert(
-        list(by_biz.values()), on_conflict="bizrno", ignore_duplicates=True
-    ).execute()
+    # 이 upsert 도 8초 제한에 걸린다(2026-11-20 일일 수집: 계약 삽입은 통과하고 여기서 57014) — 같이 나눠 넣는다.
+    upsert_rows_split("companies", list(by_biz.values()), on_conflict="bizrno", ignore_duplicates=True)
     return len(by_biz)
 
 
