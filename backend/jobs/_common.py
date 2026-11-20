@@ -17,7 +17,7 @@ import httpx
 from dotenv import load_dotenv
 from postgrest.exceptions import APIError
 
-from app.services.supabase_client import get_admin_client
+from app.services.supabase_client import get_admin_client, upsert_rows
 
 load_dotenv()
 if sys.stdout.encoding != "utf-8":
@@ -174,6 +174,26 @@ def upsert_embeddings_with_retry(
     )
     upsert_embeddings_with_retry(client, rpc_name, updates[:mid])
     upsert_embeddings_with_retry(client, rpc_name, updates[mid:])
+
+
+# ----- 큰 묶음 upsert (PostgREST 8초 제한 대응) -----
+
+def upsert_rows_split(table: str, rows: list[dict], **kwargs) -> None:
+    """upsert_rows — statement timeout(57014)이면 절반으로 나눠 다시 넣는다.
+
+    raw 를 실은 500행(1.2MB) 삽입은 평소 2초인데 간헐적으로 5~8초까지 튀어 PostgREST 8초 제한에 걸린다
+    (2026-11-20 로컬 재현: 30묶음 중 1묶음). 묶음 하나가 걸리면 잡 전체가 죽어 계약 수집이 11/14~19
+    엿새 연속 실패했다. upsert 라 다시 넣어도 안전하다.
+    """
+    try:
+        upsert_rows(table, rows, **kwargs)
+    except APIError as e:
+        if e.code != "57014" or len(rows) <= 1:
+            raise
+        mid = len(rows) // 2
+        print(f"  {table} upsert timeout (n={len(rows)}), split {mid} + {len(rows) - mid}")
+        upsert_rows_split(table, rows[:mid], **kwargs)
+        upsert_rows_split(table, rows[mid:], **kwargs)
 
 
 # ----- ingest_runs 로깅 -----

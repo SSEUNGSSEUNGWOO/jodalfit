@@ -24,13 +24,14 @@ from datetime import datetime, timedelta
 import httpx
 
 from app.services.embedding import emb_col
-from app.services.supabase_client import get_admin_client, upsert_rows
+from app.services.supabase_client import get_admin_client
 from jobs._common import (
     iter_all_items,
     log_ingest_finish,
     log_ingest_start,
     to_decimal,
     to_int,
+    upsert_rows_split,
 )
 
 BASE = "https://apis.data.go.kr/1230000/as/ScsbidInfoService"
@@ -111,7 +112,9 @@ def fetch_queue(client, days_back: int, limit: int) -> list[dict]:
             client.table("award_results")
             .select("bid_ntce_no")
             .in_("bid_ntce_no", sub)
-            .gte("openg_rank", 2)
+            # rank 2 한 줄만 본다 — gte(2) 는 공고당 수십~천 행이라 REST 1,000행 상한에 잘려
+            # 받은 공고 대부분을 "안 받음"으로 보고 매 실행 전부 다시 받았다(2026-11-20: 200건 중 48건만 인식).
+            .eq("openg_rank", 2)
             .execute()
             .data
         )
@@ -154,7 +157,13 @@ def fetch_participants(bid_ntce_no: str) -> list[dict]:
     return []
 
 
-def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500) -> None:
+def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500, max_minutes: float | None = None) -> None:
+    """max_minutes: 이 시간을 넘기면 받은 데까지 넣고 정상 종료한다. 남은 공고는 다음 실행의 큐에 다시 잡힌다.
+
+    워크플로 스텝 제한에 잘리면 ingest_runs 가 running 으로 남고 로그도 안 남는다
+    (2026-11-05~19 보름간 16회 중 9회). 스텝 제한보다 짧게 준다.
+    """
+    started = time.monotonic()
     run_id = log_ingest_start(JOB_NAME, {"days_back": days_back, "limit": limit})
     client = get_admin_client()
 
@@ -166,6 +175,9 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500) -> None:
     batch: dict[tuple, dict] = {}
     try:
         for w in queue:
+            if max_minutes and time.monotonic() - started > max_minutes * 60:
+                print(f"  {max_minutes}분 경과 — {len(queue) - calls}건 남기고 멈춤 (다음 실행에서 이어 받음)")
+                break
             calls += 1
             time.sleep(0.1)
             for it in fetch_participants(w["bid_ntce_no"]):
@@ -174,7 +186,7 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500) -> None:
                     continue
                 batch[(row["bid_ntce_no"], row["bid_ntce_ord"], row["openg_rank"])] = row
             if len(batch) >= batch_size:
-                upsert_rows(
+                upsert_rows_split(
                     "award_results",
                     list(batch.values()),
                     on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank",
@@ -184,7 +196,7 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500) -> None:
             if calls % 100 == 0:
                 print(f"  [{calls}/{len(queue)}] participants {total + len(batch):,}")
         if batch:
-            upsert_rows(
+            upsert_rows_split(
                 "award_results",
                 list(batch.values()),
                 on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank",
@@ -202,5 +214,6 @@ if __name__ == "__main__":
     parser.add_argument("--days-back", type=int, default=3)
     parser.add_argument("--limit", type=int, default=2000)
     parser.add_argument("--batch-size", type=int, default=500)
+    parser.add_argument("--max-minutes", type=float, default=None)
     args = parser.parse_args()
-    run(args.days_back, args.limit, args.batch_size)
+    run(args.days_back, args.limit, args.batch_size, args.max_minutes)

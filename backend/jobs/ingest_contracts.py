@@ -16,9 +16,7 @@ import argparse
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from postgrest.exceptions import APIError
-
-from app.services.supabase_client import get_admin_client, upsert_rows
+from app.services.supabase_client import get_admin_client
 from jobs._common import (
     DATE_FMT,
     iter_all_items,
@@ -26,6 +24,7 @@ from jobs._common import (
     log_ingest_start,
     to_date,
     to_int,
+    upsert_rows_split,
 )
 
 URL = "https://apis.data.go.kr/1230000/ao/PubDataOpnStdService/getDataSetOpnStdCntrctInfo"
@@ -82,24 +81,6 @@ def upsert_companies_from_contracts(rows: list[dict]) -> int:
     return len(by_biz)
 
 
-def upsert_contracts(rows: list[dict]) -> None:
-    """contracts upsert — statement timeout(57014)이면 절반으로 나눠 다시 넣는다.
-
-    500행(raw 포함 1.2MB) 삽입은 평소 2초인데 간헐적으로 5~8초까지 튀어 PostgREST 8초 제한에 걸린다
-    (2026-11-20 로컬 재현: 30묶음 중 1묶음 실패). 하루 60여 묶음 중 하나만 걸려도 잡 전체가 죽어
-    11/14~19 엿새 연속 실패했다. ON CONFLICT DO NOTHING 이라 다시 넣어도 안전하다.
-    """
-    try:
-        upsert_rows("contracts", rows, on_conflict="cntrct_no,cntrct_ord", ignore_duplicates=True)
-    except APIError as e:
-        if e.code != "57014" or len(rows) <= 1:
-            raise
-        mid = len(rows) // 2
-        print(f"  contracts upsert timeout (n={len(rows)}), split {mid} + {len(rows) - mid}")
-        upsert_contracts(rows[:mid])
-        upsert_contracts(rows[mid:])
-
-
 def run(days_back: int = 1, batch_size: int = 500) -> None:
     end = datetime.now()
     begin = end - timedelta(days=days_back)
@@ -124,13 +105,13 @@ def run(days_back: int = 1, batch_size: int = 500) -> None:
                 continue
             batch.append(row)
             if len(batch) >= batch_size:
-                upsert_contracts(batch)
+                upsert_rows_split("contracts", batch, on_conflict="cntrct_no,cntrct_ord", ignore_duplicates=True)
                 new_companies += upsert_companies_from_contracts(batch)
                 total += len(batch)
                 print(f"  upserted {total} contracts ({new_companies} new companies)...")
                 batch.clear()
         if batch:
-            upsert_contracts(batch)
+            upsert_rows_split("contracts", batch, on_conflict="cntrct_no,cntrct_ord", ignore_duplicates=True)
             new_companies += upsert_companies_from_contracts(batch)
             total += len(batch)
         log_ingest_finish(run_id, "success", rows_inserted=total)
