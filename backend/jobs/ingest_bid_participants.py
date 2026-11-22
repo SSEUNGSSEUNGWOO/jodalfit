@@ -22,9 +22,10 @@ import time
 from datetime import datetime, timedelta
 
 import httpx
+from postgrest.exceptions import APIError
 
 from app.services.embedding import emb_col
-from app.services.supabase_client import get_admin_client
+from app.services.supabase_client import get_admin_client, upsert_rows
 from jobs._common import (
     iter_all_items,
     log_ingest_finish,
@@ -119,6 +120,7 @@ def fetch_queue(client, days_back: int, limit: int) -> list[dict]:
             .data
         )
         done.update(r["bid_ntce_no"] for r in done_rows)
+        done.update(fetch_checked(client, sub))
 
     seen: set[str] = set()
     queue: list[dict] = []
@@ -131,6 +133,29 @@ def fetch_queue(client, days_back: int, limit: int) -> list[dict]:
         if len(queue) >= limit:
             break
     return queue
+
+
+CHECKS_TABLE = "participant_checks"  # 0071
+
+
+def fetch_checked(client, bid_nos: list[str]) -> set[str]:
+    """조회했지만 rank 2+ 가 없던 공고(단독 응찰 등). 0071 미적용이면 빈 집합 — 예전처럼 매번 다시 조회한다."""
+    try:
+        rows = client.table(CHECKS_TABLE).select("bid_ntce_no").in_("bid_ntce_no", bid_nos).execute().data
+    except APIError:
+        return set()
+    return {r["bid_ntce_no"] for r in rows}
+
+
+def mark_checked(bid_nos: list[str]) -> None:
+    """rank 2+ 가 없던 공고를 적어 둔다 — 안 적으면 완료 판정(rank 2 행)에 영영 안 걸려 창 안에서 매일 다시 조회한다
+    (2026-11-20: 2일 창 대기열 539건 중 216건, 하루 호출 한도 1,000회 안팎의 5분의 1)."""
+    if not bid_nos:
+        return
+    try:
+        upsert_rows(CHECKS_TABLE, [{"bid_ntce_no": n} for n in bid_nos], on_conflict="bid_ntce_no", ignore_duplicates=True)
+    except APIError as e:
+        print(f"  {CHECKS_TABLE} 기록 실패(0071 미적용?): {e.code}")
 
 
 RETRY_429 = 3
@@ -173,6 +198,7 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500, max_minute
     total = 0
     calls = 0
     batch: dict[tuple, dict] = {}
+    empty: list[str] = []
     try:
         for w in queue:
             if max_minutes and time.monotonic() - started > max_minutes * 60:
@@ -180,11 +206,15 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500, max_minute
                 break
             calls += 1
             time.sleep(0.1)
+            found = False
             for it in fetch_participants(w["bid_ntce_no"]):
                 row = map_item(it, w.get("bsns_div_nm"))
                 if not row or not row["bid_ntce_no"]:
                     continue
+                found = True
                 batch[(row["bid_ntce_no"], row["bid_ntce_ord"], row["openg_rank"])] = row
+            if not found:
+                empty.append(w["bid_ntce_no"])
             if len(batch) >= batch_size:
                 upsert_rows_split(
                     "award_results",
@@ -202,9 +232,11 @@ def run(days_back: int = 3, limit: int = 2000, batch_size: int = 500, max_minute
                 on_conflict="bid_ntce_no,bid_ntce_ord,openg_rank",
             )
             total += len(batch)
+        mark_checked(empty)
         log_ingest_finish(run_id, "success", rows_inserted=total)
-        print(f"[{JOB_NAME}] done. {calls} calls / {total:,} participants")
+        print(f"[{JOB_NAME}] done. {calls} calls / {total:,} participants / {len(empty)} 참가업체 없음")
     except Exception as e:
+        mark_checked(empty)
         log_ingest_finish(run_id, "failed", rows_inserted=total, error_msg=str(e))
         raise
 

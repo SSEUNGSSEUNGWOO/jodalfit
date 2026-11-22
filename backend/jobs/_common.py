@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -216,6 +217,9 @@ def log_ingest_finish(
     rows_failed: int = 0,
     error_msg: str | None = None,
 ) -> None:
+    # httpx 오류 문구에는 요청 URL 이 통째로 실려 ServiceKey 가 평문으로 저장됐다(2026-11-18 429 행) — 저장 전에 가린다.
+    if error_msg:
+        error_msg = re.sub(r"(?i)(servicekey=)[^&\s'\"]+", r"\1***", error_msg)
     client = get_admin_client()
     client.table("ingest_runs").update(
         {
