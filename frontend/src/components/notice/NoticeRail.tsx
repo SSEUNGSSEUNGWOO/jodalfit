@@ -15,8 +15,9 @@ function won(v: number | null | undefined): string {
   return v >= 100_000_000 ? `${(v / 100_000_000).toFixed(1)}억` : `${nf.format(Math.round(v / 10_000))}만`;
 }
 
-export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[]; today: Date }) {
-  const d = dLeft(n.bid_clse_date, today)?.days ?? null;
+/** today 가 null(서버·첫 렌더)이면 남은 날을 적지 않고 마감 날짜만 보인다. */
+export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[]; today: Date | null }) {
+  const d = today ? dLeft(n.bid_clse_date, today)?.days ?? null : null;
   const closed = d != null && d < 0;
   const files = (n.attachments ?? []) as { seq?: number; name?: string; url: string }[];
 
@@ -27,13 +28,23 @@ export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[
         <div className="mt-1 flex items-baseline gap-2">
           {closed ? (
             <b className="text-[22px] font-[650] text-ink-mute">마감</b>
-          ) : (
+          ) : today ? (
             <b className={cn("num text-[26px] font-[650] tracking-[-0.03em]", d != null && d <= 7 ? "text-orange-ink" : "text-ink")}>
               {d == null ? "—" : `D-${d}`}
             </b>
-          )}
+          ) : null}
           <span className="num text-[13px] text-ink-g">{n.bid_clse_date?.slice(0, 10).replace(/-/g, ".") ?? "—"}</span>
         </div>
+        {/* 이 공고를 검토하러 온 사람의 다음 걸음 — 첨부 목록 아래에 있으면 가장 멀다(2026-11-22 마감 바로 아래로). */}
+        {n.bid_ntce_url && (
+          <a
+            href={n.bid_ntce_url}
+            rel="nofollow noopener"
+            className="mt-2.5 inline-block rounded-[4px] bg-ink px-3.5 py-2 text-[13.5px] font-[650] text-paper"
+          >
+            나라장터 원문
+          </a>
+        )}
       </div>
 
       <div className="mt-4">
@@ -87,16 +98,6 @@ export function NoticeRail({ n, quals, today }: { n: BidNotice; quals: QualLine[
           </ul>
           {files.length > 8 && <p className="mt-1 text-[11.5px] text-ink-mute">외 {files.length - 8}건</p>}
         </div>
-      )}
-
-      {n.bid_ntce_url && (
-        <a
-          href={n.bid_ntce_url}
-          rel="nofollow noopener"
-          className="mt-4 inline-block rounded-[4px] bg-ink px-3.5 py-2 text-[13.5px] font-[650] text-paper"
-        >
-          나라장터 원문
-        </a>
       )}
 
       {/* 미출시 기능 수요 조사 — 이 공고를 보고 있는 사람에게만 묻는다(0068). 마감된 공고에는 묻지 않는다. */}

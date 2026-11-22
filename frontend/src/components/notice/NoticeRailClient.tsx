@@ -9,8 +9,9 @@ import { NoticeRail, type QualLine } from "./NoticeRail";
 import type { BidNotice } from "@/lib/notice";
 
 export function NoticeRailClient({ n }: { n: BidNotice }) {
-  // 서버·첫 렌더에서는 공고 날짜 기준으로만 그린다 — 하이드레이션이 어긋나지 않게 오늘은 뒤에 넣는다.
-  const [today, setToday] = useState<Date>(() => new Date(`${(n.bid_clse_date ?? "2000-01-01").slice(0, 10)}T00:00:00+09:00`));
+  // 서버·첫 렌더에서는 오늘을 모른다(null) — 하이드레이션이 어긋나지 않게 오늘은 뒤에 넣는다.
+  // 그 전엔 마감일을 오늘로 잡아 서버 HTML 이 모든 공고를 "D-0" 으로 내보냈다(크롤러·AI 답변이 그대로 읽는다, 2026-11-22).
+  const [today, setToday] = useState<Date | null>(null);
   useEffect(() => {
     queueMicrotask(() => setToday(new Date()));
   }, []);
