@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BLOCKED_BOTS } from "@/lib/blocked-bots";
 import { TOTAL_SEGMENTS } from "@/lib/sitemap-segments";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://jodalfit.co.kr";
@@ -27,11 +28,7 @@ export default function robots(): MetadataRoute.Robots {
       // 2차(2026-11-19, 14일 search_logs): SEO 데이터 판매(Semrush·MJ12)·AI 수집(Bytespider·Reflection·meta-externalagent·ExaSearchBot)·정체 불명 수집기.
       // 남기는 것: Yeti·bingbot·Googlebot·Applebot(검색 유입), PerplexityBot·GPTBot·OAI-SearchBot·ChatGPT-User·ExaUser(AI 답변 인용).
       {
-        userAgent: [
-          "AhrefsBot", "KeenableBot", "Keenable-SearchBot", "SERankingBacklinksBot", "AwarioBot", "ElevenlabsCrawler",
-          "Bytespider", "Reflectionbot", "SemrushBot", "MJ12bot", "ConsultingCrawler", "ExaSearchBot", "meta-externalagent",
-          "InterviewContactFinder", "OnseangRegistrationPublicPageVerifier",
-        ],
+        userAgent: BLOCKED_BOTS,   // proxy.ts 가 같은 목록으로 403 을 준다 — robots.txt 를 무시하는 봇이 있다
         disallow: "/",
       },
     ],

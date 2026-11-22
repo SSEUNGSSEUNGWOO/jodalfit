@@ -2,11 +2,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
+import { isBlockedBot } from "@/lib/blocked-bots";
 
 let warned = false;
 
 /** 매 요청 세션 토큰 갱신(만료된 access token 을 refresh 해 쿠키에 다시 쓴다). 보호 경로 리다이렉트는 하지 않는다 — 비로그인 /saved 는 안내 판(시안). */
 export async function proxy(request: NextRequest) {
+  // robots.txt 로 막은 수집 봇은 페이지를 그리기 전에 돌려보낸다 — 회사·공고 페이지는 그릴 때마다 추천 API 를 부른다.
+  // robots.txt 자체는 matcher 밖이라 계속 읽힌다.
+  if (isBlockedBot(request.headers.get("user-agent"))) return new Response(null, { status: 403 });
   // not-found.tsx 는 props 를 못 받는다 — 어느 주소에서 404 가 났는지 여기서 넘긴다(비공개 요청 회사 안내, 2026-11-19). 바깥에서 온 값은 덮어쓴다.
   request.headers.set("x-pathname", request.nextUrl.pathname);
   let response = NextResponse.next({ request });
